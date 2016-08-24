@@ -1,2 +1,2 @@
 # cachier
-Persistent, stale-free memoization decorators.
+Persistent, stale-free memoization decorators for python.
