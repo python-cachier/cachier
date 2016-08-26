@@ -118,12 +118,14 @@ class _PickleCore(_BaseCore):
         self.cache = None
 
     def _get_cache_path(self):
+        # print(EXPANDED_CACHIER_DIR)
         if not os.path.exists(EXPANDED_CACHIER_DIR):
             os.makedirs(EXPANDED_CACHIER_DIR)
         fname = '.{}.{}'.format(
             self.func.__module__, self.func.__name__)  # pylint: disable=W0212
         fpath = os.path.abspath(os.path.join(
             os.path.realpath(EXPANDED_CACHIER_DIR), fname))
+        # print(fpath)
         return fpath
 
     def _get_cache(self):
