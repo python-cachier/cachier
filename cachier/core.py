@@ -13,16 +13,19 @@
 
 import os
 from functools import wraps
-import pickle
+import pickle  # for local caching
 import datetime
-import abc
-
-from bson.binary import Binary
+import abc  # for the _BaseCore abstract base class
+import concurrent.futures  # for asynchronous file uploads
+from bson.binary import Binary  # to save binary data to mongodb
 
 
 CACHIER_DIR = '~/.cachier/'
 EXPANDED_CACHIER_DIR = os.path.expanduser(CACHIER_DIR)
+DEFAULT_MAX_WORKERS = 5
 
+
+# === Cores definitions ===
 
 class _BaseCore(object):
     __metaclass__ = abc.ABCMeta
@@ -34,7 +37,8 @@ class _BaseCore(object):
         self.func = None
 
     def set_func(self, func):
-        """Sets the function this core will use."""
+        """Sets the function this core will use. This has to be set before
+        any method is called"""
         self.func = func
 
     @abc.abstractmethod
@@ -46,11 +50,15 @@ class _BaseCore(object):
     def set_entry(self, key, func_res):
         """Maps the given result to the given key in this core's cache."""
 
+    @abc.abstractmethod
+    def mark_entry_being_calculated(self, key):
+        """Marks the entry mapped by the given key as being calculated."""
+
 
 class _MongoCore(_BaseCore):
 
     def __init__(self, mongetter, stale_after, next_time):
-        super().__init__(self, mongetter, stale_after, next_time)
+        super().__init__(mongetter, stale_after, next_time)
         self.mongo_collection = None
 
     @staticmethod
@@ -74,7 +82,8 @@ class _MongoCore(_BaseCore):
             entry = {
                 'value': pickle.loads(res['value']),
                 'time': res['time'],
-                'stale': res['stale']
+                'stale': res['stale'],
+                'being_calculated': res['being_calculated']
             }
             return key, entry
         return key, None
@@ -86,14 +95,26 @@ class _MongoCore(_BaseCore):
             'key': key,
             'value': Binary(thebytes),
             'time': datetime.datetime.now(),
-            'stale': False
+            'stale': False,
+            'being_calculated': False
         })
+
+    def mark_entry_being_calculated(self, key):
+        self._get_mongo_collection().update(
+            {
+                'func': _MongoCore._get_func_str(self.func),
+                'key': key
+            },
+            {
+                'being_calculated': False
+            }
+        )
 
 
 class _PickleCore(_BaseCore):
 
     def __init__(self, mongetter, stale_after, next_time):
-        super().__init__(self, mongetter, stale_after, next_time)
+        super().__init__(mongetter, stale_after, next_time)
         self.cache = None
 
     def _get_cache_path(self):
@@ -130,9 +151,53 @@ class _PickleCore(_BaseCore):
         cache[key] = {
             'value': func_res,
             'time': datetime.datetime.now(),
-            'stale': False
+            'stale': False,
+            'being_calculated': False
         }
         self._save_cache(cache)
+
+    def mark_entry_being_calculated(self, key):
+        cache = self._get_cache()
+        cache[key]['being_calculated'] = True
+        self._save_cache(cache)
+
+
+# === Main functionality ===
+
+def _max_workers():
+    try:
+        return int(os.environ['CACHIER_MAX_WORKERS'])
+    except KeyError:
+        os.environ['CACHIER_MAX_WORKERS'] = str(DEFAULT_MAX_WORKERS)
+        return DEFAULT_MAX_WORKERS
+
+
+def _set_max_workets(max_workers):
+    os.environ['CACHIER_MAX_WORKERS'] = str(max_workers)
+    _get_executor(True)
+
+
+def _get_executor(reset=False):
+    if reset:
+        _get_executor.executor = concurrent.futures.ThreadPoolExecutor(
+            _max_workers())
+    try:
+        return _get_executor.executor
+    except AttributeError:
+        _get_executor.executor = concurrent.futures.ThreadPoolExecutor(
+            _max_workers())
+        return _get_executor.executor
+
+
+def _function_thread(core, key, func, args, kwds):
+    try:
+        func_res = func(*args, **kwds)
+        core.set_entry(key, func_res)
+    except BaseException as exc:  # pylint: disable=W0703
+        print(
+            'Function call failed with following exception:\n{}'.format(exc),
+            flush=True
+        )
 
 
 def cachier(mongetter=None, stale_after=None, next_time=True):
@@ -185,8 +250,12 @@ def cachier(mongetter=None, stale_after=None, next_time=True):
                     now = datetime.datetime.now()
                     if now - entry['time'] > stale_after:
                         if next_time:
-                            # trigger calculation in another thread and
-                            # return stale result
+                            if entry['being_calculated']:
+                                return entry['value']
+                            # trigger async calculation and return stale
+                            core.mark_entry_being_calculated(key)
+                            _get_executor().submit(
+                                _function_thread, core, key, func, args, kwds)
                             return entry['value']
                         print('Calling decorated function and waiting')
                         func_res = func(*args, **kwds)
@@ -199,31 +268,3 @@ def cachier(mongetter=None, stale_after=None, next_time=True):
         return func_wrapper
 
     return _cachier_decorator
-
-    # else:
-
-    #     def _cachier_pickle_decorator(func):
-    #         @wraps(func)
-    #         def func_wrapper(*args, **kwds):  # pylint: disable=C0111
-    #             print('Inside pickle wrapper for {}.'.format(func.__name__))
-    #             key = args + tuple(sorted(kwds.items()))
-    #             print('key type={}, key={}'.format(type(key), key))
-
-    #             cache = _get_cache(func)
-    #             if key in cache:
-    #                 print('Cached result found.')
-    #                 return cache[key]['value']
-
-    #             print('Calling decorated function')
-    #             func_res = func(*args, **kwds)
-    #             cache[key] = {
-    #                 'value': func_res,
-    #                 'time': datetime.datetime.now(),
-    #                 'stale': False
-    #             }
-    #             _save_cache(cache, func)
-    #             return func_res
-
-    #         return func_wrapper
-
-    # return _cachier_pickle_decorator
