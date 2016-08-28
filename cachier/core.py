@@ -64,6 +64,10 @@ class _BaseCore(object):
         """Waits on the entry mapped by key being calculated and returns the
         result."""
 
+    @abc.abstractmethod
+    def clear_cache(self):
+        """Clears the cache of this core."""
+
 
 class _MongoCore(_BaseCore):
 
@@ -152,6 +156,10 @@ class _MongoCore(_BaseCore):
         # if entry:
         #     return entry['value']
         # return None
+
+    def clear_cache(self):
+        self._get_mongo_collection().delete_many(
+            {'func': _MongoCore._get_func_str(self.func)})
 
 
 class _PickleCore(_BaseCore):
@@ -288,6 +296,9 @@ class _PickleCore(_BaseCore):
         print("Returned value: {}".format(event_handler.value))
         return event_handler.value
 
+    def clear_cache(self):
+        self._save_cache({})
+
 
 # === Main functionality ===
 
@@ -415,6 +426,12 @@ def cachier(stale_after=None, next_time=True, pickle_reload=True,
             func_res = func(*args, **kwds)
             _get_executor().submit(core.set_entry, key, func_res)
             return func_res
+
+        def clear_cache():
+            """Clear the cache and cache statistics"""
+            core.clear_cache()
+
+        func_wrapper.clear_cache = clear_cache
         return func_wrapper
 
     return _cachier_decorator
