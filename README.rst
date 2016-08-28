@@ -14,7 +14,10 @@ Persistent, stale-free cache / memoization decorators for Python.
   def foo(arg1, arg2):
     """foo now has a persistent cache, trigerring recalculation for values stored more than 3 days!"""
     return {'arg1': arg1, 'arg2': arg2}
-    
+
+
+.. role:: python(code)
+  :language: python
 
 Dependencies and Setup
 ----------------------
@@ -62,16 +65,37 @@ You can add a deafult, pickle-based persistent cache to your function by decorat
     return {'arg1': arg1, 'arg2': arg2}
 
 Setting Shelf Live
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~
 You can set any duration as the shelf life of cached return values of a function by providing a corresponding ``timedelta`` object to the ``stale_after`` parameter:
 
 .. code-block:: python
 
   import datetime
   
-  @cachier(stale_after=datetime.timedelta(weeks=2)
+  @cachier(stale_after=datetime.timedelta(weeks=2))
   def bar(arg1, arg2):
     return {'arg1': arg1, 'arg2': arg2}
+
+Fuzzy Shelf Live
+~~~~~~~~~~~~~~~~
+Sometimes you may want your function to trigger a calculation when it encounters a stale result, but still not wait on it if it's not that critical. In that case you can set ``next_time`` to ``True`` to have your function trigger a recalculation but return the currently cached stale value:
+
+.. code-block:: python
+
+  @cachier(next_time=True)
+
+Further function calls made while the calculation is being performed will not trigger redundant calculations.
+
+Minimizing IO
+~~~~~~~~~~~~~
+You can slightly optimize caching if you know your code will only be used in a single thread environment by setting:
+
+.. code-block:: python
+
+  @cachier(pickle_reload=False)
+
+This will prevent reading the cache file on each cache read, speeding things up a bit, while also nullfying inter-thread functionality (the code is still thread safe, but different threads will have different version of the cache at times, and will sometime make unecessary function calls.
+
 
 .. links:
 .. _bson package: https://api.mongodb.com/python/current/api/bson/
