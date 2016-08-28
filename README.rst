@@ -97,6 +97,16 @@ You can slightly optimize caching if you know your code will only be used in a s
 This will prevent reading the cache file on each cache read, speeding things up a bit, while also nullfying inter-thread functionality (the code is still thread safe, but different threads will have different version of the cache at times, and will sometime make unecessary function calls.
 
 
+MongoDB-based Caching
+~~~~~~~~~~~~~~~~~~~~~
+You can set a MongoDB-based cache by assigning ``mongetter`` with a callable that returns a ``pymongo.Collection`` object:
+
+.. code-block:: python
+
+  @cachier(mongetter=False)
+
+This allows you to have a cross-machine cache, albeit slower.
+
 .. links:
 .. _bson package: https://api.mongodb.com/python/current/api/bson/
 .. _watchdog: https://github.com/gorakhargosh/watchdog
