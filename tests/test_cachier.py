@@ -25,6 +25,32 @@ def test_int_pickling(int_1, int_2):
     return int_1 + int_2
 
 
+def test_int_pickling_compare(int_1, int_2):
+    """Add the two given ints."""
+    return int_1 + int_2
+
+
+def test_speed():
+    """Test speeds"""
+    num_of_vals = 10000
+    times = []
+    for i in range(1, num_of_vals):
+        tic = time.time()
+        test_int_pickling_compare(i, i + 1)
+        toc = time.time()
+        times.append(toc - tic)
+    print('Non-decorated average = {:.8f}'.format(sum(times) / num_of_vals))
+
+    test_int_pickling.clear_cache()
+    times = []
+    for i in range(1, num_of_vals):
+        tic = time.time()
+        test_int_pickling(i, i + 1)
+        toc = time.time()
+        times.append(toc - tic)
+    print('Decorated average = {:.8f}'.format(sum(times) / num_of_vals))
+
+
 @cachier(next_time=False)
 def takes_30_seconds(arg_1, arg_2):
     """Some function."""
