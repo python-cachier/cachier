@@ -22,6 +22,6 @@ setup(
     packages=find_packages(),
     install_requires=[
     ],
-    keywords=['cache', 'persistence', 'mongo'],
+    keywords=['cache', 'persistence', 'mongo', 'memoization', 'decorator'],
     classifiers=[],
 )

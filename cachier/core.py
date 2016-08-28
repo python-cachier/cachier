@@ -7,22 +7,23 @@
 # http://www.opensource.org/licenses/MIT-license
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 
-# Used a little code from Andrew Barnert's <abarnert at yahoo.com>
-# persistent-lru-cache, which can be found at
-# https://github.com/abarnert/persistent-lru-cache
-
 import os
 from functools import wraps
 import pickle  # for local caching
 import datetime
 import abc  # for the _BaseCore abstract base class
 import concurrent.futures  # for asynchronous file uploads
-from bson.binary import Binary  # to save binary data to mongodb
+import time   # to sleep when waiting on Mongo cache
+import fcntl  # to lock on pickle cache IO
 
+from bson.binary import Binary  # to save binary data to mongodb
+from watchdog.observers import Observer
+from watchdog.events import PatternMatchingEventHandler
 
 CACHIER_DIR = '~/.cachier/'
 EXPANDED_CACHIER_DIR = os.path.expanduser(CACHIER_DIR)
 DEFAULT_MAX_WORKERS = 5
+MONGO_SLEEP_DURATION_IN_SEC = 6
 
 
 # === Cores definitions ===
@@ -30,8 +31,7 @@ DEFAULT_MAX_WORKERS = 5
 class _BaseCore(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, mongetter, stale_after, next_time):
-        self.mongetter = mongetter
+    def __init__(self, stale_after, next_time):
         self.stale_after = stale_after
         self.next_time = next_time
         self.func = None
@@ -40,6 +40,11 @@ class _BaseCore(object):
         """Sets the function this core will use. This has to be set before
         any method is called"""
         self.func = func
+
+    @abc.abstractmethod
+    def get_entry_by_key(self, key):
+        """Returns the result mapped to the given key in this core's cache,
+        if such a mapping exists."""
 
     @abc.abstractmethod
     def get_entry(self, args, kwds):
@@ -54,11 +59,17 @@ class _BaseCore(object):
     def mark_entry_being_calculated(self, key):
         """Marks the entry mapped by the given key as being calculated."""
 
+    @abc.abstractmethod
+    def wait_on_entry_calc(self, key):
+        """Waits on the entry mapped by key being calculated and returns the
+        result."""
+
 
 class _MongoCore(_BaseCore):
 
     def __init__(self, mongetter, stale_after, next_time):
-        super().__init__(mongetter, stale_after, next_time)
+        super().__init__(stale_after, next_time)
+        self.mongetter = mongetter
         self.mongo_collection = None
 
     @staticmethod
@@ -70,83 +81,168 @@ class _MongoCore(_BaseCore):
             self.mongo_collection = self.mongetter()
         return self.mongo_collection
 
-    def get_entry(self, args, kwds):
-        key = pickle.dumps(args + tuple(sorted(kwds.items())))
-        print('key type={}, key={}'.format(
-            type(key), key))
+    def get_entry_by_key(self, key):
         res = self._get_mongo_collection().find_one({
             'func': _MongoCore._get_func_str(self.func),
             'key': key
         })
         if res:
-            entry = {
-                'value': pickle.loads(res['value']),
-                'time': res['time'],
-                'stale': res['stale'],
-                'being_calculated': res['being_calculated']
-            }
+            try:
+                entry = {
+                    'value': pickle.loads(res['value']),
+                    'time': res.get('time', None),
+                    'stale': res.get('stale', False),
+                    'being_calculated': res.get('being_calculated', False)
+                }
+            except KeyError:
+                entry = {
+                    'value': None,
+                    'time': res.get('time', None),
+                    'stale': res.get('stale', False),
+                    'being_calculated': res.get('being_calculated', False)
+                }
             return key, entry
         return key, None
 
+    def get_entry(self, args, kwds):
+        key = pickle.dumps(args + tuple(sorted(kwds.items())))
+        print('key type={}, key={}'.format(
+            type(key), key))
+        return self.get_entry_by_key(key)
+
     def set_entry(self, key, func_res):
         thebytes = pickle.dumps(func_res)
-        self._get_mongo_collection().insert_one({
-            'func': _MongoCore._get_func_str(self.func),
-            'key': key,
-            'value': Binary(thebytes),
-            'time': datetime.datetime.now(),
-            'stale': False,
-            'being_calculated': False
-        })
-
-    def mark_entry_being_calculated(self, key):
-        self._get_mongo_collection().update(
+        self._get_mongo_collection().update_one(
             {
                 'func': _MongoCore._get_func_str(self.func),
                 'key': key
             },
             {
-                'being_calculated': False
-            }
+                '$set': {
+                    'func': _MongoCore._get_func_str(self.func),
+                    'key': key,
+                    'value': Binary(thebytes),
+                    'time': datetime.datetime.now(),
+                    'stale': False,
+                    'being_calculated': False
+                }
+            },
+            upsert=True
         )
+
+    def mark_entry_being_calculated(self, key):
+        self._get_mongo_collection().update_one(
+            {
+                'func': _MongoCore._get_func_str(self.func),
+                'key': key
+            },
+            {
+                '$set': {'being_calculated': True}
+            },
+            upsert=True
+        )
+
+    def wait_on_entry_calc(self, key):
+        while True:
+            time.sleep(MONGO_SLEEP_DURATION_IN_SEC)
+            key, entry = self.get_entry_by_key(key)
+            if entry and not entry['being_calculated']:
+                return entry['value']
+        # key, entry = self.get_entry_by_key(key)
+        # if entry:
+        #     return entry['value']
+        # return None
 
 
 class _PickleCore(_BaseCore):
 
-    def __init__(self, mongetter, stale_after, next_time):
-        super().__init__(mongetter, stale_after, next_time)
+    class CacheChangeHandler(PatternMatchingEventHandler):
+        """Handles cache-file modification events."""
+
+        def __init__(self, filename, core, key):
+            super(_PickleCore.CacheChangeHandler, self).__init__(
+                patterns=["*" + filename],
+                ignore_patterns=None,
+                ignore_directories=True,
+                case_sensitive=False
+            )
+            self.core = core
+            self.key = key
+            self.observer = None
+            self.value = None
+
+        def inject_observer(self, observer):
+            """Inject the observer running this handler."""
+            self.observer = observer
+
+        def _check_calculation(self):
+            print('checking calc')
+            entry = self.core.get_entry_by_key(self.key, True)[1]
+            print(entry)
+            if not entry['being_calculated']:
+                self.value = entry['value']
+                self.observer.stop()
+
+        def on_created(self, event):
+            self._check_calculation()
+
+        def on_modified(self, event):
+            self._check_calculation()
+
+    def __init__(self, stale_after, next_time, reload):
+        super().__init__(stale_after, next_time)
         self.cache = None
+        self.reload = reload
+
+    def _get_cache_file_name(self):
+        return '.{}.{}'.format(
+            self.func.__module__, self.func.__name__)  # pylint: disable=W0212
 
     def _get_cache_path(self):
         # print(EXPANDED_CACHIER_DIR)
         if not os.path.exists(EXPANDED_CACHIER_DIR):
             os.makedirs(EXPANDED_CACHIER_DIR)
-        fname = '.{}.{}'.format(
-            self.func.__module__, self.func.__name__)  # pylint: disable=W0212
         fpath = os.path.abspath(os.path.join(
-            os.path.realpath(EXPANDED_CACHIER_DIR), fname))
+            os.path.realpath(EXPANDED_CACHIER_DIR),
+            self._get_cache_file_name()
+        ))
         # print(fpath)
         return fpath
 
+    def _reload_cache(self):
+        fpath = self._get_cache_path()
+        try:
+            with open(fpath, 'rb') as cache_file:
+                fcntl.flock(cache_file, fcntl.LOCK_SH)
+                self.cache = pickle.load(cache_file)
+                fcntl.flock(cache_file, fcntl.LOCK_UN)
+        except FileNotFoundError:
+            self.cache = {}
+
     def _get_cache(self):
         if not self.cache:
-            fpath = self._get_cache_path()
-            try:
-                self.cache = pickle.load(open(fpath, 'rb'))
-            except FileNotFoundError:
-                self.cache = {}
+            self._reload_cache()
         return self.cache
 
     def _save_cache(self, cache):
         self.cache = cache
         fpath = self._get_cache_path()
-        pickle.dump(cache, open(fpath, 'wb'))
+        with open(fpath, 'wb') as cache_file:
+            fcntl.flock(cache_file, fcntl.LOCK_EX)
+            pickle.dump(cache, cache_file)
+            fcntl.flock(cache_file, fcntl.LOCK_UN)
+        self._reload_cache()
+
+    def get_entry_by_key(self, key, reload=False):  # pylint: disable=W0221
+        print('{}, {}'.format(self.reload, reload))
+        if self.reload or reload:
+            self._reload_cache()
+        return key, self._get_cache().get(key, None)
 
     def get_entry(self, args, kwds):
         key = args + tuple(sorted(kwds.items()))
         print('key type={}, key={}'.format(type(key), key))
-        cache = self._get_cache()
-        return key, cache.get(key, None)
+        return self.get_entry_by_key(key)
 
     def set_entry(self, key, func_res):
         cache = self._get_cache()
@@ -160,8 +256,37 @@ class _PickleCore(_BaseCore):
 
     def mark_entry_being_calculated(self, key):
         cache = self._get_cache()
-        cache[key]['being_calculated'] = True
+        try:
+            cache[key]['being_calculated'] = True
+        except KeyError:
+            cache[key] = {
+                'value': None,
+                'time': datetime.datetime.now(),
+                'stale': False,
+                'being_calculated': True
+            }
         self._save_cache(cache)
+
+    def wait_on_entry_calc(self, key):
+        entry = self._get_cache()[key]
+        if not entry['being_calculated']:
+            return entry['value']
+        event_handler = _PickleCore.CacheChangeHandler(
+            filename=self._get_cache_file_name(),
+            core=self,
+            key=key
+        )
+        observer = Observer()
+        event_handler.inject_observer(observer)
+        observer.schedule(
+            event_handler,
+            path=EXPANDED_CACHIER_DIR,
+            recursive=True
+        )
+        observer.start()
+        observer.join()
+        print("Returned value: {}".format(event_handler.value))
+        return event_handler.value
 
 
 # === Main functionality ===
@@ -197,12 +322,14 @@ def _function_thread(core, key, func, args, kwds):
         core.set_entry(key, func_res)
     except BaseException as exc:  # pylint: disable=W0703
         print(
-            'Function call failed with following exception:\n{}'.format(exc),
+            'Function call failed with the following exception:\n{}'.format(
+                exc),
             flush=True
         )
 
 
-def cachier(mongetter=None, stale_after=None, next_time=True):
+def cachier(stale_after=None, next_time=True, pickle_reload=True,
+            mongetter=None):
     """A persistent, stale-free memoization decorator.
 
     When using a MongoDB-backed caching, the positional and keyword arguments
@@ -214,10 +341,6 @@ def cachier(mongetter=None, stale_after=None, next_time=True):
 
     Arguments
     ---------
-    mongetter (optional) : callable
-        A callable that takes no arguments and returns a pymongo.Collection
-        object with writing permissions. If unset a local pickle cache is used
-        instead.
     stale_after (optional) : datetime.timedelta
         The time delta afterwhich a cached result is considered stale. Calls
         made after the result goes stale will trigger a recalculation of the
@@ -227,6 +350,14 @@ def cachier(mongetter=None, stale_after=None, next_time=True):
         If set to True, a stale result will be returned when finding one, not
         waiting for the calculation of the fresh result to return. Defaults to
         True.
+    pickle_reload (optional) : bool
+        If set to True, in-memory cache will be reloaded on each cache read,
+        enabling different threads to share cache. Should be set to False for
+        faster reads in single-read programs. Defaults to True.
+    mongetter (optional) : callable
+        A callable that takes no arguments and returns a pymongo.Collection
+        object with writing permissions. If unset a local pickle cache is used
+        instead.
     """
     print('Inside the wrapper maker')
     print('mongetter={}'.format(mongetter))
@@ -237,35 +368,52 @@ def cachier(mongetter=None, stale_after=None, next_time=True):
         core = _MongoCore(mongetter, stale_after, next_time)
     else:
         core = _PickleCore(  # pylint: disable=R0204
-            mongetter, stale_after, next_time)
+            stale_after, next_time, pickle_reload)
 
     def _cachier_decorator(func):
         core.set_func(func)
 
         @wraps(func)
-        def func_wrapper(*args, **kwds):  # pylint: disable=C0111
+        def func_wrapper(*args, **kwds):  # pylint: disable=C0111,R0911
             print('Inside general wrapper for {}.'.format(func.__name__))
             key, entry = core.get_entry(args, kwds)
-            if entry:
-                print('Cached result found.')
-                if stale_after:
-                    now = datetime.datetime.now()
-                    if now - entry['time'] > stale_after:
-                        if next_time:
+            if entry:  # pylint: disable=R0101
+                print('Entry found.')
+                if entry.get('value', None):
+                    print('Cached result found.')
+                    if stale_after:
+                        now = datetime.datetime.now()
+                        if now - entry['time'] > stale_after:
+                            print('But it is stale... :(')
                             if entry['being_calculated']:
+                                print('Already calculated. Waiting on change.')
+                                return core.wait_on_entry_calc(key)
+                            if next_time:
+                                if entry['being_calculated']:
+                                    return entry['value']  # return stale val
+                                # trigger async calculation and return stale
+                                core.mark_entry_being_calculated(key)
+                                _get_executor().submit(
+                                    _function_thread, core, key, func, args,
+                                    kwds)
                                 return entry['value']
-                            # trigger async calculation and return stale
+                            print('Calling decorated function and waiting')
                             core.mark_entry_being_calculated(key)
+                            func_res = func(*args, **kwds)
                             _get_executor().submit(
-                                _function_thread, core, key, func, args, kwds)
-                            return entry['value']
-                        print('Calling decorated function and waiting')
-                        func_res = func(*args, **kwds)
-                        core.set_entry(key, func_res)
-                        return func_res
-                return entry['value']
+                                core.set_entry, key, func_res)
+                            # core.set_entry(key, func_res)
+                            return func_res
+                    print('And it is fresh!')
+                    return entry['value']
+                if entry['being_calculated']:
+                    print('No value but already being calculated. Waiting.')
+                    return core.wait_on_entry_calc(key)
+            # core.mark_entry_being_calculated(key)
+            print('No entry found. Calling like a boss.')
+            _get_executor().submit(core.mark_entry_being_calculated, key)
             func_res = func(*args, **kwds)
-            core.set_entry(key, func_res)
+            _get_executor().submit(core.set_entry, key, func_res)
             return func_res
         return func_wrapper
 
