@@ -111,7 +111,7 @@ You can set a MongoDB-based cache by assigning ``mongetter`` with a callable tha
 
   @cachier(mongetter=False)
 
-This allows you to have a cross-machine cache, albeit slower.
+This allows you to have a cross-machine, albeit slower, cache.
 
 .. links:
 .. _bson package: https://api.mongodb.com/python/current/api/bson/
