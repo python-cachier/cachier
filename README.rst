@@ -40,6 +40,7 @@ Features
 * Thread-safety.
 
 Cachier is not:
+
 * Meant as a transient cache. Python's @lru_cache is better.
 * Especially fast. It is meant to replace function calls that take more than... a second, say (overhead is around 1 millisecond).
 
