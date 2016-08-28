@@ -19,7 +19,7 @@ def _mongo_getter():
 
 # Pickle core tests
 
-@cachier()
+@cachier(next_time=True)
 def test_int_pickling(int_1, int_2):
     """Add the two given ints."""
     return int_1 + int_2
@@ -69,7 +69,7 @@ def stale_after_seconds(arg_1, arg_2):
 
 # Mongo core tests
 
-@cachier(mongetter=_mongo_getter)
+@cachier(mongetter=_mongo_getter, next_time=True)
 def test_mongo_caching(arg_1, arg_2):
     """Some function."""
     return 'arg_1:{}, arg_2:{}'.format(arg_1, arg_2)

@@ -342,16 +342,16 @@ def _function_thread(core, key, func, args, kwds):
         )
 
 
-def cachier(stale_after=None, next_time=True, pickle_reload=True,
+def cachier(stale_after=None, next_time=False, pickle_reload=True,
             mongetter=None):
     """A persistent, stale-free memoization decorator.
 
-    When using a MongoDB-backed caching, the positional and keyword arguments
-    to the wrapped function must be hashable (i.e. Python's immutable built-in
-    objects, not mutable containers). Also, notice that since objects which
-    are instances of user-defined classes are hashable but all compare unequal
-    (their hash value is their id), equal objects across different sessions
-    will not yield identical keys.
+    The positional and keyword arguments to the wrapped function must be
+    hashable (i.e. Python's immutable built-in objects, not mutable
+    containers). Also, notice that since objects which are instances of
+    user-defined classes are hashable but all compare unequal (their hash
+    value is their id), equal objects across different sessions will not yield
+    identical keys.
 
     Arguments
     ---------
@@ -363,7 +363,7 @@ def cachier(stale_after=None, next_time=True, pickle_reload=True,
     next_time (optional) : bool
         If set to True, a stale result will be returned when finding one, not
         waiting for the calculation of the fresh result to return. Defaults to
-        True.
+        False.
     pickle_reload (optional) : bool
         If set to True, in-memory cache will be reloaded on each cache read,
         enabling different threads to share cache. Should be set to False for
@@ -400,11 +400,11 @@ def cachier(stale_after=None, next_time=True, pickle_reload=True,
                         if now - entry['time'] > stale_after:
                             # print('But it is stale... :(')
                             if entry['being_calculated']:
+                                if next_time:
+                                    return entry['value']  # return stale val
                                 # print('Already calc. Waiting on change.')
                                 return core.wait_on_entry_calc(key)
                             if next_time:
-                                if entry['being_calculated']:
-                                    return entry['value']  # return stale val
                                 # trigger async calculation and return stale
                                 core.mark_entry_being_calculated(key)
                                 _get_executor().submit(
