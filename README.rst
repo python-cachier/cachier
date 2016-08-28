@@ -51,9 +51,11 @@ Cachier is not:
 Use
 ---
 
+The positional and keyword arguments to the wrapped function must be hashable (i.e. Python's immutable built-in objects, not mutable containers). Also, notice that since objects which are instances of user-defined classes are hashable but all compare unequal (their hash value is their id), equal objects across different sessions will not yield identical keys.
+
 Pickle-based Caching
 ~~~~~~~~~~~~~~~~~~~~
-You can add a deafult, pickle-based persistent cache to your function by decorating it with the ``cachier`` decorator (notice the ``()``!).
+You can add a deafult, pickle-based persistent cache to your function - meaning it will last across different Python kernels calling the wrapped function - by decorating it with the ``cachier`` decorator (notice the ``()``!).
 
 .. code-block:: python
 
