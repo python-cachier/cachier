@@ -414,9 +414,9 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
                             # print('Calling decorated function and waiting')
                             core.mark_entry_being_calculated(key)
                             func_res = func(*args, **kwds)
-                            _get_executor().submit(
-                                core.set_entry, key, func_res)
-                            # core.set_entry(key, func_res)
+                            # _get_executor().submit(
+                            #     core.set_entry, key, func_res)
+                            core.set_entry(key, func_res)
                             return func_res
                     # print('And it is fresh!')
                     return entry['value']
@@ -425,9 +425,11 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
                     return core.wait_on_entry_calc(key)
             # core.mark_entry_being_calculated(key)
             # print('No entry found. Calling like a boss.')
-            _get_executor().submit(core.mark_entry_being_calculated, key)
+            core.mark_entry_being_calculated(key)
+            # _get_executor().submit(core.mark_entry_being_calculated, key)
             func_res = func(*args, **kwds)
-            _get_executor().submit(core.set_entry, key, func_res)
+            core.set_entry(key, func_res)
+            # _get_executor().submit(core.set_entry, key, func_res)
             return func_res
 
         def clear_cache():
