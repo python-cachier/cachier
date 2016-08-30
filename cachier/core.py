@@ -22,7 +22,7 @@ from watchdog.events import PatternMatchingEventHandler
 
 CACHIER_DIR = '~/.cachier/'
 EXPANDED_CACHIER_DIR = os.path.expanduser(CACHIER_DIR)
-DEFAULT_MAX_WORKERS = 5
+DEFAULT_MAX_WORKERS = 8
 MONGO_SLEEP_DURATION_IN_SEC = 6
 
 
