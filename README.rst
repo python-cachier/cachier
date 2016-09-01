@@ -22,7 +22,7 @@ Persistent, stale-free cache / memoization decorators for Python.
 Dependencies and Setup
 ----------------------
 
-s3bp uses the following packages:
+Cachier uses the following packages:
 
 * pymongo's `bson package`_
 * watchdog_
