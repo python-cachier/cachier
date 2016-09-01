@@ -21,6 +21,8 @@ setup(
     url='https://github.com/shaypal5/cachier',
     packages=find_packages(),
     install_requires=[
+        pymongo,
+        watchdog
     ],
     keywords=['cache', 'persistence', 'mongo', 'memoization', 'decorator'],
     classifiers=[],
