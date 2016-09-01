@@ -16,6 +16,7 @@ import concurrent.futures  # for asynchronous file uploads
 import time   # to sleep when waiting on Mongo cache
 import fcntl  # to lock on pickle cache IO
 
+import pymongo
 from bson.binary import Binary  # to save binary data to mongodb
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
@@ -58,6 +59,10 @@ class _BaseCore(object):
     @abc.abstractmethod
     def mark_entry_being_calculated(self, key):
         """Marks the entry mapped by the given key as being calculated."""
+
+    @abc.abstractmethod
+    def mark_entry_not_calculated(self, key):
+        """Marks the entry mapped by the given key as not being calculated."""
 
     @abc.abstractmethod
     def wait_on_entry_calc(self, key):
@@ -145,6 +150,21 @@ class _MongoCore(_BaseCore):
             },
             upsert=True
         )
+
+    def mark_entry_not_calculated(self, key):
+        try:
+            self._get_mongo_collection().update_one(
+                {
+                    'func': _MongoCore._get_func_str(self.func),
+                    'key': key
+                },
+                {
+                    '$set': {'being_calculated': True}
+                },
+                upsert=False  # should not insert in this case
+            )
+        except pymongo.errors.OperationFailure:
+            pass  # don't care in this case
 
     def wait_on_entry_calc(self, key):
         while True:
@@ -278,6 +298,15 @@ class _PickleCore(_BaseCore):
             }
         self._save_cache(cache)
 
+    def mark_entry_not_calculated(self, key):
+        cache = self._get_cache()
+        try:
+            cache[key]['being_calculated'] = False
+            self._save_cache(cache)
+        except KeyError:
+            pass  # that's ok, we don't need an entry in that case
+
+
     def wait_on_entry_calc(self, key):
         entry = self._get_cache()[key]
         if not entry['being_calculated']:
@@ -406,18 +435,24 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
                                 return core.wait_on_entry_calc(key)
                             if next_time:
                                 # trigger async calculation and return stale
-                                core.mark_entry_being_calculated(key)
-                                _get_executor().submit(
-                                    _function_thread, core, key, func, args,
-                                    kwds)
+                                try:
+                                    core.mark_entry_being_calculated(key)
+                                    _get_executor().submit(
+                                        _function_thread, core, key, func,
+                                        args, kwds)
+                                finally:
+                                    core.mark_entry_not_calculated(key)
                                 return entry['value']
                             # print('Calling decorated function and waiting')
-                            core.mark_entry_being_calculated(key)
-                            func_res = func(*args, **kwds)
-                            # _get_executor().submit(
-                            #     core.set_entry, key, func_res)
-                            core.set_entry(key, func_res)
-                            return func_res
+                            try:
+                                core.mark_entry_being_calculated(key)
+                                func_res = func(*args, **kwds)
+                                # _get_executor().submit(
+                                #     core.set_entry, key, func_res)
+                                core.set_entry(key, func_res)
+                                return func_res
+                            finally:
+                                core.mark_entry_not_calculated(key)
                     # print('And it is fresh!')
                     return entry['value']
                 if entry['being_calculated']:
@@ -425,12 +460,15 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
                     return core.wait_on_entry_calc(key)
             # core.mark_entry_being_calculated(key)
             # print('No entry found. Calling like a boss.')
-            core.mark_entry_being_calculated(key)
-            # _get_executor().submit(core.mark_entry_being_calculated, key)
-            func_res = func(*args, **kwds)
-            core.set_entry(key, func_res)
-            # _get_executor().submit(core.set_entry, key, func_res)
-            return func_res
+            try:
+                core.mark_entry_being_calculated(key)
+                # _get_executor().submit(core.mark_entry_being_calculated, key)
+                func_res = func(*args, **kwds)
+                core.set_entry(key, func_res)
+                # _get_executor().submit(core.set_entry, key, func_res)
+                return func_res
+            finally:
+                core.mark_entry_not_calculated(key)
 
         def clear_cache():
             """Clear the cache and cache statistics"""
