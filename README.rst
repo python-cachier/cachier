@@ -61,7 +61,7 @@ The positional and keyword arguments to the wrapped function must be hashable (i
 
 Setting up a Cache
 ~~~~~~~~~~~~~~~~~~
-You can add a deafult, pickle-based persistent cache to your function - meaning it will last across different Python kernels calling the wrapped function - by decorating it with the ``cachier`` decorator (notice the ``()``!).
+You can add a deafult, pickle-based, persistent cache to your function - meaning it will last across different Python kernels calling the wrapped function - by decorating it with the ``cachier`` decorator (notice the ``()``!).
 
 .. code-block:: python
 
@@ -76,7 +76,7 @@ You can add a deafult, pickle-based persistent cache to your function - meaning 
 Resetting a Cache
 ~~~~~~~~~~~~~~~~~
 
-The Cachier wrapper adds a ``clear_cache()`` function to each wrapper function. To reset the cache of the wrapped function simply call this method:
+The Cachier wrapper adds a ``clear_cache()`` function to each wrapped function. To reset the cache of the wrapped function simply call this method:
 
 .. code-block:: python
 
