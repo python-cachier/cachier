@@ -59,8 +59,8 @@ Use
 
 The positional and keyword arguments to the wrapped function must be hashable (i.e. Python's immutable built-in objects, not mutable containers). Also, notice that since objects which are instances of user-defined classes are hashable but all compare unequal (their hash value is their id), equal objects across different sessions will not yield identical keys.
 
-Pickle-based Caching
-~~~~~~~~~~~~~~~~~~~~
+Setting up a Cache
+~~~~~~~~~~~~~~~~~~
 You can add a deafult, pickle-based persistent cache to your function - meaning it will last across different Python kernels calling the wrapped function - by decorating it with the ``cachier`` decorator (notice the ``()``!).
 
 .. code-block:: python
@@ -71,6 +71,17 @@ You can add a deafult, pickle-based persistent cache to your function - meaning 
   def foo(arg1, arg2):
     """Your function now has a persistent cache mapped by argument values!"""
     return {'arg1': arg1, 'arg2': arg2}
+    
+    
+Resetting a Cache
+~~~~~~~~~~~~~~~~~
+
+The Cachier wrapper adds a ``clear_cache()`` function to each wrapper function. To reset the cache of the wrapped function simply call this method:
+
+.. code-block:: python
+
+  foo.clear_cache()
+
 
 Setting Shelf Live
 ~~~~~~~~~~~~~~~~~~
@@ -98,9 +109,16 @@ Sometimes you may want your function to trigger a calculation when it encounters
 
 Further function calls made while the calculation is being performed will not trigger redundant calculations.
 
-Minimizing IO
-~~~~~~~~~~~~~
-You can slightly optimize caching if you know your code will only be used in a single thread environment by setting:
+
+Cachier Cores
+-------------
+
+Pickle Core
+~~~~~~~~~~~~
+
+The default core for Cachier is pickle based, meaning each function will store its cache is a seperate pickle file in the ``~/.cachier`` directory. Naturally, this kind of cache is both machine-specific and user-specific.
+
+You can slightly optimize pickle-based caching if you know your code will only be used in a single thread environment by setting:
 
 .. code-block:: python
 
@@ -109,8 +127,8 @@ You can slightly optimize caching if you know your code will only be used in a s
 This will prevent reading the cache file on each cache read, speeding things up a bit, while also nullfying inter-thread functionality (the code is still thread safe, but different threads will have different version of the cache at times, and will sometime make unecessary function calls.
 
 
-MongoDB-based Caching
-~~~~~~~~~~~~~~~~~~~~~
+MongoDB Core
+~~~~~~~~~~~~
 You can set a MongoDB-based cache by assigning ``mongetter`` with a callable that returns a ``pymongo.Collection`` object:
 
 .. code-block:: python
