@@ -97,7 +97,7 @@ You can set any duration as the shelf life of cached return values of a function
     
 Now when a cached value matching the given arguments is found the time of its calculation is checked; if more than ``stale_after`` time has since passed, the function will be run again for the same arguments and the new value will be cached and returned.
 
-This is usefull for lengthy calculation that depend on a dynamic data source.
+This is usefull for lengthy calculations that depend on a dynamic data source.
 
 Fuzzy Shelf Live
 ~~~~~~~~~~~~~~~~
