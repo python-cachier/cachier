@@ -24,7 +24,7 @@ Dependencies and Setup
 
 Cachier uses the following packages:
 
-* pymongo's `bson package`_
+* pymongo_
 * watchdog_
 
 You can install cachier using:
@@ -138,5 +138,5 @@ You can set a MongoDB-based cache by assigning ``mongetter`` with a callable tha
 This allows you to have a cross-machine, albeit slower, cache.
 
 .. links:
-.. _bson package: https://api.mongodb.com/python/current/api/bson/
+.. _pymongo: https://api.mongodb.com/python/current/
 .. _watchdog: https://github.com/gorakhargosh/watchdog
