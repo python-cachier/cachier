@@ -495,10 +495,15 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
                 core.mark_entry_not_calculated(key)
 
         def clear_cache():
-            """Clear the cache and cache statistics"""
+            """Clear the cache."""
             core.clear_cache()
 
+        def clear_being_calculated():
+            """Marks all entries in this cache as not being calculated."""
+            core.clear_being_calculated()
+
         func_wrapper.clear_cache = clear_cache
+        func_wrapper.clear_being_calculated = clear_being_calculated
         return func_wrapper
 
     return _cachier_decorator
