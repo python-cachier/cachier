@@ -73,6 +73,10 @@ class _BaseCore(object):
     def clear_cache(self):
         """Clears the cache of this core."""
 
+    @abc.abstractmethod
+    def clear_being_calculated(self):
+        """Marks all entries in this cache as not being calculated."""
+
 
 class _MongoCore(_BaseCore):
 
@@ -181,6 +185,16 @@ class _MongoCore(_BaseCore):
         self._get_mongo_collection().delete_many(
             {'func': _MongoCore._get_func_str(self.func)})
 
+    def clear_being_calculated(self):
+        self._get_mongo_collection().update_many(
+            {
+                'func': _MongoCore._get_func_str(self.func),
+                'being_calculated': True
+            },
+            {
+                '$set': {'being_calculated': False}
+            }
+        }
 
 class _PickleCore(_BaseCore):
 
@@ -331,6 +345,12 @@ class _PickleCore(_BaseCore):
     def clear_cache(self):
         self._save_cache({})
 
+    def clear_being_calculated(self):
+        cache = self._get_cache()
+        for key in cache:
+            cache[key]['being_calculated'] = False
+        self._save_cache(cache)
+
 
 # === Main functionality ===
 
@@ -372,7 +392,7 @@ def _function_thread(core, key, func, args, kwds):
 
 
 def cachier(stale_after=None, next_time=False, pickle_reload=True,
-            mongetter=None):
+            wait_calc=True, mongetter=None):
     """A persistent, stale-free memoization decorator.
 
     The positional and keyword arguments to the wrapped function must be
@@ -397,6 +417,13 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
         If set to True, in-memory cache will be reloaded on each cache read,
         enabling different threads to share cache. Should be set to False for
         faster reads in single-read programs. Defaults to True.
+    pickle_reload (optional) : bool
+        If set to True, in-memory cache will be reloaded on each cache read,
+        enabling different threads to share cache. Should be set to False for
+        faster reads in single-read programs. Defaults to True.
+    wait_calc (optional) : bool
+        If set to True, waits for an ongoing calculation to complete if the
+        entry is marked as being calculated. Defaults to True.
     mongetter (optional) : callable
         A callable that takes no arguments and returns a pymongo.Collection
         object with writing permissions. If unset a local pickle cache is used
@@ -432,7 +459,8 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
                                 if next_time:
                                     return entry['value']  # return stale val
                                 # print('Already calc. Waiting on change.')
-                                return core.wait_on_entry_calc(key)
+                                if wait_calc:
+                                    return core.wait_on_entry_calc(key)
                             if next_time:
                                 # trigger async calculation and return stale
                                 try:
