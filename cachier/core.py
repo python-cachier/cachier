@@ -163,7 +163,7 @@ class _MongoCore(_BaseCore):
                     'key': key
                 },
                 {
-                    '$set': {'being_calculated': True}
+                    '$set': {'being_calculated': False}
                 },
                 upsert=False  # should not insert in this case
             )
