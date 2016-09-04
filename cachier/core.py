@@ -194,7 +194,7 @@ class _MongoCore(_BaseCore):
             {
                 '$set': {'being_calculated': False}
             }
-        }
+        )
 
 class _PickleCore(_BaseCore):
 
