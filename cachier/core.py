@@ -479,7 +479,7 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
                                 core.mark_entry_not_calculated(key)
                     # print('And it is fresh!')
                     return entry['value']
-                if entry['being_calculated']:
+                if entry['being_calculated'] and wait_calc:
                     # print('No value but already being calculated. Waiting.')
                     return core.wait_on_entry_calc(key)
             # core.mark_entry_being_calculated(key)
