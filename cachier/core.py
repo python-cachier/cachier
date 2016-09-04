@@ -417,10 +417,6 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
         If set to True, in-memory cache will be reloaded on each cache read,
         enabling different threads to share cache. Should be set to False for
         faster reads in single-read programs. Defaults to True.
-    pickle_reload (optional) : bool
-        If set to True, in-memory cache will be reloaded on each cache read,
-        enabling different threads to share cache. Should be set to False for
-        faster reads in single-read programs. Defaults to True.
     wait_calc (optional) : bool
         If set to True, waits for an ongoing calculation to complete if the
         entry is marked as being calculated. Defaults to True.
