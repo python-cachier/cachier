@@ -391,6 +391,19 @@ def _function_thread(core, key, func, args, kwds):
         )
 
 
+def _calc_entry(core, key, func, args, kwds):
+    try:
+        core.mark_entry_being_calculated(key)
+        # _get_executor().submit(core.mark_entry_being_calculated, key)
+        func_res = func(*args, **kwds)
+        core.set_entry(key, func_res)
+        # _get_executor().submit(core.set_entry, key, func_res)
+        return func_res
+    finally:
+        core.mark_entry_not_calculated(key)
+
+
+
 def cachier(stale_after=None, next_time=False, pickle_reload=True,
             wait_calc=True, mongetter=None):
     """A persistent, stale-free memoization decorator.
@@ -440,9 +453,17 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
         core.set_func(func)
 
         @wraps(func)
-        def func_wrapper(*args, **kwds):  # pylint: disable=C0111,R0911
+        def func_wrapper(
+                *args,
+                overwrite_cache=False,
+                ignore_cache=False,
+                **kwds):  # pylint: disable=C0111,R0911
             # print('Inside general wrapper for {}.'.format(func.__name__))
+            if ignore_cache:
+                return func(*args, **kwds)
             key, entry = core.get_entry(args, kwds)
+            if overwrite_cache:
+                return _calc_entry(core, key, func, args, kwds)
             if entry:  # pylint: disable=R0101
                 # print('Entry found.')
                 if entry.get('value', None):
@@ -468,31 +489,14 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
                                     core.mark_entry_not_calculated(key)
                                 return entry['value']
                             # print('Calling decorated function and waiting')
-                            try:
-                                core.mark_entry_being_calculated(key)
-                                func_res = func(*args, **kwds)
-                                # _get_executor().submit(
-                                #     core.set_entry, key, func_res)
-                                core.set_entry(key, func_res)
-                                return func_res
-                            finally:
-                                core.mark_entry_not_calculated(key)
+                            return _calc_entry(core, key, func, args, kwds)
                     # print('And it is fresh!')
                     return entry['value']
                 if entry['being_calculated'] and wait_calc:
                     # print('No value but already being calculated. Waiting.')
                     return core.wait_on_entry_calc(key)
-            # core.mark_entry_being_calculated(key)
             # print('No entry found. Calling like a boss.')
-            try:
-                core.mark_entry_being_calculated(key)
-                # _get_executor().submit(core.mark_entry_being_calculated, key)
-                func_res = func(*args, **kwds)
-                core.set_entry(key, func_res)
-                # _get_executor().submit(core.set_entry, key, func_res)
-                return func_res
-            finally:
-                core.mark_entry_not_calculated(key)
+            return _calc_entry(core, key, func, args, kwds)
 
         def clear_cache():
             """Clear the cache."""

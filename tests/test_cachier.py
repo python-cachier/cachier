@@ -11,6 +11,7 @@ import time
 import datetime
 from cachier import cachier
 from datapy.mongo import get_collection
+import random
 
 
 def _mongo_getter():
@@ -88,3 +89,58 @@ MONGO_DELTA = datetime.timedelta(seconds=30)
 def stale_after_mongo(arg_1, arg_2):
     """Some function."""
     return {'arg_1': arg_1, 'arg_2': arg_2}
+
+
+@cachier()
+def _random_num():
+    return random.random()
+
+
+@cachier()
+def _random_num_with_arg(a):
+    print(a)
+    return random.random()
+
+
+def test_overwrite_cache():
+    """Tests that the overwrite feature works correctly."""
+    _random_num.clear_cache()
+    int1 = _random_num()
+    int2 = _random_num()
+    assert int2 == int1
+    int3 = _random_num(overwrite_cache=True)
+    assert int3 != int1
+    int4 = _random_num()
+    assert int4 == int3
+
+    _random_num_with_arg.clear_cache()
+    int1 = _random_num_with_arg('a')
+    int2 = _random_num_with_arg('a')
+    assert int2 == int1
+    int3 = _random_num_with_arg('a', overwrite_cache=True)
+    assert int3 != int1
+    int4 = _random_num_with_arg('a')
+    assert int4 == int3
+
+
+def test_ignore_cache():
+    """Tests that the overwrite feature works correctly."""
+    _random_num.clear_cache()
+    int1 = _random_num()
+    int2 = _random_num()
+    assert int2 == int1
+    int3 = _random_num(ignore_cache=True)
+    assert int3 != int1
+    int4 = _random_num()
+    assert int4 != int3
+    assert int4 == int1
+
+    _random_num_with_arg.clear_cache()
+    int1 = _random_num_with_arg('a')
+    int2 = _random_num_with_arg('a')
+    assert int2 == int1
+    int3 = _random_num_with_arg('a', ignore_cache=True)
+    assert int3 != int1
+    int4 = _random_num_with_arg('a')
+    assert int4 != int3
+    assert int4 == int1
