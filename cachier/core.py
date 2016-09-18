@@ -174,10 +174,10 @@ class _MongoCore(_BaseCore):
         while True:
             time.sleep(MONGO_SLEEP_DURATION_IN_SEC)
             key, entry = self.get_entry_by_key(key)
-            if entry and not entry['being_calculated']:
+            if entry is not None and not entry['being_calculated']:
                 return entry['value']
         # key, entry = self.get_entry_by_key(key)
-        # if entry:
+        # if entry is not None:
         #     return entry['value']
         # return None
 
@@ -468,7 +468,7 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
             if entry is not None:  # pylint: disable=R0101
                 if verbose_cache:
                     print('Entry found.')
-                if entry.get('value', None):
+                if entry.get('value', None) is not None:
                     if verbose_cache:
                         print('Cached result found.')
                     if stale_after:
