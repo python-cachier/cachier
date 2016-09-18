@@ -405,7 +405,7 @@ def _calc_entry(core, key, func, args, kwds):
 
 
 def cachier(stale_after=None, next_time=False, pickle_reload=True,
-            wait_calc=True, verbose=False, mongetter=None):
+            wait_calc=True, mongetter=None):
     """A persistent, stale-free memoization decorator.
 
     The positional and keyword arguments to the wrapped function must be
@@ -457,6 +457,7 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
                 *args,
                 overwrite_cache=False,
                 ignore_cache=False,
+                verbose_cache=False,
                 **kwds):  # pylint: disable=C0111,R0911
             # print('Inside general wrapper for {}.'.format(func.__name__))
             if ignore_cache:
@@ -465,25 +466,25 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
             if overwrite_cache:
                 return _calc_entry(core, key, func, args, kwds)
             if entry is not None:  # pylint: disable=R0101
-                if verbose:
+                if verbose_cache:
                     print('Entry found.')
                 if entry.get('value', None):
-                    if verbose:
+                    if verbose_cache:
                         print('Cached result found.')
                     if stale_after:
                         now = datetime.datetime.now()
                         if now - entry['time'] > stale_after:
-                            if verbose:
+                            if verbose_cache:
                                 print('But it is stale... :(')
                             if entry['being_calculated']:
                                 if next_time:
                                     return entry['value']  # return stale val
-                                if verbose:
+                                if verbose_cache:
                                     print('Already calc. Waiting on change.')
                                 if wait_calc:
                                     return core.wait_on_entry_calc(key)
                             if next_time:
-                                if verbose:
+                                if verbose_cache:
                                     print('Async calc and return stale')
                                 try:
                                     core.mark_entry_being_calculated(key)
@@ -493,17 +494,17 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
                                 finally:
                                     core.mark_entry_not_calculated(key)
                                 return entry['value']
-                            if verbose:
+                            if verbose_cache:
                                 print('Calling decorated function and waiting')
                             return _calc_entry(core, key, func, args, kwds)
-                    if verbose:
+                    if verbose_cache:
                         print('And it is fresh!')
                     return entry['value']
                 if entry['being_calculated'] and wait_calc:
-                    if verbose:
+                    if verbose_cache:
                         print('No value but being calculated. Waiting.')
                     return core.wait_on_entry_calc(key)
-            if verbose:
+            if verbose_cache:
                 print('No entry found. Calling like a boss.')
             return _calc_entry(core, key, func, args, kwds)
 
