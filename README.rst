@@ -124,7 +124,7 @@ You can slightly optimize pickle-based caching if you know your code will only b
 
   @cachier(pickle_reload=False)
 
-This will prevent reading the cache file on each cache read, speeding things up a bit, while also nullfying inter-thread functionality (the code is still thread safe, but different threads will have different version of the cache at times, and will sometime make unecessary function calls).
+This will prevent reading the cache file on each cache read, speeding things up a bit, while also nullfying inter-thread functionality (the code is still thread safe, but different threads will have different versions of the cache at times, and will sometime make unecessary function calls).
 
 
 MongoDB Core
