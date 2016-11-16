@@ -129,7 +129,7 @@ This will prevent reading the cache file on each cache read, speeding things up 
 
 MongoDB Core
 ~~~~~~~~~~~~
-You can set a MongoDB-based cache by assigning ``mongetter`` with a callable that returns a ``pymongo.Collection`` object:
+You can set a MongoDB-based cache by assigning ``mongetter`` with a callable that returns a ``pymongo.Collection`` object with writing permission:
 
 .. code-block:: python
 
