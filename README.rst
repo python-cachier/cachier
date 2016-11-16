@@ -101,7 +101,7 @@ This is usefull for lengthy calculations that depend on a dynamic data source.
 
 Fuzzy Shelf Live
 ~~~~~~~~~~~~~~~~
-Sometimes you may want your function to trigger a calculation when it encounters a stale result, but still not wait on it if it's not that critical. In that case you can set ``next_time`` to ``True`` to have your function trigger a recalculation *in a separate thread*, but return the currently cached stale value:
+Sometimes you may want your function to trigger a calculation when it encounters a stale result, but still not wait on it if it's not that critical. In that case you can set ``next_time`` to ``True`` to have your function trigger a recalculation **in a separate thread**, but return the currently cached stale value:
 
 .. code-block:: python
 
