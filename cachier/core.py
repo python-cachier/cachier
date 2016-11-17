@@ -220,10 +220,13 @@ class _PickleCore(_BaseCore):
         def _check_calculation(self):
             # print('checking calc')
             entry = self.core.get_entry_by_key(self.key, True)[1]
+            # print(self.key)
             # print(entry)
             if not entry['being_calculated']:
+                # print('stoping observer!')
                 self.value = entry['value']
                 self.observer.stop()
+            # print('NOT stoping observer... :(')
 
         def on_created(self, event):
             self._check_calculation()
@@ -338,7 +341,10 @@ class _PickleCore(_BaseCore):
             recursive=True
         )
         observer.start()
-        observer.join()
+        observer.join(timeout=2.0)
+        if observer.isAlive():
+            # print('Timedout waiting. Starting again...')
+            return self.wait_on_entry_calc(key)
         # print("Returned value: {}".format(event_handler.value))
         return event_handler.value
 
@@ -405,7 +411,7 @@ def _calc_entry(core, key, func, args, kwds):
 
 
 def cachier(stale_after=None, next_time=False, pickle_reload=True,
-            wait_calc=True, mongetter=None):
+            mongetter=None):
     """A persistent, stale-free memoization decorator.
 
     The positional and keyword arguments to the wrapped function must be
@@ -430,9 +436,6 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
         If set to True, in-memory cache will be reloaded on each cache read,
         enabling different threads to share cache. Should be set to False for
         faster reads in single-read programs. Defaults to True.
-    wait_calc (optional) : bool
-        If set to True, waits for an ongoing calculation to complete if the
-        entry is marked as being calculated. Defaults to True.
     mongetter (optional) : callable
         A callable that takes no arguments and returns a pymongo.Collection
         object with writing permissions. If unset a local pickle cache is used
@@ -478,11 +481,12 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
                                 print('But it is stale... :(')
                             if entry['being_calculated']:
                                 if next_time:
+                                    if verbose_cache:
+                                        print('Returning stale.')
                                     return entry['value']  # return stale val
                                 if verbose_cache:
                                     print('Already calc. Waiting on change.')
-                                if wait_calc:
-                                    return core.wait_on_entry_calc(key)
+                                return core.wait_on_entry_calc(key)
                             if next_time:
                                 if verbose_cache:
                                     print('Async calc and return stale')
@@ -500,12 +504,12 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
                     if verbose_cache:
                         print('And it is fresh!')
                     return entry['value']
-                if entry['being_calculated'] and wait_calc:
+                if entry['being_calculated']:
                     if verbose_cache:
                         print('No value but being calculated. Waiting.')
                     return core.wait_on_entry_calc(key)
             if verbose_cache:
-                print('No entry found. Calling like a boss.')
+                print('No entry found. No current calc. Calling like a boss.')
             return _calc_entry(core, key, func, args, kwds)
 
         def clear_cache():
