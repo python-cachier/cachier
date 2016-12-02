@@ -81,7 +81,7 @@ class _BaseCore(object):
 class _MongoCore(_BaseCore):
 
     def __init__(self, mongetter, stale_after, next_time):
-        super().__init__(stale_after, next_time)
+        _BaseCore.__init__(stale_after, next_time)
         self.mongetter = mongetter
         self.mongo_collection = None
 
@@ -202,7 +202,7 @@ class _PickleCore(_BaseCore):
         """Handles cache-file modification events."""
 
         def __init__(self, filename, core, key):
-            super(_PickleCore.CacheChangeHandler, self).__init__(
+            PatternMatchingEventHandler.__init__(
                 patterns=["*" + filename],
                 ignore_patterns=None,
                 ignore_directories=True,
@@ -235,7 +235,7 @@ class _PickleCore(_BaseCore):
             self._check_calculation()
 
     def __init__(self, stale_after, next_time, reload):
-        super().__init__(stale_after, next_time)
+        _BaseCore.__init__(stale_after, next_time)
         self.cache = None
         self.reload = reload
 
