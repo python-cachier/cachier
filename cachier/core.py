@@ -12,7 +12,18 @@ from functools import wraps
 import pickle  # for local caching
 import datetime
 import abc  # for the _BaseCore abstract base class
-import concurrent.futures  # for asynchronous file uploads
+try:  # for asynchronous file uploads
+    from concurrent.futures import ThreadPoolExecutor
+except ImportError:  # we're in python 2.x
+    import pip
+    PACKAGES = [
+        package.project_name
+        for package
+        in pip.get_installed_distributions()
+    ]
+    if 'futures' not in PACKAGES:
+        pip.main(['install', 'futures'])
+    from concurrent.futures import ThreadPoolExecutor
 import time   # to sleep when waiting on Mongo cache
 import fcntl  # to lock on pickle cache IO
 
@@ -81,7 +92,7 @@ class _BaseCore(object):
 class _MongoCore(_BaseCore):
 
     def __init__(self, mongetter, stale_after, next_time):
-        _BaseCore.__init__(stale_after, next_time)
+        _BaseCore.__init__(self, stale_after, next_time)
         self.mongetter = mongetter
         self.mongo_collection = None
 
@@ -203,6 +214,7 @@ class _PickleCore(_BaseCore):
 
         def __init__(self, filename, core, key):
             PatternMatchingEventHandler.__init__(
+                self,
                 patterns=["*" + filename],
                 ignore_patterns=None,
                 ignore_directories=True,
@@ -235,7 +247,7 @@ class _PickleCore(_BaseCore):
             self._check_calculation()
 
     def __init__(self, stale_after, next_time, reload):
-        _BaseCore.__init__(stale_after, next_time)
+        _BaseCore.__init__(self, stale_after, next_time)
         self.cache = None
         self.reload = reload
 
@@ -375,13 +387,11 @@ def _set_max_workets(max_workers):
 
 def _get_executor(reset=False):
     if reset:
-        _get_executor.executor = concurrent.futures.ThreadPoolExecutor(
-            _max_workers())
+        _get_executor.executor = ThreadPoolExecutor(_max_workers())
     try:
         return _get_executor.executor
     except AttributeError:
-        _get_executor.executor = concurrent.futures.ThreadPoolExecutor(
-            _max_workers())
+        _get_executor.executor = ThreadPoolExecutor(_max_workers())
         return _get_executor.executor
 
 
@@ -392,8 +402,7 @@ def _function_thread(core, key, func, args, kwds):
     except BaseException as exc:  # pylint: disable=W0703
         print(
             'Function call failed with the following exception:\n{}'.format(
-                exc),
-            flush=True
+                exc)
         )
 
 

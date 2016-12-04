@@ -87,3 +87,6 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# added by shaypal5@gmail.com
+cachier_test_mongo_cred.yml
