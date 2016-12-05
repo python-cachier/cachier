@@ -36,6 +36,7 @@ You can install cachier using:
 Features
 ----------------------
 
+* Compatible with Python 2.7+ and Python 3.5+.
 * A simple interface.
 * Defining "shelf life" for cached values.
 * Local caching using pickle files.
