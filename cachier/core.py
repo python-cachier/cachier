@@ -465,13 +465,11 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
         core.set_func(func)
 
         @wraps(func)
-        def func_wrapper(
-                *args,
-                overwrite_cache=False,
-                ignore_cache=False,
-                verbose_cache=False,
-                **kwds):  # pylint: disable=C0111,R0911
+        def func_wrapper(*args, **kwds):  # pylint: disable=C0111,R0911
             # print('Inside general wrapper for {}.'.format(func.__name__))
+            overwrite_cache = kwds.pop('overwrite_cache', False)
+            ignore_cache = kwds.pop('ignore_cache', False)
+            verbose_cache = kwds.pop('verbose_cache', False)
             if ignore_cache:
                 return func(*args, **kwds)
             key, entry = core.get_entry(args, kwds)

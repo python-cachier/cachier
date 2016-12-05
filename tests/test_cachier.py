@@ -7,9 +7,16 @@
 # http://www.opensource.org/licenses/MIT-license
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 
-import time
-import datetime
-import random
+from os.path import (
+    realpath,
+    dirname
+)
+from time import (
+    time,
+    sleep
+)
+from datetime import timedelta
+from random import random
 import yaml
 
 from cachier import cachier
@@ -24,7 +31,9 @@ CRED_FILE_NAME = 'cachier_test_mongo_cred.yml'
 
 def _get_mongo_cred():
     try:
-        with open(CRED_FILE_NAME, 'r') as mongo_cred_file:
+        current_dir = dirname(realpath(__file__))
+        cred_file_path = current_dir + '/' + CRED_FILE_NAME
+        with open(cred_file_path, 'r') as mongo_cred_file:
             return yaml.load(mongo_cred_file)
     except FileNotFoundError:
         msg = 'A MongoDB credentials file is missing. '
@@ -80,12 +89,12 @@ def _test_int_pickling_compare(int_1, int_2):
 def test_pickle_speed():
     """Test speeds"""
     print("    * Comparing speeds of decorated vs non-decorated functions...")
-    num_of_vals = 1000
+    num_of_vals = 100
     times = []
     for i in range(1, num_of_vals):
-        tic = time.time()
+        tic = time()
         _test_int_pickling_compare(i, i + 1)
-        toc = time.time()
+        toc = time()
         times.append(toc - tic)
     print('      - Non-decorated average = {:.8f}'.format(
         sum(times) / num_of_vals))
@@ -93,9 +102,9 @@ def test_pickle_speed():
     _test_int_pickling.clear_cache()
     times = []
     for i in range(1, num_of_vals):
-        tic = time.time()
+        tic = time()
         _test_int_pickling(i, i + 1)
-        toc = time.time()
+        toc = time()
         times.append(toc - tic)
     print('      - Decorated average = {:.8f}'.format(
         sum(times) / num_of_vals))
@@ -104,7 +113,7 @@ def test_pickle_speed():
 @cachier(next_time=False)
 def _takes_5_seconds(arg_1, arg_2):
     """Some function."""
-    time.sleep(5)
+    sleep(5)
     return 'arg_1:{}, arg_2:{}'.format(arg_1, arg_2)
 
 
@@ -113,18 +122,18 @@ def test_pickle_core():
     print("    * Testing basic Pickle core functionality.")
     _takes_5_seconds.clear_cache()
     stringi = _takes_5_seconds('a', 'b')
-    start = time.time()
+    start = time()
     stringi = _takes_5_seconds('a', 'b')
-    end = time.time()
+    end = time()
     assert end - start < 1
 
 
-DELTA = datetime.timedelta(seconds=3)
+DELTA = timedelta(seconds=3)
 
 @cachier(stale_after=DELTA, next_time=False)
 def _stale_after_seconds(arg_1, arg_2):
     """Some function."""
-    return random.random()
+    return random()
 
 
 def test_stale_after():
@@ -136,7 +145,7 @@ def test_stale_after():
     val3 = _stale_after_seconds(1, 3)
     assert val1 == val2
     assert val1 != val3
-    time.sleep(3)
+    sleep(3)
     val4 = _stale_after_seconds(1, 2)
     assert val4 != val1
 
@@ -144,7 +153,7 @@ def test_stale_after():
 @cachier(stale_after=DELTA, next_time=True)
 def _stale_after_next_time(arg_1, arg_2):
     """Some function."""
-    return random.random()
+    return random()
 
 
 def test_stale_after_next_time():
@@ -156,7 +165,7 @@ def test_stale_after_next_time():
     val3 = _stale_after_next_time(1, 3)
     assert val1 == val2
     assert val1 != val3
-    time.sleep(3)
+    sleep(3)
     val4 = _stale_after_next_time(1, 2)
     assert val4 == val1
     val5 = _stale_after_next_time(1, 2)
@@ -165,13 +174,13 @@ def test_stale_after_next_time():
 
 @cachier()
 def _random_num():
-    return random.random()
+    return random()
 
 
 @cachier()
 def _random_num_with_arg(a):
     # print(a)
-    return random.random()
+    return random()
 
 
 def test_overwrite_cache():
@@ -225,7 +234,7 @@ def test_ignore_cache():
 @cachier(mongetter=_mongo_getter)
 def _test_mongo_caching(arg_1, arg_2):
     """Some function."""
-    return random.random() + arg_1 + arg_2
+    return random() + arg_1 + arg_2
 
 
 def test_mongo_core():
@@ -245,12 +254,12 @@ def test_mongo_core():
     assert val6 == val5
 
 
-MONGO_DELTA = datetime.timedelta(seconds=3)
+MONGO_DELTA = timedelta(seconds=3)
 
 @cachier(mongetter=_mongo_getter, stale_after=MONGO_DELTA, next_time=False)
 def _stale_after_mongo(arg_1, arg_2):
     """Some function."""
-    return random.random() + arg_1 + arg_2
+    return random() + arg_1 + arg_2
 
 
 def test_mongo_stale_after():
@@ -260,7 +269,7 @@ def test_mongo_stale_after():
     val1 = _stale_after_mongo(1, 2)
     val2 = _stale_after_mongo(1, 2)
     assert val1 == val2
-    time.sleep(3)
+    sleep(3)
     val3 = _stale_after_mongo(1, 2)
     assert val3 != val1
 
