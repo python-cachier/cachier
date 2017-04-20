@@ -102,7 +102,7 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
     pickle_reload (optional) : bool
         If set to True, in-memory cache will be reloaded on each cache read,
         enabling different threads to share cache. Should be set to False for
-        faster reads in single-read programs. Defaults to True.
+        faster reads in single-thread programs. Defaults to True.
     mongetter (optional) : callable
         A callable that takes no arguments and returns a pymongo.Collection
         object with writing permissions. If unset a local pickle cache is used

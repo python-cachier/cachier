@@ -7,23 +7,51 @@
 # http://www.opensource.org/licenses/MIT-license
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 
-from setuptools import setup, find_packages
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
+
 import versioneer
 
+README_RST = ''
+with open('README.rst') as f:
+    README_RST = f.read(
+
 setup(
-    name='Cachier',
+    name='cachier',
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     description='Persistent, stale-free memoization decorators for Python.',
+    long_description=README_RST,
     license='MIT',
     author='Shay Palachy',
-    author_email='shaypal5@gmail.com',
+    author_email='shay.palachy@gmail.com',
     url='https://github.com/shaypal5/cachier',
-    packages=find_packages(),
+    packages=['cachier'],
     install_requires=[
         'pymongo',
         'watchdog'
     ],
+    setup_requires=['nose', 'coverage'],
+    test_suite='nose.collector',
+    platforms=['linux', 'osx'],
     keywords=['cache', 'persistence', 'mongo', 'memoization', 'decorator'],
-    classifiers=[],
+    classifiers=[
+        # Trove classifiers
+        # (https://pypi.python.org/pypi?%3Aaction=list_classifiers)
+        'Development Status :: 4 - Beta',
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Topic :: Software Development :: Libraries',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+        'Topic :: Utilities',
+        'Topic :: Other/Nonlisted Topic',
+        'Intended Audience :: Developers',
+    ]
 )
