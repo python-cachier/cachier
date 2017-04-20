@@ -16,7 +16,7 @@ import versioneer
 
 README_RST = ''
 with open('README.rst') as f:
-    README_RST = f.read(
+    README_RST = f.read()
 
 setup(
     name='cachier',
@@ -53,5 +53,5 @@ setup(
         'Topic :: Utilities',
         'Topic :: Other/Nonlisted Topic',
         'Intended Audience :: Developers',
-    ]
+    ],
 )
