@@ -1,7 +1,7 @@
 Cachier
 #######
 
-|PyPI-Status| |PyPI-Versions| |LICENCE|
+|PyPI-Status| |PyPI-Versions| |Build-Status| |LICENCE|
 
 Persistent, stale-free cache / memoization decorators for Python.
 
