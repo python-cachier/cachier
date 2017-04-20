@@ -42,8 +42,9 @@ Install ``cachier`` with:
 Features
 ========
 
-* Tested on Linux and OS X systems. Does not support Windows.
+* Pure Python.
 * Compatible with Python 2.7+ and Python 3.5+.
+* Tested on Linux and OS X systems. Does not support Windows.
 * A simple interface.
 * Defining "shelf life" for cached values.
 * Local caching using pickle files.
