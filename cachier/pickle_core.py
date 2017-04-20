@@ -66,23 +66,25 @@ class _PickleCore(_BaseCore):
         self.cache = None
         self.reload = reload
 
-    def _get_cache_file_name(self):
-        return '.{}.{}'.format(
-            self.func.__module__, self.func.__name__)  # pylint: disable=W0212
+    def _cache_fname(self):
+        if not hasattr(self, 'cache_fname'):
+            self.cache_fname = '.{}.{}'.format(
+                self.func.__module__, self.func.__name__)
+        return self.cache_fname
 
-    def _get_cache_path(self):
-        # print(EXPANDED_CACHIER_DIR)
-        if not os.path.exists(EXPANDED_CACHIER_DIR):
-            os.makedirs(EXPANDED_CACHIER_DIR)
-        fpath = os.path.abspath(os.path.join(
-            os.path.realpath(EXPANDED_CACHIER_DIR),
-            self._get_cache_file_name()
-        ))
-        # print(fpath)
-        return fpath
+    def _cache_fpath(self):
+        if not hasattr(self, 'cache_fpath'):
+            # print(EXPANDED_CACHIER_DIR)
+            if not os.path.exists(EXPANDED_CACHIER_DIR):
+                os.makedirs(EXPANDED_CACHIER_DIR)
+            self.cache_fpath = os.path.abspath(os.path.join(
+                os.path.realpath(EXPANDED_CACHIER_DIR),
+                self._cache_fname()
+            ))
+        return self.cache_fpath
 
     def _reload_cache(self):
-        fpath = self._get_cache_path()
+        fpath = self._cache_fpath()
         try:
             with open(fpath, 'rb') as cache_file:
                 fcntl.flock(cache_file, fcntl.LOCK_SH)
@@ -101,7 +103,7 @@ class _PickleCore(_BaseCore):
 
     def _save_cache(self, cache):
         self.cache = cache
-        fpath = self._get_cache_path()
+        fpath = self._cache_fpath()
         with open(fpath, 'wb') as cache_file:
             fcntl.flock(cache_file, fcntl.LOCK_EX)
             pickle.dump(cache, cache_file)
@@ -155,7 +157,7 @@ class _PickleCore(_BaseCore):
         if not entry['being_calculated']:
             return entry['value']
         event_handler = _PickleCore.CacheChangeHandler(
-            filename=self._get_cache_file_name(),
+            filename=self._cache_fname(),
             core=self,
             key=key
         )
