@@ -11,8 +11,8 @@ before_install:
   # coverage submission packages
   - pip install codecov
 install:
-  - pip install ".[test]"
-script: pytest --cov=pcachier
+  - if [ "$TRAVIS_PYTHON_VERSION" == "2.7" ]; then pip install pytest coverage pytest-cov; else; pip install ".[test]"; fi
+script: pytest --cov=cachier
 # submit coverage
 after_success:
   # - coveralls
