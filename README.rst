@@ -179,7 +179,7 @@ This allows you to have a cross-machine, albeit slower, cache. This functionalit
 Contributing
 ============
 
-Package author and current maintainer is Shay Palachy (shay.palachy@gmail.com).
+Package author and current maintainer is Shay Palachy (shay.palachy@gmail.com); You are more than welcome to approach him for help. Contributions are very welcomed.
 
 Installing for development
 --------------------------
@@ -212,7 +212,7 @@ To run the tests use:
 Adding documentation
 --------------------
 
-The project is documented using the `numpy docstring conventions`_, which were chosen as they are perhaps the most widely-spread conventions that are both supported by common tools such as Sphinx and result in human-readable docstrings. When documenting code you add to this project, follow `these conventions`_.
+This project is documented using the `numpy docstring conventions`_, which were chosen as they are perhaps the most widely-spread conventions that are both supported by common tools such as Sphinx and result in human-readable docstrings. When documenting code you add to this project, please follow `these conventions`_.
 
 .. _`numpy docstring conventions`: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
 .. _`these conventions`: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
