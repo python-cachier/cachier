@@ -12,7 +12,7 @@ before_install:
   - pip install codecov
 install:
   - if [ "$TRAVIS_PYTHON_VERSION" == "2.7" ]; then pip install pytest coverage pytest-cov; else pip install ".[test]"; fi
-script: pytest --cov=cachier
+script: python -m pytest --cov=cachier
 # submit coverage
 after_success:
   # - coveralls
