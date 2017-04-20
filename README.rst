@@ -28,11 +28,6 @@ Persistent, stale-free, local and cross-machine caching for Python functions.
 Installation
 ============
 
-.. Cachier uses the following packages:
-
-.. * pymongo_
-.. * watchdog_
-
 Install ``cachier`` with:
 
 .. code-block:: python
@@ -59,6 +54,7 @@ Cachier is not:
 Future features:
 ----------------
 
+* Windows support.
 * S3 core.
 * Multi-core caching.
 
@@ -180,9 +176,51 @@ You can set a MongoDB-based cache by assigning ``mongetter`` with a callable tha
 This allows you to have a cross-machine, albeit slower, cache. This functionality requires that the installation of the ``pymongo`` python package.
 
 
+Contributing
+============
+
+Package author and current maintainer is Shay Palachy (shay.palachy@gmail.com).
+
+Installing for development
+--------------------------
+
+Clone:
+
+.. code-block:: bash
+
+  git clone git@github.com:shaypal5/cachier.git
+
+
+Install in development mode with test dependencies:
+
+.. code-block:: bash
+
+  cd cachier
+  pip install -e ".[test]"
+
+
+Running the tests
+-----------------
+
+To run the tests use:
+
+.. code-block:: bash
+
+  pytest --cov=cachier
+
+
+Adding documentation
+--------------------
+
+The project is documented using the `numpy docstring conventions`_, which were chosen as they are perhaps the most widely-spread conventions that are both supported by common tools such as Sphinx and result in human-readable docstrings. When documenting code you add to this project, follow `these conventions`_.
+
+.. _`numpy docstring conventions`: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
+.. _`these conventions`: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
+
+
 Credits
 =======
-Created by Shay Palachy  (shay.palachy@gmail.com).
+Created by Shay Palachy (shay.palachy@gmail.com).
 
 
 

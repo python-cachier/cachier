@@ -34,7 +34,6 @@ setup(
     url='https://github.com/shaypal5/cachier',
     packages=['cachier'],
     install_requires=[
-        'pymongo',
         'watchdog'
     ],
     extras_require={
