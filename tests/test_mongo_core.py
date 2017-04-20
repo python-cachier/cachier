@@ -6,10 +6,6 @@ from time import sleep
 
 from cachier import cachier
 from pymongo.mongo_client import MongoClient
-try:
-    from functools import lru_cache
-except ImportError:
-    from repoze.lru import lru_cache
 
 _TEST_HOST = 'ds119508.mlab.com'
 _TEST_PORT = 19508
@@ -27,9 +23,10 @@ def _get_cachier_db_mongo_client():
     return client
 
 
-@lru_cache(2)
 def _mongo_getter():
-    return _get_cachier_db_mongo_client()['cachier_test']['cachier_test']
+    if not hasattr(_mongo_getter, 'client'):
+        _mongo_getter.client = _get_cachier_db_mongo_client()
+    return _mongo_getter.client['cachier_test']['cachier_test']
 
 
 # Mongo core tests
