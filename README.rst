@@ -3,7 +3,7 @@ Cachier
 
 |PyPI-Status| |PyPI-Versions| |Build-Status| |LICENCE|
 
-Persistent, stale-free cache / memoization decorators for Python.
+Persistent, stale-free, local and cross-machine caching for Python functions.
 
 .. code-block:: python
 
@@ -42,7 +42,7 @@ Install ``cachier`` with:
 Features
 ========
 
-* Tested on Linux and OS X systems. Does not support windows.
+* Tested on Linux and OS X systems. Does not support Windows.
 * Compatible with Python 2.7+ and Python 3.5+.
 * A simple interface.
 * Defining "shelf life" for cached values.
@@ -90,8 +90,11 @@ The Cachier wrapper adds a ``clear_cache()`` function to each wrapped function. 
   foo.clear_cache()
 
 
-Setting Shelf Live
-------------------
+Cache Shelf Life
+----------------
+
+Setting Shelf Life
+~~~~~~~~~~~~~~~~~~
 You can set any duration as the shelf life of cached return values of a function by providing a corresponding ``timedelta`` object to the ``stale_after`` parameter:
 
 .. code-block:: python
@@ -106,8 +109,8 @@ Now when a cached value matching the given arguments is found the time of its ca
 
 This is usefull for lengthy calculations that depend on a dynamic data source.
 
-Fuzzy Shelf Live
-----------------
+Fuzzy Shelf Life
+~~~~~~~~~~~~~~~~
 Sometimes you may want your function to trigger a calculation when it encounters a stale result, but still not wait on it if it's not that critical. In that case you can set ``next_time`` to ``True`` to have your function trigger a recalculation **in a separate thread**, but return the currently cached stale value:
 
 .. code-block:: python
@@ -115,6 +118,37 @@ Sometimes you may want your function to trigger a calculation when it encounters
   @cachier(next_time=True)
 
 Further function calls made while the calculation is being performed will not trigger redundant calculations.
+
+
+Per-function call arguments
+---------------------------
+
+Cachier also accepts several keyword arguments in the calls of the function it wraps rather than in the decorator call, allowing to modify its behaviour for a specific function call.
+
+Ignore Cache
+~~~~~~~~~~~~
+
+You cah have ``cachier`` ignore any existing cache for a specific function call by passing ``ignore_cache=True`` to the function call. The cache will neither be checked nor updated with the new return value.
+
+.. code-block:: python
+
+  @cachier()
+  def sum(first_num, second_num):
+    return first_num + second_num
+
+  def main():
+    print(sum(5, 3, ignore_cache=True))
+
+Overwrite Cache
+~~~~~~~~~~~~~~~
+
+You cah have ``cachier`` overwrite an existing cache entry - if one exists - for a specific function call by passing ``overwrite_cache=True`` to the function call. The cache will not be checked, but will be updated with the new return value.
+
+Verbose Cache Call
+~~~~~~~~~~~~~~~~~~
+
+You cah have ``cachier`` print out a detailed explanation of the logic of a specific call by passing ``verbose_cachee=True`` to the function call. This can be usefull if you are not sure why a certain function result is or is not returned.
+
 
 
 Cachier Cores
@@ -142,7 +176,7 @@ You can set a MongoDB-based cache by assigning ``mongetter`` with a callable tha
 
   @cachier(mongetter=False)
 
-This allows you to have a cross-machine, albeit slower, cache.
+This allows you to have a cross-machine, albeit slower, cache. This functionality requires that the installation of the ``pymongo`` python package.
 
 
 Credits

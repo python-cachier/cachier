@@ -125,8 +125,8 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
         @wraps(func)
         def func_wrapper(*args, **kwds):  # pylint: disable=C0111,R0911
             # print('Inside general wrapper for {}.'.format(func.__name__))
-            overwrite_cache = kwds.pop('overwrite_cache', False)
             ignore_cache = kwds.pop('ignore_cache', False)
+            overwrite_cache = kwds.pop('overwrite_cache', False)
             verbose_cache = kwds.pop('verbose_cache', False)
             if ignore_cache:
                 return func(*args, **kwds)

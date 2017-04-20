@@ -9,14 +9,19 @@
 
 import pickle  # for serialization of python objects
 from datetime import datetime
-import time   # to sleep when waiting on Mongo cache
+import time   # to sleep when waiting on Mongo cache\
+import warnings
 
-from pymongo import (
-    IndexModel,
-    ASCENDING
-)
-from pymongo.errors import OperationFailure
-from bson.binary import Binary  # to save binary data to mongodb
+try:
+    from pymongo import (
+        IndexModel,
+        ASCENDING
+    )
+    from pymongo.errors import OperationFailure
+    from bson.binary import Binary  # to save binary data to mongodb
+except ImportError:
+    warnings.warn(
+        "Cachier warning: pymongo was not found. MongoDB cores will not work.")
 
 from .base_core import _BaseCore
 
