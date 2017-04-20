@@ -10,6 +10,7 @@ notifications:
 before_install:
   # coverage submission packages
   - pip install codecov
+  - pip install pymongo
 install:
   - if [ "$TRAVIS_PYTHON_VERSION" == "2.7" ]; then pip install pytest coverage pytest-cov .; else pip install ".[test]"; fi
 script: python -m pytest --cov=cachier
