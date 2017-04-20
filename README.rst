@@ -206,7 +206,7 @@ To run the tests use:
 
 .. code-block:: bash
 
-  pytest --cov=cachier
+  python -m pytest --cov=cachier
 
 
 Adding documentation
