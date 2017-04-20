@@ -14,9 +14,13 @@ except ImportError:
 
 import versioneer
 
+
+TEST_REQUIRES = ['pytest', 'coverage', 'pytest-cov']
+
 README_RST = ''
 with open('README.rst') as f:
     README_RST = f.read()
+
 
 setup(
     name='cachier',
@@ -33,8 +37,10 @@ setup(
         'pymongo',
         'watchdog'
     ],
-    setup_requires=['nose', 'coverage'],
-    test_suite='nose.collector',
+    extras_require={
+        'test': TEST_REQUIRES
+    },
+    setup_requires=TEST_REQUIRES,
     platforms=['linux', 'osx'],
     keywords=['cache', 'persistence', 'mongo', 'memoization', 'decorator'],
     classifiers=[

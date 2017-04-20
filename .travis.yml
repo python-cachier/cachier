@@ -11,9 +11,10 @@ before_install:
   # coverage submission packages
   - pip install codecov
 install:
-  - python setup.py test
-script: nosetests --cover-erase --with-coverage --cover-package=cachier -d
-# --ignore-files="tests_perf\.py" -coveralls
+  # Coveralls 4.0 doesn't support Python 3.2
+  - if [ "$TRAVIS_PYTHON_VERSION" == "2.7" ]; then travis_retry pip install repoze; fi
+  - pip install ".[test]"
+script: pytest --cov=pcachier
 # submit coverage
 after_success:
   # - coveralls
