@@ -66,7 +66,7 @@ The positional and keyword arguments to the wrapped function must be hashable (i
 
 Setting up a Cache
 ------------------
-You can add a deafult, pickle-based, persistent cache to your function - meaning it will last across different Python kernels calling the wrapped function - by decorating it with the ``cachier`` decorator (notice the ``()``!).
+You can add a default, pickle-based, persistent cache to your function - meaning it will last across different Python kernels calling the wrapped function - by decorating it with the ``cachier`` decorator (notice the ``()``!).
 
 .. code-block:: python
 
@@ -104,11 +104,11 @@ You can set any duration as the shelf life of cached return values of a function
 
 Now when a cached value matching the given arguments is found the time of its calculation is checked; if more than ``stale_after`` time has since passed, the function will be run again for the same arguments and the new value will be cached and returned.
 
-This is usefull for lengthy calculations that depend on a dynamic data source.
+This is useful for lengthy calculations that depend on a dynamic data source.
 
 Fuzzy Shelf Life
 ~~~~~~~~~~~~~~~~
-Sometimes you may want your function to trigger a calculation when it encounters a stale result, but still not wait on it if it's not that critical. In that case you can set ``next_time`` to ``True`` to have your function trigger a recalculation **in a separate thread**, but return the currently cached stale value:
+Sometimes you may want your function to trigger a calculation when it encounters a stale result, but still not wait on it if it's not that critical. In that case, you can set ``next_time`` to ``True`` to have your function trigger a recalculation **in a separate thread**, but return the currently cached stale value:
 
 .. code-block:: python
 
@@ -125,7 +125,7 @@ Cachier also accepts several keyword arguments in the calls of the function it w
 Ignore Cache
 ~~~~~~~~~~~~
 
-You cah have ``cachier`` ignore any existing cache for a specific function call by passing ``ignore_cache=True`` to the function call. The cache will neither be checked nor updated with the new return value.
+You can have ``cachier`` ignore any existing cache for a specific function call by passing ``ignore_cache=True`` to the function call. The cache will neither be checked nor updated with the new return value.
 
 .. code-block:: python
 
@@ -139,12 +139,12 @@ You cah have ``cachier`` ignore any existing cache for a specific function call 
 Overwrite Cache
 ~~~~~~~~~~~~~~~
 
-You cah have ``cachier`` overwrite an existing cache entry - if one exists - for a specific function call by passing ``overwrite_cache=True`` to the function call. The cache will not be checked, but will be updated with the new return value.
+You can have ``cachier`` overwrite an existing cache entry - if one exists - for a specific function call by passing ``overwrite_cache=True`` to the function call. The cache will not be checked but will be updated with the new return value.
 
 Verbose Cache Call
 ~~~~~~~~~~~~~~~~~~
 
-You cah have ``cachier`` print out a detailed explanation of the logic of a specific call by passing ``verbose_cachee=True`` to the function call. This can be usefull if you are not sure why a certain function result is or is not returned.
+You can have ``cachier`` print out a detailed explanation of the logic of a specific call by passing ``verbose_cache=True`` to the function call. This can be useful if you are not sure why a certain function result is or is not returned.
 
 
 
@@ -154,15 +154,15 @@ Cachier Cores
 Pickle Core
 -----------
 
-The default core for Cachier is pickle based, meaning each function will store its cache is a seperate pickle file in the ``~/.cachier`` directory. Naturally, this kind of cache is both machine-specific and user-specific.
+The default core for Cachier is pickle based, meaning each function will store its cache is a separate pickle file in the ``~/.cachier`` directory. Naturally, this kind of cache is both machine-specific and user-specific.
 
-You can slightly optimize pickle-based caching if you know your code will only be used in a single thread environment by setting:
+You can slightly optimise pickle-based caching if you know your code will only be used in a single thread environment by setting:
 
 .. code-block:: python
 
   @cachier(pickle_reload=False)
 
-This will prevent reading the cache file on each cache read, speeding things up a bit, while also nullfying inter-thread functionality (the code is still thread safe, but different threads will have different versions of the cache at times, and will sometime make unecessary function calls).
+This will prevent reading the cache file on each cache read, speeding things up a bit, while also nullifying inter-thread functionality (the code is still thread safe, but different threads will have different versions of the cache at times, and will sometime make unnecessary function calls).
 
 
 MongoDB Core
@@ -202,7 +202,7 @@ Install in development mode with test dependencies:
 Running the tests
 -----------------
 
-To run the tests use:
+To run the tests, use:
 
 .. code-block:: bash
 
