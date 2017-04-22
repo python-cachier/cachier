@@ -120,7 +120,7 @@ Further function calls made while the calculation is being performed will not tr
 Per-function call arguments
 ---------------------------
 
-Cachier also accepts several keyword arguments in the calls of the function it wraps rather than in the decorator call, allowing to modify its behaviour for a specific function call.
+Cachier also accepts several keyword arguments in the calls of the function it wraps rather than in the decorator call, allowing you to modify its behaviour for a specific function call.
 
 Ignore Cache
 ~~~~~~~~~~~~
@@ -144,7 +144,7 @@ You can have ``cachier`` overwrite an existing cache entry - if one exists - for
 Verbose Cache Call
 ~~~~~~~~~~~~~~~~~~
 
-You can have ``cachier`` print out a detailed explanation of the logic of a specific call by passing ``verbose_cache=True`` to the function call. This can be useful if you are not sure why a certain function result is or is not returned.
+You can have ``cachier`` print out a detailed explanation of the logic of a specific call by passing ``verbose_cache=True`` to the function call. This can be useful if you are not sure why a certain function result is, or is not, returned.
 
 
 
@@ -167,7 +167,7 @@ This will prevent reading the cache file on each cache read, speeding things up 
 
 MongoDB Core
 ------------
-You can set a MongoDB-based cache by assigning ``mongetter`` with a callable that returns a ``pymongo.Collection`` object with writing permission:
+You can set a MongoDB-based cache by assigning ``mongetter`` with a callable that returns a ``pymongo.Collection`` object with writing permissions:
 
 .. code-block:: python
 
@@ -212,7 +212,7 @@ To run the tests, use:
 Adding documentation
 --------------------
 
-This project is documented using the `numpy docstring conventions`_, which were chosen as they are perhaps the most widely-spread conventions that are both supported by common tools such as Sphinx and result in human-readable docstrings. When documenting code you add to this project, please follow `these conventions`_.
+This project is documented using the `numpy docstring conventions`_, which were chosen as they are perhaps the most widely-spread conventions that are both supported by common tools such as Sphinx and result in human-readable docstrings (in my personal opinion, of course). When documenting code you add to this project, please follow `these conventions`_.
 
 .. _`numpy docstring conventions`: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
 .. _`these conventions`: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
@@ -221,6 +221,15 @@ This project is documented using the `numpy docstring conventions`_, which were 
 Credits
 =======
 Created by Shay Palachy (shay.palachy@gmail.com).
+
+Contributers (in chronological order of first commit):
+
+* `shaypal5`_ (Shay Palachy)
+* `j-chad`_ (Jackson)
+
+.. Contributer links:
+.. _shaypal5: https://github.com/shaypal5
+.. _j-chad: https://github.com/j-chad
 
 
 
