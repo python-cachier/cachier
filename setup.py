@@ -39,7 +39,6 @@ setup(
     extras_require={
         'test': TEST_REQUIRES
     },
-    setup_requires=TEST_REQUIRES,
     platforms=['linux', 'osx'],
     keywords=['cache', 'persistence', 'mongo', 'memoization', 'decorator'],
     classifiers=[
