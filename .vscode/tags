@@ -1,0 +1,301 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+Binary	../cachier/mongo_core.py	/^    from bson.binary import Binary  # to save binary data to mongodb$/;"	kind:namespace	line:21
+CACHIER_DIR	../cachier/pickle_core.py	/^CACHIER_DIR = '~\/.cachier\/'$/;"	kind:variable	line:21
+CacheChangeHandler	../cachier/pickle_core.py	/^    class CacheChangeHandler(PatternMatchingEventHandler):$/;"	kind:class	line:27
+Command	../versioneer.py	/^    from distutils.core import Command$/;"	kind:namespace	line:1496
+DEFAULT_MAX_WORKERS	../cachier/core.py	/^DEFAULT_MAX_WORKERS = 8$/;"	kind:variable	line:31
+DELTA	../tests/test_cachier.py	/^DELTA = timedelta(seconds=3)$/;"	kind:variable	line:44
+EXPANDED_CACHIER_DIR	../cachier/pickle_core.py	/^EXPANDED_CACHIER_DIR = os.path.expanduser(CACHIER_DIR)$/;"	kind:variable	line:22
+HANDLERS	../cachier/_version.py	/^HANDLERS = {}$/;"	kind:variable	line:55
+HANDLERS	../versioneer.py	/^HANDLERS = {}$/;"	kind:variable	line:439
+IO	../cachier/pickle_core.py	/^import fcntl  # to lock on pickle cache IO$/;"	kind:namespace	line:12
+LONG_VERSION_PY	../cachier/_version.py	/^LONG_VERSION_PY = {}$/;"	kind:variable	line:54
+LONG_VERSION_PY	../versioneer.py	/^LONG_VERSION_PY = {}$/;"	kind:variable	line:438
+MONGO_DELTA	../tests/test_mongo_core.py	/^MONGO_DELTA = timedelta(seconds=3)$/;"	kind:variable	line:72
+MONGO_SLEEP_DURATION_IN_SEC	../cachier/mongo_core.py	/^MONGO_SLEEP_DURATION_IN_SEC = 6$/;"	kind:variable	line:29
+Mongo	../cachier/mongo_core.py	/^import warnings$/;"	kind:namespace	line:13
+MongoClient	../tests/test_mongo_core.py	/^from pymongo.mongo_client import MongoClient$/;"	kind:namespace	line:9
+NotThisMethod	../cachier/_version.py	/^class NotThisMethod(Exception):$/;"	kind:class	line:50
+NotThisMethod	../versioneer.py	/^class NotThisMethod(Exception):$/;"	kind:class	line:434
+Observer	../cachier/pickle_core.py	/^from watchdog.observers import Observer$/;"	kind:namespace	line:15
+OperationFailure	../cachier/mongo_core.py	/^    from pymongo.errors import OperationFailure$/;"	kind:namespace	line:20
+OperationFailure	../tests/test_mongo_core.py	/^from pymongo.errors import OperationFailure$/;"	kind:namespace	line:10
+PACKAGES	../cachier/core.py	/^    PACKAGES = [$/;"	kind:variable	line:18
+PatternMatchingEventHandler	../cachier/pickle_core.py	/^from watchdog.events import PatternMatchingEventHandler$/;"	kind:namespace	line:16
+README_RST	../setup.py	/^    README_RST = f.read()$/;"	kind:variable	line:22
+README_RST	../setup.py	/^README_RST = ''$/;"	kind:variable	line:20
+TEST_REQUIRES	../setup.py	/^TEST_REQUIRES = ['pytest', 'coverage', 'pytest-cov']$/;"	kind:variable	line:18
+ThreadPoolExecutor	../cachier/core.py	/^    from concurrent.futures import ThreadPoolExecutor$/;"	kind:namespace	line:15
+ThreadPoolExecutor	../cachier/core.py	/^    from concurrent.futures import ThreadPoolExecutor$/;"	kind:namespace	line:25
+VersioneerBadRootError	../versioneer.py	/^class VersioneerBadRootError(Exception):$/;"	kind:class	line:1392
+VersioneerConfig	../cachier/_version.py	/^class VersioneerConfig:$/;"	kind:class	line:32
+VersioneerConfig	../versioneer.py	/^class VersioneerConfig:$/;"	kind:class	line:364
+_BadMongoCollection	../tests/test_mongo_core.py	/^class _BadMongoCollection:$/;"	kind:class	line:118
+_BaseCore	../cachier/base_core.py	/^class _BaseCore(object):$/;"	kind:class	line:11
+_BaseCore	../cachier/base_core.py	/^import abc  # for the _BaseCore abstract base class$/;"	kind:namespace	line:9
+_BaseCore	../cachier/mongo_core.py	/^from .base_core import _BaseCore$/;"	kind:namespace	line:26
+_BaseCore	../cachier/pickle_core.py	/^from .base_core import _BaseCore$/;"	kind:namespace	line:18
+_INDEX_NAME	../cachier/mongo_core.py	/^    _INDEX_NAME = 'func_1_key_1'$/;"	kind:variable	line:34
+_MongoCore	../cachier/core.py	/^from .mongo_core import _MongoCore$/;"	kind:namespace	line:28
+_MongoCore	../cachier/mongo_core.py	/^class _MongoCore(_BaseCore):$/;"	kind:class	line:32
+_MongoCore	../tests/test_mongo_core.py	/^from cachier.mongo_core import _MongoCore$/;"	kind:namespace	line:13
+_PickleCore	../cachier/core.py	/^from .pickle_core import _PickleCore$/;"	kind:namespace	line:27
+_PickleCore	../cachier/pickle_core.py	/^class _PickleCore(_BaseCore):$/;"	kind:class	line:25
+_TEST_HOST	../tests/test_mongo_core.py	/^_TEST_HOST = 'ds119508.mlab.com'$/;"	kind:variable	line:16
+_TEST_PORT	../tests/test_mongo_core.py	/^_TEST_PORT = 19508$/;"	kind:variable	line:17
+_TEST_PWD	../tests/test_mongo_core.py	/^_TEST_PWD = 'ZGhjO5CQESYJ69U4z65G79YG'$/;"	kind:variable	line:19
+_TEST_USERNAME	../tests/test_mongo_core.py	/^_TEST_USERNAME = 'cachier_test'$/;"	kind:variable	line:18
+__init__	../cachier/base_core.py	/^    def __init__(self, stale_after, next_time):$/;"	kind:member	line:14
+__init__	../cachier/mongo_core.py	/^    def __init__(self, mongetter, stale_after, next_time):$/;"	kind:member	line:36
+__init__	../cachier/pickle_core.py	/^        def __init__(self, filename, core, key):$/;"	kind:member	line:30
+__init__	../cachier/pickle_core.py	/^    def __init__(self, stale_after, next_time, reload):$/;"	kind:member	line:64
+__init__	../tests/test_mongo_core.py	/^    def __init__(self, mongetter):$/;"	kind:member	line:120
+__init__.py	../cachier/__init__.py	1;"	kind:file	line:1
+__init__.py	../tests/__init__.py	1;"	kind:file	line:1
+__metaclass__	../cachier/base_core.py	/^    __metaclass__ = abc.ABCMeta$/;"	kind:variable	line:12
+__version__	../cachier/__init__.py	/^__version__ = get_versions()['version']$/;"	kind:variable	line:3
+_bad_mongetter	../tests/test_mongo_core.py	/^def _bad_mongetter():$/;"	kind:function	line:135
+_build_exe	../versioneer.py	/^        from cx_Freeze.dist import build_exe as _build_exe$/;"	kind:namespace	line:1550
+_build_py	../versioneer.py	/^        from distutils.command.build_py import build_py as _build_py$/;"	kind:namespace	line:1532
+_build_py	../versioneer.py	/^        from setuptools.command.build_py import build_py as _build_py$/;"	kind:namespace	line:1530
+_cache_fname	../cachier/pickle_core.py	/^    def _cache_fname(self):$/;"	kind:member	line:69
+_cache_fpath	../cachier/pickle_core.py	/^    def _cache_fpath(self):$/;"	kind:member	line:75
+_cachier_decorator	../cachier/core.py	/^    def _cachier_decorator(func):$/;"	kind:function	line:122
+_calc_entry	../cachier/core.py	/^def _calc_entry(core, key, func, args, kwds):$/;"	kind:function	line:67
+_calls_takes_time	../tests/test_mongo_core.py	/^def _calls_takes_time(res_queue):$/;"	kind:function	line:96
+_check_calculation	../cachier/pickle_core.py	/^        def _check_calculation(self):$/;"	kind:member	line:47
+_func_w_bad_mongo	../tests/test_mongo_core.py	/^def _func_w_bad_mongo(arg_1, arg_2):$/;"	kind:function	line:139
+_function_thread	../cachier/core.py	/^def _function_thread(core, key, func, args, kwds):$/;"	kind:function	line:57
+_get_cache	../cachier/pickle_core.py	/^    def _get_cache(self):$/;"	kind:member	line:99
+_get_cachier_db_mongo_client	../tests/test_mongo_core.py	/^def _get_cachier_db_mongo_client():$/;"	kind:function	line:22
+_get_executor	../cachier/core.py	/^def _get_executor(reset=False):$/;"	kind:function	line:47
+_get_func_str	../cachier/mongo_core.py	/^    def _get_func_str(func):$/;"	kind:member	line:48
+_max_workers	../cachier/core.py	/^def _max_workers():$/;"	kind:function	line:34
+_random_num	../tests/test_cachier.py	/^def _random_num():$/;"	kind:function	line:90
+_random_num_with_arg	../tests/test_cachier.py	/^def _random_num_with_arg(a):$/;"	kind:function	line:95
+_reload_cache	../cachier/pickle_core.py	/^    def _reload_cache(self):$/;"	kind:member	line:86
+_save_cache	../cachier/pickle_core.py	/^    def _save_cache(self, cache):$/;"	kind:member	line:104
+_sdist	../versioneer.py	/^        from distutils.command.sdist import sdist as _sdist$/;"	kind:namespace	line:1579
+_sdist	../versioneer.py	/^        from setuptools.command.sdist import sdist as _sdist$/;"	kind:namespace	line:1577
+_set_max_workets	../cachier/core.py	/^def _set_max_workets(max_workers):$/;"	kind:function	line:42
+_stale_after_mongo	../tests/test_mongo_core.py	/^def _stale_after_mongo(arg_1, arg_2):$/;"	kind:function	line:75
+_stale_after_next_time	../tests/test_cachier.py	/^def _stale_after_next_time(arg_1, arg_2):$/;"	kind:function	line:67
+_stale_after_seconds	../tests/test_cachier.py	/^def _stale_after_seconds(arg_1, arg_2):$/;"	kind:function	line:47
+_takes_5_seconds	../tests/test_cachier.py	/^def _takes_5_seconds(arg_1, arg_2):$/;"	kind:function	line:27
+_takes_time	../tests/test_mongo_core.py	/^def _takes_time(arg_1, arg_2):$/;"	kind:function	line:91
+_test_int_pickling	../tests/speed_eval.py	/^def _test_int_pickling(int_1, int_2):$/;"	kind:function	line:8
+_test_int_pickling_compare	../tests/speed_eval.py	/^def _test_int_pickling_compare(int_1, int_2):$/;"	kind:function	line:13
+_test_mongetter	../tests/test_mongo_core.py	/^def _test_mongetter():$/;"	kind:function	line:32
+_test_mongo_caching	../tests/test_mongo_core.py	/^def _test_mongo_caching(arg_1, arg_2):$/;"	kind:function	line:41
+_version.py	../cachier/_version.py	1;"	kind:file	line:1
+abc	../cachier/base_core.py	/^import abc  # for the _BaseCore abstract base class$/;"	kind:namespace	line:9
+abstract	../cachier/base_core.py	/^import abc  # for the _BaseCore abstract base class$/;"	kind:namespace	line:9
+author	../setup.py	/^    author='Shay Palachy',$/;"	kind:variable	line:32
+author_email	../setup.py	/^    author_email='shay.palachy@gmail.com',$/;"	kind:variable	line:33
+base	../cachier/base_core.py	/^import abc  # for the _BaseCore abstract base class$/;"	kind:namespace	line:9
+base_core.py	../cachier/base_core.py	1;"	kind:file	line:1
+binary	../cachier/mongo_core.py	/^    from bson.binary import Binary  # to save binary data to mongodb$/;"	kind:namespace	line:21
+boolean_options	../versioneer.py	/^        boolean_options = []$/;"	kind:variable	line:1501
+cache	../cachier/mongo_core.py	/^import warnings$/;"	kind:namespace	line:13
+cache	../cachier/pickle_core.py	/^import fcntl  # to lock on pickle cache IO$/;"	kind:namespace	line:12
+cachier	../cachier/__init__.py	/^from .core import cachier$/;"	kind:namespace	line:1
+cachier	../cachier/core.py	/^def cachier(stale_after=None, next_time=False, pickle_reload=True,$/;"	kind:function	line:80
+cachier	../tests/speed_eval.py	/^from cachier import cachier$/;"	kind:namespace	line:4
+cachier	../tests/test_cachier.py	/^from cachier import cachier$/;"	kind:namespace	line:21
+cachier	../tests/test_mongo_core.py	/^from cachier import cachier$/;"	kind:namespace	line:12
+caching	../cachier/pickle_core.py	/^import pickle  # for local caching$/;"	kind:namespace	line:11
+class	../cachier/base_core.py	/^import abc  # for the _BaseCore abstract base class$/;"	kind:namespace	line:9
+classifiers	../setup.py	/^    classifiers=[$/;"	kind:variable	line:45
+clear_being_calculated	../cachier/base_core.py	/^    def clear_being_calculated(self):$/;"	kind:member	line:56
+clear_being_calculated	../cachier/core.py	/^        def clear_being_calculated():$/;"	kind:function	line:177
+clear_being_calculated	../cachier/mongo_core.py	/^    def clear_being_calculated(self):$/;"	kind:member	line:137
+clear_being_calculated	../cachier/pickle_core.py	/^    def clear_being_calculated(self):$/;"	kind:member	line:182
+clear_cache	../cachier/base_core.py	/^    def clear_cache(self):$/;"	kind:member	line:52
+clear_cache	../cachier/core.py	/^        def clear_cache():$/;"	kind:function	line:173
+clear_cache	../cachier/mongo_core.py	/^    def clear_cache(self):$/;"	kind:member	line:132
+clear_cache	../cachier/pickle_core.py	/^    def clear_cache(self):$/;"	kind:member	line:179
+cmd	../versioneer.py	/^    cmd = sys.argv[1]$/;"	kind:variable	line:1769
+cmd_build_exe	../versioneer.py	/^        class cmd_build_exe(_build_exe):$/;"	kind:class	line:1552
+cmd_build_py	../versioneer.py	/^    class cmd_build_py(_build_py):$/;"	kind:class	line:1534
+cmd_sdist	../versioneer.py	/^    class cmd_sdist(_sdist):$/;"	kind:class	line:1581
+cmd_version	../versioneer.py	/^    class cmd_version(Command):$/;"	kind:class	line:1498
+cmdclass	../setup.py	/^    cmdclass=versioneer.get_cmdclass(),$/;"	kind:variable	line:28
+configparser	../versioneer.py	/^    import ConfigParser as configparser$/;"	kind:namespace	line:355
+configparser	../versioneer.py	/^    import configparser$/;"	kind:namespace	line:353
+core.py	../cachier/core.py	1;"	kind:file	line:1
+data	../cachier/mongo_core.py	/^    from bson.binary import Binary  # to save binary data to mongodb$/;"	kind:namespace	line:21
+datetime	../cachier/core.py	/^import datetime$/;"	kind:namespace	line:13
+datetime	../cachier/mongo_core.py	/^from datetime import datetime$/;"	kind:namespace	line:11
+datetime	../cachier/pickle_core.py	/^from datetime import datetime$/;"	kind:namespace	line:13
+decorate	../cachier/_version.py	/^    def decorate(f):$/;"	kind:function	line:60
+decorate	../versioneer.py	/^    def decorate(f):$/;"	kind:function	line:444
+delete_many	../tests/test_mongo_core.py	/^    def delete_many(self, *args, **kwargs):$/;"	kind:member	line:126
+description	../setup.py	/^    description='Persistent, stale-free, local and cross-machine caching for Python functions.',$/;"	kind:variable	line:29
+description	../versioneer.py	/^        description = "report generated version string"$/;"	kind:variable	line:1499
+do_setup	../versioneer.py	/^def do_setup():$/;"	kind:function	line:1650
+do_vcs_install	../versioneer.py	/^def do_vcs_install(manifest_in, versionfile_source, ipy):$/;"	kind:function	line:1127
+errno	../cachier/_version.py	/^import errno$/;"	kind:namespace	line:13
+errno	../versioneer.py	/^import errno$/;"	kind:namespace	line:356
+errors	../versioneer.py	/^        errors = do_setup()$/;"	kind:variable	line:1771
+extras_require	../setup.py	/^    extras_require={$/;"	kind:variable	line:39
+fcntl	../cachier/pickle_core.py	/^import fcntl  # to lock on pickle cache IO$/;"	kind:namespace	line:12
+finalize_options	../versioneer.py	/^        def finalize_options(self):$/;"	kind:member	line:1506
+for	../cachier/base_core.py	/^import abc  # for the _BaseCore abstract base class$/;"	kind:namespace	line:9
+for	../cachier/mongo_core.py	/^import pickle  # for serialization of python objects$/;"	kind:namespace	line:10
+for	../cachier/pickle_core.py	/^import pickle  # for local caching$/;"	kind:namespace	line:11
+func_wrapper	../cachier/core.py	/^        def func_wrapper(*args, **kwds):  # pylint: disable=C0111,R0911$/;"	kind:function	line:126
+get	../versioneer.py	/^    def get(parser, name):$/;"	kind:function	line:417
+get_cmdclass	../versioneer.py	/^def get_cmdclass():$/;"	kind:function	line:1476
+get_config	../cachier/_version.py	/^def get_config():$/;"	kind:function	line:36
+get_config_from_root	../versioneer.py	/^def get_config_from_root(root):$/;"	kind:function	line:405
+get_entry	../cachier/base_core.py	/^    def get_entry(self, args, kwds):$/;"	kind:member	line:30
+get_entry	../cachier/mongo_core.py	/^    def get_entry(self, args, kwds):$/;"	kind:member	line:74
+get_entry	../cachier/pickle_core.py	/^    def get_entry(self, args, kwds):$/;"	kind:member	line:119
+get_entry_by_key	../cachier/base_core.py	/^    def get_entry_by_key(self, key):$/;"	kind:member	line:25
+get_entry_by_key	../cachier/mongo_core.py	/^    def get_entry_by_key(self, key):$/;"	kind:member	line:51
+get_entry_by_key	../cachier/pickle_core.py	/^    def get_entry_by_key(self, key, reload=False):  # pylint: disable=W0221$/;"	kind:member	line:113
+get_keywords	../cachier/_version.py	/^def get_keywords():$/;"	kind:function	line:20
+get_root	../versioneer.py	/^def get_root():$/;"	kind:function	line:368
+get_version	../versioneer.py	/^def get_version():$/;"	kind:function	line:1471
+get_versions	../cachier/__init__.py	/^from ._version import get_versions$/;"	kind:namespace	line:2
+get_versions	../cachier/_version.py	/^def get_versions():$/;"	kind:function	line:442
+get_versions	../versioneer.py	/^def get_versions(verbose=False):$/;"	kind:function	line:1396
+git_get_keywords	../cachier/_version.py	/^def git_get_keywords(versionfile_abs):$/;"	kind:function	line:121
+git_get_keywords	../versioneer.py	/^def git_get_keywords(versionfile_abs):$/;"	kind:function	line:973
+git_pieces_from_vcs	../cachier/_version.py	/^def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):$/;"	kind:function	line:192
+git_pieces_from_vcs	../versioneer.py	/^def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):$/;"	kind:function	line:1044
+git_versions_from_keywords	../cachier/_version.py	/^def git_versions_from_keywords(keywords, tag_prefix, verbose):$/;"	kind:function	line:146
+git_versions_from_keywords	../versioneer.py	/^def git_versions_from_keywords(keywords, tag_prefix, verbose):$/;"	kind:function	line:998
+import	../cachier/mongo_core.py	/^import warnings$/;"	kind:namespace	line:13
+initialize_options	../versioneer.py	/^        def initialize_options(self):$/;"	kind:member	line:1503
+inject_observer	../cachier/pickle_core.py	/^        def inject_observer(self, observer):$/;"	kind:member	line:43
+install_requires	../setup.py	/^    install_requires=[$/;"	kind:variable	line:36
+json	../versioneer.py	/^import json$/;"	kind:namespace	line:357
+keywords	../setup.py	/^    keywords=['cache', 'persistence', 'mongo', 'memoization', 'decorator'],$/;"	kind:variable	line:44
+license	../setup.py	/^    license='MIT',$/;"	kind:variable	line:31
+local	../cachier/pickle_core.py	/^import pickle  # for local caching$/;"	kind:namespace	line:11
+lock	../cachier/pickle_core.py	/^import fcntl  # to lock on pickle cache IO$/;"	kind:namespace	line:12
+long_description	../setup.py	/^    long_description=README_RST,$/;"	kind:variable	line:30
+make_release_tree	../versioneer.py	/^        def make_release_tree(self, base_dir, files):$/;"	kind:member	line:1590
+mark_entry_being_calculated	../cachier/base_core.py	/^    def mark_entry_being_calculated(self, key):$/;"	kind:member	line:39
+mark_entry_being_calculated	../cachier/mongo_core.py	/^    def mark_entry_being_calculated(self, key):$/;"	kind:member	line:98
+mark_entry_being_calculated	../cachier/pickle_core.py	/^    def mark_entry_being_calculated(self, key):$/;"	kind:member	line:134
+mark_entry_not_calculated	../cachier/base_core.py	/^    def mark_entry_not_calculated(self, key):$/;"	kind:member	line:43
+mark_entry_not_calculated	../cachier/mongo_core.py	/^    def mark_entry_not_calculated(self, key):$/;"	kind:member	line:110
+mark_entry_not_calculated	../cachier/pickle_core.py	/^    def mark_entry_not_calculated(self, key):$/;"	kind:member	line:147
+mongo_core.py	../cachier/mongo_core.py	1;"	kind:file	line:1
+mongodb	../cachier/mongo_core.py	/^    from bson.binary import Binary  # to save binary data to mongodb$/;"	kind:namespace	line:21
+name	../setup.py	/^    name='cachier',$/;"	kind:variable	line:26
+objects	../cachier/mongo_core.py	/^import pickle  # for serialization of python objects$/;"	kind:namespace	line:10
+of	../cachier/mongo_core.py	/^import pickle  # for serialization of python objects$/;"	kind:namespace	line:10
+on	../cachier/mongo_core.py	/^import warnings$/;"	kind:namespace	line:13
+on	../cachier/pickle_core.py	/^import fcntl  # to lock on pickle cache IO$/;"	kind:namespace	line:12
+on_created	../cachier/pickle_core.py	/^        def on_created(self, event):$/;"	kind:member	line:58
+on_modified	../cachier/pickle_core.py	/^        def on_modified(self, event):$/;"	kind:member	line:61
+os	../cachier/_version.py	/^import os$/;"	kind:namespace	line:14
+os	../cachier/core.py	/^import os$/;"	kind:namespace	line:10
+os	../cachier/pickle_core.py	/^import os$/;"	kind:namespace	line:10
+os	../versioneer.py	/^import os$/;"	kind:namespace	line:358
+packages	../setup.py	/^    packages=['cachier'],$/;"	kind:variable	line:35
+pickle	../cachier/mongo_core.py	/^import pickle  # for serialization of python objects$/;"	kind:namespace	line:10
+pickle	../cachier/pickle_core.py	/^import fcntl  # to lock on pickle cache IO$/;"	kind:namespace	line:12
+pickle	../cachier/pickle_core.py	/^import pickle  # for local caching$/;"	kind:namespace	line:11
+pickle_core.py	../cachier/pickle_core.py	1;"	kind:file	line:1
+pip	../cachier/core.py	/^    import pip$/;"	kind:namespace	line:17
+platforms	../setup.py	/^    platforms=['linux', 'osx'],$/;"	kind:variable	line:43
+plus_or_dot	../cachier/_version.py	/^def plus_or_dot(pieces):$/;"	kind:function	line:275
+plus_or_dot	../versioneer.py	/^def plus_or_dot(pieces):$/;"	kind:function	line:1225
+print_function	../versioneer.py	/^from __future__ import print_function$/;"	kind:namespace	line:351
+python	../cachier/mongo_core.py	/^import pickle  # for serialization of python objects$/;"	kind:namespace	line:10
+queue	../tests/test_mongo_core.py	/^import queue$/;"	kind:namespace	line:7
+random	../tests/test_cachier.py	/^from random import random$/;"	kind:namespace	line:19
+random	../tests/test_mongo_core.py	/^from random import random$/;"	kind:namespace	line:3
+re	../cachier/_version.py	/^import re$/;"	kind:namespace	line:15
+re	../versioneer.py	/^import re$/;"	kind:namespace	line:359
+register_vcs_handler	../cachier/_version.py	/^def register_vcs_handler(vcs, method):  # decorator$/;"	kind:function	line:58
+register_vcs_handler	../versioneer.py	/^def register_vcs_handler(vcs, method):  # decorator$/;"	kind:function	line:442
+render	../cachier/_version.py	/^def render(pieces, style):$/;"	kind:function	line:412
+render	../versioneer.py	/^def render(pieces, style):$/;"	kind:function	line:1362
+render_git_describe	../cachier/_version.py	/^def render_git_describe(pieces):$/;"	kind:function	line:372
+render_git_describe	../versioneer.py	/^def render_git_describe(pieces):$/;"	kind:function	line:1322
+render_git_describe_long	../cachier/_version.py	/^def render_git_describe_long(pieces):$/;"	kind:function	line:392
+render_git_describe_long	../versioneer.py	/^def render_git_describe_long(pieces):$/;"	kind:function	line:1342
+render_pep440	../cachier/_version.py	/^def render_pep440(pieces):$/;"	kind:function	line:282
+render_pep440	../versioneer.py	/^def render_pep440(pieces):$/;"	kind:function	line:1232
+render_pep440_old	../cachier/_version.py	/^def render_pep440_old(pieces):$/;"	kind:function	line:350
+render_pep440_old	../versioneer.py	/^def render_pep440_old(pieces):$/;"	kind:function	line:1300
+render_pep440_post	../cachier/_version.py	/^def render_pep440_post(pieces):$/;"	kind:function	line:323
+render_pep440_post	../versioneer.py	/^def render_pep440_post(pieces):$/;"	kind:function	line:1273
+render_pep440_pre	../cachier/_version.py	/^def render_pep440_pre(pieces):$/;"	kind:function	line:307
+render_pep440_pre	../versioneer.py	/^def render_pep440_pre(pieces):$/;"	kind:function	line:1257
+run	../versioneer.py	/^            def run(self):$/;"	kind:member	line:1553
+run	../versioneer.py	/^        def run(self):$/;"	kind:member	line:1509
+run	../versioneer.py	/^        def run(self):$/;"	kind:member	line:1535
+run	../versioneer.py	/^        def run(self):$/;"	kind:member	line:1582
+run_command	../cachier/_version.py	/^def run_command(commands, args, cwd=None, verbose=False, hide_stderr=False):$/;"	kind:function	line:69
+run_command	../versioneer.py	/^def run_command(commands, args, cwd=None, verbose=False, hide_stderr=False):$/;"	kind:function	line:453
+save	../cachier/mongo_core.py	/^    from bson.binary import Binary  # to save binary data to mongodb$/;"	kind:namespace	line:21
+scan_setup_py	../versioneer.py	/^def scan_setup_py():$/;"	kind:function	line:1732
+serialization	../cachier/mongo_core.py	/^import pickle  # for serialization of python objects$/;"	kind:namespace	line:10
+set_entry	../cachier/base_core.py	/^    def set_entry(self, key, func_res):$/;"	kind:member	line:35
+set_entry	../cachier/mongo_core.py	/^    def set_entry(self, key, func_res):$/;"	kind:member	line:78
+set_entry	../cachier/pickle_core.py	/^    def set_entry(self, key, func_res):$/;"	kind:member	line:124
+set_func	../cachier/base_core.py	/^    def set_func(self, func):$/;"	kind:member	line:19
+setup	../setup.py	/^    from distutils.core import setup$/;"	kind:namespace	line:13
+setup	../setup.py	/^    from setuptools import setup$/;"	kind:namespace	line:11
+setup.py	../setup.py	1;"	kind:file	line:1
+setup_requires	../setup.py	/^    setup_requires=TEST_REQUIRES,$/;"	kind:variable	line:42
+sleep	../cachier/mongo_core.py	/^import warnings$/;"	kind:namespace	line:13
+sleep	../tests/test_mongo_core.py	/^from time import sleep$/;"	kind:namespace	line:5
+speed_eval.py	../tests/speed_eval.py	1;"	kind:file	line:1
+subprocess	../cachier/_version.py	/^import subprocess$/;"	kind:namespace	line:16
+subprocess	../versioneer.py	/^import subprocess$/;"	kind:namespace	line:360
+sys	../cachier/_version.py	/^import sys$/;"	kind:namespace	line:17
+sys	../versioneer.py	/^import sys$/;"	kind:namespace	line:361
+test_cachier.py	../tests/test_cachier.py	1;"	kind:file	line:1
+test_ignore_cache	../tests/test_cachier.py	/^def test_ignore_cache():$/;"	kind:function	line:123
+test_mongo_being_calculated	../tests/test_mongo_core.py	/^def test_mongo_being_calculated():$/;"	kind:function	line:100
+test_mongo_core	../tests/test_mongo_core.py	/^def test_mongo_core():$/;"	kind:function	line:56
+test_mongo_core.py	../tests/test_mongo_core.py	1;"	kind:file	line:1
+test_mongo_index_creation	../tests/test_mongo_core.py	/^def test_mongo_index_creation():$/;"	kind:function	line:45
+test_mongo_stale_after	../tests/test_mongo_core.py	/^def test_mongo_stale_after():$/;"	kind:function	line:79
+test_mongo_write_failure	../tests/test_mongo_core.py	/^def test_mongo_write_failure():$/;"	kind:function	line:143
+test_overwrite_cache	../tests/test_cachier.py	/^def test_overwrite_cache():$/;"	kind:function	line:100
+test_pickle_core	../tests/test_cachier.py	/^def test_pickle_core():$/;"	kind:function	line:33
+test_pickle_speed	../tests/speed_eval.py	/^def test_pickle_speed():$/;"	kind:function	line:18
+test_stale_after	../tests/test_cachier.py	/^def test_stale_after():$/;"	kind:function	line:52
+test_stale_after_next_time	../tests/test_cachier.py	/^def test_stale_after_next_time():$/;"	kind:function	line:72
+the	../cachier/base_core.py	/^import abc  # for the _BaseCore abstract base class$/;"	kind:namespace	line:9
+threading	../tests/test_mongo_core.py	/^import threading$/;"	kind:namespace	line:6
+time	../cachier/mongo_core.py	/^import warnings$/;"	kind:namespace	line:13
+time	../tests/speed_eval.py	/^from time import time$/;"	kind:namespace	line:2
+timedelta	../tests/test_cachier.py	/^from datetime import timedelta$/;"	kind:namespace	line:18
+timedelta	../tests/test_mongo_core.py	/^from datetime import timedelta$/;"	kind:namespace	line:4
+to	../cachier/mongo_core.py	/^    from bson.binary import Binary  # to save binary data to mongodb$/;"	kind:namespace	line:21
+to	../cachier/mongo_core.py	/^import warnings$/;"	kind:namespace	line:13
+to	../cachier/pickle_core.py	/^import fcntl  # to lock on pickle cache IO$/;"	kind:namespace	line:12
+update_many	../tests/test_mongo_core.py	/^    def update_many(self, *args, **kwargs):$/;"	kind:member	line:129
+update_one	../tests/test_mongo_core.py	/^    def update_one(self, *args, **kwargs):$/;"	kind:member	line:132
+url	../setup.py	/^    url='https:\/\/github.com\/shaypal5\/cachier',$/;"	kind:variable	line:34
+user_options	../versioneer.py	/^        user_options = []$/;"	kind:variable	line:1500
+version	../setup.py	/^    version=versioneer.get_version(),$/;"	kind:variable	line:27
+versioneer	../setup.py	/^import versioneer$/;"	kind:namespace	line:15
+versioneer	../versioneer.py	/^            if "import versioneer" in line:$/;"	kind:namespace	line:1739
+versioneer	../versioneer.py	/^        print(" import versioneer")$/;"	kind:namespace	line:1755
+versioneer.py	../versioneer.py	1;"	kind:file	line:1
+versions_from_file	../versioneer.py	/^def versions_from_file(filename):$/;"	kind:function	line:1200
+versions_from_parentdir	../cachier/_version.py	/^def versions_from_parentdir(parentdir_prefix, root, verbose):$/;"	kind:function	line:103
+versions_from_parentdir	../versioneer.py	/^def versions_from_parentdir(parentdir_prefix, root, verbose):$/;"	kind:function	line:1165
+wait_on_entry_calc	../cachier/base_core.py	/^    def wait_on_entry_calc(self, key):$/;"	kind:member	line:47
+wait_on_entry_calc	../cachier/mongo_core.py	/^    def wait_on_entry_calc(self, key):$/;"	kind:member	line:125
+wait_on_entry_calc	../cachier/pickle_core.py	/^    def wait_on_entry_calc(self, key):$/;"	kind:member	line:155
+waiting	../cachier/mongo_core.py	/^import warnings$/;"	kind:namespace	line:13
+warnings	../cachier/mongo_core.py	/^import warnings$/;"	kind:namespace	line:13
+when	../cachier/mongo_core.py	/^import warnings$/;"	kind:namespace	line:13
+wraps	../cachier/core.py	/^from functools import wraps$/;"	kind:namespace	line:11
+write_to_version_file	../versioneer.py	/^def write_to_version_file(filename, versions):$/;"	kind:function	line:1214

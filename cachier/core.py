@@ -128,33 +128,30 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
             ignore_cache = kwds.pop('ignore_cache', False)
             overwrite_cache = kwds.pop('overwrite_cache', False)
             verbose_cache = kwds.pop('verbose_cache', False)
+            _print = lambda x: None
+            if verbose_cache:
+                _print = print
             if ignore_cache:
                 return func(*args, **kwds)
             key, entry = core.get_entry(args, kwds)
             if overwrite_cache:
                 return _calc_entry(core, key, func, args, kwds)
             if entry is not None:  # pylint: disable=R0101
-                if verbose_cache:
-                    print('Entry found.')
+                _print('Entry found.')
                 if entry.get('value', None) is not None:
-                    if verbose_cache:
-                        print('Cached result found.')
+                    _print('Cached result found.')
                     if stale_after:
                         now = datetime.datetime.now()
                         if now - entry['time'] > stale_after:
-                            if verbose_cache:
-                                print('But it is stale... :(')
+                            _print('But it is stale... :(')
                             if entry['being_calculated']:
                                 if next_time:
-                                    if verbose_cache:
-                                        print('Returning stale.')
+                                    _print('Returning stale.')
                                     return entry['value']  # return stale val
-                                if verbose_cache:
-                                    print('Already calc. Waiting on change.')
+                                _print('Already calc. Waiting on change.')
                                 return core.wait_on_entry_calc(key)
                             if next_time:
-                                if verbose_cache:
-                                    print('Async calc and return stale')
+                                _print('Async calc and return stale')
                                 try:
                                     core.mark_entry_being_calculated(key)
                                     _get_executor().submit(
@@ -163,18 +160,14 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
                                 finally:
                                     core.mark_entry_not_calculated(key)
                                 return entry['value']
-                            if verbose_cache:
-                                print('Calling decorated function and waiting')
+                            _print('Calling decorated function and waiting')
                             return _calc_entry(core, key, func, args, kwds)
-                    if verbose_cache:
-                        print('And it is fresh!')
+                    _print('And it is fresh!')
                     return entry['value']
                 if entry['being_calculated']:
-                    if verbose_cache:
-                        print('No value but being calculated. Waiting.')
+                    _print('No value but being calculated. Waiting.')
                     return core.wait_on_entry_calc(key)
-            if verbose_cache:
-                print('No entry found. No current calc. Calling like a boss.')
+            _print('No entry found. No current calc. Calling like a boss.')
             return _calc_entry(core, key, func, args, kwds)
 
         def clear_cache():

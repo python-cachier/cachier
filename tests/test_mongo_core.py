@@ -3,9 +3,16 @@
 from random import random
 from datetime import timedelta
 from time import sleep
+import threading
+import queue
+
+import pytest
+from pymongo.mongo_client import MongoClient
+from pymongo.errors import OperationFailure
 
 from cachier import cachier
-from pymongo.mongo_client import MongoClient
+from cachier.mongo_core import _MongoCore
+
 
 _TEST_HOST = 'ds119508.mlab.com'
 _TEST_PORT = 19508
@@ -23,18 +30,28 @@ def _get_cachier_db_mongo_client():
     return client
 
 
-def _mongo_getter():
-    if not hasattr(_mongo_getter, 'client'):
-        _mongo_getter.client = _get_cachier_db_mongo_client()
-    return _mongo_getter.client['cachier_test']['cachier_test']
+def _test_mongetter():
+    if not hasattr(_test_mongetter, 'client'):
+        _test_mongetter.client = _get_cachier_db_mongo_client()
+    return _test_mongetter.client['cachier_test']['cachier_test']
 
 
-# Mongo core tests
+# === Mongo core tests ===
 
-@cachier(mongetter=_mongo_getter)
+@cachier(mongetter=_test_mongetter)
 def _test_mongo_caching(arg_1, arg_2):
     """Some function."""
     return random() + arg_1 + arg_2
+
+def test_mongo_index_creation():
+    """Basic Mongo core functionality."""
+    collection = _test_mongetter()
+    _test_mongo_caching.clear_cache()
+    val1 = _test_mongo_caching(1, 2)
+    val2 = _test_mongo_caching(1, 2)
+    assert val1 == val2
+    assert _MongoCore._INDEX_NAME in collection.index_information()
+
 
 
 def test_mongo_core():
@@ -55,14 +72,13 @@ def test_mongo_core():
 
 MONGO_DELTA = timedelta(seconds=3)
 
-@cachier(mongetter=_mongo_getter, stale_after=MONGO_DELTA, next_time=False)
+@cachier(mongetter=_test_mongetter, stale_after=MONGO_DELTA, next_time=False)
 def _stale_after_mongo(arg_1, arg_2):
     """Some function."""
     return random() + arg_1 + arg_2
 
-
 def test_mongo_stale_after():
-    """Testing MongoDB core stale_after functionality.."""
+    """Testing MongoDB core stale_after functionality."""
     _stale_after_mongo.clear_cache()
     val1 = _stale_after_mongo(1, 2)
     val2 = _stale_after_mongo(1, 2)
@@ -70,3 +86,69 @@ def test_mongo_stale_after():
     sleep(3)
     val3 = _stale_after_mongo(1, 2)
     assert val3 != val1
+
+
+@cachier(mongetter=_test_mongetter)
+def _takes_time(arg_1, arg_2):
+    """Some function."""
+    sleep(2)
+    return random() + arg_1 + arg_2
+
+def _calls_takes_time(res_queue):
+    res = _takes_time(34, 82.3)
+    res_queue.put(res)
+
+def test_mongo_being_calculated():
+    """Testing MongoDB core handling of being calculated scenarios."""
+    _takes_time.clear_cache()
+    res_queue = queue.Queue()
+    thread1 = threading.Thread(
+        target=_calls_takes_time, kwargs={'res_queue': res_queue})
+    thread2 = threading.Thread(
+        target=_calls_takes_time, kwargs={'res_queue': res_queue})
+    thread1.start()
+    thread2.start()
+    thread1.join()
+    thread2.join()
+    assert res_queue.qsize() == 2
+    res1 = res_queue.get()
+    res2 = res_queue.get()
+    assert res1 == res2
+
+
+class _BadMongoCollection:
+
+    def __init__(self, mongetter):
+        self.collection = mongetter()
+        self.index_information = self.collection.index_information
+        self.create_indexes = self.collection.create_indexes
+        self.find_one = self.collection.find_one
+
+    def delete_many(self, *args, **kwargs):
+        pass
+
+    def update_many(self, *args, **kwargs):
+        pass
+
+    def update_one(self, *args, **kwargs):
+        raise OperationFailure(Exception())
+
+def _bad_mongetter():
+    return _BadMongoCollection(_test_mongetter)
+
+@cachier(mongetter=_bad_mongetter)
+def _func_w_bad_mongo(arg_1, arg_2):
+    """Some function."""
+    return random() + arg_1 + arg_2
+
+def test_mongo_write_failure():
+    """Testing MongoDB core handling of writing failure scenarios."""
+    with pytest.raises(OperationFailure):
+        val1 = _func_w_bad_mongo(1, 2)
+        val2 = _func_w_bad_mongo(1, 2)
+        assert val1 == val2
+
+
+def test_mongo_clear_being_calculated():
+    """Testing MongoDB core clear_being_calculated."""
+    _func_w_bad_mongo.clear_being_calculated()

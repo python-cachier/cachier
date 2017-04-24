@@ -38,6 +38,7 @@ def test_pickle_core():
     stringi = _takes_5_seconds('a', 'b')
     end = time()
     assert end - start < 1
+    _takes_5_seconds.clear_cache()
 
 
 DELTA = timedelta(seconds=3)
@@ -59,6 +60,7 @@ def test_stale_after():
     sleep(3)
     val4 = _stale_after_seconds(1, 2)
     assert val4 != val1
+    _stale_after_seconds.clear_cache()
 
 
 @cachier(stale_after=DELTA, next_time=True)
@@ -80,6 +82,8 @@ def test_stale_after_next_time():
     assert val4 == val1
     val5 = _stale_after_next_time(1, 2)
     assert val5 != val1
+    _stale_after_next_time.clear_cache()
+
 
 
 @cachier()
@@ -103,6 +107,7 @@ def test_overwrite_cache():
     assert int3 != int1
     int4 = _random_num()
     assert int4 == int3
+    _random_num.clear_cache()
 
     _random_num_with_arg.clear_cache()
     int1 = _random_num_with_arg('a')
@@ -112,6 +117,7 @@ def test_overwrite_cache():
     assert int3 != int1
     int4 = _random_num_with_arg('a')
     assert int4 == int3
+    _random_num_with_arg.clear_cache()
 
 
 def test_ignore_cache():
@@ -125,6 +131,7 @@ def test_ignore_cache():
     int4 = _random_num()
     assert int4 != int3
     assert int4 == int1
+    _random_num.clear_cache()
 
     _random_num_with_arg.clear_cache()
     int1 = _random_num_with_arg('a')
@@ -135,4 +142,5 @@ def test_ignore_cache():
     int4 = _random_num_with_arg('a')
     assert int4 != int3
     assert int4 == int1
+    _random_num_with_arg.clear_cache()
 

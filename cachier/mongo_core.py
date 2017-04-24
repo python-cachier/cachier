@@ -19,39 +19,37 @@ try:
     )
     from pymongo.errors import OperationFailure
     from bson.binary import Binary  # to save binary data to mongodb
-except ImportError:
+except ImportError: # pragma: no cover
     warnings.warn(
         "Cachier warning: pymongo was not found. MongoDB cores will not work.")
 
 from .base_core import _BaseCore
 
 
-MONGO_SLEEP_DURATION_IN_SEC = 6
+MONGO_SLEEP_DURATION_IN_SEC = 1
 
 
 class _MongoCore(_BaseCore):
+
+    _INDEX_NAME = 'func_1_key_1'
 
     def __init__(self, mongetter, stale_after, next_time):
         _BaseCore.__init__(self, stale_after, next_time)
         self.mongetter = mongetter
         self.mongo_collection = self.mongetter()
-        if '_func_1_key_1' not in self.mongo_collection.index_information():
+        index_inf = self.mongo_collection.index_information()
+        if _MongoCore._INDEX_NAME not in index_inf:
             func1key1 = IndexModel(
-                [('func', ASCENDING), ('key', ASCENDING)],
-                name='_func_1_key_1')
+                keys=[('func', ASCENDING), ('key', ASCENDING)],
+                name=_MongoCore._INDEX_NAME)
             self.mongo_collection.create_indexes([func1key1])
 
     @staticmethod
     def _get_func_str(func):
         return '.{}.{}'.format(func.__module__, func.__name__)
 
-    def _get_mongo_collection(self):
-        if not self.mongo_collection:
-            self.mongo_collection = self.mongetter()
-        return self.mongo_collection
-
     def get_entry_by_key(self, key):
-        res = self._get_mongo_collection().find_one({
+        res = self.mongo_collection.find_one({
             'func': _MongoCore._get_func_str(self.func),
             'key': key
         })
@@ -75,18 +73,16 @@ class _MongoCore(_BaseCore):
 
     def get_entry(self, args, kwds):
         key = pickle.dumps(args + tuple(sorted(kwds.items())))
-        # print('key type={}, key={}'.format(
-        #     type(key), key))
         return self.get_entry_by_key(key)
 
     def set_entry(self, key, func_res):
         thebytes = pickle.dumps(func_res)
-        self._get_mongo_collection().update_one(
-            {
+        self.mongo_collection.update_one(
+            filter={
                 'func': _MongoCore._get_func_str(self.func),
                 'key': key
             },
-            {
+            update={
                 '$set': {
                     'func': _MongoCore._get_func_str(self.func),
                     'key': key,
@@ -100,12 +96,12 @@ class _MongoCore(_BaseCore):
         )
 
     def mark_entry_being_calculated(self, key):
-        self._get_mongo_collection().update_one(
-            {
+        self.mongo_collection.update_one(
+            filter={
                 'func': _MongoCore._get_func_str(self.func),
                 'key': key
             },
-            {
+            update={
                 '$set': {'being_calculated': True}
             },
             upsert=True
@@ -113,12 +109,12 @@ class _MongoCore(_BaseCore):
 
     def mark_entry_not_calculated(self, key):
         try:
-            self._get_mongo_collection().update_one(
-                {
+            self.mongo_collection.update_one(
+                filter={
                     'func': _MongoCore._get_func_str(self.func),
                     'key': key
                 },
-                {
+                update={
                     '$set': {'being_calculated': False}
                 },
                 upsert=False  # should not insert in this case
@@ -132,22 +128,19 @@ class _MongoCore(_BaseCore):
             key, entry = self.get_entry_by_key(key)
             if entry is not None and not entry['being_calculated']:
                 return entry['value']
-        # key, entry = self.get_entry_by_key(key)
-        # if entry is not None:
-        #     return entry['value']
-        # return None
 
     def clear_cache(self):
-        self._get_mongo_collection().delete_many(
-            {'func': _MongoCore._get_func_str(self.func)})
+        self.mongo_collection.delete_many(
+            filter={'func': _MongoCore._get_func_str(self.func)}
+        )
 
     def clear_being_calculated(self):
-        self._get_mongo_collection().update_many(
-            {
+        self.mongo_collection.update_many(
+            filter={
                 'func': _MongoCore._get_func_str(self.func),
                 'being_calculated': True
             },
-            {
+            update={
                 '$set': {'being_calculated': False}
             }
         )
