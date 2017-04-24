@@ -57,7 +57,7 @@ Future features
 * Windows support.
 * S3 core.
 * Multi-core caching.
-.. https://github.com/WoLpH/portalocker
+
 
 Use
 ===

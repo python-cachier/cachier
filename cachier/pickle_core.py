@@ -14,6 +14,7 @@ from datetime import datetime
 
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
+#Altenative:  https://github.com/WoLpH/portalocker
 
 from .base_core import _BaseCore
 
