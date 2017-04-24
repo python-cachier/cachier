@@ -224,12 +224,8 @@ Created by Shay Palachy (shay.palachy@gmail.com).
 
 Contributers (in chronological order of first commit):
 
-* `shaypal5`_ (Shay Palachy)
-* `j-chad`_ (Jackson)
-
-.. Contributer links:
-.. _shaypal5: https://github.com/shaypal5
-.. _j-chad: https://github.com/j-chad
+* `shaypal5 <https://github.com/shaypal5>`_ (Shay Palachy)
+* `j-chad <https://github.com/j-chad>`_ (Jackson)
 
 
 
