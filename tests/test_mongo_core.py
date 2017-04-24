@@ -1,5 +1,6 @@
 """Testing the MongoDB core of cachier."""
 
+import sys
 from random import random
 from datetime import timedelta
 from time import sleep
@@ -30,10 +31,16 @@ def _get_cachier_db_mongo_client():
     return client
 
 
+_COLLECTION_NAME = 'cachier_test{}.{}.{}'.format(
+    sys.version_info[0], sys.version_info[1], sys.version_info[2])
+
 def _test_mongetter():
     if not hasattr(_test_mongetter, 'client'):
         _test_mongetter.client = _get_cachier_db_mongo_client()
-    return _test_mongetter.client['cachier_test']['cachier_test']
+    db_obj = _test_mongetter.client['cachier_test']
+    if not _COLLECTION_NAME in db_obj.collection_names():
+        db_obj.create_collection(_COLLECTION_NAME)
+    return db_obj[_COLLECTION_NAME]
 
 
 # === Mongo core tests ===
