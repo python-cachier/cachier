@@ -5,7 +5,10 @@ from random import random
 from datetime import timedelta
 from time import sleep
 import threading
-import queue
+try:
+    import queue
+except ImportError: # python 2
+    import Queue as queue
 
 import pytest
 from pymongo.mongo_client import MongoClient
