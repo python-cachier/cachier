@@ -23,6 +23,7 @@ except ImportError:  # we're in python 2.x
     if 'futures' not in PACKAGES:
         pip.main(['install', 'futures'])
     from concurrent.futures import ThreadPoolExecutor
+    from __future__ import print_function
 
 from .pickle_core import _PickleCore
 from .mongo_core import _MongoCore
