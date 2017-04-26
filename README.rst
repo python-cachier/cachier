@@ -1,7 +1,7 @@
 Cachier
 #######
 
-|PyPI-Status| |PyPI-Versions| |Build-Status| |LICENCE|
+|PyPI-Status| |PyPI-Versions| |Build-Status| |Codecov| |LICENCE|
 
 Persistent, stale-free, local and cross-machine caching for Python functions.
 
