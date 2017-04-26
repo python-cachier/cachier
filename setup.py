@@ -43,7 +43,7 @@ setup(
     extras_require={
         'test': TEST_REQUIRES
     },
-    platforms=['linux', 'osx'],
+    platforms=['linux', 'osx', 'windows'],
     keywords=['cache', 'persistence', 'mongo', 'memoization', 'decorator'],
     classifiers=[
         # Trove classifiers
