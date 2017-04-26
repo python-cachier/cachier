@@ -251,7 +251,7 @@ def test_bad_cache_file():
     res1 = res_queue.get()
     assert isinstance(res1, float)
     res2 = res_queue.get()
-    assert res2 is None
+    assert (res2 is None) or isinstance(res2, KeyError)
 
 
 @cachier()
