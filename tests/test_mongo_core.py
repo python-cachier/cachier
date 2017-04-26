@@ -101,7 +101,7 @@ def test_mongo_stale_after():
 @cachier(mongetter=_test_mongetter)
 def _takes_time(arg_1, arg_2):
     """Some function."""
-    sleep(2)
+    sleep(3)
     return random() + arg_1 + arg_2
 
 def _calls_takes_time(res_queue):
@@ -117,7 +117,7 @@ def test_mongo_being_calculated():
     thread2 = threading.Thread(
         target=_calls_takes_time, kwargs={'res_queue': res_queue})
     thread1.start()
-    sleep(0.5)
+    sleep(1)
     thread2.start()
     thread1.join()
     thread2.join()
