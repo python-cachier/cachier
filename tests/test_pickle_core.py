@@ -298,7 +298,7 @@ def test_delete_cache_file():
     # print(res1)
     assert isinstance(res1, float)
     res2 = res_queue.get()
-    assert isinstance(res2, KeyError)
+    assert isinstance(res2, KeyError) or (res2 is None)
     # print(res2)
     # print(type(res2))
 
