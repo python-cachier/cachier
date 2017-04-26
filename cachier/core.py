@@ -33,19 +33,21 @@ from .pickle_core import _PickleCore
 from .mongo_core import _MongoCore
 
 
+
+MAX_WORKERS_ENVAR_NAME = 'CACHIER_MAX_WORKERS'
 DEFAULT_MAX_WORKERS = 8
 
 
 def _max_workers():
     try:
-        return int(os.environ['CACHIER_MAX_WORKERS'])
+        return int(os.environ[MAX_WORKERS_ENVAR_NAME])
     except KeyError:
-        os.environ['CACHIER_MAX_WORKERS'] = str(DEFAULT_MAX_WORKERS)
+        os.environ[MAX_WORKERS_ENVAR_NAME] = str(DEFAULT_MAX_WORKERS)
         return DEFAULT_MAX_WORKERS
 
 
-def _set_max_workets(max_workers):
-    os.environ['CACHIER_MAX_WORKERS'] = str(max_workers)
+def _set_max_workers(max_workers):
+    os.environ[MAX_WORKERS_ENVAR_NAME] = str(max_workers)
     _get_executor(True)
 
 

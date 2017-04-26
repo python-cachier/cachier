@@ -4,6 +4,7 @@ omit =
     tests/*
     cachier/_version.py
     cachier/__init__.py
+    **/scripts/**
 [report]
 show_missing = True
 # Regexes for lines to exclude from consideration

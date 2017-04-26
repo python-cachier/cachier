@@ -1,7 +1,10 @@
+"""Configuration file for pytest."""
 
 import pytest
+import shutil
 
 from .test_mongo_core import _test_mongetter
+from cachier.pickle_core import EXPANDED_CACHIER_DIR
 
 
 def mongo_finalizer():
@@ -14,5 +17,6 @@ def mongo_finalizer():
 
 @pytest.fixture(scope="session", autouse=True)
 def do_something(request):
-    """Sessions-scopre pytest hook."""
+    """Session-scope pytest hook."""
+    shutil.rmtree(EXPANDED_CACHIER_DIR)
     request.addfinalizer(mongo_finalizer)

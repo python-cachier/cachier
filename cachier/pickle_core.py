@@ -9,9 +9,10 @@
 
 import os
 import pickle  # for local caching
-import fcntl  # to lock on pickle cache IO
 from datetime import datetime
+import threading
 
+import portalocker  # to lock on pickle cache IO
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 #Altenative:  https://github.com/WoLpH/portalocker
@@ -50,14 +51,19 @@ class _PickleCore(_BaseCore):
             entry = self.core.get_entry_by_key(self.key, True)[1]
             # print(self.key)
             # print(entry)
-            if not entry['being_calculated']:
-                # print('stoping observer!')
-                self.value = entry['value']
+            try:
+                if not entry['being_calculated']:
+                    # print('stoping observer!')
+                    self.value = entry['value']
+                    self.observer.stop()
+                # else:
+                    # print('NOT stoping observer... :(')
+            except TypeError:
+                self.value = None
                 self.observer.stop()
-            # print('NOT stoping observer... :(')
 
         def on_created(self, event):
-            self._check_calculation()
+            self._check_calculation() # pragma: no cover
 
         def on_modified(self, event):
             self._check_calculation()
@@ -66,6 +72,7 @@ class _PickleCore(_BaseCore):
         _BaseCore.__init__(self, stale_after, next_time)
         self.cache = None
         self.reload = reload
+        self.lock = threading.RLock()
 
     def _cache_fname(self):
         if not hasattr(self, 'cache_fname'):
@@ -85,37 +92,37 @@ class _PickleCore(_BaseCore):
         return self.cache_fpath
 
     def _reload_cache(self):
-        fpath = self._cache_fpath()
-        try:
-            with open(fpath, 'rb') as cache_file:
-                fcntl.flock(cache_file, fcntl.LOCK_SH)
-                try:
-                    self.cache = pickle.load(cache_file)
-                except EOFError:
-                    self.cache = {}
-                fcntl.flock(cache_file, fcntl.LOCK_UN)
-        except FileNotFoundError:
-            self.cache = {}
+        with self.lock:
+            fpath = self._cache_fpath()
+            try:
+                with portalocker.Lock(fpath, mode='rb') as cache_file:
+                    try:
+                        self.cache = pickle.load(cache_file)
+                    except EOFError:
+                        self.cache = {}
+            except FileNotFoundError:
+                self.cache = {}
 
     def _get_cache(self):
-        if not self.cache:
-            self._reload_cache()
-        return self.cache
+        with self.lock:
+            if not self.cache:
+                self._reload_cache()
+            return self.cache
 
     def _save_cache(self, cache):
-        self.cache = cache
-        fpath = self._cache_fpath()
-        with open(fpath, 'wb') as cache_file:
-            fcntl.flock(cache_file, fcntl.LOCK_EX)
-            pickle.dump(cache, cache_file)
-            fcntl.flock(cache_file, fcntl.LOCK_UN)
-        self._reload_cache()
+        with self.lock:
+            self.cache = cache
+            fpath = self._cache_fpath()
+            with portalocker.Lock(fpath, mode='wb') as cache_file:
+                pickle.dump(cache, cache_file)
+            self._reload_cache()
 
     def get_entry_by_key(self, key, reload=False):  # pylint: disable=W0221
-        # print('{}, {}'.format(self.reload, reload))
-        if self.reload or reload:
-            self._reload_cache()
-        return key, self._get_cache().get(key, None)
+        with self.lock:
+            # print('{}, {}'.format(self.reload, reload))
+            if self.reload or reload:
+                self._reload_cache()
+            return key, self._get_cache().get(key, None)
 
     def get_entry(self, args, kwds):
         key = args + tuple(sorted(kwds.items()))
@@ -123,40 +130,45 @@ class _PickleCore(_BaseCore):
         return self.get_entry_by_key(key)
 
     def set_entry(self, key, func_res):
-        cache = self._get_cache()
-        cache[key] = {
-            'value': func_res,
-            'time': datetime.now(),
-            'stale': False,
-            'being_calculated': False
-        }
-        self._save_cache(cache)
-
-    def mark_entry_being_calculated(self, key):
-        cache = self._get_cache()
-        try:
-            cache[key]['being_calculated'] = True
-        except KeyError:
+        with self.lock:
+            cache = self._get_cache()
             cache[key] = {
-                'value': None,
+                'value': func_res,
                 'time': datetime.now(),
                 'stale': False,
-                'being_calculated': True
+                'being_calculated': False
             }
-        self._save_cache(cache)
+            self._save_cache(cache)
+
+    def mark_entry_being_calculated(self, key):
+        with self.lock:
+            cache = self._get_cache()
+            try:
+                cache[key]['being_calculated'] = True
+            except KeyError:
+                cache[key] = {
+                    'value': None,
+                    'time': datetime.now(),
+                    'stale': False,
+                    'being_calculated': True
+                }
+            self._save_cache(cache)
 
     def mark_entry_not_calculated(self, key):
-        cache = self._get_cache()
-        try:
-            cache[key]['being_calculated'] = False
-            self._save_cache(cache)
-        except KeyError:
-            pass  # that's ok, we don't need an entry in that case
+        with self.lock:
+            cache = self._get_cache()
+            try:
+                cache[key]['being_calculated'] = False
+                self._save_cache(cache)
+            except KeyError:
+                pass  # that's ok, we don't need an entry in that case
 
     def wait_on_entry_calc(self, key):
-        entry = self._get_cache()[key]
-        if not entry['being_calculated']:
-            return entry['value']
+        with self.lock:
+            self._reload_cache()
+            entry = self._get_cache()[key]
+            if not entry['being_calculated']:
+                return entry['value']
         event_handler = _PickleCore.CacheChangeHandler(
             filename=self._cache_fname(),
             core=self,
@@ -170,7 +182,7 @@ class _PickleCore(_BaseCore):
             recursive=True
         )
         observer.start()
-        observer.join(timeout=2.0)
+        observer.join(timeout=1.0)
         if observer.isAlive():
             # print('Timedout waiting. Starting again...')
             return self.wait_on_entry_calc(key)
@@ -181,7 +193,8 @@ class _PickleCore(_BaseCore):
         self._save_cache({})
 
     def clear_being_calculated(self):
-        cache = self._get_cache()
-        for key in cache:
-            cache[key]['being_calculated'] = False
-        self._save_cache(cache)
+        with self.lock:
+            cache = self._get_cache()
+            for key in cache:
+                cache[key]['being_calculated'] = False
+            self._save_cache(cache)

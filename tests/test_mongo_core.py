@@ -117,6 +117,7 @@ def test_mongo_being_calculated():
     thread2 = threading.Thread(
         target=_calls_takes_time, kwargs={'res_queue': res_queue})
     thread1.start()
+    sleep(0.5)
     thread2.start()
     thread1.join()
     thread2.join()

@@ -33,6 +33,10 @@ setup(
     author_email='shay.palachy@gmail.com',
     url='https://github.com/shaypal5/cachier',
     packages=['cachier'],
+    entry_points='''
+        [console_scripts]
+        cachier=cachier.scripts.cli:cli
+    ''',
     install_requires=[
         'watchdog'
     ],
