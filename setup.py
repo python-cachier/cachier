@@ -38,7 +38,7 @@ setup(
         cachier=cachier.scripts.cli:cli
     ''',
     install_requires=[
-        'watchdog'
+        'watchdog', 'portalocker'
     ],
     extras_require={
         'test': TEST_REQUIRES

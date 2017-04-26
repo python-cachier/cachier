@@ -19,6 +19,11 @@ from watchdog.events import PatternMatchingEventHandler
 
 from .base_core import _BaseCore
 
+try:
+    FileNotFoundError
+except NameError:  # we're on python 2
+    FileNotFoundError = IOError
+
 
 CACHIER_DIR = '~/.cachier/'
 EXPANDED_CACHIER_DIR = os.path.expanduser(CACHIER_DIR)
