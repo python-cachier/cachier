@@ -18,7 +18,7 @@ BaseCoverageException	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/cove
 BaseCoverageException	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/misc.py	/^class BaseCoverageException(Exception):$/;"	kind:class	line:262
 Binary	../cachier/mongo_core.py	/^    from bson.binary import Binary  # to save binary data to mongodb$/;"	kind:namespace	line:21
 ByteParser	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/parser.py	/^class ByteParser(object):$/;"	kind:class	line:354
-CACHIER_DIR	../cachier/pickle_core.py	/^CACHIER_DIR = '~\/.cachier\/'$/;"	kind:variable	line:23
+CACHIER_DIR	../cachier/pickle_core.py	/^CACHIER_DIR = '~\/.cachier\/'$/;"	kind:variable	line:28
 CANONICAL_FILENAME_CACHE	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/files.py	/^CANONICAL_FILENAME_CACHE = None$/;"	kind:variable	line:165
 CFileDisposition	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/collector.py	/^    from coverage.tracer import CTracer, CFileDisposition$/;"	kind:namespace	line:20
 CMDS	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/cmdline.py	/^CMDS = {$/;"	kind:variable	line:261
@@ -31,7 +31,7 @@ CTracer	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/collector
 CTracer	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/collector.py	/^    CTracer = None$/;"	kind:variable	line:32
 CTracer	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/collector.py	/^    from coverage.tracer import CTracer, CFileDisposition$/;"	kind:namespace	line:20
 C_TRACER	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/env.py	/^C_TRACER = os.getenv('COVERAGE_TEST_TRACER', 'c') == 'c'$/;"	kind:variable	line:30
-CacheChangeHandler	../cachier/pickle_core.py	/^    class CacheChangeHandler(PatternMatchingEventHandler):$/;"	kind:class	line:29
+CacheChangeHandler	../cachier/pickle_core.py	/^    class CacheChangeHandler(PatternMatchingEventHandler):$/;"	kind:class	line:34
 CachedTokenizer	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/phystokens.py	/^class CachedTokenizer(object):$/;"	kind:class	line:127
 Central	../.eggs/pytest_cov-2.4.0-py2.7.egg/pytest_cov/engine.py	/^class Central(CovController):$/;"	kind:class	line:130
 CmdOptionParser	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/cmdline.py	/^class CmdOptionParser(CoverageOptionParser):$/;"	kind:class	line:217
@@ -91,7 +91,7 @@ DebugPluginWrapper	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverag
 DistMaster	../.eggs/pytest_cov-2.4.0-py2.7.egg/pytest_cov/engine.py	/^class DistMaster(CovController):$/;"	kind:class	line:156
 DistSlave	../.eggs/pytest_cov-2.4.0-py2.7.egg/pytest_cov/engine.py	/^class DistSlave(CovController):$/;"	kind:class	line:228
 DummyLoader	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/execfile.py	/^class DummyLoader(object):$/;"	kind:class	line:20
-EXPANDED_CACHIER_DIR	../cachier/pickle_core.py	/^EXPANDED_CACHIER_DIR = os.path.expanduser(CACHIER_DIR)$/;"	kind:variable	line:24
+EXPANDED_CACHIER_DIR	../cachier/pickle_core.py	/^EXPANDED_CACHIER_DIR = os.path.expanduser(CACHIER_DIR)$/;"	kind:variable	line:29
 EXPANDED_CACHIER_DIR	../tests/conftest.py	/^from cachier.pickle_core import EXPANDED_CACHIER_DIR$/;"	kind:namespace	line:7
 EXPANDED_CACHIER_DIR	../tests/test_pickle_core.py	/^from cachier.pickle_core import EXPANDED_CACHIER_DIR$/;"	kind:namespace	line:28
 ExceptionDuringRun	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/cmdline.py	/^from coverage.misc import BaseCoverageException, ExceptionDuringRun, NoSource$/;"	kind:namespace	line:17
@@ -99,6 +99,7 @@ ExceptionDuringRun	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverag
 ExceptionDuringRun	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/misc.py	/^class ExceptionDuringRun(CoverageException):$/;"	kind:class	line:287
 FORCED_DEBUG	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/debug.py	/^FORCED_DEBUG = []$/;"	kind:variable	line:25
 FileDisposition	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/collector.py	/^class FileDisposition(object):$/;"	kind:class	line:35
+FileNotFoundError	../cachier/pickle_core.py	/^    FileNotFoundError = IOError$/;"	kind:variable	line:25
 FileReporter	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/__init__.py	/^from coverage.plugin import CoveragePlugin, FileTracer, FileReporter$/;"	kind:namespace	line:17
 FileReporter	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/control.py	/^from coverage.plugin import FileReporter$/;"	kind:namespace	line:30
 FileReporter	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/plugin.py	/^class FileReporter(object):$/;"	kind:class	line:197
@@ -243,23 +244,23 @@ YIELD_VALUE	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/pytra
 YIELD_VALUE	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/pytracer.py	/^YIELD_VALUE = dis.opmap['YIELD_VALUE']$/;"	kind:variable	line:13
 _ACTUAL_PATH_CACHE	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/files.py	/^    _ACTUAL_PATH_CACHE = {}$/;"	kind:variable	line:94
 _ACTUAL_PATH_LIST_CACHE	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/files.py	/^    _ACTUAL_PATH_LIST_CACHE = {}$/;"	kind:variable	line:95
-_BAD_CACHE_FNAME	../tests/test_pickle_core.py	/^_BAD_CACHE_FNAME = '.tests.test_pickle_core._bad_cache'$/;"	kind:variable	line:218
-_BAD_CACHE_FPATH	../tests/test_pickle_core.py	/^_BAD_CACHE_FPATH = os.path.join(EXPANDED_CACHIER_DIR, _BAD_CACHE_FNAME)$/;"	kind:variable	line:219
+_BAD_CACHE_FNAME	../tests/test_pickle_core.py	/^_BAD_CACHE_FNAME = '.tests.test_pickle_core._bad_cache'$/;"	kind:variable	line:221
+_BAD_CACHE_FPATH	../tests/test_pickle_core.py	/^_BAD_CACHE_FPATH = os.path.join(EXPANDED_CACHIER_DIR, _BAD_CACHE_FNAME)$/;"	kind:variable	line:222
 _BadMongoCollection	../tests/test_mongo_core.py	/^class _BadMongoCollection:$/;"	kind:class	line:130
 _BaseCore	../cachier/base_core.py	/^class _BaseCore(object):$/;"	kind:class	line:11
 _BaseCore	../cachier/base_core.py	/^import abc  # for the _BaseCore abstract base class$/;"	kind:namespace	line:9
 _BaseCore	../cachier/mongo_core.py	/^from .base_core import _BaseCore$/;"	kind:namespace	line:26
 _BaseCore	../cachier/pickle_core.py	/^from .base_core import _BaseCore$/;"	kind:namespace	line:20
 _COLLECTION_NAME	../tests/test_mongo_core.py	/^_COLLECTION_NAME = 'cachier_test{}.{}.{}'.format($/;"	kind:variable	line:37
-_DEL_CACHE_FNAME	../tests/test_pickle_core.py	/^_DEL_CACHE_FNAME = '.tests.test_pickle_core._delete_cache'$/;"	kind:variable	line:261
-_DEL_CACHE_FPATH	../tests/test_pickle_core.py	/^_DEL_CACHE_FPATH = os.path.join(EXPANDED_CACHIER_DIR, _DEL_CACHE_FNAME)$/;"	kind:variable	line:262
+_DEL_CACHE_FNAME	../tests/test_pickle_core.py	/^_DEL_CACHE_FNAME = '.tests.test_pickle_core._delete_cache'$/;"	kind:variable	line:264
+_DEL_CACHE_FPATH	../tests/test_pickle_core.py	/^_DEL_CACHE_FPATH = os.path.join(EXPANDED_CACHIER_DIR, _DEL_CACHE_FNAME)$/;"	kind:variable	line:265
 _GO_AWAY	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/data.py	/^    _GO_AWAY = "!coverage.py: This is a private format, don't read it directly!"$/;"	kind:variable	line:301
 _INDEX_NAME	../cachier/mongo_core.py	/^    _INDEX_NAME = 'func_1_key_1'$/;"	kind:variable	line:34
 _MongoCore	../cachier/core.py	/^from .mongo_core import _MongoCore$/;"	kind:namespace	line:33
 _MongoCore	../cachier/mongo_core.py	/^class _MongoCore(_BaseCore):$/;"	kind:class	line:32
 _MongoCore	../tests/test_mongo_core.py	/^from cachier.mongo_core import _MongoCore$/;"	kind:namespace	line:18
 _PickleCore	../cachier/core.py	/^from .pickle_core import _PickleCore$/;"	kind:namespace	line:32
-_PickleCore	../cachier/pickle_core.py	/^class _PickleCore(_BaseCore):$/;"	kind:class	line:27
+_PickleCore	../cachier/pickle_core.py	/^class _PickleCore(_BaseCore):$/;"	kind:class	line:32
 _TEST_HOST	../tests/test_mongo_core.py	/^_TEST_HOST = 'ds119508.mlab.com'$/;"	kind:variable	line:21
 _TEST_NAME_FILE	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/data.py	/^from coverage.debug import _TEST_NAME_FILE$/;"	kind:namespace	line:18
 _TEST_NAME_FILE	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/debug.py	/^_TEST_NAME_FILE = ""    # "\/tmp\/covtest.txt"$/;"	kind:variable	line:28
@@ -332,8 +333,8 @@ __init__	../.eggs/pytest_cov-2.4.0-py2.7.egg/pytest_cov/engine.py	/^    def __in
 __init__	../.eggs/pytest_cov-2.4.0-py2.7.egg/pytest_cov/plugin.py	/^    def __init__(self, options, pluginmanager, start=True):$/;"	kind:member	line:121
 __init__	../cachier/base_core.py	/^    def __init__(self, stale_after, next_time):$/;"	kind:member	line:14
 __init__	../cachier/mongo_core.py	/^    def __init__(self, mongetter, stale_after, next_time):$/;"	kind:member	line:36
-__init__	../cachier/pickle_core.py	/^        def __init__(self, filename, core, key):$/;"	kind:member	line:32
-__init__	../cachier/pickle_core.py	/^    def __init__(self, stale_after, next_time, reload):$/;"	kind:member	line:71
+__init__	../cachier/pickle_core.py	/^        def __init__(self, filename, core, key):$/;"	kind:member	line:37
+__init__	../cachier/pickle_core.py	/^    def __init__(self, stale_after, next_time, reload):$/;"	kind:member	line:76
 __init__	../tests/test_mongo_core.py	/^    def __init__(self, mongetter):$/;"	kind:member	line:132
 __init__.py	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/__init__.py	1;"	kind:file	line:1
 __init__.py	../.eggs/pytest_cov-2.4.0-py2.7.egg/pytest_cov/__init__.py	1;"	kind:file	line:1
@@ -376,7 +377,7 @@ _add_plugin	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/plugi
 _analyze	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/control.py	/^    def _analyze(self, it):$/;"	kind:member	line:929
 _analyze_ast	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/parser.py	/^    def _analyze_ast(self):$/;"	kind:member	line:267
 _atexit	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/control.py	/^    def _atexit(self):$/;"	kind:member	line:701
-_bad_cache	../tests/test_pickle_core.py	/^def _bad_cache(arg_1, arg_2):$/;"	kind:function	line:212
+_bad_cache	../tests/test_pickle_core.py	/^def _bad_cache(arg_1, arg_2):$/;"	kind:function	line:215
 _bad_mongetter	../tests/test_mongo_core.py	/^def _bad_mongetter():$/;"	kind:function	line:147
 _being_calc_next_time	../tests/test_pickle_core.py	/^def _being_calc_next_time(arg_1, arg_2):$/;"	kind:function	line:184
 _bootstrap	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/multiproc.py	/^    def _bootstrap(self):$/;"	kind:member	line:31
@@ -384,17 +385,17 @@ _build_exe	../versioneer.py	/^        from cx_Freeze.dist import build_exe as _b
 _build_py	../versioneer.py	/^        from distutils.command.build_py import build_py as _build_py$/;"	kind:namespace	line:1532
 _build_py	../versioneer.py	/^        from setuptools.command.build_py import build_py as _build_py$/;"	kind:namespace	line:1530
 _bytes_lines	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/parser.py	/^    def _bytes_lines(self):$/;"	kind:member	line:390
-_cache_fname	../cachier/pickle_core.py	/^    def _cache_fname(self):$/;"	kind:member	line:77
-_cache_fpath	../cachier/pickle_core.py	/^    def _cache_fpath(self):$/;"	kind:member	line:83
+_cache_fname	../cachier/pickle_core.py	/^    def _cache_fname(self):$/;"	kind:member	line:82
+_cache_fpath	../cachier/pickle_core.py	/^    def _cache_fpath(self):$/;"	kind:member	line:88
 _cachier_decorator	../cachier/core.py	/^    def _cachier_decorator(func):$/;"	kind:function	line:129
 _calc_entry	../cachier/core.py	/^def _calc_entry(core, key, func, args, kwds):$/;"	kind:function	line:74
-_calls_bad_cache	../tests/test_pickle_core.py	/^def _calls_bad_cache(res_queue, trash_cache):$/;"	kind:function	line:221
-_calls_being_calc_next_time	../tests/test_pickle_core.py	/^def _calls_being_calc_next_time(res_queue):$/;"	kind:function	line:188
-_calls_delete_cache	../tests/test_pickle_core.py	/^def _calls_delete_cache(res_queue, del_cache):$/;"	kind:function	line:264
+_calls_bad_cache	../tests/test_pickle_core.py	/^def _calls_bad_cache(res_queue, trash_cache):$/;"	kind:function	line:224
+_calls_being_calc_next_time	../tests/test_pickle_core.py	/^def _calls_being_calc_next_time(res_queue):$/;"	kind:function	line:189
+_calls_delete_cache	../tests/test_pickle_core.py	/^def _calls_delete_cache(res_queue, del_cache):$/;"	kind:function	line:267
 _calls_takes_time	../tests/test_mongo_core.py	/^def _calls_takes_time(res_queue):$/;"	kind:function	line:107
 _calls_takes_time	../tests/test_pickle_core.py	/^def _calls_takes_time(res_queue):$/;"	kind:function	line:160
 _canonical_path	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/control.py	/^    def _canonical_path(self, morf, directory=False):$/;"	kind:member	line:376
-_check_calculation	../cachier/pickle_core.py	/^        def _check_calculation(self):$/;"	kind:member	line:49
+_check_calculation	../cachier/pickle_core.py	/^        def _check_calculation(self):$/;"	kind:member	line:54
 _check_include_omit_etc	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/control.py	/^    def _check_include_omit_etc(self, filename, frame):$/;"	kind:member	line:590
 _check_include_omit_etc_internal	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/control.py	/^    def _check_include_omit_etc_internal(self, filename, frame):$/;"	kind:member	line:537
 _clear_data	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/collector.py	/^    def _clear_data(self):$/;"	kind:member	line:165
@@ -411,11 +412,11 @@ _collectors	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/colle
 _combine_finally_starts	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/parser.py	/^    def _combine_finally_starts(self, starts, exits):$/;"	kind:member	line:995
 _decorator	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/misc.py	/^        def _decorator(func):$/;"	kind:function	line:70
 _decorator	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/misc.py	/^    def _decorator(func):$/;"	kind:function	line:43
-_delete_cache	../tests/test_pickle_core.py	/^def _delete_cache(arg_1, arg_2):$/;"	kind:function	line:255
+_delete_cache	../tests/test_pickle_core.py	/^def _delete_cache(arg_1, arg_2):$/;"	kind:function	line:258
 _disposition_debug_msg	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/control.py	/^def _disposition_debug_msg(disp):$/;"	kind:function	line:1192
 _disposition_init	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/control.py	/^def _disposition_init(cls, original_filename):$/;"	kind:function	line:1179
 _do_dots	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/templite.py	/^    def _do_dots(self, value, *dots):$/;"	kind:member	line:277
-_error_throwing_func	../tests/test_pickle_core.py	/^def _error_throwing_func(arg1):$/;"	kind:function	line:307
+_error_throwing_func	../tests/test_pickle_core.py	/^def _error_throwing_func(arg1):$/;"	kind:function	line:310
 _exclude_regex	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/control.py	/^    def _exclude_regex(self, which):$/;"	kind:member	line:752
 _exclude_regex_stale	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/control.py	/^    def _exclude_regex_stale(self):$/;"	kind:member	line:748
 _expr_code	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/templite.py	/^    def _expr_code(self, expr):$/;"	kind:member	line:231
@@ -425,7 +426,7 @@ _find_statements	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/
 _find_unexecuted_files	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/control.py	/^    def _find_unexecuted_files(self, src_dir):$/;"	kind:member	line:878
 _func_w_bad_mongo	../tests/test_mongo_core.py	/^def _func_w_bad_mongo(arg_1, arg_2):$/;"	kind:function	line:151
 _function_thread	../cachier/core.py	/^def _function_thread(core, key, func, args, kwds):$/;"	kind:function	line:64
-_get_cache	../cachier/pickle_core.py	/^    def _get_cache(self):$/;"	kind:member	line:106
+_get_cache	../cachier/pickle_core.py	/^    def _get_cache(self):$/;"	kind:member	line:111
 _get_cachier_db_mongo_client	../tests/test_mongo_core.py	/^def _get_cachier_db_mongo_client():$/;"	kind:function	line:27
 _get_executor	../cachier/core.py	/^def _get_executor(reset=False):$/;"	kind:function	line:54
 _get_file_reporter	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/control.py	/^    def _get_file_reporter(self, morf):$/;"	kind:member	line:941
@@ -481,8 +482,8 @@ _random_num_with_arg	../tests/test_pickle_core.py	/^def _random_num_with_arg(a):
 _raw_parse	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/parser.py	/^    def _raw_parse(self):$/;"	kind:member	line:118
 _read_raw_data	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/data.py	/^    def _read_raw_data(cls, file_obj):$/;"	kind:member	line:309
 _read_raw_data_file	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/data.py	/^    def _read_raw_data_file(cls, filename):$/;"	kind:member	line:317
-_reload_cache	../cachier/pickle_core.py	/^    def _reload_cache(self):$/;"	kind:member	line:94
-_save_cache	../cachier/pickle_core.py	/^    def _save_cache(self, cache):$/;"	kind:member	line:112
+_reload_cache	../cachier/pickle_core.py	/^    def _reload_cache(self):$/;"	kind:member	line:99
+_save_cache	../cachier/pickle_core.py	/^    def _save_cache(self, cache):$/;"	kind:member	line:117
 _sdist	../versioneer.py	/^        from distutils.command.sdist import sdist as _sdist$/;"	kind:namespace	line:1579
 _sdist	../versioneer.py	/^        from setuptools.command.sdist import sdist as _sdist$/;"	kind:namespace	line:1577
 _set_attr_from_config_option	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/config.py	/^    def _set_attr_from_config_option(self, cp, attr, where, type_=''):$/;"	kind:member	line:319
@@ -613,11 +614,11 @@ classifiers	../setup.py	/^    classifiers=[$/;"	kind:variable	line:48
 clear_being_calculated	../cachier/base_core.py	/^    def clear_being_calculated(self):$/;"	kind:member	line:56
 clear_being_calculated	../cachier/core.py	/^        def clear_being_calculated():$/;"	kind:function	line:184
 clear_being_calculated	../cachier/mongo_core.py	/^    def clear_being_calculated(self):$/;"	kind:member	line:137
-clear_being_calculated	../cachier/pickle_core.py	/^    def clear_being_calculated(self):$/;"	kind:member	line:195
+clear_being_calculated	../cachier/pickle_core.py	/^    def clear_being_calculated(self):$/;"	kind:member	line:200
 clear_cache	../cachier/base_core.py	/^    def clear_cache(self):$/;"	kind:member	line:52
 clear_cache	../cachier/core.py	/^        def clear_cache():$/;"	kind:function	line:180
 clear_cache	../cachier/mongo_core.py	/^    def clear_cache(self):$/;"	kind:member	line:132
-clear_cache	../cachier/pickle_core.py	/^    def clear_cache(self):$/;"	kind:member	line:192
+clear_cache	../cachier/pickle_core.py	/^    def clear_cache(self):$/;"	kind:member	line:197
 clear_exclude	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/control.py	/^    def clear_exclude(self, which='exclude'):$/;"	kind:member	line:722
 cli	../cachier/scripts/cli.py	/^def cli():$/;"	kind:function	line:9
 cli.py	../cachier/scripts/cli.py	1;"	kind:file	line:1
@@ -822,10 +823,10 @@ get_config_from_root	../versioneer.py	/^def get_config_from_root(root):$/;"	kind
 get_data	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/control.py	/^    def get_data(self):$/;"	kind:member	line:812
 get_entry	../cachier/base_core.py	/^    def get_entry(self, args, kwds):$/;"	kind:member	line:30
 get_entry	../cachier/mongo_core.py	/^    def get_entry(self, args, kwds):$/;"	kind:member	line:74
-get_entry	../cachier/pickle_core.py	/^    def get_entry(self, args, kwds):$/;"	kind:member	line:127
+get_entry	../cachier/pickle_core.py	/^    def get_entry(self, args, kwds):$/;"	kind:member	line:132
 get_entry_by_key	../cachier/base_core.py	/^    def get_entry_by_key(self, key):$/;"	kind:member	line:25
 get_entry_by_key	../cachier/mongo_core.py	/^    def get_entry_by_key(self, key):$/;"	kind:member	line:51
-get_entry_by_key	../cachier/pickle_core.py	/^    def get_entry_by_key(self, key, reload=False):  # pylint: disable=W0221$/;"	kind:member	line:120
+get_entry_by_key	../cachier/pickle_core.py	/^    def get_entry_by_key(self, key, reload=False):  # pylint: disable=W0221$/;"	kind:member	line:125
 get_exclude_list	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/control.py	/^    def get_exclude_list(self, which='exclude'):$/;"	kind:member	line:759
 get_globals	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/templite.py	/^    def get_globals(self):$/;"	kind:member	line:62
 get_keywords	../cachier/_version.py	/^def get_keywords():$/;"	kind:function	line:20
@@ -942,7 +943,7 @@ info_header	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/debug
 init	../.eggs/pytest_cov-2.4.0-py2.7.egg/pytest_cov/embed.py	/^def init():$/;"	kind:function	line:38
 init_args	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/results.py	/^    def init_args(self):$/;"	kind:member	line:184
 initialize_options	../versioneer.py	/^        def initialize_options(self):$/;"	kind:member	line:1503
-inject_observer	../cachier/pickle_core.py	/^        def inject_observer(self, observer):$/;"	kind:member	line:45
+inject_observer	../cachier/pickle_core.py	/^        def inject_observer(self, observer):$/;"	kind:member	line:50
 inspect	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/control.py	/^import inspect$/;"	kind:namespace	line:8
 inspect	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/debug.py	/^import inspect$/;"	kind:namespace	line:7
 inspect	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/misc.py	/^import inspect$/;"	kind:namespace	line:8
@@ -1004,10 +1005,10 @@ make_release_tree	../versioneer.py	/^        def make_release_tree(self, base_di
 map	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/files.py	/^    def map(self, path):$/;"	kind:member	line:347
 mark_entry_being_calculated	../cachier/base_core.py	/^    def mark_entry_being_calculated(self, key):$/;"	kind:member	line:39
 mark_entry_being_calculated	../cachier/mongo_core.py	/^    def mark_entry_being_calculated(self, key):$/;"	kind:member	line:98
-mark_entry_being_calculated	../cachier/pickle_core.py	/^    def mark_entry_being_calculated(self, key):$/;"	kind:member	line:143
+mark_entry_being_calculated	../cachier/pickle_core.py	/^    def mark_entry_being_calculated(self, key):$/;"	kind:member	line:148
 mark_entry_not_calculated	../cachier/base_core.py	/^    def mark_entry_not_calculated(self, key):$/;"	kind:member	line:43
 mark_entry_not_calculated	../cachier/mongo_core.py	/^    def mark_entry_not_calculated(self, key):$/;"	kind:member	line:110
-mark_entry_not_calculated	../cachier/pickle_core.py	/^    def mark_entry_not_calculated(self, key):$/;"	kind:member	line:157
+mark_entry_not_calculated	../cachier/pickle_core.py	/^    def mark_entry_not_calculated(self, key):$/;"	kind:member	line:162
 marshal	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/execfile.py	/^import marshal$/;"	kind:namespace	line:6
 match	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/files.py	/^    def match(self, fpath):$/;"	kind:member	line:211
 match	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/files.py	/^    def match(self, fpath):$/;"	kind:member	line:275
@@ -1056,8 +1057,8 @@ of	../cachier/mongo_core.py	/^import pickle  # for serialization of python objec
 omit	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/cmdline.py	/^    omit = optparse.make_option($/;"	kind:variable	line:86
 on	../cachier/mongo_core.py	/^import warnings$/;"	kind:namespace	line:13
 on	../cachier/pickle_core.py	/^import portalocker  # to lock on pickle cache IO$/;"	kind:namespace	line:15
-on_created	../cachier/pickle_core.py	/^        def on_created(self, event):$/;"	kind:member	line:65
-on_modified	../cachier/pickle_core.py	/^        def on_modified(self, event):$/;"	kind:member	line:68
+on_created	../cachier/pickle_core.py	/^        def on_created(self, event):$/;"	kind:member	line:70
+on_modified	../cachier/pickle_core.py	/^        def on_modified(self, event):$/;"	kind:member	line:73
 one_of	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/misc.py	/^    def one_of(argnames):$/;"	kind:function	line:68
 one_of	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/misc.py	/^    one_of = dummy_decorator_with_args$/;"	kind:variable	line:82
 one_of	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/parser.py	/^from coverage.misc import contract, join_regex, new_contract, nice_pair, one_of$/;"	kind:namespace	line:18
@@ -1290,7 +1291,7 @@ sep	../.eggs/pytest_cov-2.4.0-py2.7.egg/pytest_cov/engine.py	/^    def sep(strea
 serialization	../cachier/mongo_core.py	/^import pickle  # for serialization of python objects$/;"	kind:namespace	line:10
 set_entry	../cachier/base_core.py	/^    def set_entry(self, key, func_res):$/;"	kind:member	line:35
 set_entry	../cachier/mongo_core.py	/^    def set_entry(self, key, func_res):$/;"	kind:member	line:78
-set_entry	../cachier/pickle_core.py	/^    def set_entry(self, key, func_res):$/;"	kind:member	line:132
+set_entry	../cachier/pickle_core.py	/^    def set_entry(self, key, func_res):$/;"	kind:member	line:137
 set_env	../.eggs/pytest_cov-2.4.0-py2.7.egg/pytest_cov/engine.py	/^    def set_env(self):$/;"	kind:member	line:31
 set_file_hash	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/html.py	/^    def set_file_hash(self, fname, val):$/;"	kind:member	line:420
 set_func	../cachier/base_core.py	/^    def set_func(self, func):$/;"	kind:member	line:19
@@ -1396,11 +1397,11 @@ sys_info	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/control.
 sys_info	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/plugin.py	/^    def sys_info(self):$/;"	kind:member	line:105
 sys_info	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/plugin_support.py	/^    def sys_info(self):$/;"	kind:member	line:150
 templite.py	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/templite.py	1;"	kind:file	line:1
-test_bad_cache_file	../tests/test_pickle_core.py	/^def test_bad_cache_file():$/;"	kind:function	line:232
-test_being_calc_next_time	../tests/test_pickle_core.py	/^def test_being_calc_next_time():$/;"	kind:function	line:192
-test_clear_being_calculated	../tests/test_pickle_core.py	/^def test_clear_being_calculated():$/;"	kind:function	line:302
-test_delete_cache_file	../tests/test_pickle_core.py	/^def test_delete_cache_file():$/;"	kind:function	line:278
-test_error_throwing_func	../tests/test_pickle_core.py	/^def test_error_throwing_func():$/;"	kind:function	line:316
+test_bad_cache_file	../tests/test_pickle_core.py	/^def test_bad_cache_file():$/;"	kind:function	line:235
+test_being_calc_next_time	../tests/test_pickle_core.py	/^def test_being_calc_next_time():$/;"	kind:function	line:193
+test_clear_being_calculated	../tests/test_pickle_core.py	/^def test_clear_being_calculated():$/;"	kind:function	line:305
+test_delete_cache_file	../tests/test_pickle_core.py	/^def test_delete_cache_file():$/;"	kind:function	line:281
+test_error_throwing_func	../tests/test_pickle_core.py	/^def test_error_throwing_func():$/;"	kind:function	line:319
 test_general.py	../tests/test_general.py	1;"	kind:file	line:1
 test_get_executor	../tests/test_general.py	/^def test_get_executor():$/;"	kind:function	line:23
 test_ignore_cache	../tests/test_pickle_core.py	/^def test_ignore_cache():$/;"	kind:function	line:130
@@ -1506,7 +1507,7 @@ versions_from_parentdir	../cachier/_version.py	/^def versions_from_parentdir(par
 versions_from_parentdir	../versioneer.py	/^def versions_from_parentdir(parentdir_prefix, root, verbose):$/;"	kind:function	line:1165
 wait_on_entry_calc	../cachier/base_core.py	/^    def wait_on_entry_calc(self, key):$/;"	kind:member	line:47
 wait_on_entry_calc	../cachier/mongo_core.py	/^    def wait_on_entry_calc(self, key):$/;"	kind:member	line:125
-wait_on_entry_calc	../cachier/pickle_core.py	/^    def wait_on_entry_calc(self, key):$/;"	kind:member	line:166
+wait_on_entry_calc	../cachier/pickle_core.py	/^    def wait_on_entry_calc(self, key):$/;"	kind:member	line:171
 waiting	../cachier/mongo_core.py	/^import warnings$/;"	kind:namespace	line:13
 warnings	../.eggs/coverage-4.4b1-py2.7-macosx-10.11-x86_64.egg/coverage/report.py	/^import warnings$/;"	kind:namespace	line:7
 warnings	../cachier/mongo_core.py	/^import warnings$/;"	kind:namespace	line:13

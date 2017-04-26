@@ -18,5 +18,5 @@ def mongo_finalizer():
 @pytest.fixture(scope="session", autouse=True)
 def do_something(request):
     """Session-scope pytest hook."""
-    shutil.rmtree(EXPANDED_CACHIER_DIR)
+    # shutil.rmtree(EXPANDED_CACHIER_DIR)
     request.addfinalizer(mongo_finalizer)
