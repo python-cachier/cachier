@@ -39,7 +39,7 @@ Features
 
 * Pure Python.
 * Compatible with Python 2.7+ and Python 3.5+.
-* Support Linux, OS X and Windows. Tested on Linux and OS X systems.
+* Supports Linux, OS X and Windows. Tested on Linux and OS X systems.
 * A simple interface.
 * Defining "shelf life" for cached values.
 * Local caching using pickle files.
