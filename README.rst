@@ -56,12 +56,13 @@ Future features
 
 * S3 core.
 * Multi-core caching.
+* `Cache replacement policies <https://en.wikipedia.org/wiki/Cache_replacement_policies>`_
 
 
 Use
 ===
 
-The positional and keyword arguments to the wrapped function must be hashable (i.e. Python's immutable built-in objects, not mutable containers). Also, notice that since objects which are instances of user-defined classes are hashable but all compare unequal (their hash value is their id), equal objects across different sessions will not yield identical keys.
+Cachier provides a decorator which you can wrap arount your functions to give them a persistent cache. The positional and keyword arguments to the wrapped function must be hashable (i.e. Python's immutable built-in objects, not mutable containers). Also, notice that since objects which are instances of user-defined classes are hashable but all compare unequal (their hash value is their id), equal objects across different sessions will not yield identical keys.
 
 Setting up a Cache
 ------------------
@@ -221,10 +222,10 @@ Credits
 =======
 Created by Shay Palachy (shay.palachy@gmail.com).
 
-Contributers (in chronological order of first commit):
+.. Contributers (in chronological order of first commit):
 
-* `shaypal5 <https://github.com/shaypal5>`_ (Shay Palachy)
-* `j-chad <https://github.com/j-chad>`_ (Jackson)
+.. * `shaypal5 <https://github.com/shaypal5>`_ (Shay Palachy)
+.. * `j-chad <https://github.com/j-chad>`_ (Jackson)
 
 
 
