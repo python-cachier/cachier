@@ -28,6 +28,8 @@ from .base_core import _BaseCore
 
 MONGO_SLEEP_DURATION_IN_SEC = 1
 
+class RecalculationNeeded(Exception):
+    pass
 
 class _MongoCore(_BaseCore):
 
@@ -126,6 +128,8 @@ class _MongoCore(_BaseCore):
         while True:
             time.sleep(MONGO_SLEEP_DURATION_IN_SEC)
             key, entry = self.get_entry_by_key(key)
+            if entry is None:
+                raise RecalculationNeeded()
             if entry is not None and not entry['being_calculated']:
                 return entry['value']
 

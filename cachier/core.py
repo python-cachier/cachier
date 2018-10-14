@@ -30,7 +30,7 @@ except ImportError:  # we're in python 2.x
     from concurrent.futures import ThreadPoolExecutor
 
 from .pickle_core import _PickleCore
-from .mongo_core import _MongoCore
+from .mongo_core import _MongoCore, RecalculationNeeded
 
 
 
@@ -81,8 +81,6 @@ def _calc_entry(core, key, func, args, kwds):
         return func_res
     finally:
         core.mark_entry_not_calculated(key)
-
-
 
 def cachier(stale_after=None, next_time=False, pickle_reload=True,
             mongetter=None):
@@ -156,7 +154,10 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
                                     _print('Returning stale.')
                                     return entry['value']  # return stale val
                                 _print('Already calc. Waiting on change.')
-                                return core.wait_on_entry_calc(key)
+                                try:
+                                    return core.wait_on_entry_calc(key)
+                                except RecalculationNeeded:
+                                    return _calc_entry(core, key, func, args, kwds)
                             if next_time:
                                 _print('Async calc and return stale')
                                 try:
@@ -173,7 +174,10 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
                     return entry['value']
                 if entry['being_calculated']:
                     _print('No value but being calculated. Waiting.')
-                    return core.wait_on_entry_calc(key)
+                    try:
+                        return core.wait_on_entry_calc(key)
+                    except RecalculationNeeded:
+                        return _calc_entry(core, key, func, args, kwds)
             _print('No entry found. No current calc. Calling like a boss.')
             return _calc_entry(core, key, func, args, kwds)
 
