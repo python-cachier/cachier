@@ -1,5 +1,4 @@
 """Testing the MongoDB core of cachier."""
-
 import sys
 from random import random
 from datetime import timedelta
@@ -15,8 +14,7 @@ from pymongo.mongo_client import MongoClient
 from pymongo.errors import OperationFailure
 
 from cachier import cachier
-from cachier.mongo_core import _MongoCore
-
+from cachier.mongo_core import _MongoCore, RecalculationNeeded
 
 _TEST_HOST = 'ds119508.mlab.com'
 _TEST_PORT = 19508
@@ -163,3 +161,22 @@ def test_mongo_write_failure():
 def test_mongo_clear_being_calculated():
     """Testing MongoDB core clear_being_calculated."""
     _func_w_bad_mongo.clear_being_calculated()
+
+@cachier(mongetter=_test_mongetter)
+def _stalled_func():
+    """ Testing stalled function"""
+    return 1
+
+def test_stalled_mongo_db_cache():
+    core = _MongoCore(_test_mongetter, None, False)
+    core.set_func(_stalled_func)
+    _stalled_func.clear_cache()
+    with pytest.raises(RecalculationNeeded):
+        core.wait_on_entry_calc(key=None)
+
+def test_stalled_mong_db_core():
+    core = _MongoCore(_test_mongetter, None, False)
+    core.get_entry = lambda: {'being_calculated':True}
+    res = _stalled_func()
+    assert res == 1
+
