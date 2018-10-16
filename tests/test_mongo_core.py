@@ -1,4 +1,6 @@
 """Testing the MongoDB core of cachier."""
+
+import datetime
 import sys
 from random import random
 from datetime import timedelta
@@ -162,21 +164,42 @@ def test_mongo_clear_being_calculated():
     """Testing MongoDB core clear_being_calculated."""
     _func_w_bad_mongo.clear_being_calculated()
 
-@cachier(mongetter=_test_mongetter)
-def _stalled_func():
-    """ Testing stalled function"""
-    return 1
 
 def test_stalled_mongo_db_cache():
+    @cachier(mongetter=_test_mongetter)
+    def _stalled_func():
+        return 1
     core = _MongoCore(_test_mongetter, None, False)
     core.set_func(_stalled_func)
-    _stalled_func.clear_cache()
+    core.clear_cache()
     with pytest.raises(RecalculationNeeded):
         core.wait_on_entry_calc(key=None)
 
-def test_stalled_mong_db_core():
-    core = _MongoCore(_test_mongetter, None, False)
-    core.get_entry = lambda: {'being_calculated':True}
+def test_stalled_mong_db_core(monkeypatch):
+    def mock_get_entry(self, args, kwargs):
+        return "key", {'being_calculated': True}
+    def mock_get_entry_by_key(self, key):
+        return "key", None
+    monkeypatch.setattr("cachier.mongo_core._MongoCore.get_entry", mock_get_entry )
+    monkeypatch.setattr("cachier.mongo_core._MongoCore.get_entry_by_key", mock_get_entry_by_key )
+    @cachier(mongetter=_test_mongetter)
+    def _stalled_func():
+        return 1
     res = _stalled_func()
     assert res == 1
+
+    def mock_get_entry_2(self, args, kwargs):
+        return "key", {'being_calculated': True,
+                       "value": 1,
+                       "time": datetime.datetime.now() - datetime.timedelta(seconds=10)}
+    monkeypatch.setattr("cachier.mongo_core._MongoCore.get_entry", mock_get_entry_2 )
+
+    stale_after = datetime.timedelta(seconds=1)
+    @cachier(mongetter=_test_mongetter,stale_after=stale_after)
+    def _stalled_func_2():
+        """ Testing stalled function"""
+        return 2
+    res = _stalled_func_2()
+    assert res == 2
+
 
