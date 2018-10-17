@@ -62,7 +62,7 @@ Future features
 Use
 ===
 
-Cachier provides a decorator which you can wrap arount your functions to give them a persistent cache. The positional and keyword arguments to the wrapped function must be hashable (i.e. Python's immutable built-in objects, not mutable containers). Also, notice that since objects which are instances of user-defined classes are hashable but all compare unequal (their hash value is their id), equal objects across different sessions will not yield identical keys.
+Cachier provides a decorator which you can wrap around your functions to give them a persistent cache. The positional and keyword arguments to the wrapped function must be hashable (i.e. Python's immutable built-in objects, not mutable containers). Also, notice that since objects which are instances of user-defined classes are hashable but all compare unequal (their hash value is their id), equal objects across different sessions will not yield identical keys.
 
 Setting up a Cache
 ------------------
