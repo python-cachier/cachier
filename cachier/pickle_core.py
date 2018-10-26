@@ -130,8 +130,8 @@ class _PickleCore(_BaseCore):
             return key, self._get_cache().get(key, None)
 
     def get_entry(self, args, kwds):
+        args = tuple([str(arg) for arg in args])
         key = args + tuple(sorted(kwds.items()))
-        # print('key type={}, key={}'.format(type(key), key))
         return self.get_entry_by_key(key)
 
     def set_entry(self, key, func_res):
