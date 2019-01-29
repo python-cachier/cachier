@@ -30,5 +30,3 @@ def test_get_executor():
 def test_set_max_workers():
     """Just call this function for coverage."""
     _set_max_workers(9)
-
-

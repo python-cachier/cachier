@@ -15,7 +15,7 @@ except ImportError:
 import versioneer
 
 
-TEST_REQUIRES = ['pytest', 'coverage', 'pytest-cov']
+TEST_REQUIRES = ['pytest', 'coverage', 'pytest-cov', 'pymongo']
 
 README_RST = ''
 with open('README.rst') as f:
@@ -26,7 +26,8 @@ setup(
     name='cachier',
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    description='Persistent, stale-free, local and cross-machine caching for Python functions.',
+    description=('Persistent, stale-free, local and cross-machine caching for'
+                 ' Python functions.'),
     long_description=README_RST,
     license='MIT',
     author='Shay Palachy',

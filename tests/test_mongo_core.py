@@ -8,7 +8,7 @@ from time import sleep
 import threading
 try:
     import queue
-except ImportError: # python 2
+except ImportError:  # python 2
     import Queue as queue
 
 import pytest
@@ -37,11 +37,12 @@ def _get_cachier_db_mongo_client():
 _COLLECTION_NAME = 'cachier_test{}.{}.{}'.format(
     sys.version_info[0], sys.version_info[1], sys.version_info[2])
 
+
 def _test_mongetter():
     if not hasattr(_test_mongetter, 'client'):
         _test_mongetter.client = _get_cachier_db_mongo_client()
     db_obj = _test_mongetter.client['cachier_test']
-    if not _COLLECTION_NAME in db_obj.collection_names():
+    if _COLLECTION_NAME not in db_obj.list_collection_names():
         db_obj.create_collection(_COLLECTION_NAME)
     return db_obj[_COLLECTION_NAME]
 
@@ -53,6 +54,7 @@ def _test_mongo_caching(arg_1, arg_2):
     """Some function."""
     return random() + arg_1 + arg_2
 
+
 def test_mongo_index_creation():
     """Basic Mongo core functionality."""
     collection = _test_mongetter()
@@ -61,7 +63,6 @@ def test_mongo_index_creation():
     val2 = _test_mongo_caching(1, 2)
     assert val1 == val2
     assert _MongoCore._INDEX_NAME in collection.index_information()
-
 
 
 def test_mongo_core():
@@ -82,10 +83,12 @@ def test_mongo_core():
 
 MONGO_DELTA = timedelta(seconds=3)
 
+
 @cachier(mongetter=_test_mongetter, stale_after=MONGO_DELTA, next_time=False)
 def _stale_after_mongo(arg_1, arg_2):
     """Some function."""
     return random() + arg_1 + arg_2
+
 
 def test_mongo_stale_after():
     """Testing MongoDB core stale_after functionality."""
@@ -104,9 +107,11 @@ def _takes_time(arg_1, arg_2):
     sleep(3)
     return random() + arg_1 + arg_2
 
+
 def _calls_takes_time(res_queue):
     res = _takes_time(34, 82.3)
     res_queue.put(res)
+
 
 def test_mongo_being_calculated():
     """Testing MongoDB core handling of being calculated scenarios."""
@@ -144,13 +149,16 @@ class _BadMongoCollection:
     def update_one(self, *args, **kwargs):
         raise OperationFailure(Exception())
 
+
 def _bad_mongetter():
     return _BadMongoCollection(_test_mongetter)
+
 
 @cachier(mongetter=_bad_mongetter)
 def _func_w_bad_mongo(arg_1, arg_2):
     """Some function."""
     return random() + arg_1 + arg_2
+
 
 def test_mongo_write_failure():
     """Testing MongoDB core handling of writing failure scenarios."""
@@ -175,13 +183,21 @@ def test_stalled_mongo_db_cache():
     with pytest.raises(RecalculationNeeded):
         core.wait_on_entry_calc(key=None)
 
+
 def test_stalled_mong_db_core(monkeypatch):
+
     def mock_get_entry(self, args, kwargs):
         return "key", {'being_calculated': True}
+
     def mock_get_entry_by_key(self, key):
         return "key", None
-    monkeypatch.setattr("cachier.mongo_core._MongoCore.get_entry", mock_get_entry )
-    monkeypatch.setattr("cachier.mongo_core._MongoCore.get_entry_by_key", mock_get_entry_by_key )
+
+    monkeypatch.setattr(
+        "cachier.mongo_core._MongoCore.get_entry", mock_get_entry)
+    monkeypatch.setattr(
+        "cachier.mongo_core._MongoCore.get_entry_by_key", mock_get_entry_by_key
+    )
+
     @cachier(mongetter=_test_mongetter)
     def _stalled_func():
         return 1
@@ -189,17 +205,22 @@ def test_stalled_mong_db_core(monkeypatch):
     assert res == 1
 
     def mock_get_entry_2(self, args, kwargs):
-        return "key", {'being_calculated': True,
-                       "value": 1,
-                       "time": datetime.datetime.now() - datetime.timedelta(seconds=10)}
-    monkeypatch.setattr("cachier.mongo_core._MongoCore.get_entry", mock_get_entry_2 )
+        entry = {
+            'being_calculated': True,
+            "value": 1,
+            "time": datetime.datetime.now() - datetime.timedelta(seconds=10)
+        }
+        return "key", entry
+
+    monkeypatch.setattr(
+        "cachier.mongo_core._MongoCore.get_entry", mock_get_entry_2)
 
     stale_after = datetime.timedelta(seconds=1)
-    @cachier(mongetter=_test_mongetter,stale_after=stale_after)
+
+    @cachier(mongetter=_test_mongetter, stale_after=stale_after)
     def _stalled_func_2():
-        """ Testing stalled function"""
+        """Testing stalled function"""
         return 2
+
     res = _stalled_func_2()
     assert res == 2
-
-

@@ -38,5 +38,6 @@ def test_pickle_speed():
     print('  - Decorated average = {:.8f}'.format(
         sum(times) / num_of_vals))
 
+
 if __name__ == '__main__':
     test_pickle_speed()

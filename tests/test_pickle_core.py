@@ -21,7 +21,7 @@ from random import random
 import threading
 try:
     import queue
-except ImportError: # python 2
+except ImportError:  # python 2
     import Queue as queue
 
 from cachier import cachier
@@ -40,15 +40,16 @@ def _takes_5_seconds(arg_1, arg_2):
 def test_pickle_core():
     """Basic Pickle core functionality."""
     _takes_5_seconds.clear_cache()
-    stringi = _takes_5_seconds('a', 'b')
+    _takes_5_seconds('a', 'b')
     start = time()
-    stringi = _takes_5_seconds('a', 'b', verbose_cache=True)
+    _takes_5_seconds('a', 'b', verbose_cache=True)
     end = time()
     assert end - start < 1
     _takes_5_seconds.clear_cache()
 
 
 DELTA = timedelta(seconds=3)
+
 
 @cachier(stale_after=DELTA, next_time=False)
 def _stale_after_seconds(arg_1, arg_2):
@@ -90,7 +91,6 @@ def test_stale_after_next_time():
     val5 = _stale_after_next_time(1, 2)
     assert val5 != val1
     _stale_after_next_time.clear_cache()
-
 
 
 @cachier()
@@ -151,15 +151,18 @@ def test_ignore_cache():
     assert int4 == int1
     _random_num_with_arg.clear_cache()
 
+
 @cachier()
 def _takes_time(arg_1, arg_2):
     """Some function."""
     sleep(2)  # this has to be enough time for check_calculation to run twice
     return random() + arg_1 + arg_2
 
+
 def _calls_takes_time(res_queue):
     res = _takes_time(0.13, 0.02)
     res_queue.put(res)
+
 
 def test_pickle_being_calculated():
     """Testing pickle core handling of being calculated scenarios."""
@@ -186,9 +189,11 @@ def _being_calc_next_time(arg_1, arg_2):
     sleep(1)
     return random() + arg_1 + arg_2
 
+
 def _calls_being_calc_next_time(res_queue):
     res = _being_calc_next_time(0.13, 0.02)
     res_queue.put(res)
+
 
 def test_being_calc_next_time():
     """Testing pickle core handling of being calculated scenarios."""
@@ -217,9 +222,11 @@ def _bad_cache(arg_1, arg_2):
     sleep(1)
     return random() + arg_1 + arg_2
 
+
 # _BAD_CACHE_FNAME = '.__main__._bad_cache'
 _BAD_CACHE_FNAME = '.tests.test_pickle_core._bad_cache'
 _BAD_CACHE_FPATH = os.path.join(EXPANDED_CACHIER_DIR, _BAD_CACHE_FNAME)
+
 
 def _calls_bad_cache(res_queue, trash_cache):
     try:
@@ -231,6 +238,7 @@ def _calls_bad_cache(res_queue, trash_cache):
         res_queue.put(res)
     except Exception as exc:
         res_queue.put(exc)
+
 
 def test_bad_cache_file():
     """Test pickle core handling of bad cache files."""
@@ -260,9 +268,11 @@ def _delete_cache(arg_1, arg_2):
     sleep(1)
     return random() + arg_1 + arg_2
 
+
 # _DEL_CACHE_FNAME = '.__main__._delete_cache'
 _DEL_CACHE_FNAME = '.tests.test_pickle_core._delete_cache'
 _DEL_CACHE_FPATH = os.path.join(EXPANDED_CACHIER_DIR, _DEL_CACHE_FNAME)
+
 
 def _calls_delete_cache(res_queue, del_cache):
     try:
@@ -277,6 +287,7 @@ def _calls_delete_cache(res_queue, del_cache):
     except Exception as exc:
         # print('found')
         res_queue.put(exc)
+
 
 def test_delete_cache_file():
     """Test pickle core handling of missing cache files."""
@@ -302,9 +313,11 @@ def test_delete_cache_file():
     # print(res2)
     # print(type(res2))
 
+
 def test_clear_being_calculated():
     """Test pickle core clear `being calculated` functionality."""
     _takes_time.clear_being_calculated()
+
 
 @cachier(stale_after=timedelta(seconds=1), next_time=True)
 def _error_throwing_func(arg1):
@@ -322,7 +335,3 @@ def test_error_throwing_func():
     sleep(1.5)
     res2 = _error_throwing_func(4)
     assert res1 == res2
-
-
-if __name__ == '__main__':
-    test_mongo_being_calculated()
