@@ -38,10 +38,11 @@ setup(
         cachier=cachier.scripts.cli:cli
     ''',
     install_requires=[
-        'watchdog', 'portalocker'
+        'watchdog', 'portalocker',
     ],
     extras_require={
-        'test': TEST_REQUIRES
+        'test': TEST_REQUIRES,
+        ':python_version == "2.7"': ['futures'],
     },
     platforms=['linux', 'osx', 'windows'],
     keywords=['cache', 'persistence', 'mongo', 'memoization', 'decorator'],
