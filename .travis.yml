@@ -11,10 +11,11 @@ matrix:
 before_install:
   # coverage submission packages
   - pip install -U pip
+  - pip install -U pytest
   - pip install codecov
   - pip install pymongo
 install:
-  - if [ "$TRAVIS_PYTHON_VERSION" == "2.7" ]; then pip install pytest coverage pytest-cov .; else pip install ".[test]"; fi
+  - if [ "$TRAVIS_PYTHON_VERSION" == "2.7" ]; then pip install coverage pytest-cov .; else pip install ".[test]"; fi
 script: python -m pytest --cov=cachier
 # submit coverage
 after_success:
