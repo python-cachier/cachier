@@ -16,18 +16,7 @@ import os
 from functools import wraps
 
 import datetime
-try:  # for asynchronous file uploads
-    from concurrent.futures import ThreadPoolExecutor
-except ImportError:  # we're in python 2.x
-    import pip
-    PACKAGES = [
-        package.project_name
-        for package
-        in pip.get_installed_distributions()
-    ]
-    if 'futures' not in PACKAGES:
-        pip.main(['install', 'futures'])
-    from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 
 from .pickle_core import _PickleCore
 from .mongo_core import _MongoCore, RecalculationNeeded
