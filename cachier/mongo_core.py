@@ -7,9 +7,11 @@
 # http://www.opensource.org/licenses/MIT-license
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 
+import sys  # to make sure that pymongo was imported
 import pickle  # for serialization of python objects
 from datetime import datetime
 import time   # to sleep when waiting on Mongo cache\
+import warnings  # to warn if pymongo is missing
 
 try:
     from pymongo import (
@@ -20,9 +22,6 @@ try:
     from bson.binary import Binary  # to save binary data to mongodb
 except ImportError:  # pragma: no cover
     pass
-    # warnings.warn((
-    #     "Cachier warning: pymongo was not found. "
-    #     "MongoDB cores will not work."))
 
 from .base_core import _BaseCore
 
@@ -39,6 +38,10 @@ class _MongoCore(_BaseCore):
     _INDEX_NAME = 'func_1_key_1'
 
     def __init__(self, mongetter, stale_after, next_time):
+        if 'pymongo' not in sys.modules:
+            warnings.warn((
+                "Cachier warning: pymongo was not found. "
+                "MongoDB cores will not function."))
         _BaseCore.__init__(self, stale_after, next_time)
         self.mongetter = mongetter
         self.mongo_collection = self.mongetter()

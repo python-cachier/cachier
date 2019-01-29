@@ -48,7 +48,8 @@ def test_pickle_core():
     _takes_5_seconds.clear_cache()
 
 
-DELTA = timedelta(seconds=3)
+SECONDS_IN_DELTA = 3
+DELTA = timedelta(seconds=SECONDS_IN_DELTA)
 
 
 @cachier(stale_after=DELTA, next_time=False)
@@ -85,9 +86,10 @@ def test_stale_after_next_time():
     val3 = _stale_after_next_time(1, 3)
     assert val1 == val2
     assert val1 != val3
-    sleep(3)
+    sleep(SECONDS_IN_DELTA + 1)
     val4 = _stale_after_next_time(1, 2)
     assert val4 == val1
+    sleep(0.5)
     val5 = _stale_after_next_time(1, 2)
     assert val5 != val1
     _stale_after_next_time.clear_cache()
