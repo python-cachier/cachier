@@ -10,7 +10,6 @@
 import pickle  # for serialization of python objects
 from datetime import datetime
 import time   # to sleep when waiting on Mongo cache\
-import warnings
 
 try:
     from pymongo import (
@@ -19,17 +18,21 @@ try:
     )
     from pymongo.errors import OperationFailure
     from bson.binary import Binary  # to save binary data to mongodb
-except ImportError: # pragma: no cover
-    warnings.warn(
-        "Cachier warning: pymongo was not found. MongoDB cores will not work.")
+except ImportError:  # pragma: no cover
+    pass
+    # warnings.warn((
+    #     "Cachier warning: pymongo was not found. "
+    #     "MongoDB cores will not work."))
 
 from .base_core import _BaseCore
 
 
 MONGO_SLEEP_DURATION_IN_SEC = 1
 
+
 class RecalculationNeeded(Exception):
     pass
+
 
 class _MongoCore(_BaseCore):
 
