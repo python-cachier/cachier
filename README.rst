@@ -1,7 +1,7 @@
 Cachier
 #######
 
-|PyPI-Status| |PyPI-Versions| |Build-Status| |Codecov| |LICENCE|
+|PyPI-Status| |Downloads| |PyPI-Versions| |Build-Status| |Codecov| |Codefactor| |LICENCE|
 
 Persistent, stale-free, local and cross-machine caching for Python functions.
 
@@ -243,6 +243,14 @@ Created by Shay Palachy (shay.palachy@gmail.com).
 
 .. |Codecov| image:: https://codecov.io/github/shaypal5/cachier/coverage.svg?branch=master
    :target: https://codecov.io/github/shaypal5/cachier?branch=master
+
+.. |Downloads| image:: https://pepy.tech/badge/cachier
+     :target: https://pepy.tech/project/cachier
+     :alt: PePy stats
+     
+.. |Codefactor| image:: https://www.codefactor.io/repository/github/shaypal5/cachier/badge?style=plastic
+     :target: https://www.codefactor.io/repository/github/shaypal5/cachier
+     :alt: Codefactor code quality
 
 .. links:
 .. _pymongo: https://api.mongodb.com/python/current/
