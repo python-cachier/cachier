@@ -22,9 +22,9 @@ matrix:
         - python --version
         # - pip install -U pip
         # - python -m pip install --upgrade pip
-        - pip install pytest
-        - pip install codecov
-        - pip install pymongo
+        - pip install pytest --user
+        - pip install codecov --user
+        - pip install pymongo --user
       script: python -m pytest
       after_success: python  -m codecov
     - name: "Python 3.6.5 on macOS 10.13"
@@ -54,7 +54,7 @@ matrix:
     #  ====== WINDOWS =========
     - name: "Python 2.7 on Windows"
       os: windows           # Windows 10.0.17134 N/A Build 17134
-      language: shell       # 'language: python' is an error on Travis CI Windows
+      language: shell # 'language: python' errors Travis CI Windows
       before_install:
         - choco install python2
         - python --version
