@@ -253,7 +253,7 @@ def test_bad_cache_file():
         target=_calls_bad_cache,
         kwargs={'res_queue': res_queue, 'trash_cache': False})
     thread1.start()
-    sleep(0.5)
+    sleep(1.5)
     thread2.start()
     thread1.join()
     thread2.join()
@@ -302,7 +302,7 @@ def test_delete_cache_file():
         target=_calls_delete_cache,
         kwargs={'res_queue': res_queue, 'del_cache': False})
     thread1.start()
-    sleep(0.5)
+    sleep(1.5)
     thread2.start()
     thread1.join()
     thread2.join()
