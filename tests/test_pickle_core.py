@@ -328,8 +328,7 @@ def _helper_delete_cache_file(sleeptime):
     if not isinstance(res1, float):
         return False
     res2 = res_queue.get()
-    if not (isinstance(res2, KeyError)) or (
-            (res2 is None)):
+    if not ((isinstance(res2, KeyError)) or ((res2 is None))):
         return False
     return True
     # print(res2)
