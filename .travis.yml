@@ -101,7 +101,7 @@ before_install:
   - pip install pymongo
 install:
   - echo $TRAVIS_OS_NAME
-  - if [ "$TRAVIS_PYTHON_VERSION" == "2.7" ] && ["$TRAVIS_OS_NAME" == "linux"]; then pip install coverage pytest-cov .; else pip install ".[test]"; fi
+  - if [ "$TRAVIS_PYTHON_VERSION" == "2.7" ] && ["$TRAVIS_OS_NAME" == "linux"]; then pip install coverage pytest-cov .; else pip install ".[test] --user"; fi
 script: python -m pytest
 # submit coverage
 after_success:
