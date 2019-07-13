@@ -6,9 +6,8 @@ python:
 matrix:
   fast_finish: true  # allows to determine results when linux builds finish, without waiting for osx and windows builds
   allow_failures:
-    - os:
-        - osx
-        - windows
+    - os: osx
+    - os: windows
   include:
     - python: 3.7
       dist: xenial
