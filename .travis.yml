@@ -12,9 +12,13 @@ matrix:
       os: osx
       osx_image: xcode10.2  # Python 3.7.2 running on macOS 10.14.3
       language: shell       # 'language: python' is an error on Travis CI macOS
-    # - os: osx
-    #   language: minimal
-    #   install: pip3 install -e .[tests]
+      before_install:
+        - pip3 install -U pip
+        - pip3 install -U pytest
+        - pip3 install codecov
+        - pip3 install pymongo
+      script: python3 -m pytest
+      after_success: python 3 -m codecov
     - name: "Python 3.7.3 on Windows"
       os: windows           # Windows 10.0.17134 N/A Build 17134
       language: shell       # 'language: python' is an error on Travis CI Windows
@@ -24,18 +28,15 @@ matrix:
         - pip3 install --upgrade pytest
         - pip3 install codecov
       env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
-      script: 
-        - python -m pytest
-        - python -m codecov
 before_install:
   # coverage submission packages
-  - pip3 install -U pip
-  - pip3 install -U pytest
-  - pip3 install codecov
-  - pip3 install pymongo
+  - pip install -U pip
+  - pip install -U pytest
+  - pip install codecov
+  - pip install pymongo
 install:
   - if [ "$TRAVIS_PYTHON_VERSION" == "2.7" ]; then pip install coverage pytest-cov .; else pip install ".[test]"; fi
-script: python3 -m pytest
+script: python -m pytest
 # submit coverage
 after_success:
   # - coveralls
