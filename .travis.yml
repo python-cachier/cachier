@@ -24,9 +24,9 @@ matrix:
         - pip3 install pymongo
       script: python3 -m pytest
       after_success: python 3 -m codecov
-    - name: "Python 3.7.2 on macOS 10.14"
+    - name: "Python 3.7.3 on macOS 10.14"
       os: osx
-      osx_image: xcode10.2  # Python 3.7.2 running on macOS 10.14.3
+      osx_image: xcode10.2  # Python 3.7.3 running on macOS 10.14.3
       language: shell       # 'language: python' is an error on Travis CI macOS
       before_install:
         - python3 --version
@@ -40,15 +40,16 @@ matrix:
       os: osx
       osx_image: xcode9.3  # Python 2.7.14_2 running on macOS 10.13
       language: shell       # 'language: python' is an error on Travis CI macOS
+      # sudo: true
       before_install:
         - python --version
-        - pip install -U pip
+        # - pip install -U pip
         - pip install -U pytest
         - pip install codecov
         - pip install pymongo
       script: python -m pytest
       after_success: python  -m codecov
-    - name: "Python 3.7.3 on Windows"
+    - name: "Python 3.7 on Windows"
       os: windows           # Windows 10.0.17134 N/A Build 17134
       language: shell       # 'language: python' is an error on Travis CI Windows
       before_install:
