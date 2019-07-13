@@ -4,6 +4,11 @@ python:
 - '3.5'
 - '3.6'
 matrix:
+  fast_finish: true  # allows to determine results when linux builds finish, without waiting for osx and windows builds
+  allow_failures:
+    - os:
+        - osx
+        - windows
   include:
     - python: 3.7
       dist: xenial
