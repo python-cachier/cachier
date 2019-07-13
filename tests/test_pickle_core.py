@@ -306,7 +306,7 @@ def _calls_delete_cache(res_queue, del_cache):
         res_queue.put(exc)
 
 
-def test_delete_cache_file():
+def _helper_delete_cache_file(sleeptime):
     """Test pickle core handling of missing cache files."""
     _delete_cache.clear_cache()
     res_queue = queue.Queue()
@@ -317,18 +317,33 @@ def test_delete_cache_file():
         target=_calls_delete_cache,
         kwargs={'res_queue': res_queue, 'del_cache': False})
     thread1.start()
-    sleep(0.5)
+    sleep(sleeptime)
     thread2.start()
     thread1.join()
     thread2.join()
-    assert res_queue.qsize() == 2
+    if not res_queue.qsize() == 2:
+        return False
     res1 = res_queue.get()
     # print(res1)
-    assert isinstance(res1, float)
+    if not isinstance(res1, float):
+        return False
     res2 = res_queue.get()
-    assert isinstance(res2, KeyError) or (res2 is None)
+    if not (isinstance(res2, KeyError)) or (
+            (res2 is None)):
+        return False
+    return True
     # print(res2)
     # print(type(res2))
+
+
+def test_delete_cache_file():
+    """Test pickle core handling of missing cache files."""
+    sleeptimes = [0.5, 0.3, 0.1, 0.2, 0.8, 1]
+    sleeptimes = sleeptimes + sleeptimes
+    for sleeptime in sleeptimes:
+        if _helper_delete_cache_file(sleeptime):
+            return
+    assert False
 
 
 def test_clear_being_calculated():
