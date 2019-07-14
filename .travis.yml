@@ -24,7 +24,7 @@ matrix:
         # - python -m pip install --upgrade pip
         - pip install pytest --user
         - pip install codecov --user
-        - pip install pymongo --user
+        # - pip install pymongo --user
       install: pip install ".[test]" --user
       script: python -m pytest
       after_success: python  -m codecov
@@ -37,7 +37,7 @@ matrix:
         - pip3 install -U pip
         - pip3 install -U pytest
         - pip3 install codecov
-        - pip3 install pymongo
+        # - pip3 install pymongo
       script: python3 -m pytest
       after_success: python 3 -m codecov
     - name: "Python 3.7.3 on macOS 10.14"
@@ -49,7 +49,7 @@ matrix:
         - pip3 install -U pip
         - pip3 install -U pytest
         - pip3 install codecov
-        - pip3 install pymongo
+        # - pip3 install pymongo
       script: python3 -m pytest
       after_success: python 3 -m codecov
     #  ====== WINDOWS =========
