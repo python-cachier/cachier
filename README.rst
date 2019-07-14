@@ -39,7 +39,7 @@ Features
 
 * Pure Python.
 * Compatible with Python 2.7+ and Python 3.5+.
-* Supports Linux, OS X and Windows. Tested on Linux and OS X systems.
+* Supported and `tested on Linux, OS X and Windows <https://travis-ci.org/shaypal5/cachier>`_. 
 * A simple interface.
 * Defining "shelf life" for cached values.
 * Local caching using pickle files.
