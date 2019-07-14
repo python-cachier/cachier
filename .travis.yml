@@ -103,7 +103,7 @@ install:
   - echo $TRAVIS_OS_NAME
   - pip install ".[test]"
   # - if [ "$TRAVIS_PYTHON_VERSION" == "2.7" ] && ["$TRAVIS_OS_NAME" == "linux"]; then pip install coverage pytest-cov .; else pip install ".[test]"; fi
-script: python -m pytest
+script: pytest  # python -m pytest
 after_success:
   - python -m codecov  # submit coverage to codecov.io
 # deploy:
