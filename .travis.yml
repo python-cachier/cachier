@@ -94,7 +94,6 @@ matrix:
         - pip3 install codecov
       env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
 before_install:
-  # coverage submission packages
   - python --version
   - pip install -U pip
   - pip install -U pytest
@@ -102,12 +101,11 @@ before_install:
   - pip install pymongo
 install:
   - echo $TRAVIS_OS_NAME
-  - if [ "$TRAVIS_PYTHON_VERSION" == "2.7" ] && ["$TRAVIS_OS_NAME" == "linux"]; then pip install coverage pytest-cov .; else pip install ".[test]"; fi
+  - pip install ".[test]"
+  # - if [ "$TRAVIS_PYTHON_VERSION" == "2.7" ] && ["$TRAVIS_OS_NAME" == "linux"]; then pip install coverage pytest-cov .; else pip install ".[test]"; fi
 script: python -m pytest
-# submit coverage
 after_success:
-  # - coveralls
-  - python -m codecov
+  - python -m codecov  # submit coverage to codecov.io
 # deploy:
 #   provider: pypi
 #   user: shaypal5
