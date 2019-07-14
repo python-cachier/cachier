@@ -3,16 +3,15 @@ python:
 - '2.7'
 - '3.5'
 - '3.6'
-- '3.7'
 matrix:
   fast_finish: true  # allows to determine results when linux builds finish, without waiting for osx and windows builds
-  allow_failures:
-    - os: osx
-    - os: windows
+  # allow_failures:
+  #   - os: osx
+  #   - os: windows
   include:
-    # - python: 3.7
-    #   dist: xenial
-    #   sudo: true
+    - python: 3.7
+      dist: xenial
+      sudo: true
     # ======= OSX ========
     - name: "Python 2.7.14 on macOS 10.13"
       os: osx
