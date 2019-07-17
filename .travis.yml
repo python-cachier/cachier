@@ -2,13 +2,19 @@ language: python
 # ===== Linux ======
 dist: xenial
 python:
-- 2.7
-- 3.5
-- 3.6
-- 3.7
+  - 2.7
+  - 3.5
+  - 3.6
+  - 3.7
+  - "3.6-dev"
+  - "3.7-dev"
+  - "3.8-dev"
 matrix:
-  # fast_finish: true  # allows to determine results when linux builds finish, without waiting for osx and windows builds
-  # allow_failures:
+  fast_finish: true  # allows to determine results when linux builds finish, without waiting for osx and windows builds
+  allow_failures:
+    - python: "3.6-dev"
+    - python: "3.7-dev"
+    - python: "3.8-dev"
   #   - os: osx
   #   - os: windows
   include:
@@ -47,7 +53,7 @@ matrix:
       script: python3 -m pytest
       after_success: python 3 -m codecov
     #  ====== WINDOWS =========
-    - name: "Python 2.7 on Windows"
+    - name: "Python 2.7.16 on Windows"
       os: windows           # Windows 10.0.17134 N/A Build 17134
       language: shell # 'language: python' errors Travis CI Windows
       before_install:
