@@ -8,7 +8,8 @@
 
 import abc  # for the _BaseCore abstract base class
 
-class _BaseCore(object):
+
+class _BaseCore():
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, stale_after, next_time):
