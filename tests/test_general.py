@@ -1,5 +1,6 @@
 """Non-core-specific tests for cachier."""
 
+from __future__ import print_function
 import os
 
 import cachier

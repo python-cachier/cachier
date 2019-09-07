@@ -1,5 +1,6 @@
 """Testing the MongoDB core of cachier."""
 
+from __future__ import print_function
 import datetime
 import sys
 from random import random
