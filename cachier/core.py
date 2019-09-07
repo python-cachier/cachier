@@ -122,7 +122,7 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
             ignore_cache = kwds.pop('ignore_cache', False)
             overwrite_cache = kwds.pop('overwrite_cache', False)
             verbose_cache = kwds.pop('verbose_cache', False)
-            _print = lambda x: None
+            _print = lambda x: None  # skipcq: FKL-E731
             if verbose_cache:
                 _print = print
             if ignore_cache:
