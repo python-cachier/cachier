@@ -12,6 +12,7 @@ except ImportError:  # python 2
     import Queue as queue
 
 import pytest
+import pymongo
 from pymongo.mongo_client import MongoClient
 from pymongo.errors import OperationFailure
 
@@ -25,7 +26,7 @@ _TEST_PWD = 'ZGhjO5CQESYJ69U4z65G79YG'
 
 
 def _get_cachier_db_mongo_client():
-    client = MongoClient(host=_TEST_HOST, port=_TEST_PORT)
+    client = MongoClient(host=_TEST_HOST, port=_TEST_PORT, retryWrites=False)
     client.cachier_test.authenticate(
         name=_TEST_USERNAME,
         password=_TEST_PWD,
@@ -48,6 +49,12 @@ def _test_mongetter():
 
 
 # === Mongo core tests ===
+
+
+def test_information():
+    print("\npymongo version: ", end="")
+    print(pymongo.__version__)
+
 
 @cachier(mongetter=_test_mongetter)
 def _test_mongo_caching(arg_1, arg_2):

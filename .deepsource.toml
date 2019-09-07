@@ -4,3 +4,8 @@
   name = "python"
   enabled = true
   runtime_version = "3.x.x"
+
+exclude_patterns = [
+  "**/versioneer.py",
+  "**/_version.py"
+]

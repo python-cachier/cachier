@@ -2,6 +2,7 @@
 
 import os
 
+import cachier
 from cachier.core import (
     MAX_WORKERS_ENVAR_NAME,
     DEFAULT_MAX_WORKERS,
@@ -9,6 +10,11 @@ from cachier.core import (
     _set_max_workers,
     _get_executor
 )
+
+
+def test_information():
+    print("\ncachier version: ", end="")
+    print(cachier.__version__)
 
 
 def test_max_workers():
