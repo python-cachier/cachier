@@ -148,13 +148,14 @@ class _BadMongoCollection:
         self.create_indexes = self.collection.create_indexes
         self.find_one = self.collection.find_one
 
-    def delete_many(self, *args, **kwargs):
+    def delete_many(self, *args, **kwargs):  # skipcq: PYL-R0201
         pass
 
-    def update_many(self, *args, **kwargs):
+    def update_many(self, *args, **kwargs):  # skipcq: PYL-R0201
+
         pass
 
-    def update_one(self, *args, **kwargs):
+    def update_one(self, *args, **kwargs):  # skipcq: PYL-R0201
         raise OperationFailure(Exception())
 
 
@@ -194,10 +195,10 @@ def test_stalled_mongo_db_cache():
 
 def test_stalled_mong_db_core(monkeypatch):
 
-    def mock_get_entry(self, args, kwargs):
+    def mock_get_entry(self, args, kwargs):  # skipcq: PYL-R0201
         return "key", {'being_calculated': True}
 
-    def mock_get_entry_by_key(self, key):
+    def mock_get_entry_by_key(self, key):  # skipcq: PYL-R0201
         return "key", None
 
     monkeypatch.setattr(
