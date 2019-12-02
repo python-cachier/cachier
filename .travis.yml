@@ -55,7 +55,7 @@ matrix:
       install:
         - pip3 install ".[test]"
       script: python3 -m pytest
-      after_success: python 3 -m codecov
+      after_success: python3 -m codecov
     #  ====== WINDOWS =========
     - name: "Python 2.7.16 on Windows"
       os: windows           # Windows 10.0.17134 N/A Build 17134
