@@ -22,7 +22,6 @@ from .pickle_core import _PickleCore
 from .mongo_core import _MongoCore, RecalculationNeeded
 
 
-
 MAX_WORKERS_ENVAR_NAME = 'CACHIER_MAX_WORKERS'
 DEFAULT_MAX_WORKERS = 8
 
@@ -57,7 +56,9 @@ def _function_thread(core, key, func, args, kwds):
     except BaseException as exc:  # pylint: disable=W0703
         print(
             'Function call failed with the following exception:\n{}'.format(
-                exc))
+                exc
+            )
+        )
 
 
 def _calc_entry(core, key, func, args, kwds):
@@ -71,8 +72,14 @@ def _calc_entry(core, key, func, args, kwds):
     finally:
         core.mark_entry_not_calculated(key)
 
-def cachier(stale_after=None, next_time=False, pickle_reload=True,
-            mongetter=None):
+
+def cachier(
+    stale_after=None,
+    next_time=False,
+    pickle_reload=True,
+    mongetter=None,
+    cache_dir=None,
+):
     """A persistent, stale-free memoization decorator.
 
     The positional and keyword arguments to the wrapped function must be
@@ -84,23 +91,27 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
 
     Arguments
     ---------
-    stale_after (optional) : datetime.timedelta
+    stale_after : datetime.timedelta, optional
         The time delta afterwhich a cached result is considered stale. Calls
         made after the result goes stale will trigger a recalculation of the
         result, but whether a stale or fresh result will be returned is
         determined by the optional next_time argument.
-    next_time (optional) : bool
+    next_time : bool, optional
         If set to True, a stale result will be returned when finding one, not
         waiting for the calculation of the fresh result to return. Defaults to
         False.
-    pickle_reload (optional) : bool
+    pickle_reload : bool, optional
         If set to True, in-memory cache will be reloaded on each cache read,
         enabling different threads to share cache. Should be set to False for
         faster reads in single-thread programs. Defaults to True.
-    mongetter (optional) : callable
+    mongetter : callable, optional
         A callable that takes no arguments and returns a pymongo.Collection
         object with writing permissions. If unset a local pickle cache is used
         instead.
+    cache_dir : str, optional
+        A fully qualified path to a file directory to be used for cache files.
+        The running process must have running permissions to this folder. If
+        not provided, a default directory at `~/.cachier/` is used.
     """
     # print('Inside the wrapper maker')
     # print('mongetter={}'.format(mongetter))
@@ -111,7 +122,11 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
         core = _MongoCore(mongetter, stale_after, next_time)
     else:
         core = _PickleCore(  # pylint: disable=R0204
-            stale_after, next_time, pickle_reload)
+            stale_after=stale_after,
+            next_time=next_time,
+            reload=pickle_reload,
+            cache_dir=cache_dir,
+        )
 
     def _cachier_decorator(func):
         core.set_func(func)
@@ -122,7 +137,7 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
             ignore_cache = kwds.pop('ignore_cache', False)
             overwrite_cache = kwds.pop('overwrite_cache', False)
             verbose_cache = kwds.pop('verbose_cache', False)
-            _print = lambda x: None  # skipcq: FLK-E731
+            _print = lambda x: None  # skipcq: FLK-E731  # noqa: E731
             if verbose_cache:
                 _print = print
             if ignore_cache:
@@ -146,14 +161,21 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
                                 try:
                                     return core.wait_on_entry_calc(key)
                                 except RecalculationNeeded:
-                                    return _calc_entry(core, key, func, args, kwds)
+                                    return _calc_entry(
+                                        core, key, func, args, kwds
+                                    )
                             if next_time:
                                 _print('Async calc and return stale')
                                 try:
                                     core.mark_entry_being_calculated(key)
                                     _get_executor().submit(
-                                        _function_thread, core, key, func,
-                                        args, kwds)
+                                        _function_thread,
+                                        core,
+                                        key,
+                                        func,
+                                        args,
+                                        kwds,
+                                    )
                                 finally:
                                     core.mark_entry_not_calculated(key)
                                 return entry['value']
@@ -178,8 +200,16 @@ def cachier(stale_after=None, next_time=False, pickle_reload=True,
             """Marks all entries in this cache as not being calculated."""
             core.clear_being_calculated()
 
+        def cache_dpath():
+            """Returns the path to the cache dir, if exists; None if not."""
+            try:
+                return core.expended_cache_dir
+            except AttributeError:
+                return None
+
         func_wrapper.clear_cache = clear_cache
         func_wrapper.clear_being_calculated = clear_being_calculated
+        func_wrapper.cache_dpath = cache_dpath
         return func_wrapper
 
     return _cachier_decorator

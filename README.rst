@@ -77,6 +77,12 @@ You can add a default, pickle-based, persistent cache to your function - meaning
     """Your function now has a persistent cache mapped by argument values!"""
     return {'arg1': arg1, 'arg2': arg2}
 
+You can get the fully qualified path to the directory of cache files used by ``cachier`` (``~/.cachier`` by default) by calling the ``cache_dpath()`` function:
+
+.. code-block:: python
+
+  foo.clear_cache()
+
 
 Resetting a Cache
 -----------------
@@ -155,6 +161,13 @@ Pickle Core
 -----------
 
 The default core for Cachier is pickle based, meaning each function will store its cache is a separate pickle file in the ``~/.cachier`` directory. Naturally, this kind of cache is both machine-specific and user-specific.
+
+You can configure ``cachier`` to use another directory by providing the ``cache_dir`` parameter with the path to that directory:
+
+.. code-block:: python
+
+  @cachier(cache_dir='~/.temp/.cache')
+
 
 You can slightly optimise pickle-based caching if you know your code will only be used in a single thread environment by setting:
 

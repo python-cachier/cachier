@@ -15,7 +15,8 @@ import threading
 import portalocker  # to lock on pickle cache IO
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
-#Altenative:  https://github.com/WoLpH/portalocker
+
+# Altenative:  https://github.com/WoLpH/portalocker
 
 from .base_core import _BaseCore
 
@@ -25,11 +26,23 @@ except NameError:  # we're on python 2
     FileNotFoundError = IOError
 
 
-CACHIER_DIR = '~/.cachier/'
-EXPANDED_CACHIER_DIR = os.path.expanduser(CACHIER_DIR)
+DEF_CACHIER_DIR = '~/.cachier/'
 
 
 class _PickleCore(_BaseCore):
+    """The pickle core class for cachier.
+
+    Parameters
+    ----------
+    stale_after : datetime.timedelta, optional
+        See _BaseCore documentation.
+    next_time : bool, optional
+        See _BaseCore documentation.
+    pickle_reload : bool, optional
+        See core.cachier() documentation.
+    cache_dir : str, optional.
+        See core.cachier() documentation.
+    """
 
     class CacheChangeHandler(PatternMatchingEventHandler):
         """Handles cache-file modification events."""
@@ -40,7 +53,7 @@ class _PickleCore(_BaseCore):
                 patterns=["*" + filename],
                 ignore_patterns=None,
                 ignore_directories=True,
-                case_sensitive=False
+                case_sensitive=False,
             )
             self.core = core
             self.key = key
@@ -62,38 +75,45 @@ class _PickleCore(_BaseCore):
                     self.value = entry['value']
                     self.observer.stop()
                 # else:
-                    # print('NOT stoping observer... :(')
+                # print('NOT stoping observer... :(')
             except TypeError:
                 self.value = None
                 self.observer.stop()
 
         def on_created(self, event):
-            self._check_calculation() # pragma: no cover
+            self._check_calculation()  # pragma: no cover
 
         def on_modified(self, event):
             self._check_calculation()
 
-    def __init__(self, stale_after, next_time, reload):
+    def __init__(self, stale_after, next_time, reload, cache_dir):
         _BaseCore.__init__(self, stale_after, next_time)
         self.cache = None
         self.reload = reload
+        self.cache_dir = DEF_CACHIER_DIR
+        if cache_dir is not None:
+            self.cache_dir = cache_dir
+        self.expended_cache_dir = os.path.expanduser(self.cache_dir)
         self.lock = threading.RLock()
 
     def _cache_fname(self):
         if not hasattr(self, 'cache_fname'):
             self.cache_fname = '.{}.{}'.format(
-                self.func.__module__, self.func.__name__)
+                self.func.__module__, self.func.__name__
+            )
         return self.cache_fname
 
     def _cache_fpath(self):
         if not hasattr(self, 'cache_fpath'):
             # print(EXPANDED_CACHIER_DIR)
-            if not os.path.exists(EXPANDED_CACHIER_DIR):
-                os.makedirs(EXPANDED_CACHIER_DIR)
-            self.cache_fpath = os.path.abspath(os.path.join(
-                os.path.realpath(EXPANDED_CACHIER_DIR),
-                self._cache_fname()
-            ))
+            if not os.path.exists(self.expended_cache_dir):
+                os.makedirs(self.expended_cache_dir)
+            self.cache_fpath = os.path.abspath(
+                os.path.join(
+                    os.path.realpath(self.expended_cache_dir),
+                    self._cache_fname(),
+                )
+            )
         return self.cache_fpath
 
     def _reload_cache(self):
@@ -141,7 +161,7 @@ class _PickleCore(_BaseCore):
                 'value': func_res,
                 'time': datetime.now(),
                 'stale': False,
-                'being_calculated': False
+                'being_calculated': False,
             }
             self._save_cache(cache)
 
@@ -155,7 +175,7 @@ class _PickleCore(_BaseCore):
                     'value': None,
                     'time': datetime.now(),
                     'stale': False,
-                    'being_calculated': True
+                    'being_calculated': True,
                 }
             self._save_cache(cache)
 
@@ -175,16 +195,12 @@ class _PickleCore(_BaseCore):
             if not entry['being_calculated']:
                 return entry['value']
         event_handler = _PickleCore.CacheChangeHandler(
-            filename=self._cache_fname(),
-            core=self,
-            key=key
+            filename=self._cache_fname(), core=self, key=key
         )
         observer = Observer()
         event_handler.inject_observer(observer)
         observer.schedule(
-            event_handler,
-            path=EXPANDED_CACHIER_DIR,
-            recursive=True
+            event_handler, path=self.expended_cache_dir, recursive=True
         )
         observer.start()
         observer.join(timeout=1.0)

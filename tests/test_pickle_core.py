@@ -25,7 +25,7 @@ except ImportError:  # python 2
     import Queue as queue
 
 from cachier import cachier
-from cachier.pickle_core import EXPANDED_CACHIER_DIR
+from cachier.pickle_core import DEF_CACHIER_DIR
 
 
 # Pickle core tests
@@ -227,6 +227,7 @@ def _bad_cache(arg_1, arg_2):
 
 # _BAD_CACHE_FNAME = '.__main__._bad_cache'
 _BAD_CACHE_FNAME = '.tests.test_pickle_core._bad_cache'
+EXPANDED_CACHIER_DIR = os.path.expanduser(DEF_CACHIER_DIR)
 _BAD_CACHE_FPATH = os.path.join(EXPANDED_CACHIER_DIR, _BAD_CACHE_FNAME)
 
 
@@ -366,3 +367,28 @@ def test_error_throwing_func():
     sleep(1.5)
     res2 = _error_throwing_func(4)
     assert res1 == res2
+
+
+# test custom cache dir for pickle core
+
+CUSTOM_DIR = '~/.exparrot'
+EXPANDED_CUSTOM_DIR = os.path.expanduser(CUSTOM_DIR)
+
+
+@cachier(next_time=False, cache_dir=CUSTOM_DIR)
+def _takes_5_seconds_custom_dir(arg_1, arg_2):
+    """Some function."""
+    sleep(5)
+    return 'arg_1:{}, arg_2:{}'.format(arg_1, arg_2)
+
+
+def test_pickle_core_custom_cache_dir():
+    """Basic Pickle core functionality."""
+    _takes_5_seconds_custom_dir.clear_cache()
+    _takes_5_seconds_custom_dir('a', 'b')
+    start = time()
+    _takes_5_seconds_custom_dir('a', 'b', verbose_cache=True)
+    end = time()
+    assert end - start < 1
+    _takes_5_seconds_custom_dir.clear_cache()
+    assert _takes_5_seconds_custom_dir.cache_dpath() == EXPANDED_CUSTOM_DIR
