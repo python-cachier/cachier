@@ -271,7 +271,7 @@ def _helper_bad_cache_file(sleeptime):
 # we want this to succeed at leat once
 def test_bad_cache_file():
     """Test pickle core handling of bad cache files."""
-    sleeptimes = [0.5, 0.1, 0.2, 0.3, 0.8, 1]
+    sleeptimes = [0.5, 0.1, 0.2, 0.3, 0.8, 1, 2]
     sleeptimes = sleeptimes + sleeptimes
     for sleeptime in sleeptimes:
         if _helper_bad_cache_file(sleeptime):
