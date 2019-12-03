@@ -81,7 +81,8 @@ You can get the fully qualified path to the directory of cache files used by ``c
 
 .. code-block:: python
 
-  foo.clear_cache()
+  >>> foo.cache_dpath()
+      "/home/bigus/.cachier/"
 
 
 Resetting a Cache
