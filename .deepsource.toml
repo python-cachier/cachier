@@ -6,10 +6,8 @@ test_patterns = [
 ]
 
 exclude_patterns = [
-  "**/versioneer.py",
-  "**/_version.py",
   "versioneer.py",
-  "_version.py"
+  "**/_version.py"
 ]
 
 [[analyzers]]
