@@ -337,7 +337,7 @@ def _helper_delete_cache_file(sleeptime):
 
 def test_delete_cache_file():
     """Test pickle core handling of missing cache files."""
-    sleeptimes = [0.5, 0.3, 0.1, 0.2, 0.8, 1]
+    sleeptimes = [0.5, 0.3, 0.1, 0.2, 0.8, 1, 2]
     sleeptimes = sleeptimes + sleeptimes
     for sleeptime in sleeptimes:
         if _helper_delete_cache_file(sleeptime):
