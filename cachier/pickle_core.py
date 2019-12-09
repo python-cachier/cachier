@@ -23,7 +23,7 @@ from .base_core import _BaseCore
 try:
     FileNotFoundError
 except NameError:  # we're on python 2
-    FileNotFoundError = IOError
+    FileNotFoundError = IOError  # skipcq: PYL-W0622
 
 
 DEF_CACHIER_DIR = '~/.cachier/'
@@ -80,10 +80,10 @@ class _PickleCore(_BaseCore):
                 self.value = None
                 self.observer.stop()
 
-        def on_created(self, event):
+        def on_created(self, event):  # skipcq: PYL-W0613
             self._check_calculation()  # pragma: no cover
 
-        def on_modified(self, event):
+        def on_modified(self, event):  # skipcq: PYL-W0613
             self._check_calculation()
 
     def __init__(self, stale_after, next_time, reload, cache_dir):
@@ -95,16 +95,18 @@ class _PickleCore(_BaseCore):
             self.cache_dir = cache_dir
         self.expended_cache_dir = os.path.expanduser(self.cache_dir)
         self.lock = threading.RLock()
+        self.cache_fname = None
+        self.cache_fpath = None
 
     def _cache_fname(self):
-        if not hasattr(self, 'cache_fname'):
+        if self.cache_fname is None:
             self.cache_fname = '.{}.{}'.format(
                 self.func.__module__, self.func.__name__
             )
         return self.cache_fname
 
     def _cache_fpath(self):
-        if not hasattr(self, 'cache_fpath'):
+        if self.cache_fpath is None:
             # print(EXPANDED_CACHIER_DIR)
             if not os.path.exists(self.expended_cache_dir):
                 os.makedirs(self.expended_cache_dir)

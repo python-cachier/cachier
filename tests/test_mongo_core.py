@@ -1,10 +1,10 @@
 """Testing the MongoDB core of cachier."""
 
 from __future__ import print_function
-import datetime
 import sys
-from random import random
+import datetime
 from datetime import timedelta
+from random import random
 from time import sleep
 import threading
 try:
@@ -148,14 +148,14 @@ class _BadMongoCollection:
         self.create_indexes = self.collection.create_indexes
         self.find_one = self.collection.find_one
 
-    def delete_many(self, *args, **kwargs):  # skipcq: PYL-R0201
+    def delete_many(self, *args, **kwargs):  # skipcq: PYL-R0201, PYL-W0613
         pass
 
-    def update_many(self, *args, **kwargs):  # skipcq: PYL-R0201
+    def update_many(self, *args, **kwargs):  # skipcq: PYL-R0201, PYL-W0613
 
         pass
 
-    def update_one(self, *args, **kwargs):  # skipcq: PYL-R0201
+    def update_one(self, *args, **kwargs):  # skipcq: PYL-R0201, PYL-W0613
         raise OperationFailure(Exception())
 
 
@@ -195,10 +195,10 @@ def test_stalled_mongo_db_cache():
 
 def test_stalled_mong_db_core(monkeypatch):
 
-    def mock_get_entry(self, args, kwargs):  # skipcq: PYL-R0201
+    def mock_get_entry(self, args, kwargs):  # skipcq: PYL-R0201, PYL-W0613
         return "key", {'being_calculated': True}
 
-    def mock_get_entry_by_key(self, key):  # skipcq: PYL-R0201
+    def mock_get_entry_by_key(self, key):  # skipcq: PYL-R0201, PYL-W0613
         return "key", None
 
     monkeypatch.setattr(
@@ -213,7 +213,7 @@ def test_stalled_mong_db_core(monkeypatch):
     res = _stalled_func()
     assert res == 1
 
-    def mock_get_entry_2(self, args, kwargs):
+    def mock_get_entry_2(self, args, kwargs):  # skipcq: PYL-W0613
         entry = {
             'being_calculated': True,
             "value": 1,
