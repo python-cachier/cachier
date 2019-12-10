@@ -94,3 +94,5 @@ cachier_test_mongo_cred.yml
 
 # annoying vim swap files
 *.swp
+
+.vscode
