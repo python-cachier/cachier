@@ -96,3 +96,7 @@ cachier_test_mongo_cred.yml
 *.swp
 
 .vscode
+
+# Pipfile doesn't work for me yet
+Pipfile
+Pipfile.lock
