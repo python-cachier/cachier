@@ -159,17 +159,17 @@ class _PickleCore(_BaseCore):
         try:
             import pandas
             if isinstance(value, pandas.DataFrame):
-                return(pandas.util.hash_pandas_object(value).sum())
+                return pandas.util.hash_pandas_object(value).sum()
         except ImportError:
             pass
         if hasattr(value, "tobytes"):  # For numpy
             return hash(value.tobytes())
-        elif hasattr(value, "__iter__"):  # For iterators
+        if hasattr(value, "__iter__"):  # For iterators
             hash_array = []
             for elem in value:
                 hash_array.append(value)
             return tuple(hash_array)
-        elif hasattr(value, "items"):  # For dict
+        if hasattr(value, "items"):  # For dict
             hash_array = []
             for key, elem in value.items:
                 hash_array.append(key)

@@ -11,24 +11,14 @@
 #     realpath,
 #     dirname
 # )
-import os
 from time import time, sleep
-from datetime import timedelta
-from random import random
-import threading
-
-try:
-    import queue
-except ImportError:  # python 2
-    import Queue as queue
 
 from cachier import cachier
-from cachier.pickle_core import DEF_CACHIER_DIR
 
 import numpy as np
 import pandas as pd
 
-# Pickle core tests
+# Numpy and pandas tests
 
 
 @cachier()
