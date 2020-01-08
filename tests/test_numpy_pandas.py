@@ -11,12 +11,12 @@
 #     realpath,
 #     dirname
 # )
-from time import time, sleep
-
-from cachier import cachier
+from time import sleep, time
 
 import numpy as np
 import pandas as pd
+
+from cachier import cachier
 
 # Numpy and pandas tests
 
