@@ -99,7 +99,7 @@ matrix:
       env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
 before_install:
   - python --version
-  # - pip install -U pip
+  - pip install -U pip
   - pip install -U pytest
   - pip install codecov
   - pip install pymongo
