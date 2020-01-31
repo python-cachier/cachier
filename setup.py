@@ -15,7 +15,7 @@ except ImportError:
 import versioneer
 
 
-TEST_REQUIRES = ['pytest', 'coverage', 'pytest-cov', 'pymongo']
+TEST_REQUIRES = ['pytest', 'coverage', 'pytest-cov', 'pymongo', 'numpy', 'pandas']
 
 README_RST = ''
 with open('README.rst') as f:
