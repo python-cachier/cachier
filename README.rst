@@ -34,11 +34,18 @@ Install ``cachier`` with:
 
     pip install cachier
 
+For the latest version supporting Python 2.7 please use:
+
+.. code-block:: python
+
+    pip install 'cachier==1.2.8'
+
+
 Features
 ========
 
 * Pure Python.
-* Compatible with Python 2.7+ and Python 3.5+.
+* Compatible with Python 3.5+ (and Python 2.7 up until version 1.2.8).
 * Supported and `tested on Linux, OS X and Windows <https://travis-ci.org/shaypal5/cachier>`_. 
 * A simple interface.
 * Defining "shelf life" for cached values.

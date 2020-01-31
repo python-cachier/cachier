@@ -40,6 +40,7 @@ setup(
     ''',
     install_requires=[
         'watchdog', 'portalocker',
+        'pathtools',  # for watchdog, who has dependency spec problem
     ],
     extras_require={
         'test': TEST_REQUIRES,
