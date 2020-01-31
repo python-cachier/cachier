@@ -152,7 +152,10 @@ class _PickleCore(_BaseCore):
             return key, self._get_cache().get(key, None)
 
     def get_entry(self, args, kwds):
-        key = tuple(self._hash_args(key) for key in args + tuple(sorted(kwds.items())))
+        key = tuple(
+            self._hash_args(key)
+            for key in args + tuple(sorted(kwds.items()))
+        )
         return self.get_entry_by_key(key)
 
     def _hash_args(self, value):
@@ -160,7 +163,7 @@ class _PickleCore(_BaseCore):
             import pandas
             if isinstance(value, pandas.DataFrame):
                 return pandas.util.hash_pandas_object(value).sum()
-        except ImportError:
+        except ImportError:  # pragma: no cover
             pass
         if hasattr(value, "tobytes"):  # For numpy
             return hash(value.tobytes())
@@ -172,7 +175,7 @@ class _PickleCore(_BaseCore):
                 return tuple(hash_array)
         if hasattr(value, "items"):  # For dict
             hash_array = []
-            for key, elem in value.items:
+            for key, elem in value.items():
                 hash_array.append(key)
                 hash_array.append(self._hash_args(elem))
             return tuple(hash_array)
