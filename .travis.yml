@@ -29,7 +29,7 @@ matrix:
         - pip3 install codecov
       install:
         - pip3 install ".[test]"
-      before_script: python3 test/prepare_text_caching_test.py
+      before_script: python3 tests/prepare_text_caching_test.py
       script: python3 -m pytest
       after_success: python 3 -m codecov
     - name: "Python 3.7.3 on macOS 10.14"
@@ -43,7 +43,7 @@ matrix:
         - pip3 install codecov
       install:
         - pip3 install ".[test]"
-      before_script: python3 test/prepare_text_caching_test.py
+      before_script: python3 tests/prepare_text_caching_test.py
       script: python3 -m pytest
       after_success: python3 -m codecov
     #  ====== WINDOWS =========
@@ -87,7 +87,7 @@ install:
   - echo $TRAVIS_OS_NAME
   - pip install ".[test]"
   # - if [ "$TRAVIS_PYTHON_VERSION" == "2.7" ] && ["$TRAVIS_OS_NAME" == "linux"]; then pip install coverage pytest-cov .; else pip install ".[test]"; fi
-before_script: python test/prepare_text_caching_test.py
+before_script: python tests/prepare_text_caching_test.py
 script: pytest
 after_success:
   - codecov  # submit coverage to codecov.io
