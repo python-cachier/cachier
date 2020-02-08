@@ -16,6 +16,7 @@ from time import (
     time,
     sleep
 )
+from pickle import load
 from datetime import timedelta
 from random import random
 import threading
@@ -26,6 +27,12 @@ except ImportError:  # python 2
 
 from cachier import cachier
 from cachier.pickle_core import DEF_CACHIER_DIR
+
+from .prepare_text_caching_test import (
+    TEXT_VAL_TO_CHECK,
+    TEXT_CACHE_FNAME,
+    text_caching,
+)
 
 
 # Pickle core tests
@@ -392,3 +399,18 @@ def test_pickle_core_custom_cache_dir():
     assert end - start < 1
     _takes_5_seconds_custom_dir.clear_cache()
     assert _takes_5_seconds_custom_dir.cache_dpath() == EXPANDED_CUSTOM_DIR
+
+
+def test_text_hashing():
+    text = TEXT_VAL_TO_CHECK
+    with open(TEXT_CACHE_FNAME, 'rb') as f:
+        first = load(f)
+    print('\npickled return val found for text cache text:')
+    print(first)
+    start_time = time()
+    second = text_caching(text)
+    print('second value returned:')
+    print(second)
+    call_time = time() - start_time
+    assert call_time < 1
+    assert first == second
