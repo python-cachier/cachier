@@ -8,6 +8,7 @@
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 
 import os
+from zlib import adler32
 import pickle  # for local caching
 from datetime import datetime
 import threading
@@ -166,7 +167,7 @@ class _PickleCore(_BaseCore):
         except ImportError:  # pragma: no cover
             pass
         if hasattr(value, "tobytes"):  # For numpy
-            return hash(value.tobytes())
+            return adler32(value.tobytes()) & 0xffffffff
         if hasattr(value, "__iter__"):  # For iterators
             if isinstance(value, (list, tuple)):
                 hash_array = []
@@ -179,7 +180,7 @@ class _PickleCore(_BaseCore):
                 hash_array.append(key)
                 hash_array.append(self._hash_args(elem))
             return tuple(hash_array)
-        return hash(value)
+        return adler32(pickle.dumps(value)) & 0xffffffff
 
     def set_entry(self, key, func_res):
         with self.lock:

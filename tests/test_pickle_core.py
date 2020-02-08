@@ -402,13 +402,14 @@ def test_pickle_core_custom_cache_dir():
 
 
 def test_text_hashing():
-    text = TEXT_VAL_TO_CHECK
     with open(TEXT_CACHE_FNAME, 'rb') as f:
         first = load(f)
     print('\npickled return val found for text cache text:')
     print(first)
     start_time = time()
-    second = text_caching(text)
+    print('calling with value:')
+    print(TEXT_VAL_TO_CHECK)
+    second = text_caching(TEXT_VAL_TO_CHECK)
     print('second value returned:')
     print(second)
     call_time = time() - start_time
