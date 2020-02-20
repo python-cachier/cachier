@@ -20,11 +20,6 @@ from watchdog.events import PatternMatchingEventHandler
 
 from .base_core import _BaseCore
 
-try:
-    FileNotFoundError
-except NameError:  # we're on python 2
-    FileNotFoundError = IOError  # skipcq: PYL-W0622
-
 
 DEF_CACHIER_DIR = '~/.cachier/'
 

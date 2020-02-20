@@ -40,10 +40,10 @@ setup(
     ''',
     install_requires=[
         'watchdog', 'portalocker',
+        'pathtools',  # for watchdog, who has dependency spec problem
     ],
     extras_require={
         'test': TEST_REQUIRES,
-        ':python_version == "2.7"': ['futures'],
     },
     platforms=['linux', 'osx', 'windows'],
     keywords=['cache', 'persistence', 'mongo', 'memoization', 'decorator'],
@@ -53,8 +53,6 @@ setup(
         'Development Status :: 4 - Beta',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
