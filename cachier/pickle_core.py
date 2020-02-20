@@ -8,7 +8,6 @@
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 
 import os
-from zlib import adler32
 import pickle  # for local caching
 from datetime import datetime
 import threading
@@ -153,34 +152,9 @@ class _PickleCore(_BaseCore):
             return key, self._get_cache().get(key, None)
 
     def get_entry(self, args, kwds):
-        key = tuple(
-            self._hash_args(key)
-            for key in args + tuple(sorted(kwds.items()))
-        )
+        key = args + tuple(sorted(kwds.items()))
+        # print('key type={}, key={}'.format(type(key), key))
         return self.get_entry_by_key(key)
-
-    def _hash_args(self, value):
-        try:
-            import pandas
-            if isinstance(value, pandas.DataFrame):
-                return pandas.util.hash_pandas_object(value).sum()
-        except ImportError:  # pragma: no cover
-            pass
-        if hasattr(value, "tobytes"):  # For numpy
-            return adler32(value.tobytes()) & 0xffffffff
-        if hasattr(value, "__iter__"):  # For iterators
-            if isinstance(value, (list, tuple)):
-                hash_array = []
-                for elem in value:
-                    hash_array.append(self._hash_args(elem))
-                return tuple(hash_array)
-        if hasattr(value, "items"):  # For dict
-            hash_array = []
-            for key, elem in value.items():
-                hash_array.append(key)
-                hash_array.append(self._hash_args(elem))
-            return tuple(hash_array)
-        return adler32(pickle.dumps(value)) & 0xffffffff
 
     def set_entry(self, key, func_res):
         with self.lock:

@@ -5,7 +5,6 @@ python:
   - 3.5
   - 3.6
   - 3.7
-  - 3.8
   - "3.6-dev"
   - "3.7-dev"
   - "3.8-dev"
@@ -86,7 +85,6 @@ install:
   - echo $TRAVIS_OS_NAME
   - pip install ".[test]"
   # - if [ "$TRAVIS_PYTHON_VERSION" == "2.7" ] && ["$TRAVIS_OS_NAME" == "linux"]; then pip install coverage pytest-cov .; else pip install ".[test]"; fi
-before_script: pytest -m prep
 script: pytest
 after_success:
   - codecov  # submit coverage to codecov.io

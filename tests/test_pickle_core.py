@@ -16,17 +16,14 @@ from time import (
     time,
     sleep
 )
-from pickle import load, dump, dumps
 from datetime import timedelta
 from random import random
-from zlib import adler32
 import threading
 try:
     import queue
 except ImportError:  # python 2
     import Queue as queue
 
-import pytest
 from cachier import cachier
 from cachier.pickle_core import DEF_CACHIER_DIR
 
@@ -395,40 +392,3 @@ def test_pickle_core_custom_cache_dir():
     assert end - start < 1
     _takes_5_seconds_custom_dir.clear_cache()
     assert _takes_5_seconds_custom_dir.cache_dpath() == EXPANDED_CUSTOM_DIR
-
-
-TEXT_VAL_TO_CHECK = 'foo'
-TEXT_CACHE_FNAME = 'cachier_text_cache_temp.pkl'
-
-
-@cachier()
-def text_caching(text):
-    sleep(1)
-    print(text)
-    print(adler32(dumps(text)) & 0xffffffff)
-    return random()
-
-
-@pytest.mark.prep
-def test_prep_text_hashing():
-    text_caching.clear_cache()
-    return_val = text_caching(TEXT_VAL_TO_CHECK)
-    print(return_val)
-    with open(TEXT_CACHE_FNAME, 'wb+') as f:
-        dump(return_val, f)
-
-
-def test_text_hashing():
-    with open(TEXT_CACHE_FNAME, 'rb') as f:
-        first = load(f)
-    print('\npickled return val found for text cache text:')
-    print(first)
-    start_time = time()
-    print('calling with value:')
-    print(TEXT_VAL_TO_CHECK)
-    second = text_caching(TEXT_VAL_TO_CHECK)
-    print('second value returned:')
-    print(second)
-    call_time = time() - start_time
-    assert call_time < 1
-    assert first == second

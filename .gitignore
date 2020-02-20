@@ -101,6 +101,3 @@ cachier_test_mongo_cred.yml
 # Pipfile doesn't work for me yet
 Pipfile
 Pipfile.lock
-
-# pickle files
-*.pkl
