@@ -201,7 +201,7 @@ class _PickleCore(_BaseCore):
         )
         observer.start()
         observer.join(timeout=1.0)
-        if observer.isAlive():
+        if observer.is_alive():
             # print('Timedout waiting. Starting again...')
             return self.wait_on_entry_calc(key)
         # print("Returned value: {}".format(event_handler.value))
