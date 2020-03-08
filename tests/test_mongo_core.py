@@ -195,7 +195,7 @@ def test_stalled_mongo_db_cache():
 
 def test_stalled_mong_db_core(monkeypatch):
 
-    def mock_get_entry(self, args, kwargs):  # skipcq: PYL-R0201, PYL-W0613
+    def mock_get_entry(self, args, kwargs, hash_params):  # skipcq: PYL-R0201, PYL-W0613
         return "key", {'being_calculated': True}
 
     def mock_get_entry_by_key(self, key):  # skipcq: PYL-R0201, PYL-W0613
@@ -213,7 +213,7 @@ def test_stalled_mong_db_core(monkeypatch):
     res = _stalled_func()
     assert res == 1
 
-    def mock_get_entry_2(self, args, kwargs):  # skipcq: PYL-W0613
+    def mock_get_entry_2(self, args, kwargs, hash_params):  # skipcq: PYL-W0613
         entry = {
             'being_calculated': True,
             "value": 1,
