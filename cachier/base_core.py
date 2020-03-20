@@ -28,7 +28,7 @@ class _BaseCore():
         if such a mapping exists."""
 
     @abc.abstractmethod
-    def get_entry(self, args, kwds):
+    def get_entry(self, args, kwds, hash_params):
         """Returns the result mapped to the given arguments in this core's
         cache, if such a mapping exists."""
 

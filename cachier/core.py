@@ -79,6 +79,7 @@ def cachier(
     pickle_reload=True,
     mongetter=None,
     cache_dir=None,
+    hash_params=None,
 ):
     """A persistent, stale-free memoization decorator.
 
@@ -112,6 +113,11 @@ def cachier(
         A fully qualified path to a file directory to be used for cache files.
         The running process must have running permissions to this folder. If
         not provided, a default directory at `~/.cachier/` is used.
+    hash_params : callable, optional
+        A callable that takes args and kwargs from main function and returns
+        a hash key of these params. If unset, default transformation is
+        applied. It is valuable and works as workaround in scenarios
+        that positional and keyword arguments are not hashable.
     """
     # print('Inside the wrapper maker')
     # print('mongetter={}'.format(mongetter))
@@ -142,7 +148,7 @@ def cachier(
                 _print = print
             if ignore_cache:
                 return func(*args, **kwds)
-            key, entry = core.get_entry(args, kwds)
+            key, entry = core.get_entry(args, kwds, hash_params)
             if overwrite_cache:
                 return _calc_entry(core, key, func, args, kwds)
             if entry is not None:  # pylint: disable=R0101

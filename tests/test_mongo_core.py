@@ -14,6 +14,8 @@ except ImportError:  # python 2
 
 import pytest
 import pymongo
+import hashlib
+import pandas as pd
 from pymongo.mongo_client import MongoClient
 from pymongo.errors import OperationFailure
 
@@ -195,7 +197,7 @@ def test_stalled_mongo_db_cache():
 
 def test_stalled_mong_db_core(monkeypatch):
 
-    def mock_get_entry(self, args, kwargs):  # skipcq: PYL-R0201, PYL-W0613
+    def mock_get_entry(self, args, kwargs, hash_params):  # skipcq: PYL-R0201, PYL-W0613
         return "key", {'being_calculated': True}
 
     def mock_get_entry_by_key(self, key):  # skipcq: PYL-R0201, PYL-W0613
@@ -213,7 +215,7 @@ def test_stalled_mong_db_core(monkeypatch):
     res = _stalled_func()
     assert res == 1
 
-    def mock_get_entry_2(self, args, kwargs):  # skipcq: PYL-W0613
+    def mock_get_entry_2(self, args, kwargs, hash_params):  # skipcq: PYL-W0613
         entry = {
             'being_calculated': True,
             "value": 1,
@@ -233,3 +235,35 @@ def test_stalled_mong_db_core(monkeypatch):
 
     res = _stalled_func_2()
     assert res == 2
+
+
+def test_callable_hash_param():
+
+    def _hash_params(args, kwargs):
+        def _hash(obj):
+            if isinstance(obj, pd.core.frame.DataFrame):
+                return hashlib.sha256(pd.util.hash_pandas_object(obj).values.tobytes()).hexdigest()
+            return obj
+
+        k_args = tuple(map(_hash, args))
+        k_kwargs = tuple(sorted({k: _hash(v) for k, v in kwargs.items()}.items()))
+        return k_args + k_kwargs
+
+    @cachier(mongetter=_test_mongetter, hash_params=_hash_params)
+    def _params_with_dataframe(*args, **kwargs):
+        """Some function."""
+        return random()
+
+    _params_with_dataframe.clear_cache()
+
+    df_a = pd.DataFrame.from_dict(dict(a=[0], b=[2], c=[3]))
+    df_b = pd.DataFrame.from_dict(dict(a=[0], b=[2], c=[3]))
+    value_a = _params_with_dataframe(df_a, 1)
+    value_b = _params_with_dataframe(df_b, 1)
+
+    assert value_a == value_b  # same content --> same key
+
+    value_a = _params_with_dataframe(1, df=df_a)
+    value_b = _params_with_dataframe(1, df=df_b)
+
+    assert value_a == value_b  # same content --> same key
