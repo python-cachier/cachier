@@ -130,6 +130,18 @@ Sometimes you may want your function to trigger a calculation when it encounters
 Further function calls made while the calculation is being performed will not trigger redundant calculations.
 
 
+Working with unhashable arguments
+---------------------------------
+
+As mentioned above, The positional and keyword arguments to the wrapped function must be hashable (i.e. Python's immutable built-in objects, not mutable containers). To get around this limitation the ``hash_params`` parameter of the ``cachier`` decorator can be provided with a callable that gets the args and kwargs from the decorated function and returns a hash key for them.
+
+.. code-block:: python
+
+  @cachier(hash_params=hash_my_custom_class)
+  def calculate_super_complex_stuff(custom_obj):
+    # amazing code goes here
+
+
 Per-function call arguments
 ---------------------------
 

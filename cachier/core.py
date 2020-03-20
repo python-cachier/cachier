@@ -114,10 +114,10 @@ def cachier(
         The running process must have running permissions to this folder. If
         not provided, a default directory at `~/.cachier/` is used.
     hash_params : callable, optional
-        A callable that takes args and kwargs from main function and returns
-        a hash key of these params. If unset, default transformation is
-        applied. It is valuable and works as workaround in scenarios
-        that positional and keyword arguments are not hashable.
+        A callable that gets the args and kwargs from the decorated function
+        and returns a hash key for them. This parameter can be used to enable
+        the use of cachier with functions that get arguments that are not
+        automatically hashable by Python.
     """
     # print('Inside the wrapper maker')
     # print('mongetter={}'.format(mongetter))
