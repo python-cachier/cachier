@@ -45,6 +45,19 @@ matrix:
         - pip3 install ".[test]"
       script: python3 -m pytest
       after_success: python3 -m codecov
+    - name: "Python 3.8.0 on macOS 10.14"
+      os: osx
+      osx_image: xcode11.3  # Python 3.7.3 running on macOS 10.14.3
+      language: shell       # 'language: python' is an error on Travis CI macOS
+      before_install:
+        - python3 --version
+        - pip3 install -U pip
+        - pip3 install -U pytest
+        - pip3 install codecov
+      install:
+        - pip3 install ".[test]"
+      script: python3 -m pytest
+      after_success: python3 -m codecov
     #  ====== WINDOWS =========
     - name: "Python 3.5.4 on Windows"
       os: windows           # Windows 10.0.17134 N/A Build 17134
