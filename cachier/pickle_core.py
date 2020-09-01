@@ -136,7 +136,7 @@ class _PickleCore(_BaseCore):
             self.cache = cache
             fpath = self._cache_fpath()
             with portalocker.Lock(fpath, mode='wb') as cache_file:
-                pickle.dump(cache, cache_file)
+                pickle.dump(cache, cache_file, protocol=4)
             self._reload_cache()
 
     def get_entry_by_key(self, key, reload=False):  # pylint: disable=W0221
