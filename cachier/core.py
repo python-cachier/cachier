@@ -21,6 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 from .pickle_core import _PickleCore
 from .mongo_core import _MongoCore, RecalculationNeeded
 
+import inspect
 
 MAX_WORKERS_ENVAR_NAME = 'CACHIER_MAX_WORKERS'
 DEFAULT_MAX_WORKERS = 8
@@ -148,7 +149,8 @@ def cachier(
                 _print = print
             if ignore_cache:
                 return func(*args, **kwds)
-            key, entry = core.get_entry(args, kwds, hash_params)
+            code = {'source': inspect.getsource(func)}
+            key, entry = core.get_entry(args, {**kwds, **code}, hash_params)
             if overwrite_cache:
                 return _calc_entry(core, key, func, args, kwds)
             if entry is not None:  # pylint: disable=R0101
