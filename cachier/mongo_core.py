@@ -135,7 +135,7 @@ class _MongoCore(_BaseCore):
         time_spent = 0
         while True:
             time.sleep(MONGO_SLEEP_DURATION_IN_SEC)
-            time_spent += 1
+            time_spent += MONGO_SLEEP_DURATION_IN_SEC
             key, entry = self.get_entry_by_key(key)
             if entry is None:
                 raise RecalculationNeeded()

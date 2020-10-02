@@ -99,7 +99,6 @@ def _stale_after_mongo(arg_1, arg_2):
     """Some function."""
     return random() + arg_1 + arg_2
 
-
 def test_mongo_stale_after():
     """Testing MongoDB core stale_after functionality."""
     _stale_after_mongo.clear_cache()
@@ -140,6 +139,53 @@ def test_mongo_being_calculated():
     res1 = res_queue.get()
     res2 = res_queue.get()
     assert res1 == res2
+
+
+@cachier(mongetter=_test_mongetter, stale_after=MONGO_DELTA, next_time=False, wait_for_calc_timeout=2)
+def _wait_for_calc_timeout_mongo_fast(arg_1, arg_2):
+    """Some function."""
+    sleep(1)
+    return random() + arg_1 + arg_2
+
+
+def test_mongo_wait_for_calc_timeout_ok():
+    """Testing MongoDB core handling of waiting for results."""
+    _wait_for_calc_timeout_mongo_fast.clear_cache()
+    val1 = _wait_for_calc_timeout_mongo_fast(1, 2)
+    val2 = _wait_for_calc_timeout_mongo_fast(1, 2)
+    assert val1 == val2
+
+
+@cachier(mongetter=_test_mongetter, stale_after=MONGO_DELTA, next_time=False, wait_for_calc_timeout=2)
+def _wait_for_calc_timeout_mongo_slow(arg_1, arg_2):
+    """Some function."""
+    sleep(3)
+    return random() + arg_1 + arg_2
+
+
+def _calls_wait_for_calc_timeout_mongo_slow(res_queue):
+    res = _wait_for_calc_timeout_mongo_slow(1, 2)
+    res_queue.put(res)
+
+
+def test_mongo_wait_for_calc_timeout_slow():
+    """Testing MongoDB core handling of waiting for results."""
+    _wait_for_calc_timeout_mongo_slow.clear_cache()
+    res_queue = queue.Queue()
+    thread1 = threading.Thread(
+        target=_calls_wait_for_calc_timeout_mongo_slow, kwargs={'res_queue': res_queue})
+    thread2 = threading.Thread(
+        target=_calls_wait_for_calc_timeout_mongo_slow, kwargs={'res_queue': res_queue})
+
+    thread1.start()
+    thread2.start()
+    sleep(3)
+    thread1.join()
+    thread2.join()    
+    assert res_queue.qsize() == 2
+    res1 = res_queue.get()
+    res2 = res_queue.get()
+    assert res1 != res2
 
 
 class _BadMongoCollection:
@@ -188,7 +234,7 @@ def test_stalled_mongo_db_cache():
     @cachier(mongetter=_test_mongetter)
     def _stalled_func():
         return 1
-    core = _MongoCore(_test_mongetter, None, False)
+    core = _MongoCore(_test_mongetter, None, False, 0)
     core.set_func(_stalled_func)
     core.clear_cache()
     with pytest.raises(RecalculationNeeded):
