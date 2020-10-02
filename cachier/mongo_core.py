@@ -37,7 +37,7 @@ class _MongoCore(_BaseCore):
 
     _INDEX_NAME = 'func_1_key_1'
 
-    def __init__(self, mongetter, stale_after, next_time):
+    def __init__(self, mongetter, stale_after, next_time, wait_for_calc_timeout):
         if 'pymongo' not in sys.modules:
             warnings.warn((
                 "Cachier warning: pymongo was not found. "
@@ -45,6 +45,7 @@ class _MongoCore(_BaseCore):
         _BaseCore.__init__(self, stale_after, next_time)
         self.mongetter = mongetter
         self.mongo_collection = self.mongetter()
+        self.wait_for_calc_timeout = wait_for_calc_timeout
         index_inf = self.mongo_collection.index_information()
         if _MongoCore._INDEX_NAME not in index_inf:
             func1key1 = IndexModel(
@@ -131,13 +132,21 @@ class _MongoCore(_BaseCore):
             pass  # don't care in this case
 
     def wait_on_entry_calc(self, key):
+        time_spent = 0
         while True:
             time.sleep(MONGO_SLEEP_DURATION_IN_SEC)
+            time_spent += 1
             key, entry = self.get_entry_by_key(key)
             if entry is None:
                 raise RecalculationNeeded()
-            if entry is not None and not entry['being_calculated']:
-                return entry['value']
+
+            if entry is not None:
+                if not entry['being_calculated']:
+                    return entry['value']
+
+                if self.wait_for_calc_timeout > 0 and time_spent >= self.wait_for_calc_timeout:
+                    raise RecalculationNeeded()
+
 
     def clear_cache(self):
         self.mongo_collection.delete_many(

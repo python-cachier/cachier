@@ -80,6 +80,7 @@ def cachier(
     mongetter=None,
     cache_dir=None,
     hash_params=None,
+    wait_for_calc_timeout=0
 ):
     """A persistent, stale-free memoization decorator.
 
@@ -118,6 +119,12 @@ def cachier(
         and returns a hash key for them. This parameter can be used to enable
         the use of cachier with functions that get arguments that are not
         automatically hashable by Python.
+    wait_for_calc_timeout: int, optional, for MongoDB only
+        The maximum time to wait for an ongoing calculation. When a
+        process started to calculate the value setting being_calculated to 
+        True, any process trying to read the same entry will wait a maximum of 
+        seconds specified in this parameter. 0 means wait forever.
+        Once the timeout expires the calculation will be triggered.
     """
     # print('Inside the wrapper maker')
     # print('mongetter={}'.format(mongetter))
@@ -125,7 +132,7 @@ def cachier(
     # print('next_time={}'.format(next_time))
 
     if mongetter:
-        core = _MongoCore(mongetter, stale_after, next_time)
+        core = _MongoCore(mongetter, stale_after, next_time, wait_for_calc_timeout)
     else:
         core = _PickleCore(  # pylint: disable=R0204
             stale_after=stale_after,
