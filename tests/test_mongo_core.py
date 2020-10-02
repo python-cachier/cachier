@@ -153,6 +153,7 @@ def _calls_wait_for_calc_timeout_mongo_fast(res_queue):
 
 
 def test_mongo_wait_for_calc_timeout_ok():
+    """ Testing calls that avoid timeouts store the values in cache. """
     _wait_for_calc_timeout_mongo_fast.clear_cache()
     val1 = _wait_for_calc_timeout_mongo_fast(1, 2)
     val2 = _wait_for_calc_timeout_mongo_fast(1, 2)
@@ -187,7 +188,7 @@ def _calls_wait_for_calc_timeout_mongo_slow(res_queue):
 
 
 def test_mongo_wait_for_calc_timeout_slow():
-    """Testing for calls that time out are performed again."""
+    """Testing for calls timing out to be performed twice when needed."""
     _wait_for_calc_timeout_mongo_slow.clear_cache()
     res_queue = queue.Queue()
     thread1 = threading.Thread(
