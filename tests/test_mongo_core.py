@@ -92,7 +92,7 @@ def test_mongo_core():
 
 
 MONGO_DELTA = timedelta(seconds=3)
-
+MONGO_DELTA_LONG = timedelta(seconds=10)
 
 @cachier(mongetter=_test_mongetter, stale_after=MONGO_DELTA, next_time=False)
 def _stale_after_mongo(arg_1, arg_2):
@@ -156,7 +156,8 @@ def test_mongo_wait_for_calc_timeout_ok():
     assert val1 == val2
 
 
-@cachier(mongetter=_test_mongetter, stale_after=MONGO_DELTA, next_time=False, wait_for_calc_timeout=2)
+
+@cachier(mongetter=_test_mongetter, stale_after=MONGO_DELTA_LONG, next_time=False, wait_for_calc_timeout=2)
 def _wait_for_calc_timeout_mongo_slow(arg_1, arg_2):
     """Some function."""
     sleep(3)
@@ -185,7 +186,9 @@ def test_mongo_wait_for_calc_timeout_slow():
     assert res_queue.qsize() == 2
     res1 = res_queue.get()
     res2 = res_queue.get()
-    assert res1 != res2
+    assert res1 != res2 # Timeout kicked in, hence two calls were done
+    res3 = _wait_for_calc_timeout_mongo_slow(1, 2)
+    assert res2 == res3 # The cached value is returned
 
 
 class _BadMongoCollection:
