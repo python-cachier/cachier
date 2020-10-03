@@ -206,7 +206,7 @@ def test_mongo_wait_for_calc_timeout_slow():
     res2 = res_queue.get()
     assert res1 != res2 # Timeout kicked in.  Two calls were done
     res3 = _wait_for_calc_timeout_mongo_slow(1, 2)
-    assert res2 == res3 # The cached value is returned
+    assert res2 == res3 or res1 == res3 # One of the cached values is returned
 
 
 class _BadMongoCollection:
