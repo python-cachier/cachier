@@ -177,12 +177,14 @@ def test_mongo_wait_for_calc_timeout_ok():
 
 @cachier(mongetter=_test_mongetter, stale_after=MONGO_DELTA_LONG, next_time=False, wait_for_calc_timeout=2)
 def _wait_for_calc_timeout_mongo_slow(arg_1, arg_2):
+    print("_wait_for_calc_timeout_mongo_slow")
     """Some function."""
     sleep(3)
     return random() + arg_1 + arg_2
 
 
 def _calls_wait_for_calc_timeout_mongo_slow(res_queue):
+    print("_calls_wait_for_calc_timeout_mongo_slow")
     res = _wait_for_calc_timeout_mongo_slow(1, 2)
     res_queue.put(res)
 
@@ -190,6 +192,7 @@ def _calls_wait_for_calc_timeout_mongo_slow(res_queue):
 def test_mongo_wait_for_calc_timeout_slow():
     """Testing for calls timing out to be performed twice when needed."""
     _wait_for_calc_timeout_mongo_slow.clear_cache()
+    print("Cache cleared")
     res_queue = queue.Queue()
     thread1 = threading.Thread(
         target=_calls_wait_for_calc_timeout_mongo_slow, kwargs={'res_queue': res_queue})
@@ -198,7 +201,7 @@ def test_mongo_wait_for_calc_timeout_slow():
 
     thread1.start()
     thread2.start()
-    sleep(3)
+    sleep(4)
     thread1.join()
     thread2.join()    
     assert res_queue.qsize() == 2
