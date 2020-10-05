@@ -201,15 +201,17 @@ def test_mongo_wait_for_calc_timeout_slow():
 
     thread1.start()
     thread2.start()
+    sleep(1)
+    res3 = _wait_for_calc_timeout_mongo_slow(1, 2)
     sleep(4)
     thread1.join()
-    thread2.join()    
+    thread2.join()
     assert res_queue.qsize() == 2
     res1 = res_queue.get()
     res2 = res_queue.get()
     assert res1 != res2 # Timeout kicked in.  Two calls were done
-    res3 = _wait_for_calc_timeout_mongo_slow(1, 2)
-    assert res2 == res3 or res1 == res3 # One of the cached values is returned
+    res4 = _wait_for_calc_timeout_mongo_slow(1, 2)
+    assert res1 == res4 or res2 == res4 or res3 == res4 # One of the cached values is returned
 
 
 class _BadMongoCollection:

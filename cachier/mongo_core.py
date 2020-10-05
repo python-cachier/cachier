@@ -144,8 +144,9 @@ class _MongoCore(_BaseCore):
             if not entry['being_calculated']:
                 return entry['value']
 
+            print("Got an entry. It is being calculated. Do we wait?", time_spent, self.wait_for_calc_timeout, time_spent >= self.wait_for_calc_timeout)
             if self.wait_for_calc_timeout > 0 and time_spent >= self.wait_for_calc_timeout:
-                print("Got an entry. Is not valid. Force recomputation.", time_spent, self.wait_for_calc_timeout, time_spent >= self.wait_for_calc_timeout)
+                print("Tired of waiting. RecalculationNeeded.", time_spent, self.wait_for_calc_timeout, time_spent >= self.wait_for_calc_timeout)
                 raise RecalculationNeeded()
 
 
