@@ -134,7 +134,6 @@ class _MongoCore(_BaseCore):
     def wait_on_entry_calc(self, key):
         time_spent = 0
         while True:
-            print("Waiting for Mongo cache...")
             time.sleep(MONGO_SLEEP_DURATION_IN_SEC)
             time_spent += MONGO_SLEEP_DURATION_IN_SEC
             key, entry = self.get_entry_by_key(key)
@@ -144,9 +143,7 @@ class _MongoCore(_BaseCore):
             if not entry['being_calculated']:
                 return entry['value']
 
-            print("Got an entry. It is being calculated. Do we wait?", time_spent, self.wait_for_calc_timeout, time_spent >= self.wait_for_calc_timeout)
             if self.wait_for_calc_timeout > 0 and time_spent >= self.wait_for_calc_timeout:
-                print("Tired of waiting. RecalculationNeeded.", time_spent, self.wait_for_calc_timeout, time_spent >= self.wait_for_calc_timeout)
                 raise RecalculationNeeded()
 
 
