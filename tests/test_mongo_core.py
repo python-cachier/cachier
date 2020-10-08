@@ -178,7 +178,7 @@ def test_mongo_wait_for_calc_timeout_ok():
 @cachier(mongetter=_test_mongetter, stale_after=MONGO_DELTA_LONG, next_time=False, wait_for_calc_timeout=2)
 def _wait_for_calc_timeout_mongo_slow(arg_1, arg_2):
     print("_wait_for_calc_timeout_mongo_slow")
-    """Some function."""
+    """Some slow function."""
     sleep(3)
     return random() + arg_1 + arg_2
 
