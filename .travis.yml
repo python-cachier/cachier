@@ -9,12 +9,14 @@ python:
   - "3.6-dev"
   - "3.7-dev"
   - "3.8-dev"
+  - "3.9-dev"
 matrix:
   fast_finish: true  # allows to determine results when linux builds finish, without waiting for osx and windows builds
   allow_failures:
     - python: "3.6-dev"
     - python: "3.7-dev"
     - python: "3.8-dev"
+    - python: "3.9-dev"
   #   - os: osx
   #   - os: windows
   include:
