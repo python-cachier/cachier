@@ -92,13 +92,12 @@ def test_mongo_core():
 
 
 MONGO_DELTA = timedelta(seconds=3)
-
+MONGO_DELTA_LONG = timedelta(seconds=10)
 
 @cachier(mongetter=_test_mongetter, stale_after=MONGO_DELTA, next_time=False)
 def _stale_after_mongo(arg_1, arg_2):
     """Some function."""
     return random() + arg_1 + arg_2
-
 
 def test_mongo_stale_after():
     """Testing MongoDB core stale_after functionality."""
@@ -140,6 +139,75 @@ def test_mongo_being_calculated():
     res1 = res_queue.get()
     res2 = res_queue.get()
     assert res1 == res2
+
+
+@cachier(mongetter=_test_mongetter, stale_after=MONGO_DELTA, next_time=False, wait_for_calc_timeout=2)
+def _wait_for_calc_timeout_mongo_fast(arg_1, arg_2):
+    """Some function."""
+    sleep(1)
+    return random() + arg_1 + arg_2
+
+def _calls_wait_for_calc_timeout_mongo_fast(res_queue):
+    res = _wait_for_calc_timeout_mongo_fast(1, 2)
+    res_queue.put(res)
+
+
+def test_mongo_wait_for_calc_timeout_ok():
+    """ Testing calls that avoid timeouts store the values in cache. """
+    _wait_for_calc_timeout_mongo_fast.clear_cache()
+    val1 = _wait_for_calc_timeout_mongo_fast(1, 2)
+    val2 = _wait_for_calc_timeout_mongo_fast(1, 2)
+    assert val1 == val2
+
+    res_queue = queue.Queue()
+    thread1 = threading.Thread(
+        target=_calls_wait_for_calc_timeout_mongo_fast, kwargs={'res_queue': res_queue})
+    thread2 = threading.Thread(
+        target=_calls_wait_for_calc_timeout_mongo_fast, kwargs={'res_queue': res_queue})
+
+    thread1.start()
+    thread2.start()
+    sleep(2)
+    thread1.join()
+    thread2.join()    
+    assert res_queue.qsize() == 2
+    res1 = res_queue.get()
+    res2 = res_queue.get()
+    assert res1 == res2 # Timeout did not kick in, a single call was done
+
+@cachier(mongetter=_test_mongetter, stale_after=MONGO_DELTA_LONG, next_time=False, wait_for_calc_timeout=2)
+def _wait_for_calc_timeout_mongo_slow(arg_1, arg_2):
+    sleep(3)
+    return random() + arg_1 + arg_2
+
+
+def _calls_wait_for_calc_timeout_mongo_slow(res_queue):
+    res = _wait_for_calc_timeout_mongo_slow(1, 2)
+    res_queue.put(res)
+
+
+def test_mongo_wait_for_calc_timeout_slow():
+    """Testing for calls timing out to be performed twice when needed."""
+    _wait_for_calc_timeout_mongo_slow.clear_cache()
+    res_queue = queue.Queue()
+    thread1 = threading.Thread(
+        target=_calls_wait_for_calc_timeout_mongo_slow, kwargs={'res_queue': res_queue})
+    thread2 = threading.Thread(
+        target=_calls_wait_for_calc_timeout_mongo_slow, kwargs={'res_queue': res_queue})
+
+    thread1.start()
+    thread2.start()
+    sleep(1)
+    res3 = _wait_for_calc_timeout_mongo_slow(1, 2)
+    sleep(4)
+    thread1.join()
+    thread2.join()
+    assert res_queue.qsize() == 2
+    res1 = res_queue.get()
+    res2 = res_queue.get()
+    assert res1 != res2 # Timeout kicked in.  Two calls were done
+    res4 = _wait_for_calc_timeout_mongo_slow(1, 2)
+    assert res1 == res4 or res2 == res4 or res3 == res4 # One of the cached values is returned
 
 
 class _BadMongoCollection:
@@ -188,7 +256,7 @@ def test_stalled_mongo_db_cache():
     @cachier(mongetter=_test_mongetter)
     def _stalled_func():
         return 1
-    core = _MongoCore(_test_mongetter, None, False)
+    core = _MongoCore(_test_mongetter, None, False, 0)
     core.set_func(_stalled_func)
     core.clear_cache()
     with pytest.raises(RecalculationNeeded):
