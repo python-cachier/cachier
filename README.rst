@@ -207,6 +207,12 @@ You can set a MongoDB-based cache by assigning ``mongetter`` with a callable tha
 
 This allows you to have a cross-machine, albeit slower, cache. This functionality requires that the installation of the ``pymongo`` python package.
 
+In certain cases the MongoDB backend might leave a deadlock behind, blocking all subsequent requests from being processed. If you encounter this issue, supply the ``wait_for_calc_timeout`` with a reasonable number of seconds; calls will then wait at most this number of seconds before triggering a recalculation.
+
+.. code-block:: python
+
+  @cachier(mongetter=False, wait_for_calc_timeout=2)
+
 
 Contributing
 ============
