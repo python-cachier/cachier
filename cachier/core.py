@@ -73,10 +73,15 @@ def _calc_entry(core, key, func, args, kwds):
         core.mark_entry_not_calculated(key)
 
 
+class MissingMongetter(ValueError):
+    """Thrown when the mongetter keyword argument is missing."""
+
+
 def cachier(
     stale_after=None,
     next_time=False,
     pickle_reload=True,
+    backend=None,
     mongetter=None,
     cache_dir=None,
     hash_params=None,
@@ -110,6 +115,10 @@ def cachier(
         A callable that takes no arguments and returns a pymongo.Collection
         object with writing permissions. If unset a local pickle cache is used
         instead.
+    backend : str, optional
+        The name of the backend to use. If None, defaults to 'mongo' when
+        the ``mongetter`` argument is passed, otherwise defaults to 'pickle'.
+        Valid options currently include 'pickle' and 'mongo'.
     cache_dir : str, optional
         A fully qualified path to a file directory to be used for cache files.
         The running process must have running permissions to this folder. If
@@ -131,15 +140,34 @@ def cachier(
     # print('stale_after={}'.format(stale_after))
     # print('next_time={}'.format(next_time))
 
-    if mongetter:
-        core = _MongoCore(mongetter, stale_after, next_time, wait_for_calc_timeout)
-    else:
+    # The default is calculated dynamically to maintain previous behavior
+    # to default to pickle unless the ``mongetter`` argument is given.
+    if backend is None:
+        backend = 'pickle' if mongetter is None else 'mongo'
+
+    if backend == 'pickle':
         core = _PickleCore(  # pylint: disable=R0204
             stale_after=stale_after,
             next_time=next_time,
             reload=pickle_reload,
             cache_dir=cache_dir,
         )
+    elif backend == 'mongo':
+        if mongetter is None:
+            raise MissingMongetter('must specify ``mongetter`` when using the mongo core')
+        core = _MongoCore(mongetter, stale_after, next_time, wait_for_calc_timeout)
+    elif backend == 'memory':
+        raise NotImplementedError(
+            'An in-memory backend has not yet been implemented. '
+            'Please see https://github.com/shaypal5/cachier/issues/6'
+        )
+    elif backend == 'redis':
+        raise NotImplementedError(
+            'A Redis backend has not yet been implemented. '
+            'Please see https://github.com/shaypal5/cachier/issues/4'
+        )
+    else:
+        raise ValueError('specified an invalid core: {}'.format(backend))
 
     def _cachier_decorator(func):
         core.set_func(func)
