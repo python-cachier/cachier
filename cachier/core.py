@@ -135,7 +135,12 @@ def cachier(
     # print('stale_after={}'.format(stale_after))
     # print('next_time={}'.format(next_time))
 
-    if backend is None or backend == 'pickle':
+    # The default is calculated dynamically to maintain previous behavior
+    # to default to pickle unless the ``mongetter`` argument is given.
+    if backend is None:
+        backend = 'pickle' if mongetter is None else 'mongo'
+
+    if backend == 'pickle':
         core = _PickleCore(  # pylint: disable=R0204
             stale_after=stale_after,
             next_time=next_time,
