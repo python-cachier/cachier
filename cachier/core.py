@@ -73,6 +73,10 @@ def _calc_entry(core, key, func, args, kwds):
         core.mark_entry_not_calculated(key)
 
 
+class MissingMongetter(ValueError):
+    """Thrown when the mongetter keyword argument is missing."""
+
+
 def cachier(
     stale_after=None,
     next_time=False,
@@ -150,7 +154,7 @@ def cachier(
         )
     elif backend == 'mongo':
         if mongetter is None:
-            raise ValueError('must specify ``mongetter`` when using the mongo core')
+            raise MissingMongetter('must specify ``mongetter`` when using the mongo core')
         core = _MongoCore(mongetter, stale_after, next_time, wait_for_calc_timeout)
     elif backend == 'memory':
         raise NotImplementedError(
