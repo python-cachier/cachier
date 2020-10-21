@@ -77,6 +77,7 @@ def cachier(
     stale_after=None,
     next_time=False,
     pickle_reload=True,
+    backend=None,
     mongetter=None,
     cache_dir=None,
     hash_params=None,
@@ -110,6 +111,9 @@ def cachier(
         A callable that takes no arguments and returns a pymongo.Collection
         object with writing permissions. If unset a local pickle cache is used
         instead.
+    backend : str, optional
+        The name of the backend to use. Defaults to 'pickle' if None. Other
+        valid options include 'pickle' and 'mongo'.
     cache_dir : str, optional
         A fully qualified path to a file directory to be used for cache files.
         The running process must have running permissions to this folder. If
@@ -131,15 +135,19 @@ def cachier(
     # print('stale_after={}'.format(stale_after))
     # print('next_time={}'.format(next_time))
 
-    if mongetter:
-        core = _MongoCore(mongetter, stale_after, next_time, wait_for_calc_timeout)
-    else:
+    if backend is None or backend == 'pickle':
         core = _PickleCore(  # pylint: disable=R0204
             stale_after=stale_after,
             next_time=next_time,
             reload=pickle_reload,
             cache_dir=cache_dir,
         )
+    elif backend == 'mongo':
+        if mongetter is None:
+            raise ValueError('must specify ``mongetter`` when using the mongo core')
+        core = _MongoCore(mongetter, stale_after, next_time, wait_for_calc_timeout)
+    else:
+        raise ValueError('specified an invalid core: {}'.format(backend))
 
     def _cachier_decorator(func):
         core.set_func(func)
