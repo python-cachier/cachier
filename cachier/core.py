@@ -112,8 +112,9 @@ def cachier(
         object with writing permissions. If unset a local pickle cache is used
         instead.
     backend : str, optional
-        The name of the backend to use. Defaults to 'pickle' if None. Other
-        valid options include 'pickle' and 'mongo'.
+        The name of the backend to use. If None, defaults to 'mongo' when
+        the ``mongetter`` argument is passed, otherwise defaults to 'pickle'.
+        Valid options currently include 'pickle' and 'mongo'.
     cache_dir : str, optional
         A fully qualified path to a file directory to be used for cache files.
         The running process must have running permissions to this folder. If
