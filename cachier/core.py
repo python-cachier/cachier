@@ -146,6 +146,16 @@ def cachier(
         if mongetter is None:
             raise ValueError('must specify ``mongetter`` when using the mongo core')
         core = _MongoCore(mongetter, stale_after, next_time, wait_for_calc_timeout)
+    elif backend == 'memory':
+        raise NotImplementedError(
+            'An in-memory backend has not yet been implemented. '
+            'Please see https://github.com/shaypal5/cachier/issues/6'
+        )
+    elif backend == 'redis':
+        raise NotImplementedError(
+            'A Redis backend has not yet been implemented. '
+            'Please see https://github.com/shaypal5/cachier/issues/4'
+        )
     else:
         raise ValueError('specified an invalid core: {}'.format(backend))
 
