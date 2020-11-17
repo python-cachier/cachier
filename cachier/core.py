@@ -20,6 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from .pickle_core import _PickleCore
 from .mongo_core import _MongoCore, RecalculationNeeded
+from .memory_core import _MemoryCore
 
 
 MAX_WORKERS_ENVAR_NAME = 'CACHIER_MAX_WORKERS'
@@ -157,10 +158,7 @@ def cachier(
             raise MissingMongetter('must specify ``mongetter`` when using the mongo core')
         core = _MongoCore(mongetter, stale_after, next_time, wait_for_calc_timeout)
     elif backend == 'memory':
-        raise NotImplementedError(
-            'An in-memory backend has not yet been implemented. '
-            'Please see https://github.com/shaypal5/cachier/issues/6'
-        )
+        core = _MemoryCore(stale_after=stale_after, next_time=next_time)
     elif backend == 'redis':
         raise NotImplementedError(
             'A Redis backend has not yet been implemented. '
