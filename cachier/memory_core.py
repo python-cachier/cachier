@@ -19,7 +19,7 @@ class _MemoryCore(_BaseCore):
 
     def __init__(self, stale_after, next_time):
         super().__init__(stale_after=stale_after, next_time=next_time)
-        self.cache = defaultdict(dict)
+        self.cache = {}
 
     def get_entry_by_key(self, key, reload=False):  # pylint: disable=W0221
         return key, self.cache.get(key, None)
