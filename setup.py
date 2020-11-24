@@ -15,7 +15,16 @@ except ImportError:
 import versioneer
 
 
-TEST_REQUIRES = ['pytest', 'coverage', 'pytest-cov', 'pymongo', 'pandas']
+TEST_REQUIRES = [
+    # testing and coverage
+    'pytest', 'coverage', 'pytest-cov',
+    # optional dependencies
+    'pymongo',
+    # non-testing packages required by tests, not by the package
+    'pandas',
+    # to be able to run `python setup.py checkdocs`
+    'collective.checkdocs', 'pygments',
+]
 
 README_RST = ''
 with open('README.rst') as f:

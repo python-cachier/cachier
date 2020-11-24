@@ -214,6 +214,18 @@ In certain cases the MongoDB backend might leave a deadlock behind, blocking all
   @cachier(mongetter=False, wait_for_calc_timeout=2)
 
 
+Memory Core
+-----------
+
+You can set an in-memory cache by assigning the ``backend`` parameter with ``'memory'``:
+
+.. code-block:: python
+
+  @cachier(backend='memory')
+
+Note, however, that ``cachier``'s in-memory core is simple, and has no monitoring or cap on cache size, and can thus lead to memory errors on large return values - it is mainly intended to be used with future multi-core functionality. As a rule, Python's built-in ``lru_cache`` is a much better stand-alone solution.
+
+
 Contributing
 ============
 
@@ -255,10 +267,22 @@ This project is documented using the `numpy docstring conventions`_, which were 
 .. _`numpy docstring conventions`: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
 .. _`these conventions`: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
 
+Additionally, if you update this ``README.rst`` file,  use ``python setup.py checkdocs`` to validate it compiles.
+
 
 Credits
 =======
-Created by Shay Palachy (shay.palachy@gmail.com).
+Created by `Shay Palachy <https://github.com/shaypal5>`_ (shay.palachy@gmail.com).
+
+Other major contributors:
+
+  * `cthoyt <https://github.com/cthoyt>`_ - Base memory core implementation.
+
+  * `amarczew <https://github.com/amarczew>`_ - The ``hash_params`` kwarg.
+
+  * `non-senses <https://github.com/non-senses>`_ - The ``wait_for_calc_timeout`` kwarg.
+
+Notable bugfixers: `MichaelRazum <https://github.com/MichaelRazum>`_, 
 
 .. Contributers (in chronological order of first commit):
 
