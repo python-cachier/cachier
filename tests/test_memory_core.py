@@ -7,6 +7,7 @@ from datetime import timedelta
 from random import random
 from time import sleep, time
 
+import pytest
 import pandas as pd
 
 from cachier import cachier
@@ -19,6 +20,7 @@ def _takes_5_seconds(arg_1, arg_2):
     return 'arg_1:{}, arg_2:{}'.format(arg_1, arg_2)
 
 
+@pytest.mark.memory
 def test_memory_core():
     """Basic memory core functionality."""
     _takes_5_seconds.clear_cache()
@@ -40,6 +42,7 @@ def _stale_after_seconds(arg_1, arg_2):
     return random()
 
 
+@pytest.mark.memory
 def test_stale_after():
     """Testing the stale_after functionality."""
     _stale_after_seconds.clear_cache()
@@ -60,6 +63,7 @@ def _stale_after_next_time(arg_1, arg_2):
     return random()
 
 
+@pytest.mark.memory
 def test_stale_after_next_time():
     """Testing the stale_after with next_time functionality."""
     _stale_after_next_time.clear_cache()
@@ -88,6 +92,7 @@ def _random_num_with_arg(a):
     return random()
 
 
+@pytest.mark.memory
 def test_overwrite_cache():
     """Tests that the overwrite feature works correctly."""
     _random_num.clear_cache()
@@ -111,6 +116,7 @@ def test_overwrite_cache():
     _random_num_with_arg.clear_cache()
 
 
+@pytest.mark.memory
 def test_ignore_cache():
     """Tests that the ignore_cache feature works correctly."""
     _random_num.clear_cache()
@@ -148,12 +154,15 @@ def _calls_takes_time(res_queue):
     res_queue.put(res)
 
 
+@pytest.mark.memory
 def test_memory_being_calculated():
     """Testing memory core handling of being calculated scenarios."""
     _takes_time.clear_cache()
     res_queue = queue.Queue()
-    thread1 = threading.Thread(target=_calls_takes_time, kwargs={'res_queue': res_queue})
-    thread2 = threading.Thread(target=_calls_takes_time, kwargs={'res_queue': res_queue})
+    thread1 = threading.Thread(
+            target=_calls_takes_time, kwargs={'res_queue': res_queue})
+    thread2 = threading.Thread(
+            target=_calls_takes_time, kwargs={'res_queue': res_queue})
     thread1.start()
     sleep(0.5)
     thread2.start()
@@ -177,6 +186,7 @@ def _calls_being_calc_next_time(res_queue):
     res_queue.put(res)
 
 
+@pytest.mark.memory
 def test_being_calc_next_time():
     """Testing memory core handling of being calculated scenarios."""
     _takes_time.clear_cache()
@@ -212,6 +222,7 @@ def _delete_cache(arg_1, arg_2):
     return random() + arg_1 + arg_2
 
 
+@pytest.mark.memory
 def test_clear_being_calculated():
     """Test memory core clear `being calculated` functionality."""
     _takes_time.clear_being_calculated()
@@ -227,6 +238,7 @@ def _error_throwing_func(arg1):
     return 7
 
 
+@pytest.mark.memory
 def test_error_throwing_func():
     # with
     res1 = _error_throwing_func(4)
@@ -235,15 +247,18 @@ def test_error_throwing_func():
     assert res1 == res2
 
 
+@pytest.mark.memory
 def test_callable_hash_param():
     def _hash_params(args, kwargs):
         def _hash(obj):
             if isinstance(obj, pd.core.frame.DataFrame):
-                return hashlib.sha256(pd.util.hash_pandas_object(obj).values.tobytes()).hexdigest()
+                return hashlib.sha256(
+                        pd.util.hash_pandas_object(obj).values.tobytes()
+                ).hexdigest()
             return obj
-
         k_args = tuple(map(_hash, args))
-        k_kwargs = tuple(sorted({k: _hash(v) for k, v in kwargs.items()}.items()))
+        k_kwargs = tuple(sorted(
+            {k: _hash(v) for k, v in kwargs.items()}.items()))
         return k_args + k_kwargs
 
     @cachier(backend='memory', hash_params=_hash_params)

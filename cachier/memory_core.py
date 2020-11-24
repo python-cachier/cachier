@@ -1,6 +1,6 @@
 """A memory-based caching core for cachier."""
 
-from collections import defaultdict
+import threading
 from datetime import datetime
 
 from .base_core import _BaseCore
@@ -20,48 +20,82 @@ class _MemoryCore(_BaseCore):
     def __init__(self, stale_after, next_time):
         super().__init__(stale_after=stale_after, next_time=next_time)
         self.cache = {}
+        self.lock = threading.RLock()
 
     def get_entry_by_key(self, key, reload=False):  # pylint: disable=W0221
-        return key, self.cache.get(key, None)
+        with self.lock:
+            return key, self.cache.get(key, None)
 
     def get_entry(self, args, kwds, hash_params):
-        key = args + tuple(sorted(kwds.items())) if hash_params is None else hash_params(args, kwds)
-        return self.get_entry_by_key(key)
+        with self.lock:
+            key = args + tuple(sorted(kwds.items())) if hash_params is None else hash_params(args, kwds)  # noqa: E501
+            return self.get_entry_by_key(key)
 
     def set_entry(self, key, func_res):
-        self.cache[key] = {
-            'value': func_res,
-            'time': datetime.now(),
-            'stale': False,
-            'being_calculated': False,
-        }
-
-    def mark_entry_being_calculated(self, key):
-        try:
-            self.cache[key]['being_calculated'] = True
-        except KeyError:
+        with self.lock:
+            try:
+                # we need to retain the existing condition so that 
+                # mark_entry_not_calculated can notify all possibly-waiting
+                # threads about it
+                cond = self.cache[key]['condition']
+            except KeyError:
+                cond = None
             self.cache[key] = {
-                'value': None,
+                'value': func_res,
                 'time': datetime.now(),
                 'stale': False,
-                'being_calculated': True,
+                'being_calculated': False,
+                'condition': cond,
             }
 
+    def mark_entry_being_calculated(self, key):
+        with self.lock:
+            condition = threading.Condition()
+            # condition.acquire()
+            try:
+                self.cache[key]['being_calculated'] = True
+                self.cache[key]['condition'] = condition
+            except KeyError:
+                self.cache[key] = {
+                    'value': None,
+                    'time': datetime.now(),
+                    'stale': False,
+                    'being_calculated': True,
+                    'condition': condition,
+                }
+
     def mark_entry_not_calculated(self, key):
-        try:
-            self.cache[key]['being_calculated'] = False
-        except KeyError:
-            pass  # that's ok, we don't need an entry in that case
+        with self.lock:
+            try:
+                self.cache[key]['being_calculated'] = False
+            except KeyError:
+                pass  # that's ok, we don't need an entry in that case
+            try:
+                cond = self.cache[key]['condition']
+                if cond:
+                    cond.acquire()
+                    cond.notify_all()
+                    cond.release()
+                    self.cache[key]['condition'] = None
+            except KeyError:
+                pass  # that's ok, we don't need an entry in that case
 
     def wait_on_entry_calc(self, key):
-        entry = self.cache[key]
-        # I don't think waiting is necessary for this one
-        # if not entry['being_calculated']:
-        return entry['value']
+        with self.lock:
+            entry = self.cache[key]
+            if not entry['being_calculated']:
+                return entry['value']
+        entry['condition'].acquire()
+        entry['condition'].wait()
+        entry['condition'].release()
+        return self.cache[key]['value']
 
     def clear_cache(self):
-        self.cache.clear()
+        with self.lock:
+            self.cache.clear()
 
     def clear_being_calculated(self):
-        for value in self.cache.values():
-            value['being_calculated'] = False
+        with self.lock:
+            for entry in self.cache.values():
+                entry['being_calculated'] = False
+                entry['condition'] = None

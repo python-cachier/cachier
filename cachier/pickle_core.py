@@ -76,9 +76,11 @@ class _PickleCore(_BaseCore):
                 self.observer.stop()
 
         def on_created(self, event):  # skipcq: PYL-W0613
+            """A Watchdog Event Handler method."""
             self._check_calculation()  # pragma: no cover
 
         def on_modified(self, event):  # skipcq: PYL-W0613
+            """A Watchdog Event Handler method."""
             self._check_calculation()
 
     def __init__(self, stale_after, next_time, reload, cache_dir):
@@ -147,7 +149,7 @@ class _PickleCore(_BaseCore):
             return key, self._get_cache().get(key, None)
 
     def get_entry(self, args, kwds, hash_params):
-        key = args + tuple(sorted(kwds.items())) if hash_params is None else hash_params(args, kwds)
+        key = args + tuple(sorted(kwds.items())) if hash_params is None else hash_params(args, kwds)  # noqa: E501
         # print('key type={}, key={}'.format(type(key), key))
         return self.get_entry_by_key(key)
 
