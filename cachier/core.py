@@ -144,13 +144,26 @@ def cachier(
             overwrite_cache = kwds.pop('overwrite_cache', False)
             verbose_cache = kwds.pop('verbose_cache', False)
             _print = lambda x: None  # skipcq: FLK-E731  # noqa: E731
+            notify_fresh = kwds.pop('notify_fresh', False)
+            from_cache = False
+
+            if notify_fresh:
+                def prepare_return_value(retval, from_cache):
+                    return retval, from_cache
+            else:
+                def prepare_return_value(retval, from_cache):
+                    return retval
+
             if verbose_cache:
                 _print = print
             if ignore_cache:
-                return func(*args, **kwds)
+                return prepare_return_value(func(*args, **kwds), from_cache)
             key, entry = core.get_entry(args, kwds, hash_params)
             if overwrite_cache:
-                return _calc_entry(core, key, func, args, kwds)
+                return prepare_return_value(
+                    _calc_entry(core, key, func, args, kwds),
+                    from_cache
+                )
             if entry is not None:  # pylint: disable=R0101
                 _print('Entry found.')
                 if entry.get('value', None) is not None:
@@ -162,13 +175,18 @@ def cachier(
                             if entry['being_calculated']:
                                 if next_time:
                                     _print('Returning stale.')
-                                    return entry['value']  # return stale val
+                                    return prepare_return_value(
+                                        entry['value'], from_cache
+                                    )  # return stale val
                                 _print('Already calc. Waiting on change.')
                                 try:
-                                    return core.wait_on_entry_calc(key)
+                                    return prepare_return_value(
+                                        core.wait_on_entry_calc(key), from_cache
+                                    )
                                 except RecalculationNeeded:
-                                    return _calc_entry(
-                                        core, key, func, args, kwds
+                                    return prepare_return_value(
+                                        _calc_entry(core, key, func, args, kwds),
+                                        from_cache,
                                     )
                             if next_time:
                                 _print('Async calc and return stale')
@@ -184,19 +202,31 @@ def cachier(
                                     )
                                 finally:
                                     core.mark_entry_not_calculated(key)
-                                return entry['value']
+                                return prepare_return_value(entry['value'], from_cache)
                             _print('Calling decorated function and waiting')
-                            return _calc_entry(core, key, func, args, kwds)
+                            return prepare_return_value(
+                                _calc_entry(core, key, func, args, kwds), from_cache
+                            )
                     _print('And it is fresh!')
-                    return entry['value']
+                    from_cache = True
+                    return prepare_return_value(entry['value'], from_cache)
                 if entry['being_calculated']:
                     _print('No value but being calculated. Waiting.')
                     try:
-                        return core.wait_on_entry_calc(key)
+                        return prepare_return_value(
+                            core.wait_on_entry_calc(key),
+                            from_cache
+                        )
                     except RecalculationNeeded:
-                        return _calc_entry(core, key, func, args, kwds)
+                        return prepare_return_value(
+                            _calc_entry(core, key, func, args, kwds),
+                            from_cache
+                        )
             _print('No entry found. No current calc. Calling like a boss.')
-            return _calc_entry(core, key, func, args, kwds)
+            return prepare_return_value(
+                _calc_entry(core, key, func, args, kwds),
+                from_cache
+            )
 
         def clear_cache():
             """Clear the cache."""
