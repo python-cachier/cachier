@@ -1,17 +1,16 @@
 """Testing the MongoDB core of cachier."""
 
-from __future__ import print_function
 import sys
+import platform
 import datetime
 from datetime import timedelta
 from random import random
 from time import sleep
 import threading
-try:
-    import queue
-except ImportError:  # python 2
-    import Queue as queue
+import queue
+from urllib.parse import quote_plus
 
+from birch import Birch
 import pytest
 import pymongo
 import hashlib
@@ -22,24 +21,34 @@ from pymongo.errors import OperationFailure
 from cachier import cachier
 from cachier.mongo_core import _MongoCore, RecalculationNeeded
 
-_TEST_HOST = 'ds119508.mlab.com'
-_TEST_PORT = 19508
-_TEST_USERNAME = 'cachier_test'
-_TEST_PWD = 'ZGhjO5CQESYJ69U4z65G79YG'
+
+CFG = Birch("cachier")
+
+
+class CfgKey():
+    HOST = "TEST_HOST"
+    UNAME = "TEST_USERNAME"
+    PWD = "TEST_PASSWORD"
+    DB = "TEST_DB"
+
+
+URI_TEMPLATE = (
+    "mongodb+srv://{uname}:{pwd}@{host}/{db}?retrywrites=true&w=majority")
 
 
 def _get_cachier_db_mongo_client():
-    client = MongoClient(host=_TEST_HOST, port=_TEST_PORT, retryWrites=False)
-    client.cachier_test.authenticate(
-        name=_TEST_USERNAME,
-        password=_TEST_PWD,
-        mechanism='SCRAM-SHA-1'
-    )
+    host = quote_plus(CFG[CfgKey.HOST])
+    uname = quote_plus(CFG[CfgKey.UNAME])
+    pwd = quote_plus(CFG[CfgKey.PWD])
+    db = quote_plus(CFG[CfgKey.DB])
+    uri = URI_TEMPLATE.format(host=host, uname=uname, pwd=pwd, db=db)
+    client = MongoClient(uri)
     return client
 
 
-_COLLECTION_NAME = 'cachier_test{}.{}.{}'.format(
-    sys.version_info[0], sys.version_info[1], sys.version_info[2])
+_COLLECTION_NAME = 'cachier_test_{}_{}.{}.{}'.format(
+    platform.system(), sys.version_info[0], sys.version_info[1],
+    sys.version_info[2])
 
 
 def _test_mongetter():
@@ -65,6 +74,7 @@ def _test_mongo_caching(arg_1, arg_2):
     return random() + arg_1 + arg_2
 
 
+@pytest.mark.mongo
 def test_mongo_index_creation():
     """Basic Mongo core functionality."""
     collection = _test_mongetter()
@@ -75,6 +85,7 @@ def test_mongo_index_creation():
     assert _MongoCore._INDEX_NAME in collection.index_information()
 
 
+@pytest.mark.mongo
 def test_mongo_core():
     """Basic Mongo core functionality."""
     _test_mongo_caching.clear_cache()
@@ -100,6 +111,7 @@ def _stale_after_mongo(arg_1, arg_2):
     return random() + arg_1 + arg_2
 
 
+@pytest.mark.mongo
 def test_mongo_stale_after():
     """Testing MongoDB core stale_after functionality."""
     _stale_after_mongo.clear_cache()
@@ -123,6 +135,7 @@ def _calls_takes_time(res_queue):
     res_queue.put(res)
 
 
+@pytest.mark.mongo
 def test_mongo_being_calculated():
     """Testing MongoDB core handling of being calculated scenarios."""
     _takes_time.clear_cache()
@@ -171,6 +184,7 @@ def _func_w_bad_mongo(arg_1, arg_2):
     return random() + arg_1 + arg_2
 
 
+@pytest.mark.mongo
 def test_mongo_write_failure():
     """Testing MongoDB core handling of writing failure scenarios."""
     with pytest.raises(OperationFailure):
@@ -179,11 +193,13 @@ def test_mongo_write_failure():
         assert val1 == val2
 
 
+@pytest.mark.mongo
 def test_mongo_clear_being_calculated():
     """Testing MongoDB core clear_being_calculated."""
     _func_w_bad_mongo.clear_being_calculated()
 
 
+@pytest.mark.mongo
 def test_stalled_mongo_db_cache():
     @cachier(mongetter=_test_mongetter)
     def _stalled_func():
@@ -195,6 +211,7 @@ def test_stalled_mongo_db_cache():
         core.wait_on_entry_calc(key=None)
 
 
+@pytest.mark.mongo
 def test_stalled_mong_db_core(monkeypatch):
 
     def mock_get_entry(self, args, kwargs, hash_params):  # skipcq: PYL-R0201, PYL-W0613
@@ -237,6 +254,7 @@ def test_stalled_mong_db_core(monkeypatch):
     assert res == 2
 
 
+@pytest.mark.mongo
 def test_callable_hash_param():
 
     def _hash_params(args, kwargs):

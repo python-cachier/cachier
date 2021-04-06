@@ -44,8 +44,8 @@ Features
 ========
 
 * Pure Python.
-* Compatible with Python 3.5+ (and Python 2.7 up until version 1.2.8). 
-* Supported and `tested on Linux, OS X and Windows <https://travis-ci.org/shaypal5/cachier>`_. 
+* Compatible with Python 3.5+ (and Python 2.7 up until version 1.2.8).
+* Supported and `tested on Linux, OS X and Windows <https://travis-ci.org/shaypal5/cachier>`_.
 * A simple interface.
 * Defining "shelf life" for cached values.
 * Local caching using pickle files.
@@ -203,7 +203,16 @@ You can set a MongoDB-based cache by assigning ``mongetter`` with a callable tha
 
 .. code-block:: python
 
-  @cachier(mongetter=False)
+    from pymongo import MongoClient
+
+    def my_mongetter():
+        client = MongoClient(get_cachier_db_auth_uri())
+        db_obj = client['cachier_db']
+        if 'someapp_cachier_db' not in db_obj.list_collection_names():
+            db_obj.create_collection('someapp_cachier_db')
+        return db_obj['someapp_cachier_db']
+
+  @cachier(mongetter=my_mongetter)
 
 This allows you to have a cross-machine, albeit slower, cache. This functionality requires that the installation of the ``pymongo`` python package.
 
@@ -234,11 +243,17 @@ Install in development mode with test dependencies:
 Running the tests
 -----------------
 
-To run the tests, use:
+To run the tests, call the ``pytest`` command in the repository's root, or:
 
 .. code-block:: bash
 
-  python -m pytest --cov=cachier
+  python -m pytest
+
+To run only pickle core related tests, use:
+
+.. code-block:: bash
+
+  pytest -m mongo
 
 
 Adding documentation
@@ -279,7 +294,7 @@ Created by Shay Palachy (shay.palachy@gmail.com).
 .. |Downloads| image:: https://pepy.tech/badge/cachier
      :target: https://pepy.tech/project/cachier
      :alt: PePy stats
-     
+
 .. |Codefactor| image:: https://www.codefactor.io/repository/github/shaypal5/cachier/badge?style=plastic
      :target: https://www.codefactor.io/repository/github/shaypal5/cachier
      :alt: Codefactor code quality

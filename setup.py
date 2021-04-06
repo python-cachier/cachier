@@ -15,7 +15,16 @@ except ImportError:
 import versioneer
 
 
-TEST_REQUIRES = ['pytest', 'coverage', 'pytest-cov', 'pymongo', 'pandas']
+TEST_REQUIRES = [
+    # tests and coverages
+    'pytest', 'coverage', 'pytest-cov',
+    # for reading configfutation
+    'birch',
+    # to connect to the test mongodb server
+    'pymongo', 'dnspython',
+    # to test pandas dataframe as-param hashing with mongodb core
+    'pandas',
+]
 
 README_RST = ''
 with open('README.rst') as f:
