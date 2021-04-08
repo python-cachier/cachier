@@ -427,3 +427,19 @@ def test_callable_hash_param():
     value_b = _params_with_dataframe(1, df=df_b)
 
     assert value_a == value_b  # same content --> same key
+
+
+def test_default_params():
+    @cachier()
+    def _default_param(arg=1):
+        """Some function."""
+        return arg
+    
+    _default_param()
+
+    @cachier()
+    def _default_param(arg=2):
+        """Some function."""
+        return arg
+    
+    assert _default_param() == 2
