@@ -122,7 +122,9 @@ def test_overwrite_cache():
     """Tests that the overwrite feature works correctly."""
     _random_num.clear_cache()
     int1 = _random_num()
+    assert not _random_num.is_from_cache()
     int2 = _random_num()
+    assert _random_num.is_from_cache()
     assert int2 == int1
     int3 = _random_num(overwrite_cache=True)
     assert not _random_num.is_from_cache()
