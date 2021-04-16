@@ -86,18 +86,20 @@ You can add a default, pickle-based, persistent cache to your function - meaning
 Did the result come from the cache?
 -----------------------------------
 
-You can find out of the function returned a value from the cache or not, by
-calling the ``is_from_cache()`` function:
+You can find out of the function returned a value from the cache or not, passing
+an ``Info`` object to the decorated function, then inspecting its
+``is_from_cache`` attribute:
 
 .. code-block:: python
 
-  >>> foo(1, 2)
+  >>> call_info = cachier.Info()
+  >>> foo(1, 2, cachier_info=call_info)
       {'arg1': 1, 'arg2': 2}
-  >>> foo.is_from_cache()
+  >>> call_info.is_from_cache
       False
-  >>> foo(1, 2)
+  >>> foo(1, 2, cachier_info=call_info)
       {'arg1': 1, 'arg2': 2}
-  >>> foo.is_from_cache()
+  >>> call_info.is_from_cache
       True
 
 

@@ -189,8 +189,6 @@ def test_cachier_info():
     assert int4 != int3
     assert int4 == int1
     _random_num_with_arg.clear_cache()
-    pass
-
 
 
 @cachier()
