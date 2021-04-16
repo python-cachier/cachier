@@ -27,7 +27,7 @@ except ImportError:  # python 2
 import hashlib
 import pandas as pd
 
-from cachier import cachier
+from cachier import cachier, Info
 from cachier.pickle_core import DEF_CACHIER_DIR
 
 
@@ -65,16 +65,12 @@ def test_stale_after():
     """Testing the stale_after functionality."""
     _stale_after_seconds.clear_cache()
     val1 = _stale_after_seconds(1, 2)
-    assert not _stale_after_seconds.is_from_cache()
     val2 = _stale_after_seconds(1, 2)
-    assert _stale_after_seconds.is_from_cache()
     val3 = _stale_after_seconds(1, 3)
-    assert not _stale_after_seconds.is_from_cache()
     assert val1 == val2
     assert val1 != val3
     sleep(3)
     val4 = _stale_after_seconds(1, 2)
-    assert not _stale_after_seconds.is_from_cache()
     assert val4 != val1
     _stale_after_seconds.clear_cache()
 
@@ -89,20 +85,15 @@ def test_stale_after_next_time():
     """Testing the stale_after with next_time functionality."""
     _stale_after_next_time.clear_cache()
     val1 = _stale_after_next_time(1, 2)
-    assert not _stale_after_next_time.is_from_cache()
     val2 = _stale_after_next_time(1, 2)
-    assert _stale_after_next_time.is_from_cache()
     val3 = _stale_after_next_time(1, 3)
-    assert not _stale_after_next_time.is_from_cache()
     assert val1 == val2
     assert val1 != val3
     sleep(SECONDS_IN_DELTA + 1)
     val4 = _stale_after_next_time(1, 2)
-    assert _stale_after_next_time.is_from_cache()
     assert val4 == val1
     sleep(0.5)
     val5 = _stale_after_next_time(1, 2)
-    assert _stale_after_next_time.is_from_cache()
     assert val5 != val1
     _stale_after_next_time.clear_cache()
 
@@ -122,29 +113,21 @@ def test_overwrite_cache():
     """Tests that the overwrite feature works correctly."""
     _random_num.clear_cache()
     int1 = _random_num()
-    assert not _random_num.is_from_cache()
     int2 = _random_num()
-    assert _random_num.is_from_cache()
     assert int2 == int1
     int3 = _random_num(overwrite_cache=True)
-    assert not _random_num.is_from_cache()
     assert int3 != int1
     int4 = _random_num()
-    assert _random_num.is_from_cache()
     assert int4 == int3
     _random_num.clear_cache()
 
     _random_num_with_arg.clear_cache()
     int1 = _random_num_with_arg('a')
-    assert not _random_num_with_arg.is_from_cache()
     int2 = _random_num_with_arg('a')
-    assert _random_num_with_arg.is_from_cache()
     assert int2 == int1
     int3 = _random_num_with_arg('a', overwrite_cache=True)
-    assert not _random_num_with_arg.is_from_cache()
     assert int3 != int1
     int4 = _random_num_with_arg('a')
-    assert _random_num_with_arg.is_from_cache()
     assert int4 == int3
     _random_num_with_arg.clear_cache()
 
@@ -153,33 +136,61 @@ def test_ignore_cache():
     """Tests that the ignore_cache feature works correctly."""
     _random_num.clear_cache()
     int1 = _random_num()
-    assert not _random_num.is_from_cache()
     int2 = _random_num()
-    assert _random_num.is_from_cache()
     assert int2 == int1
     int3 = _random_num(ignore_cache=True)
-    assert not _random_num.is_from_cache()
     assert int3 != int1
     int4 = _random_num()
-    assert _random_num.is_from_cache()
     assert int4 != int3
     assert int4 == int1
     _random_num.clear_cache()
 
     _random_num_with_arg.clear_cache()
     int1 = _random_num_with_arg('a')
-    assert not _random_num_with_arg.is_from_cache()
     int2 = _random_num_with_arg('a')
-    assert _random_num_with_arg.is_from_cache()
     assert int2 == int1
     int3 = _random_num_with_arg('a', ignore_cache=True)
-    assert not _random_num_with_arg.is_from_cache()
     assert int3 != int1
     int4 = _random_num_with_arg('a')
-    assert _random_num_with_arg.is_from_cache()
     assert int4 != int3
     assert int4 == int1
     _random_num_with_arg.clear_cache()
+
+
+def test_cachier_info():
+    """Tests that the cachier_info feature works correctly."""
+    _random_num.clear_cache()
+    call_info = Info()
+    int1 = _random_num(cachier_info=call_info)
+    assert not call_info.is_from_cache
+    int2 = _random_num(cachier_info=call_info)
+    assert call_info.is_from_cache
+    assert int2 == int1
+    int3 = _random_num(ignore_cache=True, cachier_info=call_info)
+    assert not call_info.is_from_cache
+    assert int3 != int1
+    int4 = _random_num(cachier_info=call_info)
+    assert call_info.is_from_cache
+    assert int4 != int3
+    assert int4 == int1
+    _random_num.clear_cache()
+
+    _random_num_with_arg.clear_cache()
+    int1 = _random_num_with_arg('a', cachier_info=call_info)
+    assert not call_info.is_from_cache
+    int2 = _random_num_with_arg('a', cachier_info=call_info)
+    assert call_info.is_from_cache
+    assert int2 == int1
+    int3 = _random_num_with_arg('a', ignore_cache=True, cachier_info=call_info)
+    assert not call_info.is_from_cache
+    assert int3 != int1
+    int4 = _random_num_with_arg('a', cachier_info=call_info)
+    assert call_info.is_from_cache
+    assert int4 != int3
+    assert int4 == int1
+    _random_num_with_arg.clear_cache()
+    pass
+
 
 
 @cachier()
