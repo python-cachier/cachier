@@ -73,6 +73,23 @@ def _calc_entry(core, key, func, args, kwds):
         core.mark_entry_not_calculated(key)
 
 
+class Info:
+    """Holds function call metadata
+    """
+    def __init__(self):
+        self.__is_from_cache = False
+
+    @property
+    def is_from_cache(self):
+        return self.__is_from_cache
+    @is_from_cache.setter
+    def is_from_cache(self, state):
+        if isinstance(state, bool):
+            self.__is_from_cache = state
+        else:
+            raise TypeError("is_from_cache must be of type bool.")
+
+
 def cachier(
     stale_after=None,
     next_time=False,
@@ -136,7 +153,6 @@ def cachier(
 
     def _cachier_decorator(func):
         core.set_func(func)
-        __is_from_cache = False
 
         @wraps(func)
         def func_wrapper(*args, **kwds):  # pylint: disable=C0111,R0911
@@ -144,8 +160,9 @@ def cachier(
             ignore_cache = kwds.pop('ignore_cache', False)
             overwrite_cache = kwds.pop('overwrite_cache', False)
             verbose_cache = kwds.pop('verbose_cache', False)
-            nonlocal __is_from_cache
-            __is_from_cache = False
+            cachier_info = kwds.pop('cachier_info', None)
+            if cachier_info:
+                cachier_info.is_from_cache = False
             _print = lambda x: None  # skipcq: FLK-E731  # noqa: E731
             if verbose_cache:
                 _print = print
@@ -157,7 +174,8 @@ def cachier(
             if entry is not None:  # pylint: disable=R0101
                 _print('Entry found.')
                 if entry.get('value', None) is not None:
-                    __is_from_cache = True
+                    if cachier_info:
+                        cachier_info.is_from_cache = True
                     _print('Cached result found.')
                     if stale_after:
                         now = datetime.datetime.now()
@@ -171,7 +189,8 @@ def cachier(
                                 try:
                                     return core.wait_on_entry_calc(key)
                                 except RecalculationNeeded:
-                                    __is_from_cache = False
+                                    if cachier_info:
+                                        cachier_info.is_from_cache = False
                                     return _calc_entry(
                                         core, key, func, args, kwds
                                     )
@@ -190,7 +209,8 @@ def cachier(
                                 finally:
                                     core.mark_entry_not_calculated(key)
                                 return entry['value']
-                            __is_from_cache = False
+                            if cachier_info:
+                                cachier_info.is_from_cache = False
                             _print('Calling decorated function and waiting')
                             return _calc_entry(core, key, func, args, kwds)
                     _print('And it is fresh!')
@@ -200,7 +220,8 @@ def cachier(
                     try:
                         return core.wait_on_entry_calc(key)
                     except RecalculationNeeded:
-                        __is_from_cache = False
+                        if cachier_info:
+                            cachier_info.is_from_cache = False
                         return _calc_entry(core, key, func, args, kwds)
             _print('No entry found. No current calc. Calling like a boss.')
             return _calc_entry(core, key, func, args, kwds)
@@ -220,15 +241,9 @@ def cachier(
             except AttributeError:
                 return None
 
-        def is_from_cache():
-            """Returns True if the result from the latest call is from the cache, False if not."""
-            nonlocal __is_from_cache
-            return __is_from_cache
-
         func_wrapper.clear_cache = clear_cache
         func_wrapper.clear_being_calculated = clear_being_calculated
         func_wrapper.cache_dpath = cache_dpath
-        func_wrapper.is_from_cache = is_from_cache
         return func_wrapper
 
     return _cachier_decorator
