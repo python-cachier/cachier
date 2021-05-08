@@ -80,6 +80,7 @@ def cachier(
     mongetter=None,
     cache_dir=None,
     hash_params=None,
+    separate_files=False,
 ):
     """A persistent, stale-free memoization decorator.
 
@@ -132,6 +133,7 @@ def cachier(
             next_time=next_time,
             reload=pickle_reload,
             cache_dir=cache_dir,
+            separate_files=separate_files
         )
 
     def _cachier_decorator(func):

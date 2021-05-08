@@ -12,6 +12,10 @@
 #     dirname
 # )
 import os
+os.environ['CACHIER_TEST_DB'] = 'dummy'
+os.environ['CACHIER_TEST_HOST'] = 'dummy'
+os.environ['CACHIER_TEST_PASSWORD'] = 'dummy'
+os.environ['CACHIER_TEST_USERNAME'] = 'dummy'
 from time import (
     time,
     sleep
@@ -33,7 +37,7 @@ from cachier.pickle_core import DEF_CACHIER_DIR
 
 # Pickle core tests
 
-@cachier(next_time=False)
+@cachier(next_time=False, separate_files=True)
 def _takes_5_seconds(arg_1, arg_2):
     """Some function."""
     sleep(5)
