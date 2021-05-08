@@ -131,9 +131,12 @@ class _PickleCore(_BaseCore):
                 self._reload_cache()
             return self.cache
 
-    def _get_cache_by_key(self, key):
+    def _get_cache_by_key(self, key=None, hash=None):
         fpath = self._cache_fpath()
-        fpath += f'_{hashlib.sha256(pickle.dumps(key)).hexdigest()}'
+        if hash is None:
+            fpath += f'_{hashlib.sha256(pickle.dumps(key)).hexdigest()}'
+        else:
+            fpath += f'_{hash}'
         try:
             with portalocker.Lock(fpath, mode='rb') as cache_file:
                 try:
@@ -151,12 +154,23 @@ class _PickleCore(_BaseCore):
             if subpath.startswith(name):
                 os.remove(os.path.join(path, subpath))
 
-    def _save_cache(self, cache, key=None):
+    def _clear_being_calculated_all_cache_files(self):
+        fpath = self._cache_fpath()
+        path, name = os.path.split(fpath)
+        for subpath in os.listdir(path):
+            if subpath.startswith(name):
+                entry = self._get_cache_by_key(hash=subpath.split('_')[-1])
+                entry['being_calculated'] = False
+                self._save_cache(entry, hash=subpath.split('_')[-1])
+
+    def _save_cache(self, cache, key=None, hash=None):
         with self.lock:
             self.cache = cache
             fpath = self._cache_fpath()
             if key is not None:
                 fpath += f'_{hashlib.sha256(pickle.dumps(key)).hexdigest()}'
+            elif hash is not None:
+                fpath += f'_{hash}'
             with portalocker.Lock(fpath, mode='wb') as cache_file:
                 pickle.dump(cache, cache_file, protocol=4)
             if key is None:
@@ -177,18 +191,18 @@ class _PickleCore(_BaseCore):
         return self.get_entry_by_key(key)
 
     def set_entry(self, key, func_res):
-        with self.lock:
-            cache = self._get_cache()
-            key_data = {
+        key_data = {
                 'value': func_res,
                 'time': datetime.now(),
                 'stale': False,
                 'being_calculated': False,
             }
-            cache[key] = key_data
-            if self.separate_files:
-                self._save_cache(key_data, key)
-            else:
+        if self.separate_files:
+            self._save_cache(key_data, key)
+        else:
+            with self.lock:
+                cache = self._get_cache()
+                cache[key] = key_data
                 self._save_cache(cache)
 
     def mark_entry_being_calculated_separate_files(self, key):
@@ -233,13 +247,18 @@ class _PickleCore(_BaseCore):
                 pass  # that's ok, we don't need an entry in that case
 
     def wait_on_entry_calc(self, key):
-        with self.lock:
-            self._reload_cache()
-            entry = self._get_cache()[key]
-            if not entry['being_calculated']:
-                return entry['value']
+        if self.separate_files:
+            entry = self._get_cache_by_key(key)
+            filename = f'{self._cache_fname()}_{hashlib.sha256(pickle.dumps(key)).hexdigest()}'
+        else:
+            with self.lock:
+                self._reload_cache()
+                entry = self._get_cache()[key]
+            filename = self._cache_fname()
+        if not entry['being_calculated']:
+            return entry['value']
         event_handler = _PickleCore.CacheChangeHandler(
-            filename=self._cache_fname(), core=self, key=key
+            filename=filename, core=self, key=key
         )
         observer = Observer()
         event_handler.inject_observer(observer)
@@ -261,8 +280,11 @@ class _PickleCore(_BaseCore):
             self._save_cache({})
 
     def clear_being_calculated(self):
-        with self.lock:
-            cache = self._get_cache()
-            for key in cache:
-                cache[key]['being_calculated'] = False
-            self._save_cache(cache)
+        if self.separate_files:
+            self._clear_being_calculated_all_cache_files()
+        else:
+            with self.lock:
+                cache = self._get_cache()
+                for key in cache:
+                    cache[key]['being_calculated'] = False
+                self._save_cache(cache)
