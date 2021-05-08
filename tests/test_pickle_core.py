@@ -12,10 +12,6 @@
 #     dirname
 # )
 import os
-os.environ['CACHIER_TEST_DB'] = 'dummy'
-os.environ['CACHIER_TEST_HOST'] = 'dummy'
-os.environ['CACHIER_TEST_PASSWORD'] = 'dummy'
-os.environ['CACHIER_TEST_USERNAME'] = 'dummy'
 from time import (
     time,
     sleep
@@ -79,7 +75,7 @@ def test_stale_after():
     _stale_after_seconds.clear_cache()
 
 
-@cachier(stale_after=DELTA, next_time=True)
+@cachier(stale_after=DELTA, next_time=True, separate_files=True)
 def _stale_after_next_time(arg_1, arg_2):
     """Some function."""
     return random()
@@ -102,12 +98,12 @@ def test_stale_after_next_time():
     _stale_after_next_time.clear_cache()
 
 
-@cachier()
+@cachier(separate_files=True)
 def _random_num():
     return random()
 
 
-@cachier()
+@cachier(separate_files=True)
 def _random_num_with_arg(a):
     # print(a)
     return random()
@@ -161,7 +157,7 @@ def test_ignore_cache():
     _random_num_with_arg.clear_cache()
 
 
-@cachier()
+@cachier(separate_files=True)
 def _takes_time(arg_1, arg_2):
     """Some function."""
     sleep(2)  # this has to be enough time for check_calculation to run twice
@@ -192,7 +188,7 @@ def test_pickle_being_calculated():
     assert res1 == res2
 
 
-@cachier(stale_after=timedelta(seconds=1), next_time=True)
+@cachier(stale_after=timedelta(seconds=1), next_time=True, separate_files=True)
 def _being_calc_next_time(arg_1, arg_2):
     """Some function."""
     sleep(1)
@@ -225,7 +221,7 @@ def test_being_calc_next_time():
     assert res1 == res2
 
 
-@cachier()
+@cachier(separate_files=True)
 def _bad_cache(arg_1, arg_2):
     """Some function."""
     sleep(1)
@@ -287,7 +283,7 @@ def test_bad_cache_file():
     assert False
 
 
-@cachier()
+@cachier(separate_files=True)
 def _delete_cache(arg_1, arg_2):
     """Some function."""
     sleep(1)
@@ -358,7 +354,7 @@ def test_clear_being_calculated():
     _takes_time.clear_being_calculated()
 
 
-@cachier(stale_after=timedelta(seconds=1), next_time=True)
+@cachier(stale_after=timedelta(seconds=1), next_time=True, separate_files=True)
 def _error_throwing_func(arg1):
     if not hasattr(_error_throwing_func, 'count'):
         _error_throwing_func.count = 0
@@ -382,7 +378,7 @@ CUSTOM_DIR = '~/.exparrot'
 EXPANDED_CUSTOM_DIR = os.path.expanduser(CUSTOM_DIR)
 
 
-@cachier(next_time=False, cache_dir=CUSTOM_DIR)
+@cachier(next_time=False, cache_dir=CUSTOM_DIR, separate_files=True)
 def _takes_5_seconds_custom_dir(arg_1, arg_2):
     """Some function."""
     sleep(5)
@@ -413,7 +409,7 @@ def test_callable_hash_param():
         k_kwargs = tuple(sorted({k: _hash(v) for k, v in kwargs.items()}.items()))
         return k_args + k_kwargs
 
-    @cachier(hash_params=_hash_params)
+    @cachier(hash_params=_hash_params, separate_files=True)
     def _params_with_dataframe(*args, **kwargs):
         """Some function."""
         return random()
