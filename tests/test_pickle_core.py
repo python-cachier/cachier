@@ -55,7 +55,7 @@ SECONDS_IN_DELTA = 3
 DELTA = timedelta(seconds=SECONDS_IN_DELTA)
 
 
-@cachier(stale_after=DELTA, next_time=False)
+@cachier(stale_after=DELTA, next_time=False, separate_files=True)
 def _stale_after_seconds(arg_1, arg_2):
     """Some function."""
     return random()
@@ -221,7 +221,7 @@ def test_being_calc_next_time():
     assert res1 == res2
 
 
-@cachier(separate_files=True)
+@cachier()
 def _bad_cache(arg_1, arg_2):
     """Some function."""
     sleep(1)
