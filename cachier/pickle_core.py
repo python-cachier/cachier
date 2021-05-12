@@ -247,6 +247,7 @@ class _PickleCore(_BaseCore):
                 pass  # that's ok, we don't need an entry in that case
 
     def wait_on_entry_calc(self, key):
+        print('wating on entry calc')
         if self.separate_files:
             entry = self._get_cache_by_key(key)
             filename = f'{self._cache_fname()}_{hashlib.sha256(pickle.dumps(key)).hexdigest()}'
@@ -254,6 +255,7 @@ class _PickleCore(_BaseCore):
             with self.lock:
                 self._reload_cache()
                 entry = self._get_cache()[key]
+                print(f'getting cache[key], it is: {entry}')
             filename = self._cache_fname()
         if not entry['being_calculated']:
             return entry['value']
@@ -267,10 +269,12 @@ class _PickleCore(_BaseCore):
         )
         observer.start()
         observer.join(timeout=1.0)
+        print('Im after observer.join')
         if observer.is_alive():
             # print('Timedout waiting. Starting again...')
             return self.wait_on_entry_calc(key)
         # print("Returned value: {}".format(event_handler.value))
+        print(f'Im returning event_handler.value: {event_handler.value}')
         return event_handler.value
 
     def clear_cache(self):
