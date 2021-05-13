@@ -83,6 +83,18 @@ You can add a default, pickle-based, persistent cache to your function - meaning
     """Your function now has a persistent cache mapped by argument values!"""
     return {'arg1': arg1, 'arg2': arg2}
 
+Setting the optional argument 'separate_files' to True will cause the cache to be stored in several files,
+one per argument set, per function.
+
+.. code-block:: python
+
+  from cachier import cachier
+
+  @cachier(separate_files=True)
+  def foo(arg1, arg2):
+    """Your function now has a persistent cache mapped by argument values, split across several files, per argument set"""
+    return {'arg1': arg1, 'arg2': arg2}
+
 You can get the fully qualified path to the directory of cache files used by ``cachier`` (``~/.cachier`` by default) by calling the ``cache_dpath()`` function:
 
 .. code-block:: python

@@ -382,7 +382,7 @@ def test_delete_cache_file(separate_files):
     assert False
 
 
-@pytest.mark.parametrize('separate_files', [True, False])
+@pytest.mark.parametrize('separate_files', [False, True])
 def test_clear_being_calculated(separate_files):
     """Test pickle core clear `being calculated` functionality."""
     _takes_time_decorated = _get_decorated_func(_takes_time, separate_files=separate_files)
@@ -401,8 +401,10 @@ def _error_throwing_func(arg1):
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_error_throwing_func(separate_files):
     # with
+    _error_throwing_func.count = 0
     _error_throwing_func_decorated = _get_decorated_func(_error_throwing_func, stale_after=timedelta(seconds=1),
                                                          next_time=True, separate_files=separate_files)
+    _error_throwing_func_decorated.clear_cache()
     res1 = _error_throwing_func_decorated(4)
     sleep(1.5)
     res2 = _error_throwing_func_decorated(4)
@@ -436,7 +438,8 @@ def test_pickle_core_custom_cache_dir(separate_files):
     assert _takes_5_seconds_custom_dir_decorated.cache_dpath() == EXPANDED_CUSTOM_DIR
 
 
-def test_callable_hash_param():
+@pytest.mark.parametrize('separate_files', [True, False])
+def test_callable_hash_param(separate_files):
     def _hash_params(args, kwargs):
         def _hash(obj):
             if isinstance(obj, pd.core.frame.DataFrame):
@@ -447,7 +450,7 @@ def test_callable_hash_param():
         k_kwargs = tuple(sorted({k: _hash(v) for k, v in kwargs.items()}.items()))
         return k_args + k_kwargs
 
-    @cachier(hash_params=_hash_params, separate_files=True)
+    @cachier(hash_params=_hash_params, separate_files=separate_files)
     def _params_with_dataframe(*args, **kwargs):
         """Some function."""
         return random()
