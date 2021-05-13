@@ -181,10 +181,9 @@ class _PickleCore(_BaseCore):
         with self.lock:
             if self.separate_files:
                 return key, self._get_cache_by_key(key)
-            else:
-                if self.reload or reload:
-                    self._reload_cache()
-                return key, self._get_cache().get(key, None)
+            if self.reload or reload:
+                self._reload_cache()
+            return key, self._get_cache().get(key, None)
 
     def get_entry(self, args, kwds, hash_params):
         key = args + tuple(sorted(kwds.items())) if hash_params is None else hash_params(args, kwds)
