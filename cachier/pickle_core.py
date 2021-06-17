@@ -8,6 +8,7 @@
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 
 import os
+import sys
 import pickle  # for local caching
 from datetime import datetime
 import threading
@@ -21,8 +22,10 @@ from watchdog.events import PatternMatchingEventHandler
 from .base_core import _BaseCore
 
 
-DEF_CACHIER_DIR = '~/.cachier/'
-
+DEF_CACHIER_DIR = os.path.join(
+    os.path.expanduser("~") if getattr(sys, 'real_prefix', getattr(sys, 'base_prefix', sys.prefix)) == sys.prefix \
+    else sys.prefix, '.cachier'
+)
 
 class _PickleCore(_BaseCore):
     """The pickle core class for cachier.
