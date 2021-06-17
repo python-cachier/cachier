@@ -1,0 +1,39 @@
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    environment:
+      name: test
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.6, 3.7, 3.8, 3.9]
+        os: [ubuntu-latest, macOS-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[test]"
+      - name: Unit tests
+        env:
+          CACHIER_TEST_HOST: ${{ secrets.CACHIER_TEST_HOST  }}
+          CACHIER_TEST_DB: ${{ secrets.CACHIER_TEST_DB  }}
+          CACHIER_TEST_USERNAME: ${{ secrets.CACHIER_TEST_USERNAME  }}
+          CACHIER_TEST_PASSWORD: ${{ secrets.CACHIER_TEST_PASSWORD  }}
+        run: |
+          pytest
+      - name: "Upload coverage to Codecov"
+        uses: codecov/codecov-action@v1
+        with:
+          fail_ci_if_error: true
