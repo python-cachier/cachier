@@ -18,7 +18,7 @@ from watchdog.events import PatternMatchingEventHandler
 
 # Altenative:  https://github.com/WoLpH/portalocker
 
-from .base_core import _BaseCore
+from .base_core import _BaseCore, _Sentinel
 
 
 DEF_CACHIER_DIR = '~/.cachier/'
@@ -147,7 +147,7 @@ class _PickleCore(_BaseCore):
             return key, self._get_cache().get(key, None)
 
     def get_entry(self, args, kwds, hash_params):
-        key = args + tuple(sorted(kwds.items())) if hash_params is None else hash_params(args, kwds)
+        key = args + (_Sentinel(),) + tuple(sorted(kwds.items())) if hash_params is None else hash_params(args, kwds)
         # print('key type={}, key={}'.format(type(key), key))
         return self.get_entry_by_key(key)
 

@@ -56,3 +56,10 @@ class _BaseCore():
     @abc.abstractmethod
     def clear_being_calculated(self):
         """Marks all entries in this cache as not being calculated."""
+
+class _Sentinel:
+    def __eq__(self, other):
+        return isinstance(other, self.__class__)
+
+    def __hash__(self):
+        return 0

@@ -23,7 +23,7 @@ try:
 except ImportError:  # pragma: no cover
     pass
 
-from .base_core import _BaseCore
+from .base_core import _BaseCore, _Sentinel
 
 
 MONGO_SLEEP_DURATION_IN_SEC = 1
@@ -80,7 +80,7 @@ class _MongoCore(_BaseCore):
         return key, None
 
     def get_entry(self, args, kwds, hash_params):
-        key = pickle.dumps(args + tuple(sorted(kwds.items())) if hash_params is None else hash_params(args, kwds))
+        key = pickle.dumps(args + (_Sentinel(),) + tuple(sorted(kwds.items())) if hash_params is None else hash_params(args, kwds))
         return self.get_entry_by_key(key)
 
     def set_entry(self, key, func_res):
