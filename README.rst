@@ -187,6 +187,18 @@ You can configure ``cachier`` to use another directory by providing the ``cache_
 
   @cachier(cache_dir='~/.temp/.cache')
 
+Setting the optional argument ``separate_files`` to ``True`` will cause the cache to be stored in several files, one per argument set, per function.
+
+.. code-block:: python
+
+  from cachier import cachier
+
+  @cachier(separate_files=True)
+  def foo(arg1, arg2):
+    """Your function now has a persistent cache mapped by argument values,
+    split across several files, per argument set!"""
+    return {'arg1': arg1, 'arg2': arg2}
+
 
 You can slightly optimise pickle-based caching if you know your code will only be used in a single thread environment by setting:
 
@@ -268,6 +280,10 @@ This project is documented using the `numpy docstring conventions`_, which were 
 Credits
 =======
 Created by Shay Palachy (shay.palachy@gmail.com).
+
+Feature contributors:
+
+* The multi-file pickle cache feature was written by `Elad Rapaport <https://github.com/erap129>`_!
 
 .. Contributers (in chronological order of first commit):
 
