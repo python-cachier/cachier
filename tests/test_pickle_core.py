@@ -427,3 +427,15 @@ def test_callable_hash_param():
     value_b = _params_with_dataframe(1, df=df_b)
 
     assert value_a == value_b  # same content --> same key
+
+def test_cache_key():
+    """Test that the calls some_func(1, ("a", 2)) and some_func(1, a=2)
+    are distinguished by the cache."""
+
+    @cachier()
+    def some_func(*args, **kwargs):
+        return len(kwargs) > 0
+
+    some_func(1, ("a", 2))
+
+    assert some_func(1, a=2)
