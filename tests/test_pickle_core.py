@@ -320,20 +320,19 @@ def _delete_cache(arg_1, arg_2):
 
 # _DEL_CACHE_FNAME = '.__main__._delete_cache'
 _DEL_CACHE_FNAME = '.tests.test_pickle_core._delete_cache'
-_DEL_CACHE_FNAME_SEPARATE_FILES = f'tests.test_pickle_core._delete_cache_{hashlib.sha256(pickle.dumps((0.13, 0.02))).hexdigest()}'
+_DEL_CACHE_FNAME_SEPARATE_FILES = f'.tests.test_pickle_core._delete_cache_{hashlib.sha256(pickle.dumps((0.13, 0.02))).hexdigest()}'
 _DEL_CACHE_FPATH = os.path.join(EXPANDED_CACHIER_DIR, _DEL_CACHE_FNAME)
 _DEL_CACHE_FPATH_SEPARATE_FILES = os.path.join(EXPANDED_CACHIER_DIR, _DEL_CACHE_FNAME_SEPARATE_FILES)
 _DEL_CACHE_FPATHS = {True: _DEL_CACHE_FPATH_SEPARATE_FILES, False: _DEL_CACHE_FPATH}
 
 
-def _calls_delete_cache(del_cache_func, res_queue, del_cache):
+def _calls_delete_cache(del_cache_func, res_queue, del_cache, separate_files):
     try:
         # print('in')
         res = del_cache_func(0.13, 0.02)
         # print('out with {}'.format(res))
         if del_cache:
-            # print('deleteing!')
-            os.remove(_DEL_CACHE_FPATH)
+            os.remove(_DEL_CACHE_FPATHS[separate_files])
             # print(os.path.isfile(_DEL_CACHE_FPATH))
         res_queue.put(res)
     except Exception as exc:  # skipcq: PYL-W0703
@@ -348,10 +347,12 @@ def _helper_delete_cache_file(sleeptime, separate_files):
     res_queue = queue.Queue()
     thread1 = threading.Thread(
         target=_calls_delete_cache,
-        kwargs={'del_cache_func': _delete_cache_decorated, 'res_queue': res_queue, 'del_cache': True})
+        kwargs={'del_cache_func': _delete_cache_decorated, 'res_queue': res_queue, 'del_cache': True,
+                'separate_files': separate_files})
     thread2 = threading.Thread(
         target=_calls_delete_cache,
-        kwargs={'del_cache_func': _delete_cache_decorated, 'res_queue': res_queue, 'del_cache': False})
+        kwargs={'del_cache_func': _delete_cache_decorated, 'res_queue': res_queue, 'del_cache': False,
+                'separate_files': separate_files})
     thread1.start()
     sleep(sleeptime)
     thread2.start()
@@ -371,7 +372,7 @@ def _helper_delete_cache_file(sleeptime, separate_files):
     # print(type(res2))
 
 
-@pytest.mark.parametrize('separate_files', [True, False])
+@pytest.mark.parametrize('separate_files', [False, True])
 def test_delete_cache_file(separate_files):
     """Test pickle core handling of missing cache files."""
     sleeptimes = [0.5, 0.3, 0.1, 0.2, 0.8, 1, 2]
