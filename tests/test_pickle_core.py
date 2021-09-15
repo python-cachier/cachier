@@ -24,6 +24,7 @@ try:
 except ImportError:  # python 2
     import Queue as queue
 
+import pytest
 import hashlib
 import pandas as pd
 
@@ -273,9 +274,10 @@ def _helper_bad_cache_file(sleeptime):
 
 
 # we want this to succeed at leat once
+@pytest.mark.xfail
 def test_bad_cache_file():
     """Test pickle core handling of bad cache files."""
-    sleeptimes = [0.5, 0.1, 0.2, 0.3, 0.8, 1, 2]
+    sleeptimes = [0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8, 1, 1.5, 2]
     sleeptimes = sleeptimes + sleeptimes
     for sleeptime in sleeptimes:
         if _helper_bad_cache_file(sleeptime):
@@ -341,7 +343,7 @@ def _helper_delete_cache_file(sleeptime):
 
 def test_delete_cache_file():
     """Test pickle core handling of missing cache files."""
-    sleeptimes = [0.5, 0.3, 0.1, 0.2, 0.8, 1, 2]
+    sleeptimes = [0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8, 1, 1.5, 2]
     sleeptimes = sleeptimes + sleeptimes
     for sleeptime in sleeptimes:
         if _helper_delete_cache_file(sleeptime):
