@@ -266,10 +266,8 @@ class _PickleCore(_BaseCore):
             event_handler, path=self.expended_cache_dir, recursive=True
         )
         observer.start()
-        observer.join(timeout=1.0)
-        if observer.is_alive():
-            # print('Timedout waiting. Starting again...')
-            return self.wait_on_entry_calc(key)
+        while observer.is_alive():
+            observer.join(timeout=1.0)
         # print("Returned value: {}".format(event_handler.value))
         return event_handler.value
 
