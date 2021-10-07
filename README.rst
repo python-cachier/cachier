@@ -83,24 +83,6 @@ You can add a default, pickle-based, persistent cache to your function - meaning
     """Your function now has a persistent cache mapped by argument values!"""
     return {'arg1': arg1, 'arg2': arg2}
 
-Setting the optional argument 'separate_files' to True will cause the cache to be stored in several files,
-one per argument set, per function.
-
-.. code-block:: python
-
-  from cachier import cachier
-
-  @cachier(separate_files=True)
-  def foo(arg1, arg2):
-    """Your function now has a persistent cache mapped by argument values, split across several files, per argument set"""
-    return {'arg1': arg1, 'arg2': arg2}
-
-You can get the fully qualified path to the directory of cache files used by ``cachier`` (``~/.cachier`` by default) by calling the ``cache_dpath()`` function:
-
-.. code-block:: python
-
-  >>> foo.cache_dpath()
-      "/home/bigus/.cachier/"
 
 
 Resetting a Cache
@@ -208,6 +190,24 @@ You can slightly optimise pickle-based caching if you know your code will only b
 
 This will prevent reading the cache file on each cache read, speeding things up a bit, while also nullifying inter-thread functionality (the code is still thread safe, but different threads will have different versions of the cache at times, and will sometime make unnecessary function calls).
 
+Setting the optional argument ``separate_files`` to ``True`` will cause the cache to be stored in several files: A file per argument set, per function. This can help if your per-function cache files become too large.
+
+.. code-block:: python
+
+  from cachier import cachier
+
+  @cachier(separate_files=True)
+  def foo(arg1, arg2):
+    """Your function now has a persistent cache mapped by argument values, split across several files, per argument set"""
+    return {'arg1': arg1, 'arg2': arg2}
+
+You can get the fully qualified path to the directory of cache files used by ``cachier`` (``~/.cachier`` by default) by calling the ``cache_dpath()`` function:
+
+.. code-block:: python
+
+  >>> foo.cache_dpath()
+      "/home/bigus/.cachier/"
+
 
 MongoDB Core
 ------------
@@ -227,6 +227,24 @@ You can set a MongoDB-based cache by assigning ``mongetter`` with a callable tha
   @cachier(mongetter=my_mongetter)
 
 This allows you to have a cross-machine, albeit slower, cache. This functionality requires that the installation of the ``pymongo`` python package.
+
+In certain cases the MongoDB backend might leave a deadlock behind, blocking all subsequent requests from being processed. If you encounter this issue, supply the ``wait_for_calc_timeout`` with a reasonable number of seconds; calls will then wait at most this number of seconds before triggering a recalculation.
+
+.. code-block:: python
+
+  @cachier(mongetter=False, wait_for_calc_timeout=2)
+
+
+Memory Core
+-----------
+
+You can set an in-memory cache by assigning the ``backend`` parameter with ``'memory'``:
+
+.. code-block:: python
+
+  @cachier(backend='memory')
+
+Note, however, that ``cachier``'s in-memory core is simple, and has no monitoring or cap on cache size, and can thus lead to memory errors on large return values - it is mainly intended to be used with future multi-core functionality. As a rule, Python's built-in ``lru_cache`` is a much better stand-alone solution.
 
 
 Contributing
@@ -276,15 +294,29 @@ This project is documented using the `numpy docstring conventions`_, which were 
 .. _`numpy docstring conventions`: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
 .. _`these conventions`: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
 
+Additionally, if you update this ``README.rst`` file, use ``python setup.py checkdocs`` to validate it compiles.
+
 
 Credits
 =======
-Created by Shay Palachy (shay.palachy@gmail.com).
 
-.. Contributers (in chronological order of first commit):
+Created by `Shay Palachy <https://github.com/shaypal5>`_ (shay.palachy@gmail.com).
 
-.. * `shaypal5 <https://github.com/shaypal5>`_ (Shay Palachy)
-.. * `j-chad <https://github.com/j-chad>`_ (Jackson)
+Other major contributors:
+
+  * `cthoyt <https://github.com/cthoyt>`_ - Base memory core implementation.
+
+  * `amarczew <https://github.com/amarczew>`_ - The ``hash_params`` kwarg.
+
+  * `non-senses <https://github.com/non-senses>`_ - The ``wait_for_calc_timeout`` kwarg.
+
+  * `Elad Rapapor <https://github.com/erap129>`_ - Multi-file Pickle core, a.k.a ``separate_files`` (released on ``v1.5.3``).
+
+Notable bugfixers:
+
+  * `MichaelRazum <https://github.com/MichaelRazum>`_.
+
+  * `Eric Ma <https://github.com/ericmjl>`_ - The iNotify bugfix (released on ``v1.5.3``).
 
 
 
@@ -314,3 +346,5 @@ Created by Shay Palachy (shay.palachy@gmail.com).
 .. links:
 .. _pymongo: https://api.mongodb.com/python/current/
 .. _watchdog: https://github.com/gorakhargosh/watchdog
+
+

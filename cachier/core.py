@@ -20,6 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from .pickle_core import _PickleCore
 from .mongo_core import _MongoCore, RecalculationNeeded
+from .memory_core import _MemoryCore
 
 
 MAX_WORKERS_ENVAR_NAME = 'CACHIER_MAX_WORKERS'
@@ -73,13 +74,19 @@ def _calc_entry(core, key, func, args, kwds):
         core.mark_entry_not_calculated(key)
 
 
+class MissingMongetter(ValueError):
+    """Thrown when the mongetter keyword argument is missing."""
+
+
 def cachier(
     stale_after=None,
     next_time=False,
     pickle_reload=True,
+    backend=None,
     mongetter=None,
     cache_dir=None,
     hash_params=None,
+    wait_for_calc_timeout=0,
     separate_files=False,
 ):
     """A persistent, stale-free memoization decorator.
@@ -110,6 +117,10 @@ def cachier(
         A callable that takes no arguments and returns a pymongo.Collection
         object with writing permissions. If unset a local pickle cache is used
         instead.
+    backend : str, optional
+        The name of the backend to use. If None, defaults to 'mongo' when
+        the ``mongetter`` argument is passed, otherwise defaults to 'pickle'.
+        Valid options currently include 'pickle', 'mongo' and 'memory'.
     cache_dir : str, optional
         A fully qualified path to a file directory to be used for cache files.
         The running process must have running permissions to this folder. If
@@ -119,15 +130,22 @@ def cachier(
         and returns a hash key for them. This parameter can be used to enable
         the use of cachier with functions that get arguments that are not
         automatically hashable by Python.
+    wait_for_calc_timeout: int, optional, for MongoDB only
+        The maximum time to wait for an ongoing calculation. When a
+        process started to calculate the value setting being_calculated to
+        True, any process trying to read the same entry will wait a maximum of
+        seconds specified in this parameter. 0 means wait forever.
+        Once the timeout expires the calculation will be triggered.
+    separate_files: bool, default False, for Pickle cores only
+        Instead of a single cache file per-function, each function's cache is
+        split between several files, one for each argument set. This can help
+        if you per-function cache files become too large.
     """
-    # print('Inside the wrapper maker')
-    # print('mongetter={}'.format(mongetter))
-    # print('stale_after={}'.format(stale_after))
-    # print('next_time={}'.format(next_time))
-
-    if mongetter:
-        core = _MongoCore(mongetter, stale_after, next_time)
-    else:
+    # The default is calculated dynamically to maintain previous behavior
+    # to default to pickle unless the ``mongetter`` argument is given.
+    if backend is None:
+        backend = 'pickle' if mongetter is None else 'mongo'
+    if backend == 'pickle':
         core = _PickleCore(  # pylint: disable=R0204
             stale_after=stale_after,
             next_time=next_time,
@@ -135,6 +153,21 @@ def cachier(
             cache_dir=cache_dir,
             separate_files=separate_files
         )
+    elif backend == 'mongo':
+        if mongetter is None:
+            raise MissingMongetter(
+                'must specify ``mongetter`` when using the mongo core')
+        core = _MongoCore(
+            mongetter, stale_after, next_time, wait_for_calc_timeout)
+    elif backend == 'memory':
+        core = _MemoryCore(stale_after=stale_after, next_time=next_time)
+    elif backend == 'redis':
+        raise NotImplementedError(
+            'A Redis backend has not yet been implemented. '
+            'Please see https://github.com/shaypal5/cachier/issues/4'
+        )
+    else:
+        raise ValueError('specified an invalid core: {}'.format(backend))
 
     def _cachier_decorator(func):
         core.set_func(func)
