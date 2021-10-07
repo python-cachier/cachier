@@ -103,6 +103,7 @@ def test_mongo_core():
 
 
 MONGO_DELTA = timedelta(seconds=3)
+MONGO_DELTA_LONG = timedelta(seconds=10)
 
 
 @cachier(mongetter=_test_mongetter, stale_after=MONGO_DELTA, next_time=False)
@@ -155,6 +156,82 @@ def test_mongo_being_calculated():
     assert res1 == res2
 
 
+@cachier(mongetter=_test_mongetter, stale_after=MONGO_DELTA, next_time=False, wait_for_calc_timeout=2)  # noqa: E501
+def _wait_for_calc_timeout_mongo_fast(arg_1, arg_2):
+    """Some function."""
+    sleep(1)
+    return random() + arg_1 + arg_2
+
+
+def _calls_wait_for_calc_timeout_mongo_fast(res_queue):
+    res = _wait_for_calc_timeout_mongo_fast(1, 2)
+    res_queue.put(res)
+
+
+def test_mongo_wait_for_calc_timeout_ok():
+    """ Testing calls that avoid timeouts store the values in cache. """
+    _wait_for_calc_timeout_mongo_fast.clear_cache()
+    val1 = _wait_for_calc_timeout_mongo_fast(1, 2)
+    val2 = _wait_for_calc_timeout_mongo_fast(1, 2)
+    assert val1 == val2
+
+    res_queue = queue.Queue()
+    thread1 = threading.Thread(
+        target=_calls_wait_for_calc_timeout_mongo_fast,
+        kwargs={'res_queue': res_queue})
+    thread2 = threading.Thread(
+        target=_calls_wait_for_calc_timeout_mongo_fast,
+        kwargs={'res_queue': res_queue})
+
+    thread1.start()
+    thread2.start()
+    sleep(2)
+    thread1.join()
+    thread2.join()
+    assert res_queue.qsize() == 2
+    res1 = res_queue.get()
+    res2 = res_queue.get()
+    assert res1 == res2  # Timeout did not kick in, a single call was done
+
+
+@cachier(mongetter=_test_mongetter, stale_after=MONGO_DELTA_LONG, next_time=False, wait_for_calc_timeout=2)  # noqa: E501
+def _wait_for_calc_timeout_mongo_slow(arg_1, arg_2):
+    sleep(3)
+    return random() + arg_1 + arg_2
+
+
+def _calls_wait_for_calc_timeout_mongo_slow(res_queue):
+    res = _wait_for_calc_timeout_mongo_slow(1, 2)
+    res_queue.put(res)
+
+
+def test_mongo_wait_for_calc_timeout_slow():
+    """Testing for calls timing out to be performed twice when needed."""
+    _wait_for_calc_timeout_mongo_slow.clear_cache()
+    res_queue = queue.Queue()
+    thread1 = threading.Thread(
+        target=_calls_wait_for_calc_timeout_mongo_slow,
+        kwargs={'res_queue': res_queue})
+    thread2 = threading.Thread(
+        target=_calls_wait_for_calc_timeout_mongo_slow,
+        kwargs={'res_queue': res_queue})
+
+    thread1.start()
+    thread2.start()
+    sleep(1)
+    res3 = _wait_for_calc_timeout_mongo_slow(1, 2)
+    sleep(4)
+    thread1.join()
+    thread2.join()
+    assert res_queue.qsize() == 2
+    res1 = res_queue.get()
+    res2 = res_queue.get()
+    assert res1 != res2  # Timeout kicked in.  Two calls were done
+    res4 = _wait_for_calc_timeout_mongo_slow(1, 2)
+    # One of the cached values is returned
+    assert res1 == res4 or res2 == res4 or res3 == res4
+
+
 class _BadMongoCollection:
 
     def __init__(self, mongetter):
@@ -204,7 +281,7 @@ def test_stalled_mongo_db_cache():
     @cachier(mongetter=_test_mongetter)
     def _stalled_func():
         return 1
-    core = _MongoCore(_test_mongetter, None, False)
+    core = _MongoCore(_test_mongetter, None, False, 0)
     core.set_func(_stalled_func)
     core.clear_cache()
     with pytest.raises(RecalculationNeeded):
@@ -214,7 +291,7 @@ def test_stalled_mongo_db_cache():
 @pytest.mark.mongo
 def test_stalled_mong_db_core(monkeypatch):
 
-    def mock_get_entry(self, args, kwargs, hash_params):  # skipcq: PYL-R0201, PYL-W0613
+    def mock_get_entry(self, args, kwargs, hash_params):  # skipcq: PYL-R0201, PYL-W0613  # noqa: E501
         return "key", {'being_calculated': True}
 
     def mock_get_entry_by_key(self, key):  # skipcq: PYL-R0201, PYL-W0613
@@ -260,11 +337,14 @@ def test_callable_hash_param():
     def _hash_params(args, kwargs):
         def _hash(obj):
             if isinstance(obj, pd.core.frame.DataFrame):
-                return hashlib.sha256(pd.util.hash_pandas_object(obj).values.tobytes()).hexdigest()
+                return hashlib.sha256(
+                    pd.util.hash_pandas_object(obj).values.tobytes()
+                ).hexdigest()
             return obj
 
         k_args = tuple(map(_hash, args))
-        k_kwargs = tuple(sorted({k: _hash(v) for k, v in kwargs.items()}.items()))
+        k_kwargs = tuple(sorted({
+            k: _hash(v) for k, v in kwargs.items()}.items()))
         return k_args + k_kwargs
 
     @cachier(mongetter=_test_mongetter, hash_params=_hash_params)

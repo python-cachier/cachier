@@ -24,6 +24,8 @@ TEST_REQUIRES = [
     'pymongo', 'dnspython',
     # to test pandas dataframe as-param hashing with mongodb core
     'pandas',
+    # to be able to run `python setup.py checkdocs`
+    'collective.checkdocs', 'pygments',
 ]
 
 README_RST = ''
