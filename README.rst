@@ -318,6 +318,8 @@ Notable bugfixers:
 
   * `Eric Ma <https://github.com/ericmjl>`_ - The iNotify bugfix (released on ``v1.5.3``).
 
+  * `Ofir <https://github.com/ofirnk>`_ - The iNotify bugfix (released on ``v1.5.3``).
+
 
 
 .. |PyPI-Status| image:: https://img.shields.io/pypi/v/cachier.svg
