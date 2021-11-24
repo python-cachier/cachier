@@ -19,7 +19,7 @@ from watchdog.events import PatternMatchingEventHandler
 # Altenative:  https://github.com/WoLpH/portalocker
 
 from .base_core import _BaseCore
-
+from .mongo_core import RecalculationNeeded
 
 DEF_CACHIER_DIR = '~/.cachier/'
 
@@ -84,7 +84,7 @@ class _PickleCore(_BaseCore):
             self._check_calculation()
 
     def __init__(
-            self, stale_after, next_time, reload, cache_dir, separate_files):
+            self, stale_after, next_time, reload, cache_dir, separate_files, wait_for_calc_timeout):
         _BaseCore.__init__(self, stale_after, next_time)
         self.cache = None
         self.reload = reload
@@ -96,6 +96,7 @@ class _PickleCore(_BaseCore):
         self.cache_fname = None
         self.cache_fpath = None
         self.separate_files = separate_files
+        self.wait_for_calc_timeout = wait_for_calc_timeout
 
     def _cache_fname(self):
         if self.cache_fname is None:
@@ -269,8 +270,12 @@ class _PickleCore(_BaseCore):
             event_handler, path=self.expended_cache_dir, recursive=True
         )
         observer.start()
+        time_spent = 0
         while observer.is_alive():
             observer.join(timeout=1.0)
+            time_spent += 1
+            if 0 < self.wait_for_calc_timeout < time_spent:
+                raise RecalculationNeeded()
         # print("Returned value: {}".format(event_handler.value))
         return event_handler.value
 

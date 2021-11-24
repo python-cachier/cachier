@@ -151,7 +151,8 @@ def cachier(
             next_time=next_time,
             reload=pickle_reload,
             cache_dir=cache_dir,
-            separate_files=separate_files
+            separate_files=separate_files,
+            wait_for_calc_timeout=wait_for_calc_timeout
         )
     elif backend == 'mongo':
         if mongetter is None:
