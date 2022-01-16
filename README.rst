@@ -328,8 +328,8 @@ Notable bugfixers:
 .. |PyPI-Versions| image:: https://img.shields.io/pypi/pyversions/cachier.svg
    :target: https://pypi.python.org/pypi/cachier
 
-.. |Build-Status| image:: https://travis-ci.org/shaypal5/cachier.svg?branch=master
-  :target: https://travis-ci.org/shaypal5/cachier
+.. |Build-Status| image:: https://github.com/shaypal5/cachier/actions/workflows/test.yml/badge.svg
+  :target: https://github.com/shaypal5/cachier/actions/workflows/test.yml
 
 .. |LICENCE| image:: https://img.shields.io/pypi/l/cachier.svg
   :target: https://pypi.python.org/pypi/cachier
