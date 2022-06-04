@@ -93,6 +93,14 @@ The Cachier wrapper adds a ``clear_cache()`` function to each wrapped function. 
 
   foo.clear_cache()
 
+Genereal Configuration
+----------------------
+
+Threads Limit
+~~~~~~~~~~~~~
+
+To limit the number of threads Cachier is allowed to spawn, set the ``CACHIER_MAX_WORKERS`` with the desired number. The defeault is 8, so to enable Cachier to spawn even more threads, you'll have to set a higher limit explicitly.
+
 
 Cache Shelf Life
 ----------------
