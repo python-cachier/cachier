@@ -121,7 +121,7 @@ class _PickleCore(_BaseCore):
         with self.lock:
             fpath = self._cache_fpath()
             try:
-                with portalocker.Lock(fpath, mode='rb') as cache_file:
+                with portalocker.Lock(fpath, mode='rb', flags=portalocker.LOCK_SH) as cache_file:
                     try:
                         self.cache = pickle.load(cache_file)
                     except EOFError:
@@ -142,7 +142,7 @@ class _PickleCore(_BaseCore):
         else:
             fpath += f'_{hash}'
         try:
-            with portalocker.Lock(fpath, mode='rb') as cache_file:
+            with portalocker.Lock(fpath, mode='rb', flags=portalocker.LOCK_SH) as cache_file:
                 try:
                     res = pickle.load(cache_file)
                 except EOFError:
@@ -176,7 +176,7 @@ class _PickleCore(_BaseCore):
                 fpath += f'_{hashlib.sha256(pickle.dumps(key)).hexdigest()}'
             elif hash is not None:
                 fpath += f'_{hash}'
-            with portalocker.Lock(fpath, mode='wb') as cache_file:
+            with portalocker.Lock(fpath, mode='wb', flags=portalocker.LOCK_EX) as cache_file:
                 pickle.dump(cache, cache_file, protocol=4)
             if key is None:
                 self._reload_cache()
