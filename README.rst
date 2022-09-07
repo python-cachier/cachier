@@ -142,6 +142,10 @@ As mentioned above, the positional and keyword arguments to the wrapped function
   @cachier(hash_params=hash_my_custom_class)
   def calculate_super_complex_stuff(custom_obj):
     # amazing code goes here
+    
+See here for an example:
+
+`Question: How to work with unhashable arguments <https://github.com/shaypal5/cachier/issues/91>`_
 
 
 Per-function call arguments
