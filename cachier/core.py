@@ -179,6 +179,8 @@ def cachier(
             ignore_cache = kwds.pop('ignore_cache', False)
             overwrite_cache = kwds.pop('overwrite_cache', False)
             verbose_cache = kwds.pop('verbose_cache', False)
+            override_stale_after = kwds.pop('stale_after', False)
+            current_stale_after = override_stale_after or stale_after
             _print = lambda x: None  # skipcq: FLK-E731  # noqa: E731
             if verbose_cache:
                 _print = print
@@ -191,9 +193,9 @@ def cachier(
                 _print('Entry found.')
                 if entry.get('value', None) is not None:
                     _print('Cached result found.')
-                    if stale_after:
+                    if current_stale_after:
                         now = datetime.datetime.now()
-                        if now - entry['time'] > stale_after:
+                        if now - entry['time'] > current_stale_after:
                             _print('But it is stale... :(')
                             if entry['being_calculated']:
                                 if next_time:
