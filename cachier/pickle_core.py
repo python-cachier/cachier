@@ -84,7 +84,7 @@ class _PickleCore(_BaseCore):
             self._check_calculation()
 
     def __init__(
-            self, stale_after, next_time, reload, cache_dir, separate_files, wait_for_calc_timeout):
+            self, stale_after, next_time, reload, cache_dir, separate_files, wait_for_calc_timeout, allow_concurrent_reads=True):
         _BaseCore.__init__(self, stale_after, next_time)
         self.cache = None
         self.reload = reload
@@ -97,6 +97,7 @@ class _PickleCore(_BaseCore):
         self.cache_fpath = None
         self.separate_files = separate_files
         self.wait_for_calc_timeout = wait_for_calc_timeout
+        self.allow_concurrent_reads = allow_concurrent_reads
 
     def _cache_fname(self):
         if self.cache_fname is None:
@@ -121,7 +122,8 @@ class _PickleCore(_BaseCore):
         with self.lock:
             fpath = self._cache_fpath()
             try:
-                with portalocker.Lock(fpath, mode='rb', flags=portalocker.LOCK_SH) as cache_file:
+                kwargs = {"flags": portalocker.LOCK_SH} if self.allow_concurrent_reads else {}
+                with portalocker.Lock(fpath, mode='rb', **kwargs) as cache_file:
                     try:
                         self.cache = pickle.load(cache_file)
                     except EOFError:
@@ -142,7 +144,8 @@ class _PickleCore(_BaseCore):
         else:
             fpath += f'_{hash}'
         try:
-            with portalocker.Lock(fpath, mode='rb', flags=portalocker.LOCK_SH) as cache_file:
+            kwargs = {"flags": portalocker.LOCK_SH} if self.allow_concurrent_reads else {}
+            with portalocker.Lock(fpath, mode='rb', **kwargs) as cache_file:
                 try:
                     res = pickle.load(cache_file)
                 except EOFError:
@@ -176,7 +179,8 @@ class _PickleCore(_BaseCore):
                 fpath += f'_{hashlib.sha256(pickle.dumps(key)).hexdigest()}'
             elif hash is not None:
                 fpath += f'_{hash}'
-            with portalocker.Lock(fpath, mode='wb', flags=portalocker.LOCK_EX) as cache_file:
+            kwargs = {"flags": portalocker.LOCK_EX} if self.allow_concurrent_reads else {}
+            with portalocker.Lock(fpath, mode='wb', **kwargs) as cache_file:
                 pickle.dump(cache, cache_file, protocol=4)
             if key is None:
                 self._reload_cache()
