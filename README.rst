@@ -142,7 +142,7 @@ As mentioned above, the positional and keyword arguments to the wrapped function
   @cachier(hash_params=hash_my_custom_class)
   def calculate_super_complex_stuff(custom_obj):
     # amazing code goes here
-    
+
 See here for an example:
 
 `Question: How to work with unhashable arguments <https://github.com/shaypal5/cachier/issues/91>`_
@@ -291,11 +291,30 @@ To run the tests, call the ``pytest`` command in the repository's root, or:
 
   python -m pytest
 
-To run only pickle core related tests, use:
+To run only MongoDB core related tests, use:
 
 .. code-block:: bash
 
   pytest -m mongo
+
+To run only memory core related tests, use:
+
+.. code-block:: bash
+
+  pytest -m memory
+
+To run all tests EXCEPT MongoDB core related tests, use:
+
+.. code-block:: bash
+
+  pytest -m "not mongo"
+
+
+To run all tests EXCEPT memory core AND MongoDB core related tests, use:
+
+.. code-block:: bash
+
+  pytest -m "not (mongo or memory)"
 
 
 Adding documentation
