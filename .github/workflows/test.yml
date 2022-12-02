@@ -1,6 +1,12 @@
 name: Test
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  schedule:
+     # * is a special character in YAML so you have to quote this string
+     # min hours day(month) month day(week)
+    - cron: '0 0 * * 0'
 
 jobs:
   build:
@@ -14,10 +20,10 @@ jobs:
         os: [ubuntu-latest, macOS-latest, windows-latest]
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2.5.0
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4.3.0
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -34,6 +40,6 @@ jobs:
         run: |
           pytest
       - name: "Upload coverage to Codecov"
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3.1.1
         with:
           fail_ci_if_error: true
