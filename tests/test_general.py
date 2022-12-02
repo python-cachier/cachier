@@ -16,7 +16,11 @@ from cachier.core import (
     _set_max_workers,
     _get_executor
 )
-from tests.test_mongo_core import _test_mongetter, MONGO_DELTA, MONGO_DELTA_LONG
+from tests.test_mongo_core import (
+    _test_mongetter,
+    MONGO_DELTA,
+    MONGO_DELTA_LONG,
+)
 
 
 def test_information():
@@ -45,11 +49,22 @@ def test_set_max_workers():
     _set_max_workers(9)
 
 
-@pytest.mark.parametrize("mongetter,stale_after,separate_files", [(_test_mongetter, MONGO_DELTA, False),
-                                                                  (None, None, False), (None, None, True)])
+@pytest.mark.parametrize(
+    "mongetter,stale_after,separate_files",
+    [
+        (_test_mongetter, MONGO_DELTA, False),
+        (None, None, False),
+        (None, None, True),
+    ]
+)
 def test_wait_for_calc_timeout_ok(mongetter, stale_after, separate_files):
-    @cachier(mongetter=mongetter, stale_after=stale_after, separate_files=separate_files, next_time=False,
-             wait_for_calc_timeout=2)  # noqa: E501
+    @cachier(
+        mongetter=mongetter,
+        stale_after=stale_after,
+        separate_files=separate_files,
+        next_time=False,
+        wait_for_calc_timeout=2
+    )
     def _wait_for_calc_timeout_fast(arg_1, arg_2):
         """Some function."""
         sleep(1)
@@ -84,11 +99,22 @@ def test_wait_for_calc_timeout_ok(mongetter, stale_after, separate_files):
     assert res1 == res2  # Timeout did not kick in, a single call was done
 
 
-@pytest.mark.parametrize("mongetter,stale_after,separate_files", [(_test_mongetter, MONGO_DELTA_LONG, False),
-                                                                  (None, None, False), (None, None, True)])
+@pytest.mark.parametrize(
+    "mongetter,stale_after,separate_files",
+    [
+        (_test_mongetter, MONGO_DELTA_LONG, False),
+        (None, None, False),
+        (None, None, True),
+    ]
+)
 def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
-    @cachier(mongetter=mongetter, stale_after=stale_after, separate_files=separate_files, next_time=False,
-             wait_for_calc_timeout=2)  # noqa: E501
+    @cachier(
+        mongetter=mongetter,
+        stale_after=stale_after,
+        separate_files=separate_files,
+        next_time=False,
+        wait_for_calc_timeout=2,
+    )
     def _wait_for_calc_timeout_slow(arg_1, arg_2):
         sleep(3)
         return random() + arg_1 + arg_2

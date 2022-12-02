@@ -52,7 +52,8 @@ def _takes_5_seconds(arg_1, arg_2):
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_pickle_core(separate_files):
     """Basic Pickle core functionality."""
-    _takes_5_seconds_decorated = _get_decorated_func(_takes_5_seconds, next_time=False, separate_files=separate_files)
+    _takes_5_seconds_decorated = _get_decorated_func(
+        _takes_5_seconds, next_time=False, separate_files=separate_files)
     _takes_5_seconds_decorated.clear_cache()
     _takes_5_seconds_decorated('a', 'b')
     start = time()
@@ -74,8 +75,10 @@ def _stale_after_seconds(arg_1, arg_2):
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_stale_after(separate_files):
     """Testing the stale_after functionality."""
-    _stale_after_seconds_decorated = _get_decorated_func(_stale_after_seconds, stale_after=DELTA, next_time=False,
-                                                         separate_files=separate_files)
+    _stale_after_seconds_decorated = _get_decorated_func(
+        _stale_after_seconds, stale_after=DELTA, next_time=False,
+        separate_files=separate_files,
+    )
     _stale_after_seconds_decorated.clear_cache()
     val1 = _stale_after_seconds_decorated(1, 2)
     val2 = _stale_after_seconds_decorated(1, 2)
@@ -96,8 +99,10 @@ def _stale_after_next_time(arg_1, arg_2):
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_stale_after_next_time(separate_files):
     """Testing the stale_after with next_time functionality."""
-    _stale_after_next_time_decorated = _get_decorated_func(_stale_after_next_time, stale_after=DELTA, next_time=True,
-                                                           separate_files=separate_files)
+    _stale_after_next_time_decorated = _get_decorated_func(
+        _stale_after_next_time, stale_after=DELTA, next_time=True,
+        separate_files=separate_files,
+    )
     _stale_after_next_time_decorated.clear_cache()
     val1 = _stale_after_next_time_decorated(1, 2)
     val2 = _stale_after_next_time_decorated(1, 2)
@@ -125,8 +130,10 @@ def _random_num_with_arg(a):
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_overwrite_cache(separate_files):
     """Tests that the overwrite feature works correctly."""
-    _random_num_decorated = _get_decorated_func(_random_num, separate_files=separate_files)
-    _random_num_with_arg_decorated = _get_decorated_func(_random_num_with_arg, separate_files=separate_files)
+    _random_num_decorated = _get_decorated_func(
+        _random_num, separate_files=separate_files)
+    _random_num_with_arg_decorated = _get_decorated_func(
+        _random_num_with_arg, separate_files=separate_files)
     _random_num_decorated.clear_cache()
     int1 = _random_num_decorated()
     int2 = _random_num_decorated()
@@ -151,8 +158,10 @@ def test_overwrite_cache(separate_files):
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_ignore_cache(separate_files):
     """Tests that the ignore_cache feature works correctly."""
-    _random_num_decorated = _get_decorated_func(_random_num, separate_files=separate_files)
-    _random_num_with_arg_decorated = _get_decorated_func(_random_num_with_arg, separate_files=separate_files)
+    _random_num_decorated = _get_decorated_func(
+        _random_num, separate_files=separate_files)
+    _random_num_with_arg_decorated = _get_decorated_func(
+        _random_num_with_arg, separate_files=separate_files)
     _random_num_decorated.clear_cache()
     int1 = _random_num_decorated()
     int2 = _random_num_decorated()
@@ -190,13 +199,24 @@ def _calls_takes_time(takes_time_func, res_queue):
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_pickle_being_calculated(separate_files):
     """Testing pickle core handling of being calculated scenarios."""
-    _takes_time_decorated = _get_decorated_func(_takes_time, separate_files=separate_files)
+    _takes_time_decorated = _get_decorated_func(
+        _takes_time, separate_files=separate_files)
     _takes_time_decorated.clear_cache()
     res_queue = queue.Queue()
     thread1 = threading.Thread(
-        target=_calls_takes_time, kwargs={'takes_time_func': _takes_time_decorated, 'res_queue': res_queue})
+        target=_calls_takes_time,
+        kwargs={
+            'takes_time_func': _takes_time_decorated,
+            'res_queue': res_queue,
+        }
+    )
     thread2 = threading.Thread(
-        target=_calls_takes_time, kwargs={'takes_time_func': _takes_time_decorated, 'res_queue': res_queue})
+        target=_calls_takes_time,
+        kwargs={
+            'takes_time_func': _takes_time_decorated,
+            'res_queue': res_queue,
+        }
+    )
     thread1.start()
     sleep(0.5)
     thread2.start()
@@ -222,18 +242,30 @@ def _calls_being_calc_next_time(being_calc_func, res_queue):
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_being_calc_next_time(separate_files):
     """Testing pickle core handling of being calculated scenarios."""
-    _being_calc_next_time_decorated = _get_decorated_func(_being_calc_next_time, stale_after=timedelta(seconds=1),
-                                                          next_time=True, separate_files=separate_files)
+    _being_calc_next_time_decorated = _get_decorated_func(
+        _being_calc_next_time,
+        stale_after=timedelta(seconds=1),
+        next_time=True,
+        separate_files=separate_files,
+    )
     _being_calc_next_time_decorated.clear_cache()
     _being_calc_next_time(0.13, 0.02)
     sleep(1.1)
     res_queue = queue.Queue()
     thread1 = threading.Thread(
-        target=_calls_being_calc_next_time, kwargs={'being_calc_func': _being_calc_next_time_decorated,
-                                                    'res_queue': res_queue})
+        target=_calls_being_calc_next_time,
+        kwargs={
+            'being_calc_func': _being_calc_next_time_decorated,
+            'res_queue': res_queue,
+        }
+    )
     thread2 = threading.Thread(
-        target=_calls_being_calc_next_time, kwargs={'being_calc_func': _being_calc_next_time_decorated,
-                                                    'res_queue': res_queue})
+        target=_calls_being_calc_next_time,
+        kwargs={
+            'being_calc_func': _being_calc_next_time_decorated,
+            'res_queue': res_queue,
+        }
+    )
     thread1.start()
     sleep(0.5)
     thread2.start()
@@ -253,11 +285,18 @@ def _bad_cache(arg_1, arg_2):
 
 # _BAD_CACHE_FNAME = '.__main__._bad_cache'
 _BAD_CACHE_FNAME = '.tests.test_pickle_core._bad_cache'
-_BAD_CACHE_FNAME_SEPARATE_FILES = f'.tests.test_pickle_core._bad_cache_{hashlib.sha256(pickle.dumps((0.13, 0.02))).hexdigest()}'
+_BAD_CACHE_FNAME_SEPARATE_FILES = (
+    '.tests.test_pickle_core._bad_cache_'
+    f'{hashlib.sha256(pickle.dumps((0.13, 0.02))).hexdigest()}'
+)
 EXPANDED_CACHIER_DIR = os.path.expanduser(DEF_CACHIER_DIR)
 _BAD_CACHE_FPATH = os.path.join(EXPANDED_CACHIER_DIR, _BAD_CACHE_FNAME)
-_BAD_CACHE_FPATH_SEPARATE_FILES = os.path.join(EXPANDED_CACHIER_DIR, _BAD_CACHE_FNAME_SEPARATE_FILES)
-_BAD_CACHE_FPATHS = {True: _BAD_CACHE_FPATH_SEPARATE_FILES, False: _BAD_CACHE_FPATH}
+_BAD_CACHE_FPATH_SEPARATE_FILES = os.path.join(
+    EXPANDED_CACHIER_DIR, _BAD_CACHE_FNAME_SEPARATE_FILES)
+_BAD_CACHE_FPATHS = {
+    True: _BAD_CACHE_FPATH_SEPARATE_FILES,
+    False: _BAD_CACHE_FPATH,
+}
 
 
 def _calls_bad_cache(bad_cache_func, res_queue, trash_cache, separate_files):
@@ -274,17 +313,28 @@ def _calls_bad_cache(bad_cache_func, res_queue, trash_cache, separate_files):
 
 def _helper_bad_cache_file(sleeptime, separate_files):
     """Test pickle core handling of bad cache files."""
-    _bad_cache_decorated = _get_decorated_func(_bad_cache, separate_files=separate_files)
+    _bad_cache_decorated = _get_decorated_func(
+        _bad_cache, separate_files=separate_files)
     _bad_cache_decorated.clear_cache()
     res_queue = queue.Queue()
     thread1 = threading.Thread(
         target=_calls_bad_cache,
-        kwargs={'bad_cache_func': _bad_cache_decorated, 'res_queue': res_queue, 'trash_cache': True,
-                'separate_files': separate_files})
+        kwargs={
+            'bad_cache_func': _bad_cache_decorated,
+            'res_queue': res_queue,
+            'trash_cache': True,
+            'separate_files': separate_files,
+        },
+    )
     thread2 = threading.Thread(
         target=_calls_bad_cache,
-        kwargs={'bad_cache_func': _bad_cache_decorated, 'res_queue': res_queue, 'trash_cache': False,
-                'separate_files': separate_files})
+        kwargs={
+            'bad_cache_func': _bad_cache_decorated,
+            'res_queue': res_queue,
+            'trash_cache': False,
+            'separate_files': separate_files,
+        },
+    )
     thread1.start()
     sleep(sleeptime)
     thread2.start()
@@ -322,10 +372,17 @@ def _delete_cache(arg_1, arg_2):
 
 # _DEL_CACHE_FNAME = '.__main__._delete_cache'
 _DEL_CACHE_FNAME = '.tests.test_pickle_core._delete_cache'
-_DEL_CACHE_FNAME_SEPARATE_FILES = f'.tests.test_pickle_core._delete_cache_{hashlib.sha256(pickle.dumps((0.13, 0.02))).hexdigest()}'
+_DEL_CACHE_FNAME_SEPARATE_FILES = (
+    '.tests.test_pickle_core._delete_cache_'
+    f'{hashlib.sha256(pickle.dumps((0.13, 0.02))).hexdigest()}'
+)
 _DEL_CACHE_FPATH = os.path.join(EXPANDED_CACHIER_DIR, _DEL_CACHE_FNAME)
-_DEL_CACHE_FPATH_SEPARATE_FILES = os.path.join(EXPANDED_CACHIER_DIR, _DEL_CACHE_FNAME_SEPARATE_FILES)
-_DEL_CACHE_FPATHS = {True: _DEL_CACHE_FPATH_SEPARATE_FILES, False: _DEL_CACHE_FPATH}
+_DEL_CACHE_FPATH_SEPARATE_FILES = os.path.join(
+    EXPANDED_CACHIER_DIR, _DEL_CACHE_FNAME_SEPARATE_FILES)
+_DEL_CACHE_FPATHS = {
+    True: _DEL_CACHE_FPATH_SEPARATE_FILES,
+    False: _DEL_CACHE_FPATH,
+}
 
 
 def _calls_delete_cache(del_cache_func, res_queue, del_cache, separate_files):
@@ -344,17 +401,28 @@ def _calls_delete_cache(del_cache_func, res_queue, del_cache, separate_files):
 
 def _helper_delete_cache_file(sleeptime, separate_files):
     """Test pickle core handling of missing cache files."""
-    _delete_cache_decorated = _get_decorated_func(_delete_cache, separate_files=separate_files)
+    _delete_cache_decorated = _get_decorated_func(
+        _delete_cache, separate_files=separate_files)
     _delete_cache_decorated.clear_cache()
     res_queue = queue.Queue()
     thread1 = threading.Thread(
         target=_calls_delete_cache,
-        kwargs={'del_cache_func': _delete_cache_decorated, 'res_queue': res_queue, 'del_cache': True,
-                'separate_files': separate_files})
+        kwargs={
+            'del_cache_func': _delete_cache_decorated,
+            'res_queue': res_queue,
+            'del_cache': True,
+            'separate_files': separate_files,
+        },
+    )
     thread2 = threading.Thread(
         target=_calls_delete_cache,
-        kwargs={'del_cache_func': _delete_cache_decorated, 'res_queue': res_queue, 'del_cache': False,
-                'separate_files': separate_files})
+        kwargs={
+            'del_cache_func': _delete_cache_decorated,
+            'res_queue': res_queue,
+            'del_cache': False,
+            'separate_files': separate_files,
+        },
+    )
     thread1.start()
     sleep(sleeptime)
     thread2.start()
@@ -389,7 +457,8 @@ def test_delete_cache_file(separate_files):
 @pytest.mark.parametrize('separate_files', [False, True])
 def test_clear_being_calculated(separate_files):
     """Test pickle core clear `being calculated` functionality."""
-    _takes_time_decorated = _get_decorated_func(_takes_time, separate_files=separate_files)
+    _takes_time_decorated = _get_decorated_func(
+        _takes_time, separate_files=separate_files)
     _takes_time_decorated.clear_being_calculated()
 
 
@@ -406,8 +475,12 @@ def _error_throwing_func(arg1):
 def test_error_throwing_func(separate_files):
     # with
     _error_throwing_func.count = 0
-    _error_throwing_func_decorated = _get_decorated_func(_error_throwing_func, stale_after=timedelta(seconds=1),
-                                                         next_time=True, separate_files=separate_files)
+    _error_throwing_func_decorated = _get_decorated_func(
+        _error_throwing_func,
+        stale_after=timedelta(seconds=1),
+        next_time=True,
+        separate_files=separate_files,
+    )
     _error_throwing_func_decorated.clear_cache()
     res1 = _error_throwing_func_decorated(4)
     sleep(1.5)
@@ -430,8 +503,10 @@ def _takes_5_seconds_custom_dir(arg_1, arg_2):
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_pickle_core_custom_cache_dir(separate_files):
     """Basic Pickle core functionality."""
-    _takes_5_seconds_custom_dir_decorated = _get_decorated_func(_takes_5_seconds_custom_dir, next_time=False,
-                                                                cache_dir=CUSTOM_DIR, separate_files=separate_files)
+    _takes_5_seconds_custom_dir_decorated = _get_decorated_func(
+        _takes_5_seconds_custom_dir, next_time=False,
+        cache_dir=CUSTOM_DIR, separate_files=separate_files,
+    )
     _takes_5_seconds_custom_dir_decorated.clear_cache()
     _takes_5_seconds_custom_dir_decorated('a', 'b')
     start = time()
@@ -439,7 +514,8 @@ def test_pickle_core_custom_cache_dir(separate_files):
     end = time()
     assert end - start < 1
     _takes_5_seconds_custom_dir_decorated.clear_cache()
-    assert _takes_5_seconds_custom_dir_decorated.cache_dpath() == EXPANDED_CUSTOM_DIR
+    path2test = _takes_5_seconds_custom_dir_decorated.cache_dpath()
+    assert path2test == EXPANDED_CUSTOM_DIR
 
 
 @pytest.mark.parametrize('separate_files', [True, False])
@@ -447,11 +523,17 @@ def test_callable_hash_param(separate_files):
     def _hash_params(args, kwargs):
         def _hash(obj):
             if isinstance(obj, pd.core.frame.DataFrame):
-                return hashlib.sha256(pd.util.hash_pandas_object(obj).values.tobytes()).hexdigest()
+                return hashlib.sha256(
+                    pd.util.hash_pandas_object(obj).values.tobytes()
+                ).hexdigest()
             return obj
 
         k_args = tuple(map(_hash, args))
-        k_kwargs = tuple(sorted({k: _hash(v) for k, v in kwargs.items()}.items()))
+        k_kwargs = tuple(
+            sorted(
+                {k: _hash(v) for k, v in kwargs.items()}.items()
+            )
+        )
         return k_args + k_kwargs
 
     @cachier(hash_params=_hash_params, separate_files=separate_files)

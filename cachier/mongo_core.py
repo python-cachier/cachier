@@ -82,7 +82,11 @@ class _MongoCore(_BaseCore):
         return key, None
 
     def get_entry(self, args, kwds, hash_params):
-        key = pickle.dumps(args + tuple(sorted(kwds.items())) if hash_params is None else hash_params(args, kwds))
+        key = pickle.dumps(
+            args + tuple(
+                sorted(kwds.items())
+            ) if hash_params is None else hash_params(args, kwds)
+        )
         return self.get_entry_by_key(key)
 
     def set_entry(self, key, func_res):

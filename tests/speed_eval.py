@@ -42,13 +42,15 @@ def test_pickle_speed():
 @cachier()
 def _test_single_file_speed(int_1, int_2):
     """Add the two given ints."""
-    return [random() for _ in range(1000000)]  # something that takes some memory
+    # something that takes some memory
+    return [random() for _ in range(1000000)]
 
 
 @cachier(separate_files=True)
 def _test_separate_files_speed(int_1, int_2):
     """Add the two given ints."""
-    return [random() for _ in range(1000000)]  # something that takes some memory
+    # something that takes some memory
+    return [random() for _ in range(1000000)]
 
 
 def test_separate_files_vs_single_file():
