@@ -101,8 +101,10 @@ class _PickleCore(_BaseCore):
     def _cache_fname(self):
         if self.cache_fname is None:
             self.cache_fname = '.{}.{}'.format(
-                self.func.__module__, self.func.__name__
+                self.func.__module__, self.func.__qualname__
             )
+            self.cache_fname = self.cache_fname.replace('<', '_').replace(
+                '>', '_')
         return self.cache_fname
 
     def _cache_fpath(self):
