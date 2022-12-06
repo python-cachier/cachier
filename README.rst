@@ -343,6 +343,8 @@ Other major contributors:
 
   * `Elad Rapapor <https://github.com/erap129>`_ - Multi-file Pickle core, a.k.a ``separate_files`` (released on ``v1.5.3``).
 
+  * `John Didion <https://github.com/jdidion>`_ - Support for pickle-based caching for cases where two identically-named methods of different classes are defined in the same module.
+
 Notable bugfixers:
 
   * `MichaelRazum <https://github.com/MichaelRazum>`_.
