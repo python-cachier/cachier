@@ -145,7 +145,7 @@ As mentioned above, the positional and keyword arguments to the wrapped function
 
 See here for an example:
 
-`Question: How to work with unhashable arguments <https://github.com/shaypal5/cachier/issues/91>`_
+`Question: How to work with unhashable arguments <https://github.com/python-cachier/cachier/issues/91>`_
 
 
 Per-function call arguments
@@ -271,7 +271,7 @@ Clone:
 
 .. code-block:: bash
 
-  git clone git@github.com:shaypal5/cachier.git
+  git clone git@github.com:python-cachier/cachier.git
 
 
 Install in development mode with test dependencies:
@@ -361,21 +361,21 @@ Notable bugfixers:
 .. |PyPI-Versions| image:: https://img.shields.io/pypi/pyversions/cachier.svg
    :target: https://pypi.python.org/pypi/cachier
 
-.. |Build-Status| image:: https://github.com/shaypal5/cachier/actions/workflows/test.yml/badge.svg
-  :target: https://github.com/shaypal5/cachier/actions/workflows/test.yml
+.. |Build-Status| image:: https://github.com/python-cachier/cachier/actions/workflows/test.yml/badge.svg
+  :target: https://github.com/python-cachier/cachier/actions/workflows/test.yml
 
 .. |LICENCE| image:: https://img.shields.io/pypi/l/cachier.svg
   :target: https://pypi.python.org/pypi/cachier
 
-.. |Codecov| image:: https://codecov.io/github/shaypal5/cachier/coverage.svg?branch=master
-   :target: https://codecov.io/github/shaypal5/cachier?branch=master
+.. |Codecov| image:: https://codecov.io/github/python-cachier/cachier/coverage.svg?branch=master
+   :target: https://codecov.io/github/python-cachier/cachier?branch=master
 
 .. |Downloads| image:: https://pepy.tech/badge/cachier
      :target: https://pepy.tech/project/cachier
      :alt: PePy stats
 
-.. |Codefactor| image:: https://www.codefactor.io/repository/github/shaypal5/cachier/badge?style=plastic
-     :target: https://www.codefactor.io/repository/github/shaypal5/cachier
+.. |Codefactor| image:: https://www.codefactor.io/repository/github/python-cachier/cachier/badge?style=plastic
+     :target: https://www.codefactor.io/repository/github/python-cachier/cachier
      :alt: Codefactor code quality
 
 .. links:
