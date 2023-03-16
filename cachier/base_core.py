@@ -1,6 +1,6 @@
 """Defines the interface of a cachier caching core."""
 # This file is part of Cachier.
-# https://github.com/shaypal5/cachier
+# https://github.com/python-cachier/cachier
 
 # Licensed under the MIT license:
 # http://www.opensource.org/licenses/MIT-license

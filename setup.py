@@ -43,7 +43,7 @@ setup(
     license='MIT',
     author='Shay Palachy',
     author_email='shay.palachy@gmail.com',
-    url='https://github.com/shaypal5/cachier',
+    url='https://github.com/python-cachier/cachier',
     packages=['cachier'],
     entry_points='''
         [console_scripts]

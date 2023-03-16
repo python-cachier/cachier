@@ -1,7 +1,7 @@
 """Persistent, stale-free memoization decorators for Python."""
 
 # This file is part of Cachier.
-# https://github.com/shaypal5/cachier
+# https://github.com/python-cachier/cachier
 
 # Licensed under the MIT license:
 # http://www.opensource.org/licenses/MIT-license
@@ -165,7 +165,7 @@ def cachier(
     elif backend == 'redis':
         raise NotImplementedError(
             'A Redis backend has not yet been implemented. '
-            'Please see https://github.com/shaypal5/cachier/issues/4'
+            'Please see https://github.com/python-cachier/cachier/issues/4'
         )
     else:
         raise ValueError('specified an invalid core: {}'.format(backend))

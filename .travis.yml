@@ -96,6 +96,6 @@ after_success:
 #   on:
 #     all_branches: true
 #     tags: true
-#     repo: shaypal5/cachier
+#     repo: python-cachier/cachier
 #     condition: $TRAVIS_PYTHON_VERSION = "3.5"
 #   skip_upload_docs: true
