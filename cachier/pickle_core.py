@@ -1,7 +1,7 @@
 """A pickle-based caching core for cachier."""
 
 # This file is part of Cachier.
-# https://github.com/shaypal5/cachier
+# https://github.com/python-cachier/cachier
 
 # Licensed under the MIT license:
 # http://www.opensource.org/licenses/MIT-license
@@ -84,7 +84,9 @@ class _PickleCore(_BaseCore):
             self._check_calculation()
 
     def __init__(
-            self, stale_after, next_time, reload, cache_dir, separate_files, wait_for_calc_timeout):
+            self, stale_after, next_time, reload, cache_dir, separate_files,
+            wait_for_calc_timeout,
+    ):
         _BaseCore.__init__(self, stale_after, next_time)
         self.cache = None
         self.reload = reload
@@ -255,7 +257,8 @@ class _PickleCore(_BaseCore):
     def wait_on_entry_calc(self, key):
         if self.separate_files:
             entry = self._get_cache_by_key(key)
-            filename = f'{self._cache_fname()}_{hashlib.sha256(pickle.dumps(key)).hexdigest()}'
+            hexdg = hashlib.sha256(pickle.dumps(key)).hexdigest()
+            filename = f'{self._cache_fname()}_{hexdg}'
         else:
             with self.lock:
                 self._reload_cache()
