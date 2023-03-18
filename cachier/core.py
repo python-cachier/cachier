@@ -149,19 +149,29 @@ def cachier(
         core = _PickleCore(  # pylint: disable=R0204
             stale_after=stale_after,
             next_time=next_time,
+            hash_params=hash_params,
             reload=pickle_reload,
             cache_dir=cache_dir,
             separate_files=separate_files,
-            wait_for_calc_timeout=wait_for_calc_timeout
+            wait_for_calc_timeout=wait_for_calc_timeout,
         )
     elif backend == 'mongo':
         if mongetter is None:
             raise MissingMongetter(
                 'must specify ``mongetter`` when using the mongo core')
         core = _MongoCore(
-            mongetter, stale_after, next_time, wait_for_calc_timeout)
+            mongetter=mongetter,
+            stale_after=stale_after,
+            next_time=next_time,
+            hash_params=hash_params,
+            wait_for_calc_timeout=wait_for_calc_timeout,
+        )
     elif backend == 'memory':
-        core = _MemoryCore(stale_after=stale_after, next_time=next_time)
+        core = _MemoryCore(
+            stale_after=stale_after,
+            next_time=next_time,
+            hash_params=hash_params,
+        )
     elif backend == 'redis':
         raise NotImplementedError(
             'A Redis backend has not yet been implemented. '
@@ -184,7 +194,7 @@ def cachier(
                 _print = print
             if ignore_cache:
                 return func(*args, **kwds)
-            key, entry = core.get_entry(args, kwds, hash_params)
+            key, entry = core.get_entry(args, kwds)
             if overwrite_cache:
                 return _calc_entry(core, key, func, args, kwds)
             if entry is not None:  # pylint: disable=R0101
