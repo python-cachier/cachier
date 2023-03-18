@@ -18,6 +18,8 @@ import versioneer
 TEST_REQUIRES = [
     # tests and coverages
     'pytest', 'coverage', 'pytest-cov',
+    # linting and code quality
+    'bandit', 'pylint', 'safety',
     # for reading configfutation
     'birch',
     # to connect to the test mongodb server
