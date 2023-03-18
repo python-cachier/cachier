@@ -84,10 +84,10 @@ class _PickleCore(_BaseCore):
             self._check_calculation()
 
     def __init__(
-            self, stale_after, next_time, reload, cache_dir, separate_files,
-            wait_for_calc_timeout,
+            self, stale_after, next_time, hash_params, reload,
+            cache_dir, separate_files, wait_for_calc_timeout,
     ):
-        _BaseCore.__init__(self, stale_after, next_time)
+        super().__init__(stale_after, next_time, hash_params)
         self.cache = None
         self.reload = reload
         self.cache_dir = DEF_CACHIER_DIR
@@ -192,11 +192,6 @@ class _PickleCore(_BaseCore):
             if self.reload or reload:
                 self._reload_cache()
             return key, self._get_cache().get(key, None)
-
-    def get_entry(self, args, kwds, hash_params):
-        key = args + tuple(sorted(kwds.items())) if hash_params is None else hash_params(args, kwds)  # noqa: E501
-        # print('key type={}, key={}'.format(type(key), key))
-        return self.get_entry_by_key(key)
 
     def set_entry(self, key, func_res):
         key_data = {

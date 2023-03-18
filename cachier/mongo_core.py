@@ -38,12 +38,13 @@ class _MongoCore(_BaseCore):
     _INDEX_NAME = 'func_1_key_1'
 
     def __init__(
-            self, mongetter, stale_after, next_time, wait_for_calc_timeout):
+            self, mongetter, stale_after, next_time,
+            hash_params, wait_for_calc_timeout):
         if 'pymongo' not in sys.modules:
             warnings.warn((
                 "Cachier warning: pymongo was not found. "
                 "MongoDB cores will not function."))
-        _BaseCore.__init__(self, stale_after, next_time)
+        super().__init__(stale_after, next_time, hash_params)
         self.mongetter = mongetter
         self.mongo_collection = self.mongetter()
         self.wait_for_calc_timeout = wait_for_calc_timeout
@@ -80,14 +81,6 @@ class _MongoCore(_BaseCore):
                 }
             return key, entry
         return key, None
-
-    def get_entry(self, args, kwds, hash_params):
-        key = pickle.dumps(
-            args + tuple(
-                sorted(kwds.items())
-            ) if hash_params is None else hash_params(args, kwds)
-        )
-        return self.get_entry_by_key(key)
 
     def set_entry(self, key, func_res):
         thebytes = pickle.dumps(func_res)
