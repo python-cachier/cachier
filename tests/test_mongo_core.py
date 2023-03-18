@@ -205,7 +205,7 @@ def test_stalled_mongo_db_cache():
     @cachier(mongetter=_test_mongetter)
     def _stalled_func():
         return 1
-    core = _MongoCore(_test_mongetter, None, False, 0)
+    core = _MongoCore(_test_mongetter, None, False, None, 0)
     core.set_func(_stalled_func)
     core.clear_cache()
     with pytest.raises(RecalculationNeeded):
@@ -215,7 +215,7 @@ def test_stalled_mongo_db_cache():
 @pytest.mark.mongo
 def test_stalled_mong_db_core(monkeypatch):
 
-    def mock_get_entry(self, args, kwargs, hash_params):  # skipcq: PYL-R0201, PYL-W0613  # noqa: E501
+    def mock_get_entry(self, args, kwargs):  # skipcq: PYL-R0201, PYL-W0613  # noqa: E501
         return "key", {'being_calculated': True}
 
     def mock_get_entry_by_key(self, key):  # skipcq: PYL-R0201, PYL-W0613
@@ -233,7 +233,7 @@ def test_stalled_mong_db_core(monkeypatch):
     res = _stalled_func()
     assert res == 1
 
-    def mock_get_entry_2(self, args, kwargs, hash_params):  # skipcq: PYL-W0613
+    def mock_get_entry_2(self, args, kwargs):  # skipcq: PYL-W0613
         entry = {
             'being_calculated': True,
             "value": 1,

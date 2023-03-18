@@ -7,14 +7,20 @@
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 
 import abc  # for the _BaseCore abstract base class
+import functools
+
+
+# pylint: disable-next=protected-access
+_default_hash_params = functools.partial(functools._make_key, typed=False)
 
 
 class _BaseCore():
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, stale_after, next_time):
+    def __init__(self, stale_after, next_time, hash_params):
         self.stale_after = stale_after
         self.next_time = next_time
+        self.hash_func = hash_params if hash_params else _default_hash_params
         self.func = None
 
     def set_func(self, func):
@@ -22,15 +28,16 @@ class _BaseCore():
         any method is called"""
         self.func = func
 
+    def get_entry(self, args, kwds):
+        """Returns the result mapped to the given arguments in this core's
+        cache, if such a mapping exists."""
+        key = self.hash_func(args, kwds)
+        return self.get_entry_by_key(key)
+
     @abc.abstractmethod
     def get_entry_by_key(self, key):
         """Returns the result mapped to the given key in this core's cache,
         if such a mapping exists."""
-
-    @abc.abstractmethod
-    def get_entry(self, args, kwds, hash_params):
-        """Returns the result mapped to the given arguments in this core's
-        cache, if such a mapping exists."""
 
     @abc.abstractmethod
     def set_entry(self, key, func_res):

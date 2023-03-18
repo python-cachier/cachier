@@ -17,19 +17,14 @@ class _MemoryCore(_BaseCore):
         See :class:`_BaseCore` documentation.
     """
 
-    def __init__(self, stale_after, next_time):
-        super().__init__(stale_after=stale_after, next_time=next_time)
+    def __init__(self, stale_after, next_time, hash_params):
+        super().__init__(stale_after, next_time, hash_params)
         self.cache = {}
         self.lock = threading.RLock()
 
     def get_entry_by_key(self, key, reload=False):  # pylint: disable=W0221
         with self.lock:
             return key, self.cache.get(key, None)
-
-    def get_entry(self, args, kwds, hash_params):
-        with self.lock:
-            key = args + tuple(sorted(kwds.items())) if hash_params is None else hash_params(args, kwds)  # noqa: E501
-            return self.get_entry_by_key(key)
 
     def set_entry(self, key, func_res):
         with self.lock:
