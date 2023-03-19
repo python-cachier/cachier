@@ -194,7 +194,10 @@ def cachier(
                 _print = print
             if ignore_cache:
                 return func(*args, **kwds)
-            key, entry = core.get_entry(args, kwds)
+            if core.func_is_method:
+                key, entry = core.get_entry(args[1:], kwds)
+            else:
+                key, entry = core.get_entry(args, kwds)
             if overwrite_cache:
                 return _calc_entry(core, key, func, args, kwds)
             if entry is not None:  # pylint: disable=R0101

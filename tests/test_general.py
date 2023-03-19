@@ -5,7 +5,7 @@ import os
 import queue
 import threading
 from random import random
-from time import sleep
+from time import sleep, time
 import pytest
 import cachier as cachier_dir
 from cachier import cachier
@@ -141,3 +141,33 @@ def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
     res4 = _wait_for_calc_timeout_slow(1, 2)
     # One of the cached values is returned
     assert res1 == res4 or res2 == res4 or res3 == res4
+
+
+@pytest.mark.parametrize(
+    'mongetter,backend',
+    [
+        (_test_mongetter, 'mongo'),
+        (None, 'memory'),
+        (None, 'pickle'),
+    ]
+)
+def test_ignore_self_in_methods(mongetter, backend):
+
+    class TestClass():
+        @cachier(backend=backend, mongetter=mongetter)
+        def takes_2_seconds(self, arg_1, arg_2):
+            """Some function."""
+            sleep(2)
+            return arg_1 + arg_2
+
+    test_object_1 = TestClass()
+    test_object_2 = TestClass()
+    test_object_1.takes_2_seconds.clear_cache()
+    test_object_2.takes_2_seconds.clear_cache()
+    result_1 = test_object_1.takes_2_seconds(1, 2)
+    assert result_1 == 3
+    start = time()
+    result_2 = test_object_2.takes_2_seconds(1, 2)
+    end = time()
+    assert result_2 == 3
+    assert end - start < 1

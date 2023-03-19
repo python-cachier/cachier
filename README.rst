@@ -83,6 +83,21 @@ You can add a default, pickle-based, persistent cache to your function - meaning
     """Your function now has a persistent cache mapped by argument values!"""
     return {'arg1': arg1, 'arg2': arg2}
 
+Class and object methods can also be cached. Cachier will automatically ignore the `self` parameter when determining the cache key for an object method.
+
+.. code-block:: python
+
+  from cachier import cachier
+
+  class Foo():
+    @staticmethod
+    @cachier()
+    def bar(arg_1, arg_2):
+      return {'arg1': arg1, 'arg2': arg2}
+
+    @cachier()
+    def baz(self, arg_1, arg_2)
+      return {'arg1': arg1, 'arg2': arg2}
 
 
 Resetting a Cache
@@ -381,5 +396,3 @@ Notable bugfixers:
 .. links:
 .. _pymongo: https://api.mongodb.com/python/current/
 .. _watchdog: https://github.com/gorakhargosh/watchdog
-
-

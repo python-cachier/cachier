@@ -9,6 +9,7 @@
 import abc  # for the _BaseCore abstract base class
 import functools
 import hashlib
+import inspect
 
 
 def _default_hash_params(args, kwds):
@@ -27,8 +28,10 @@ class _BaseCore():
         self.func = None
 
     def set_func(self, func):
-        """Sets the function this core will use. This has to be set before
-        any method is called"""
+        """Sets the function this core will use. This has to be set before any
+        method is called. Also determine if the funtion is an object method."""
+        func_params = list(inspect.signature(func).parameters)
+        self.func_is_method = func_params and func_params[0] == 'self'
         self.func = func
 
     def get_entry(self, args, kwds):
