@@ -8,10 +8,13 @@
 
 import abc  # for the _BaseCore abstract base class
 import functools
+import hashlib
 
 
-# pylint: disable-next=protected-access
-_default_hash_params = functools.partial(functools._make_key, typed=False)
+def _default_hash_params(args, kwds):
+    # pylint: disable-next=protected-access
+    key = functools._make_key(args, kwds, typed=False)
+    return hashlib.sha256(str(hash(key)).encode()).hexdigest()
 
 
 class _BaseCore():
