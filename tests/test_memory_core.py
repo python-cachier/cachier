@@ -32,6 +32,18 @@ def test_memory_core():
     _takes_2_seconds.clear_cache()
 
 
+@pytest.mark.memory
+def test_memory_core_keywords():
+    """Basic memory core functionality with keyword arguments."""
+    _takes_2_seconds.clear_cache()
+    _takes_2_seconds('a', arg_2='b')
+    start = time()
+    _takes_2_seconds('a', arg_2='b', verbose_cache=True)
+    end = time()
+    assert end - start < 1
+    _takes_2_seconds.clear_cache()
+
+
 SECONDS_IN_DELTA = 3
 DELTA = timedelta(seconds=SECONDS_IN_DELTA)
 

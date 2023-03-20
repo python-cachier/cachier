@@ -43,24 +43,38 @@ def _get_decorated_func(func, **kwargs):
 
 # Pickle core tests
 
-def _takes_5_seconds(arg_1, arg_2):
+def _takes_2_seconds(arg_1, arg_2):
     """Some function."""
-    sleep(5)
+    sleep(2)
     return 'arg_1:{}, arg_2:{}'.format(arg_1, arg_2)
 
 
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_pickle_core(separate_files):
     """Basic Pickle core functionality."""
-    _takes_5_seconds_decorated = _get_decorated_func(
-        _takes_5_seconds, next_time=False, separate_files=separate_files)
-    _takes_5_seconds_decorated.clear_cache()
-    _takes_5_seconds_decorated('a', 'b')
+    _takes_2_seconds_decorated = _get_decorated_func(
+        _takes_2_seconds, next_time=False, separate_files=separate_files)
+    _takes_2_seconds_decorated.clear_cache()
+    _takes_2_seconds_decorated('a', 'b')
     start = time()
-    _takes_5_seconds_decorated('a', 'b', verbose_cache=True)
+    _takes_2_seconds_decorated('a', 'b', verbose_cache=True)
     end = time()
     assert end - start < 1
-    _takes_5_seconds_decorated.clear_cache()
+    _takes_2_seconds_decorated.clear_cache()
+
+
+@pytest.mark.parametrize('separate_files', [True, False])
+def test_pickle_core_keywords(separate_files):
+    """Basic Pickle core functionality with keyword arguments."""
+    _takes_2_seconds_decorated = _get_decorated_func(
+        _takes_2_seconds, next_time=False, separate_files=separate_files)
+    _takes_2_seconds_decorated.clear_cache()
+    _takes_2_seconds_decorated('a', arg_2='b')
+    start = time()
+    _takes_2_seconds_decorated('a', arg_2='b', verbose_cache=True)
+    end = time()
+    assert end - start < 1
+    _takes_2_seconds_decorated.clear_cache()
 
 
 SECONDS_IN_DELTA = 3
@@ -494,27 +508,27 @@ CUSTOM_DIR = '~/.exparrot'
 EXPANDED_CUSTOM_DIR = os.path.expanduser(CUSTOM_DIR)
 
 
-def _takes_5_seconds_custom_dir(arg_1, arg_2):
+def _takes_2_seconds_custom_dir(arg_1, arg_2):
     """Some function."""
-    sleep(5)
+    sleep(2)
     return 'arg_1:{}, arg_2:{}'.format(arg_1, arg_2)
 
 
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_pickle_core_custom_cache_dir(separate_files):
     """Basic Pickle core functionality."""
-    _takes_5_seconds_custom_dir_decorated = _get_decorated_func(
-        _takes_5_seconds_custom_dir, next_time=False,
+    _takes_2_seconds_custom_dir_decorated = _get_decorated_func(
+        _takes_2_seconds_custom_dir, next_time=False,
         cache_dir=CUSTOM_DIR, separate_files=separate_files,
     )
-    _takes_5_seconds_custom_dir_decorated.clear_cache()
-    _takes_5_seconds_custom_dir_decorated('a', 'b')
+    _takes_2_seconds_custom_dir_decorated.clear_cache()
+    _takes_2_seconds_custom_dir_decorated('a', 'b')
     start = time()
-    _takes_5_seconds_custom_dir_decorated('a', 'b', verbose_cache=True)
+    _takes_2_seconds_custom_dir_decorated('a', 'b', verbose_cache=True)
     end = time()
     assert end - start < 1
-    _takes_5_seconds_custom_dir_decorated.clear_cache()
-    path2test = _takes_5_seconds_custom_dir_decorated.cache_dpath()
+    _takes_2_seconds_custom_dir_decorated.clear_cache()
+    path2test = _takes_2_seconds_custom_dir_decorated.cache_dpath()
     assert path2test == EXPANDED_CUSTOM_DIR
 
 

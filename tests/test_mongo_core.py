@@ -102,6 +102,23 @@ def test_mongo_core():
     assert val6 == val5
 
 
+@pytest.mark.mongo
+def test_mongo_core_keywords():
+    """Basic Mongo core functionality with keyword arguments."""
+    _test_mongo_caching.clear_cache()
+    val1 = _test_mongo_caching(1, arg_2=2)
+    val2 = _test_mongo_caching(1, arg_2=2)
+    assert val1 == val2
+    val3 = _test_mongo_caching(1, arg_2=2, ignore_cache=True)
+    assert val3 != val1
+    val4 = _test_mongo_caching(1, arg_2=2)
+    assert val4 == val1
+    val5 = _test_mongo_caching(1, arg_2=2, overwrite_cache=True)
+    assert val5 != val1
+    val6 = _test_mongo_caching(1, arg_2=2)
+    assert val6 == val5
+
+
 MONGO_DELTA = timedelta(seconds=3)
 MONGO_DELTA_LONG = timedelta(seconds=10)
 
