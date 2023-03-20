@@ -44,7 +44,7 @@ setup(
     author='Shay Palachy',
     author_email='shay.palachy@gmail.com',
     url='https://github.com/python-cachier/cachier',
-    packages=['cachier'],
+    packages=['cachier', 'cachier.scripts'],
     entry_points='''
         [console_scripts]
         cachier=cachier.scripts.cli:cli
