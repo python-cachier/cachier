@@ -259,9 +259,20 @@ def cachier(
             except AttributeError:
                 return None
 
+        def precache_value(*args, value_to_cache, **kwds):
+            """Add an initial value to the cache.
+
+            Arguments
+            ---------
+            value : any
+                entry to be written into the cache
+            """
+            return core.precache_value(args, kwds, value_to_cache)
+
         func_wrapper.clear_cache = clear_cache
         func_wrapper.clear_being_calculated = clear_being_calculated
         func_wrapper.cache_dpath = cache_dpath
+        func_wrapper.precache_value = precache_value
         return func_wrapper
 
     return _cachier_decorator

@@ -141,3 +141,31 @@ def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
     res4 = _wait_for_calc_timeout_slow(1, 2)
     # One of the cached values is returned
     assert res1 == res4 or res2 == res4 or res3 == res4
+
+
+@pytest.mark.parametrize(
+    'mongetter,backend',
+    [
+        (_test_mongetter, 'mongo'),
+        (None, 'memory'),
+        (None, 'pickle'),
+    ]
+)
+def test_precache_value(mongetter, backend):
+
+    @cachier(backend=backend, mongetter=mongetter)
+    def func(arg_1, arg_2):
+        """Some function."""
+        return arg_1 + arg_2
+
+    result = func.precache_value(2, 2, value_to_cache=5)
+    assert result == 5
+    result = func(2, 2)
+    assert result == 5
+    func.clear_cache()
+    result = func(2, 2)
+    assert result == 4
+    result = func.precache_value(2, arg_2=2, value_to_cache=5)
+    assert result == 5
+    result = func(2, arg_2=2)
+    assert result == 5
