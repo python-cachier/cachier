@@ -37,6 +37,12 @@ class _BaseCore():
         key = self.hash_func(args, kwds)
         return self.get_entry_by_key(key)
 
+    def precache_value(self, args, kwds, value_to_cache):
+        """Writes a precomputed value into the cache."""
+        key = self.hash_func(args, kwds)
+        self.set_entry(key, value_to_cache)
+        return value_to_cache
+
     @abc.abstractmethod
     def get_entry_by_key(self, key):
         """Returns the result mapped to the given key in this core's cache,

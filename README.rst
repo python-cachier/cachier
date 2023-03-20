@@ -93,7 +93,7 @@ The Cachier wrapper adds a ``clear_cache()`` function to each wrapped function. 
 
   foo.clear_cache()
 
-Genereal Configuration
+General Configuration
 ----------------------
 
 Threads Limit
@@ -146,6 +146,24 @@ As mentioned above, the positional and keyword arguments to the wrapped function
 See here for an example:
 
 `Question: How to work with unhashable arguments <https://github.com/python-cachier/cachier/issues/91>`_
+
+
+Precaching values
+---------------------------------
+
+If you want to load a value into the cache without calling the underlying function, this can be done with the `precache_value` function.
+
+.. code-block:: python
+
+  @cachier()
+  def add(arg1, arg2):
+    return arg1 + arg2
+
+  foo.precache_value(2, 2, value_to_cache=5)
+
+  result = add(2, 2)
+  print(result)  # prints 5
+
 
 
 Per-function call arguments
@@ -381,5 +399,3 @@ Notable bugfixers:
 .. links:
 .. _pymongo: https://api.mongodb.com/python/current/
 .. _watchdog: https://github.com/gorakhargosh/watchdog
-
-
