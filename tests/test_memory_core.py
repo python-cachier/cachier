@@ -178,8 +178,8 @@ def test_memory_being_calculated():
     thread1.start()
     sleep(0.5)
     thread2.start()
-    thread1.join()
-    thread2.join()
+    thread1.join(timeout=3)
+    thread2.join(timeout=3)
     assert res_queue.qsize() == 2
     res1 = res_queue.get()
     res2 = res_queue.get()
@@ -212,8 +212,8 @@ def test_being_calc_next_time():
     thread1.start()
     sleep(0.5)
     thread2.start()
-    thread1.join()
-    thread2.join()
+    thread1.join(timeout=3)
+    thread2.join(timeout=3)
     assert res_queue.qsize() == 2
     res1 = res_queue.get()
     res2 = res_queue.get()
@@ -247,8 +247,8 @@ def test_clear_being_calculated():
     _takes_time.clear_being_calculated()
     sleep(0.5)
     thread2.start()
-    thread1.join()
-    thread2.join()
+    thread1.join(timeout=3)
+    thread2.join(timeout=3)
     assert res_queue.qsize() == 2
     res1 = res_queue.get()
     res2 = res_queue.get()

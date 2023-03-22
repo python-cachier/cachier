@@ -234,8 +234,8 @@ def test_pickle_being_calculated(separate_files):
     thread1.start()
     sleep(0.5)
     thread2.start()
-    thread1.join()
-    thread2.join()
+    thread1.join(timeout=3)
+    thread2.join(timeout=3)
     assert res_queue.qsize() == 2
     res1 = res_queue.get()
     res2 = res_queue.get()
@@ -283,8 +283,8 @@ def test_being_calc_next_time(separate_files):
     thread1.start()
     sleep(0.5)
     thread2.start()
-    thread1.join()
-    thread2.join()
+    thread1.join(timeout=2)
+    thread2.join(timeout=2)
     assert res_queue.qsize() == 2
     res1 = res_queue.get()
     res2 = res_queue.get()
@@ -352,8 +352,8 @@ def _helper_bad_cache_file(sleeptime, separate_files):
     thread1.start()
     sleep(sleeptime)
     thread2.start()
-    thread1.join()
-    thread2.join()
+    thread1.join(timeout=2)
+    thread2.join(timeout=2)
     if not res_queue.qsize() == 2:
         return False
     res1 = res_queue.get()
@@ -440,8 +440,8 @@ def _helper_delete_cache_file(sleeptime, separate_files):
     thread1.start()
     sleep(sleeptime)
     thread2.start()
-    thread1.join()
-    thread2.join()
+    thread1.join(timeout=2)
+    thread2.join(timeout=2)
     if not res_queue.qsize() == 2:
         return False
     res1 = res_queue.get()

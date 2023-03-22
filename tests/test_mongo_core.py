@@ -150,8 +150,8 @@ def test_mongo_being_calculated():
     thread1.start()
     sleep(1)
     thread2.start()
-    thread1.join()
-    thread2.join()
+    thread1.join(timeout=4)
+    thread2.join(timeout=4)
     assert res_queue.qsize() == 2
     res1 = res_queue.get()
     res2 = res_queue.get()
