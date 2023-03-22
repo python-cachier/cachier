@@ -162,11 +162,15 @@ Further function calls made while the calculation is being performed will not tr
 Working with unhashable arguments
 ---------------------------------
 
-As mentioned above, the positional and keyword arguments to the wrapped function must be hashable (i.e. Python's immutable built-in objects, not mutable containers). To get around this limitation the ``hash_params`` parameter of the ``cachier`` decorator can be provided with a callable that gets the args and kwargs from the decorated function and returns a hash key for them.
+As mentioned above, the positional and keyword arguments to the wrapped function must be hashable (i.e. Python's immutable built-in objects, not mutable containers). To get around this limitation the ``hash_func`` parameter of the ``cachier`` decorator can be provided with a callable that gets the args and kwargs from the decorated function and returns a hash key for them.
 
 .. code-block:: python
 
-  @cachier(hash_params=hash_my_custom_class)
+  def calculate_hash(args, kwds):
+    key = ...  # compute a hash key here based on arguments
+    return key
+
+  @cachier(hash_func=calculate_hash)
   def calculate_super_complex_stuff(custom_obj):
     # amazing code goes here
 
@@ -381,7 +385,7 @@ Other major contributors:
 
   * `cthoyt <https://github.com/cthoyt>`_ - Base memory core implementation.
 
-  * `amarczew <https://github.com/amarczew>`_ - The ``hash_params`` kwarg.
+  * `amarczew <https://github.com/amarczew>`_ - The ``hash_func`` kwarg.
 
   * `non-senses <https://github.com/non-senses>`_ - The ``wait_for_calc_timeout`` kwarg.
 

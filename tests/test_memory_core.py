@@ -283,7 +283,7 @@ def test_error_throwing_func():
 
 @pytest.mark.memory
 def test_callable_hash_param():
-    def _hash_params(args, kwargs):
+    def _hash_func(args, kwargs):
         def _hash(obj):
             if isinstance(obj, pd.core.frame.DataFrame):
                 return hashlib.sha256(
@@ -295,7 +295,7 @@ def test_callable_hash_param():
             {k: _hash(v) for k, v in kwargs.items()}.items()))
         return k_args + k_kwargs
 
-    @cachier(backend='memory', hash_params=_hash_params)
+    @cachier(backend='memory', hash_func=_hash_func)
     def _params_with_dataframe(*args, **kwargs):
         """Some function."""
         return random()

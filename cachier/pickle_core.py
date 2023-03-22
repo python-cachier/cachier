@@ -80,10 +80,10 @@ class _PickleCore(_BaseCore):
             self._check_calculation()
 
     def __init__(
-            self, hash_params, reload, cache_dir,
+            self, hash_func, reload, cache_dir,
             separate_files, wait_for_calc_timeout,
     ):
-        super().__init__(hash_params)
+        super().__init__(hash_func)
         self.cache = None
         self.reload = reload
         self.cache_dir = DEF_CACHIER_DIR
