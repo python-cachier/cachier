@@ -20,10 +20,8 @@ TEST_REQUIRES = [
     'pytest', 'coverage', 'pytest-cov',
     # linting and code quality
     'bandit', 'pylint', 'safety',
-    # for reading configfutation
-    'birch',
     # to connect to the test mongodb server
-    'pymongo', 'dnspython',
+    'pymongo', 'dnspython', 'pymongo-inmemory',
     # to test pandas dataframe as-param hashing with mongodb core
     'pandas',
     # to be able to run `python setup.py checkdocs`

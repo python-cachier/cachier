@@ -8,42 +8,17 @@ from random import random
 from time import sleep
 import threading
 import queue
-from urllib.parse import quote_plus
 
-from birch import Birch
 import pytest
 import pymongo
 import hashlib
 import pandas as pd
-from pymongo.mongo_client import MongoClient
 from pymongo.errors import OperationFailure
 
 from cachier import cachier
 from cachier.mongo_core import _MongoCore, RecalculationNeeded
 
-
-CFG = Birch("cachier")
-
-
-class CfgKey():
-    HOST = "TEST_HOST"
-    UNAME = "TEST_USERNAME"
-    PWD = "TEST_PASSWORD"
-    DB = "TEST_DB"
-
-
-URI_TEMPLATE = (
-    "mongodb+srv://{uname}:{pwd}@{host}/{db}?retrywrites=true&w=majority")
-
-
-def _get_cachier_db_mongo_client():
-    host = quote_plus(CFG[CfgKey.HOST])
-    uname = quote_plus(CFG[CfgKey.UNAME])
-    pwd = quote_plus(CFG[CfgKey.PWD])
-    db = quote_plus(CFG[CfgKey.DB])
-    uri = URI_TEMPLATE.format(host=host, uname=uname, pwd=pwd, db=db)
-    client = MongoClient(uri)
-    return client
+from pymongo_inmemory import MongoClient
 
 
 _COLLECTION_NAME = 'cachier_test_{}_{}.{}.{}'.format(
@@ -53,7 +28,7 @@ _COLLECTION_NAME = 'cachier_test_{}_{}.{}.{}'.format(
 
 def _test_mongetter():
     if not hasattr(_test_mongetter, 'client'):
-        _test_mongetter.client = _get_cachier_db_mongo_client()
+        _test_mongetter.client = MongoClient()
     db_obj = _test_mongetter.client['cachier_test']
     if _COLLECTION_NAME not in db_obj.list_collection_names():
         db_obj.create_collection(_COLLECTION_NAME)
