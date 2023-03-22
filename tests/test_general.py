@@ -18,7 +18,6 @@ from cachier.core import (
 )
 from tests.test_mongo_core import (
     _test_mongetter,
-    MONGO_DELTA,
     MONGO_DELTA_LONG,
 )
 
@@ -49,14 +48,16 @@ def test_set_max_workers():
     _set_max_workers(9)
 
 
-@pytest.mark.parametrize(
-    "mongetter,stale_after,separate_files",
-    [
-        (_test_mongetter, MONGO_DELTA, False),
-        (None, None, False),
-        (None, None, True),
-    ]
-)
+parametrize_keys = 'mongetter,stale_after,separate_files'
+parametrize_values = [
+    pytest.param(_test_mongetter, MONGO_DELTA_LONG, False,
+                 marks=pytest.mark.mongo),
+    (None, None, False),
+    (None, None, True),
+]
+
+
+@pytest.mark.parametrize(parametrize_keys, parametrize_values)
 def test_wait_for_calc_timeout_ok(mongetter, stale_after, separate_files):
     @cachier(
         mongetter=mongetter,
@@ -99,14 +100,7 @@ def test_wait_for_calc_timeout_ok(mongetter, stale_after, separate_files):
     assert res1 == res2  # Timeout did not kick in, a single call was done
 
 
-@pytest.mark.parametrize(
-    "mongetter,stale_after,separate_files",
-    [
-        (_test_mongetter, MONGO_DELTA_LONG, False),
-        (None, None, False),
-        (None, None, True),
-    ]
-)
+@pytest.mark.parametrize(parametrize_keys, parametrize_values)
 def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
     @cachier(
         mongetter=mongetter,

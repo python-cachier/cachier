@@ -10,8 +10,11 @@ from .test_mongo_core import _test_mongetter
 def mongo_finalizer():
     """The finalizer for MongoCore-related tests."""
     print('\n Tearing down MongoCore-related assets...')
-    collection = _test_mongetter()
-    collection.drop_indexes()
+    try:
+        collection = _test_mongetter()
+        collection.drop_indexes()
+    except KeyError:
+        pass
     print(" - Indexes dropped from cachier collection.")
 
 
