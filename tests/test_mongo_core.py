@@ -63,20 +63,19 @@ def _test_mongetter():
 # === Mongo core tests ===
 
 
+@pytest.mark.mongo
 def test_information():
     print("\npymongo version: ", end="")
     print(pymongo.__version__)
 
 
-@cachier(mongetter=_test_mongetter)
-def _test_mongo_caching(arg_1, arg_2):
-    """Some function."""
-    return random() + arg_1 + arg_2
-
-
 @pytest.mark.mongo
 def test_mongo_index_creation():
     """Basic Mongo core functionality."""
+    @cachier(mongetter=_test_mongetter)
+    def _test_mongo_caching(arg_1, arg_2):
+        """Some function."""
+        return random() + arg_1 + arg_2
     collection = _test_mongetter()
     _test_mongo_caching.clear_cache()
     val1 = _test_mongo_caching(1, 2)
@@ -88,6 +87,10 @@ def test_mongo_index_creation():
 @pytest.mark.mongo
 def test_mongo_core():
     """Basic Mongo core functionality."""
+    @cachier(mongetter=_test_mongetter)
+    def _test_mongo_caching(arg_1, arg_2):
+        """Some function."""
+        return random() + arg_1 + arg_2
     _test_mongo_caching.clear_cache()
     val1 = _test_mongo_caching(1, 2)
     val2 = _test_mongo_caching(1, 2)
@@ -105,6 +108,10 @@ def test_mongo_core():
 @pytest.mark.mongo
 def test_mongo_core_keywords():
     """Basic Mongo core functionality with keyword arguments."""
+    @cachier(mongetter=_test_mongetter)
+    def _test_mongo_caching(arg_1, arg_2):
+        """Some function."""
+        return random() + arg_1 + arg_2
     _test_mongo_caching.clear_cache()
     val1 = _test_mongo_caching(1, arg_2=2)
     val2 = _test_mongo_caching(1, arg_2=2)
@@ -123,15 +130,15 @@ MONGO_DELTA = timedelta(seconds=3)
 MONGO_DELTA_LONG = timedelta(seconds=10)
 
 
-@cachier(mongetter=_test_mongetter, stale_after=MONGO_DELTA, next_time=False)
-def _stale_after_mongo(arg_1, arg_2):
-    """Some function."""
-    return random() + arg_1 + arg_2
-
-
 @pytest.mark.mongo
 def test_mongo_stale_after():
     """Testing MongoDB core stale_after functionality."""
+    @cachier(mongetter=_test_mongetter,
+             stale_after=MONGO_DELTA, next_time=False)
+    def _stale_after_mongo(arg_1, arg_2):
+        """Some function."""
+        return random() + arg_1 + arg_2
+
     _stale_after_mongo.clear_cache()
     val1 = _stale_after_mongo(1, 2)
     val2 = _stale_after_mongo(1, 2)
@@ -141,14 +148,12 @@ def test_mongo_stale_after():
     assert val3 != val1
 
 
-@cachier(mongetter=_test_mongetter)
-def _takes_time(arg_1, arg_2):
-    """Some function."""
-    sleep(3)
-    return random() + arg_1 + arg_2
-
-
 def _calls_takes_time(res_queue):
+    @cachier(mongetter=_test_mongetter)
+    def _takes_time(arg_1, arg_2):
+        """Some function."""
+        sleep(3)
+        return random() + arg_1 + arg_2
     res = _takes_time(34, 82.3)
     res_queue.put(res)
 
@@ -156,6 +161,11 @@ def _calls_takes_time(res_queue):
 @pytest.mark.mongo
 def test_mongo_being_calculated():
     """Testing MongoDB core handling of being calculated scenarios."""
+    @cachier(mongetter=_test_mongetter)
+    def _takes_time(arg_1, arg_2):
+        """Some function."""
+        sleep(3)
+        return random() + arg_1 + arg_2
     _takes_time.clear_cache()
     res_queue = queue.Queue()
     thread1 = threading.Thread(
@@ -196,15 +206,13 @@ def _bad_mongetter():
     return _BadMongoCollection(_test_mongetter)
 
 
-@cachier(mongetter=_bad_mongetter)
-def _func_w_bad_mongo(arg_1, arg_2):
-    """Some function."""
-    return random() + arg_1 + arg_2
-
-
 @pytest.mark.mongo
 def test_mongo_write_failure():
     """Testing MongoDB core handling of writing failure scenarios."""
+    @cachier(mongetter=_bad_mongetter)
+    def _func_w_bad_mongo(arg_1, arg_2):
+        """Some function."""
+        return random() + arg_1 + arg_2
     with pytest.raises(OperationFailure):
         val1 = _func_w_bad_mongo(1, 2)
         val2 = _func_w_bad_mongo(1, 2)
@@ -214,6 +222,10 @@ def test_mongo_write_failure():
 @pytest.mark.mongo
 def test_mongo_clear_being_calculated():
     """Testing MongoDB core clear_being_calculated."""
+    @cachier(mongetter=_bad_mongetter)
+    def _func_w_bad_mongo(arg_1, arg_2):
+        """Some function."""
+        return random() + arg_1 + arg_2
     _func_w_bad_mongo.clear_being_calculated()
 
 
