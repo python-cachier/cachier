@@ -37,12 +37,12 @@ class _MongoCore(_BaseCore):
 
     _INDEX_NAME = 'func_1_key_1'
 
-    def __init__(self, mongetter, hash_params, wait_for_calc_timeout):
+    def __init__(self, mongetter, hash_func, wait_for_calc_timeout):
         if 'pymongo' not in sys.modules:
             warnings.warn((
                 "Cachier warning: pymongo was not found. "
                 "MongoDB cores will not function."))
-        super().__init__(hash_params)
+        super().__init__(hash_func)
         self.mongetter = mongetter
         self.mongo_collection = self.mongetter()
         self.wait_for_calc_timeout = wait_for_calc_timeout

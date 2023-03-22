@@ -534,7 +534,7 @@ def test_pickle_core_custom_cache_dir(separate_files):
 
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_callable_hash_param(separate_files):
-    def _hash_params(args, kwargs):
+    def _hash_func(args, kwargs):
         def _hash(obj):
             if isinstance(obj, pd.core.frame.DataFrame):
                 return hashlib.sha256(
@@ -550,7 +550,7 @@ def test_callable_hash_param(separate_files):
         )
         return k_args + k_kwargs
 
-    @cachier(hash_params=_hash_params, separate_files=separate_files)
+    @cachier(hash_func=_hash_func, separate_files=separate_files)
     def _params_with_dataframe(*args, **kwargs):
         """Some function."""
         return random()

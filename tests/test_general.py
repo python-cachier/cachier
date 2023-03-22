@@ -199,3 +199,11 @@ def test_ignore_self_in_methods(mongetter, backend):
     end = time()
     assert result_2 == 3
     assert end - start < 1
+
+
+def test_hash_params_deprecation():
+    with pytest.deprecated_call(match='hash_params will be removed'):
+        @cachier(hash_params=lambda a, k: 'key')
+        def test():
+            return 'value'
+    assert test() == 'value'

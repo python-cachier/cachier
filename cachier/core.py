@@ -14,6 +14,7 @@ from __future__ import print_function
 
 import os
 from functools import wraps
+from warnings import warn
 
 import datetime
 from concurrent.futures import ThreadPoolExecutor
@@ -85,6 +86,7 @@ def cachier(
     backend=None,
     mongetter=None,
     cache_dir=None,
+    hash_func=None,
     hash_params=None,
     wait_for_calc_timeout=0,
     separate_files=False,
@@ -125,7 +127,7 @@ def cachier(
         A fully qualified path to a file directory to be used for cache files.
         The running process must have running permissions to this folder. If
         not provided, a default directory at `~/.cachier/` is used.
-    hash_params : callable, optional
+    hash_func : callable, optional
         A callable that gets the args and kwargs from the decorated function
         and returns a hash key for them. This parameter can be used to enable
         the use of cachier with functions that get arguments that are not
@@ -141,13 +143,19 @@ def cachier(
         split between several files, one for each argument set. This can help
         if you per-function cache files become too large.
     """
+    # Check for deprecated parameters
+    if hash_params is not None:
+        message = 'hash_params will be removed in a future release, ' \
+                  'please use hash_func instead'
+        warn(message, DeprecationWarning, stacklevel=2)
+        hash_func = hash_params
     # The default is calculated dynamically to maintain previous behavior
     # to default to pickle unless the ``mongetter`` argument is given.
     if backend is None:
         backend = 'pickle' if mongetter is None else 'mongo'
     if backend == 'pickle':
         core = _PickleCore(  # pylint: disable=R0204
-            hash_params=hash_params,
+            hash_func=hash_func,
             reload=pickle_reload,
             cache_dir=cache_dir,
             separate_files=separate_files,
@@ -159,12 +167,12 @@ def cachier(
                 'must specify ``mongetter`` when using the mongo core')
         core = _MongoCore(
             mongetter=mongetter,
-            hash_params=hash_params,
+            hash_func=hash_func,
             wait_for_calc_timeout=wait_for_calc_timeout,
         )
     elif backend == 'memory':
         core = _MemoryCore(
-            hash_params=hash_params,
+            hash_func=hash_func,
         )
     elif backend == 'redis':
         raise NotImplementedError(

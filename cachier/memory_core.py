@@ -17,8 +17,8 @@ class _MemoryCore(_BaseCore):
         See :class:`_BaseCore` documentation.
     """
 
-    def __init__(self, hash_params):
-        super().__init__(hash_params)
+    def __init__(self, hash_func):
+        super().__init__(hash_func)
         self.cache = {}
         self.lock = threading.RLock()
 

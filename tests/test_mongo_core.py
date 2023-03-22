@@ -262,7 +262,7 @@ def test_stalled_mong_db_core(monkeypatch):
 @pytest.mark.mongo
 def test_callable_hash_param():
 
-    def _hash_params(args, kwargs):
+    def _hash_func(args, kwargs):
         def _hash(obj):
             if isinstance(obj, pd.core.frame.DataFrame):
                 return hashlib.sha256(
@@ -275,7 +275,7 @@ def test_callable_hash_param():
             k: _hash(v) for k, v in kwargs.items()}.items()))
         return k_args + k_kwargs
 
-    @cachier(mongetter=_test_mongetter, hash_params=_hash_params)
+    @cachier(mongetter=_test_mongetter, hash_func=_hash_func)
     def _params_with_dataframe(*args, **kwargs):
         """Some function."""
         return random()
