@@ -32,11 +32,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[test]"
       - name: Unit tests
-        env:
-          CACHIER_TEST_HOST: ${{ secrets.CACHIER_TEST_HOST  }}
-          CACHIER_TEST_DB: ${{ secrets.CACHIER_TEST_DB  }}
-          CACHIER_TEST_USERNAME: ${{ secrets.CACHIER_TEST_USERNAME  }}
-          CACHIER_TEST_PASSWORD: ${{ secrets.CACHIER_TEST_PASSWORD  }}
         run: |
           pytest
       - name: "Upload coverage to Codecov"
