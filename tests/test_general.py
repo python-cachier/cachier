@@ -92,8 +92,8 @@ def test_wait_for_calc_timeout_ok(mongetter, stale_after, separate_files):
     thread1.start()
     thread2.start()
     sleep(2)
-    thread1.join()
-    thread2.join()
+    thread1.join(timeout=2)
+    thread2.join(timeout=2)
     assert res_queue.qsize() == 2
     res1 = res_queue.get()
     res2 = res_queue.get()
@@ -132,8 +132,8 @@ def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
     sleep(1)
     res3 = _wait_for_calc_timeout_slow(1, 2)
     sleep(4)
-    thread1.join()
-    thread2.join()
+    thread1.join(timeout=4)
+    thread2.join(timeout=4)
     assert res_queue.qsize() == 2
     res1 = res_queue.get()
     res2 = res_queue.get()
