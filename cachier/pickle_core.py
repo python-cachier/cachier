@@ -29,10 +29,6 @@ class _PickleCore(_BaseCore):
 
     Parameters
     ----------
-    stale_after : datetime.timedelta, optional
-        See _BaseCore documentation.
-    next_time : bool, optional
-        See _BaseCore documentation.
     pickle_reload : bool, optional
         See core.cachier() documentation.
     cache_dir : str, optional.
@@ -84,10 +80,10 @@ class _PickleCore(_BaseCore):
             self._check_calculation()
 
     def __init__(
-            self, stale_after, next_time, hash_params, reload,
-            cache_dir, separate_files, wait_for_calc_timeout,
+            self, hash_params, reload, cache_dir,
+            separate_files, wait_for_calc_timeout,
     ):
-        super().__init__(stale_after, next_time, hash_params)
+        super().__init__(hash_params)
         self.cache = None
         self.reload = reload
         self.cache_dir = DEF_CACHIER_DIR

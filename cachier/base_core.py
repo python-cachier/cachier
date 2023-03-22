@@ -21,9 +21,7 @@ def _default_hash_params(args, kwds):
 class _BaseCore():
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, stale_after, next_time, hash_params):
-        self.stale_after = stale_after
-        self.next_time = next_time
+    def __init__(self, hash_params):
         self.hash_func = hash_params if hash_params else _default_hash_params
         self.func = None
 

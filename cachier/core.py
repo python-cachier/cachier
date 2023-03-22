@@ -147,8 +147,6 @@ def cachier(
         backend = 'pickle' if mongetter is None else 'mongo'
     if backend == 'pickle':
         core = _PickleCore(  # pylint: disable=R0204
-            stale_after=stale_after,
-            next_time=next_time,
             hash_params=hash_params,
             reload=pickle_reload,
             cache_dir=cache_dir,
@@ -161,15 +159,11 @@ def cachier(
                 'must specify ``mongetter`` when using the mongo core')
         core = _MongoCore(
             mongetter=mongetter,
-            stale_after=stale_after,
-            next_time=next_time,
             hash_params=hash_params,
             wait_for_calc_timeout=wait_for_calc_timeout,
         )
     elif backend == 'memory':
         core = _MemoryCore(
-            stale_after=stale_after,
-            next_time=next_time,
             hash_params=hash_params,
         )
     elif backend == 'redis':
