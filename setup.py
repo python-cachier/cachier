@@ -19,7 +19,7 @@ TEST_REQUIRES = [
     # tests and coverages
     'pytest', 'coverage', 'pytest-cov',
     # linting and code quality
-    'bandit', 'pylint', 'safety',
+    'bandit', 'flake8', 'pylint', 'safety',
     # to connect to the test mongodb server
     'pymongo', 'dnspython', 'pymongo-inmemory',
     # to test pandas dataframe as-param hashing with mongodb core
