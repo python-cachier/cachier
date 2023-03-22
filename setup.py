@@ -52,6 +52,7 @@ setup(
     install_requires=[
         'watchdog', 'portalocker',
         'pathtools',  # for watchdog, who has dependency spec problem
+        'setuptools>=67.6.0',  # to avoid vulnerability in 56.0.0
     ],
     extras_require={
         'test': TEST_REQUIRES,
