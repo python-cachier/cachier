@@ -1,8 +1,10 @@
 """Non-core-specific tests for cachier."""
 
 from __future__ import print_function
+import functools
 import os
 import queue
+import subprocess  # nosec: B404
 import threading
 from random import random
 from time import sleep, time
@@ -207,3 +209,16 @@ def test_hash_params_deprecation():
         def test():
             return 'value'
     assert test() == 'value'
+
+
+def test_separate_processes():
+    test_args = ('python', 'tests/standalone_script.py')
+    run_params = {'args': test_args, 'capture_output': True, 'text': True}
+    run_process = functools.partial(subprocess.run, **run_params)
+    result = run_process()
+    assert result.stdout.strip() == 'two 2'
+    start = time()
+    result = run_process()
+    end = time()
+    assert result.stdout.strip() == 'two 2'
+    assert end - start < 3

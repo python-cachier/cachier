@@ -10,12 +10,16 @@ import abc  # for the _BaseCore abstract base class
 import functools
 import hashlib
 import inspect
+import pickle  # nosec: B403
 
 
 def _default_hash_func(args, kwds):
     # pylint: disable-next=protected-access
-    key = functools._make_key(args, kwds, typed=False)
-    return hashlib.sha256(str(hash(key)).encode()).hexdigest()
+    key = functools._make_key(args, kwds, typed=True)
+    hash = hashlib.sha256()
+    for item in key:
+        hash.update(pickle.dumps(item))
+    return hash.hexdigest()
 
 
 class _BaseCore():
