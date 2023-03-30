@@ -7,27 +7,19 @@
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 
 import abc  # for the _BaseCore abstract base class
-import functools
-import hashlib
 import inspect
-import pickle  # nosec: B403
 
 
-def _default_hash_func(args, kwds):
-    # pylint: disable-next=protected-access
-    key = functools._make_key(args, kwds, typed=True)
-    hash = hashlib.sha256()
-    for item in key:
-        hash.update(pickle.dumps(item))
-    return hash.hexdigest()
+class RecalculationNeeded(Exception):
+    pass
 
 
 class _BaseCore():
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, hash_func):
-        self.hash_func = hash_func if hash_func else _default_hash_func
-        self.func = None
+    def __init__(self, hash_func, default_params):
+        self.default_params = default_params
+        self.hash_func = hash_func
 
     def set_func(self, func):
         """Sets the function this core will use. This has to be set before any
@@ -36,17 +28,33 @@ class _BaseCore():
         self.func_is_method = func_params and func_params[0] == 'self'
         self.func = func
 
+    def get_key(self, args, kwds):
+        """Returns a unique key based on the arguments provided."""
+        if self.hash_func is not None:
+            return self.hash_func(args, kwds)
+        else:
+            return self.default_params['hash_func'](args, kwds)
+
     def get_entry(self, args, kwds):
         """Returns the result mapped to the given arguments in this core's
         cache, if such a mapping exists."""
-        key = self.hash_func(args, kwds)
+        key = self.get_key(args, kwds)
         return self.get_entry_by_key(key)
 
     def precache_value(self, args, kwds, value_to_cache):
         """Writes a precomputed value into the cache."""
-        key = self.hash_func(args, kwds)
+        key = self.get_key(args, kwds)
         self.set_entry(key, value_to_cache)
         return value_to_cache
+
+    def check_calc_timeout(self, time_spent):
+        """Raise an exception if a recalulation is needed."""
+        if self.wait_for_calc_timeout is not None:
+            calc_timeout = self.wait_for_calc_timeout
+        else:
+            calc_timeout = self.default_params['wait_for_calc_timeout']
+        if calc_timeout > 0 and (time_spent >= calc_timeout):
+            raise RecalculationNeeded()
 
     @abc.abstractmethod
     def get_entry_by_key(self, key):

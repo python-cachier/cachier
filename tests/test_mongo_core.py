@@ -16,7 +16,8 @@ import pandas as pd
 from pymongo.errors import OperationFailure
 
 from cachier import cachier
-from cachier.mongo_core import _MongoCore, RecalculationNeeded
+from cachier.base_core import RecalculationNeeded
+from cachier.mongo_core import _MongoCore
 
 from pymongo_inmemory import MongoClient
 
@@ -213,7 +214,7 @@ def test_stalled_mongo_db_cache():
     @cachier(mongetter=_test_mongetter)
     def _stalled_func():
         return 1
-    core = _MongoCore(_test_mongetter, None, 0)
+    core = _MongoCore(_test_mongetter, None, 0, {})
     core.set_func(_stalled_func)
     core.clear_cache()
     with pytest.raises(RecalculationNeeded):

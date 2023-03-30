@@ -14,35 +14,29 @@ import time   # to sleep when waiting on Mongo cache\
 import warnings  # to warn if pymongo is missing
 
 try:
-    from pymongo import (
-        IndexModel,
-        ASCENDING
-    )
+    from pymongo import (IndexModel, ASCENDING)
     from pymongo.errors import OperationFailure
     from bson.binary import Binary  # to save binary data to mongodb
 except ImportError:  # pragma: no cover
     pass
 
-from .base_core import _BaseCore
+from .base_core import _BaseCore, RecalculationNeeded
 
 
 MONGO_SLEEP_DURATION_IN_SEC = 1
-
-
-class RecalculationNeeded(Exception):
-    pass
 
 
 class _MongoCore(_BaseCore):
 
     _INDEX_NAME = 'func_1_key_1'
 
-    def __init__(self, mongetter, hash_func, wait_for_calc_timeout):
+    def __init__(self, mongetter, hash_func,
+                 wait_for_calc_timeout, default_params):
         if 'pymongo' not in sys.modules:
             warnings.warn((
                 "Cachier warning: pymongo was not found. "
                 "MongoDB cores will not function."))
-        super().__init__(hash_func)
+        super().__init__(hash_func, default_params)
         self.mongetter = mongetter
         self.mongo_collection = self.mongetter()
         self.wait_for_calc_timeout = wait_for_calc_timeout
@@ -137,9 +131,7 @@ class _MongoCore(_BaseCore):
                 raise RecalculationNeeded()
             if not entry['being_calculated']:
                 return entry['value']
-            if self.wait_for_calc_timeout > 0 and (
-                    time_spent >= self.wait_for_calc_timeout):
-                raise RecalculationNeeded()
+            self.check_calc_timeout(time_spent)
 
     def clear_cache(self):
         self.mongo_collection.delete_many(

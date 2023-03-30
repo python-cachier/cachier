@@ -7,18 +7,10 @@ from .base_core import _BaseCore
 
 
 class _MemoryCore(_BaseCore):
-    """The pickle core class for cachier.
+    """The memory core class for cachier."""
 
-    Parameters
-    ----------
-    stale_after : datetime.timedelta, optional
-        See :class:`_BaseCore` documentation.
-    next_time : bool, optional
-        See :class:`_BaseCore` documentation.
-    """
-
-    def __init__(self, hash_func):
-        super().__init__(hash_func)
+    def __init__(self, hash_func, default_params):
+        super().__init__(hash_func, default_params)
         self.cache = {}
         self.lock = threading.RLock()
 
