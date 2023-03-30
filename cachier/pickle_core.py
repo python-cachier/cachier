@@ -19,9 +19,6 @@ from watchdog.events import PatternMatchingEventHandler
 # Altenative:  https://github.com/WoLpH/portalocker
 
 from .base_core import _BaseCore
-from .mongo_core import RecalculationNeeded
-
-DEF_CACHIER_DIR = '~/.cachier/'
 
 
 class _PickleCore(_BaseCore):
@@ -79,22 +76,26 @@ class _PickleCore(_BaseCore):
             """A Watchdog Event Handler method."""
             self._check_calculation()
 
-    def __init__(
-            self, hash_func, reload, cache_dir,
-            separate_files, wait_for_calc_timeout,
-    ):
-        super().__init__(hash_func)
+    def __init__(self, hash_func, pickle_reload, cache_dir,
+                 separate_files, wait_for_calc_timeout, default_params):
+        super().__init__(hash_func, default_params)
         self.cache = None
-        self.reload = reload
-        self.cache_dir = DEF_CACHIER_DIR
+        if pickle_reload is not None:
+            self.reload = pickle_reload
+        else:
+            self.reload = self.default_params['pickle_reload']
         if cache_dir is not None:
-            self.cache_dir = cache_dir
-        self.expended_cache_dir = os.path.expanduser(self.cache_dir)
-        self.lock = threading.RLock()
+            self.cache_dir = os.path.expanduser(cache_dir)
+        else:
+            self.cache_dir = os.path.expanduser(self.default_params['cache_dir'])  # noqa: E501
+        if separate_files is not None:
+            self.separate_files = separate_files
+        else:
+            self.separate_files = self.default_params['separate_files']
+        self.wait_for_calc_timeout = wait_for_calc_timeout
         self.cache_fname = None
         self.cache_fpath = None
-        self.separate_files = separate_files
-        self.wait_for_calc_timeout = wait_for_calc_timeout
+        self.lock = threading.RLock()
 
     def _cache_fname(self):
         if self.cache_fname is None:
@@ -107,11 +108,11 @@ class _PickleCore(_BaseCore):
 
     def _cache_fpath(self):
         if self.cache_fpath is None:
-            if not os.path.exists(self.expended_cache_dir):
-                os.makedirs(self.expended_cache_dir)
+            if not os.path.exists(self.cache_dir):
+                os.makedirs(self.cache_dir)
             self.cache_fpath = os.path.abspath(
                 os.path.join(
-                    os.path.realpath(self.expended_cache_dir),
+                    os.path.realpath(self.cache_dir),
                     self._cache_fname(),
                 )
             )
@@ -263,16 +264,14 @@ class _PickleCore(_BaseCore):
         observer = Observer()
         event_handler.inject_observer(observer)
         observer.schedule(
-            event_handler, path=self.expended_cache_dir, recursive=True
+            event_handler, path=self.cache_dir, recursive=True
         )
         observer.start()
         time_spent = 0
         while observer.is_alive():
             observer.join(timeout=1.0)
             time_spent += 1
-            if 0 < self.wait_for_calc_timeout < time_spent:
-                raise RecalculationNeeded()
-        # print("Returned value: {}".format(event_handler.value))
+            self.check_calc_timeout(time_spent)
         return event_handler.value
 
     def clear_cache(self):

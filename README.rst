@@ -123,6 +123,28 @@ The Cachier wrapper adds a ``clear_cache()`` function to each wrapped function. 
 General Configuration
 ----------------------
 
+Global Defaults
+~~~~~~~~~~~~~~~
+
+Settings can be globally configured across all Cachier wrappers through the use of the `set_default_params` function. This function takes the same keyword parameters as the ones defined in the decorator, which can be passed all at once or with multiple calls. Parameters given directly to a decorator take precedence over any values set by this function.
+
+The following parameters will only be applied to decorators defined after `set_default_params` is called:
+
+*  `hash_func`
+*  `backend`
+*  `mongetter`
+*  `cache_dir`
+*  `pickle_reload`
+*  `separate_files`
+
+These parameters can be changed at any time and they will apply to all decorators:
+
+*  `stale_after`
+*  `next_time`
+*  `wait_for_calc_timeout`
+
+The current defaults can be fetched by calling `get_default_params`.
+
 Threads Limit
 ~~~~~~~~~~~~~
 

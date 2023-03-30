@@ -17,10 +17,15 @@ from functools import wraps
 from warnings import warn
 
 import datetime
+import functools
+import hashlib
+import inspect
+import pickle
 from concurrent.futures import ThreadPoolExecutor
 
+from .base_core import RecalculationNeeded
 from .pickle_core import _PickleCore
-from .mongo_core import _MongoCore, RecalculationNeeded
+from .mongo_core import _MongoCore
 from .memory_core import _MemoryCore
 
 
@@ -75,21 +80,43 @@ def _calc_entry(core, key, func, args, kwds):
         core.mark_entry_not_calculated(key)
 
 
+def _default_hash_func(args, kwds):
+    # pylint: disable-next=protected-access
+    key = functools._make_key(args, kwds, typed=True)
+    hash = hashlib.sha256()
+    for item in key:
+        hash.update(pickle.dumps(item))
+    return hash.hexdigest()
+
+
 class MissingMongetter(ValueError):
     """Thrown when the mongetter keyword argument is missing."""
 
 
+_default_params = {
+    'hash_func': _default_hash_func,
+    'backend': 'pickle',
+    'mongetter': None,
+    'stale_after': datetime.timedelta.max,
+    'next_time': False,
+    'cache_dir': '~/.cachier/',
+    'pickle_reload': True,
+    'separate_files': False,
+    'wait_for_calc_timeout': 0,
+}
+
+
 def cachier(
-    stale_after=None,
-    next_time=False,
-    pickle_reload=True,
-    backend=None,
-    mongetter=None,
-    cache_dir=None,
     hash_func=None,
     hash_params=None,
-    wait_for_calc_timeout=0,
-    separate_files=False,
+    backend=None,
+    mongetter=None,
+    stale_after=None,
+    next_time=None,
+    cache_dir=None,
+    pickle_reload=None,
+    separate_files=None,
+    wait_for_calc_timeout=None,
 ):
     """A persistent, stale-free memoization decorator.
 
@@ -102,6 +129,20 @@ def cachier(
 
     Arguments
     ---------
+    hash_func : callable, optional
+        A callable that gets the args and kwargs from the decorated function
+        and returns a hash key for them. This parameter can be used to enable
+        the use of cachier with functions that get arguments that are not
+        automatically hashable by Python.
+    backend : str, optional
+        The name of the backend to use. Valid options currently include
+        'pickle', 'mongo' and 'memory'. If not provided, defaults to
+        'pickle' unless the 'mongetter' argument is passed, in which
+        case the mongo backend is automatically selected.
+    mongetter : callable, optional
+        A callable that takes no arguments and returns a pymongo.Collection
+        object with writing permissions. If unset a local pickle cache is used
+        instead.
     stale_after : datetime.timedelta, optional
         The time delta afterwhich a cached result is considered stale. Calls
         made after the result goes stale will trigger a recalculation of the
@@ -111,37 +152,24 @@ def cachier(
         If set to True, a stale result will be returned when finding one, not
         waiting for the calculation of the fresh result to return. Defaults to
         False.
-    pickle_reload : bool, optional
-        If set to True, in-memory cache will be reloaded on each cache read,
-        enabling different threads to share cache. Should be set to False for
-        faster reads in single-thread programs. Defaults to True.
-    mongetter : callable, optional
-        A callable that takes no arguments and returns a pymongo.Collection
-        object with writing permissions. If unset a local pickle cache is used
-        instead.
-    backend : str, optional
-        The name of the backend to use. If None, defaults to 'mongo' when
-        the ``mongetter`` argument is passed, otherwise defaults to 'pickle'.
-        Valid options currently include 'pickle', 'mongo' and 'memory'.
     cache_dir : str, optional
         A fully qualified path to a file directory to be used for cache files.
         The running process must have running permissions to this folder. If
         not provided, a default directory at `~/.cachier/` is used.
-    hash_func : callable, optional
-        A callable that gets the args and kwargs from the decorated function
-        and returns a hash key for them. This parameter can be used to enable
-        the use of cachier with functions that get arguments that are not
-        automatically hashable by Python.
+    pickle_reload : bool, optional
+        If set to True, in-memory cache will be reloaded on each cache read,
+        enabling different threads to share cache. Should be set to False for
+        faster reads in single-thread programs. Defaults to True.
+    separate_files: bool, default False, for Pickle cores only
+        Instead of a single cache file per-function, each function's cache is
+        split between several files, one for each argument set. This can help
+        if you per-function cache files become too large.
     wait_for_calc_timeout: int, optional, for MongoDB only
         The maximum time to wait for an ongoing calculation. When a
         process started to calculate the value setting being_calculated to
         True, any process trying to read the same entry will wait a maximum of
         seconds specified in this parameter. 0 means wait forever.
         Once the timeout expires the calculation will be triggered.
-    separate_files: bool, default False, for Pickle cores only
-        Instead of a single cache file per-function, each function's cache is
-        split between several files, one for each argument set. This can help
-        if you per-function cache files become too large.
     """
     # Check for deprecated parameters
     if hash_params is not None:
@@ -149,17 +177,21 @@ def cachier(
                   'please use hash_func instead'
         warn(message, DeprecationWarning, stacklevel=2)
         hash_func = hash_params
-    # The default is calculated dynamically to maintain previous behavior
-    # to default to pickle unless the ``mongetter`` argument is given.
+    # Override the backend parameter if a mongetter is provided.
+    if mongetter is None:
+        mongetter = _default_params['mongetter']
+    if callable(mongetter):
+        backend = 'mongo'
     if backend is None:
-        backend = 'pickle' if mongetter is None else 'mongo'
+        backend = _default_params['backend']
     if backend == 'pickle':
         core = _PickleCore(  # pylint: disable=R0204
             hash_func=hash_func,
-            reload=pickle_reload,
+            pickle_reload=pickle_reload,
             cache_dir=cache_dir,
             separate_files=separate_files,
             wait_for_calc_timeout=wait_for_calc_timeout,
+            default_params=_default_params,
         )
     elif backend == 'mongo':
         if mongetter is None:
@@ -169,10 +201,12 @@ def cachier(
             mongetter=mongetter,
             hash_func=hash_func,
             wait_for_calc_timeout=wait_for_calc_timeout,
+            default_params=_default_params,
         )
     elif backend == 'memory':
         core = _MemoryCore(
             hash_func=hash_func,
+            default_params=_default_params,
         )
     elif backend == 'redis':
         raise NotImplementedError(
@@ -206,38 +240,39 @@ def cachier(
                 _print('Entry found.')
                 if entry.get('value', None) is not None:
                     _print('Cached result found.')
-                    if stale_after:
-                        now = datetime.datetime.now()
-                        if now - entry['time'] > stale_after:
-                            _print('But it is stale... :(')
-                            if entry['being_calculated']:
-                                if next_time:
-                                    _print('Returning stale.')
-                                    return entry['value']  # return stale val
-                                _print('Already calc. Waiting on change.')
-                                try:
-                                    return core.wait_on_entry_calc(key)
-                                except RecalculationNeeded:
-                                    return _calc_entry(
-                                        core, key, func, args, kwds
-                                    )
-                            if next_time:
-                                _print('Async calc and return stale')
-                                try:
-                                    core.mark_entry_being_calculated(key)
-                                    _get_executor().submit(
-                                        _function_thread,
-                                        core,
-                                        key,
-                                        func,
-                                        args,
-                                        kwds,
-                                    )
-                                finally:
-                                    core.mark_entry_not_calculated(key)
-                                return entry['value']
-                            _print('Calling decorated function and waiting')
-                            return _calc_entry(core, key, func, args, kwds)
+                    local_stale_after = stale_after if stale_after is not None else _default_params['stale_after']  # noqa: E501
+                    local_next_time = next_time if next_time is not None else _default_params['next_time']  # noqa: E501
+                    now = datetime.datetime.now()
+                    if now - entry['time'] > local_stale_after:
+                        _print('But it is stale... :(')
+                        if entry['being_calculated']:
+                            if local_next_time:
+                                _print('Returning stale.')
+                                return entry['value']  # return stale val
+                            _print('Already calc. Waiting on change.')
+                            try:
+                                return core.wait_on_entry_calc(key)
+                            except RecalculationNeeded:
+                                return _calc_entry(
+                                    core, key, func, args, kwds
+                                )
+                        if local_next_time:
+                            _print('Async calc and return stale')
+                            try:
+                                core.mark_entry_being_calculated(key)
+                                _get_executor().submit(
+                                    _function_thread,
+                                    core,
+                                    key,
+                                    func,
+                                    args,
+                                    kwds,
+                                )
+                            finally:
+                                core.mark_entry_not_calculated(key)
+                            return entry['value']
+                        _print('Calling decorated function and waiting')
+                        return _calc_entry(core, key, func, args, kwds)
                     _print('And it is fresh!')
                     return entry['value']
                 if entry['being_calculated']:
@@ -260,7 +295,7 @@ def cachier(
         def cache_dpath():
             """Returns the path to the cache dir, if exists; None if not."""
             try:
-                return core.expended_cache_dir
+                return core.cache_dir
             except AttributeError:
                 return None
 
@@ -281,3 +316,27 @@ def cachier(
         return func_wrapper
 
     return _cachier_decorator
+
+
+_valid_param_names = tuple(inspect.getcallargs(cachier).keys())
+
+
+def set_default_params(**params):
+    """Configure global parameters applicable to all memoized functions.
+
+    This function takes the same keyword parameters as the ones defined
+    in the decorator, which can be passed all at once or with multiple
+    calls. Parameters given directly to a decorator take precedence over
+    any values set by this function.
+
+    Only 'stale_after', 'next_time', and 'wait_for_calc_timeout' can be
+    changed after the memoization decorator has been applied. Other parameters
+    will only have an effect on decorators applied after this function is run.
+    """
+    valid_params = (p for p in params.items() if p[0] in _valid_param_names)
+    _default_params.update(valid_params)
+
+
+def get_default_params():
+    """Get current set of default parameters."""
+    return _default_params
