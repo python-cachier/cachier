@@ -222,14 +222,16 @@ def test_pickle_being_calculated(separate_files):
         kwargs={
             'takes_time_func': _takes_time_decorated,
             'res_queue': res_queue,
-        }
+        },
+        daemon=True,
     )
     thread2 = threading.Thread(
         target=_calls_takes_time,
         kwargs={
             'takes_time_func': _takes_time_decorated,
             'res_queue': res_queue,
-        }
+        },
+        daemon=True,
     )
     thread1.start()
     sleep(0.5)
@@ -271,14 +273,16 @@ def test_being_calc_next_time(separate_files):
         kwargs={
             'being_calc_func': _being_calc_next_time_decorated,
             'res_queue': res_queue,
-        }
+        },
+        daemon=True,
     )
     thread2 = threading.Thread(
         target=_calls_being_calc_next_time,
         kwargs={
             'being_calc_func': _being_calc_next_time_decorated,
             'res_queue': res_queue,
-        }
+        },
+        daemon=True,
     )
     thread1.start()
     sleep(0.5)
@@ -339,6 +343,7 @@ def _helper_bad_cache_file(sleeptime, separate_files):
             'trash_cache': True,
             'separate_files': separate_files,
         },
+        daemon=True,
     )
     thread2 = threading.Thread(
         target=_calls_bad_cache,
@@ -348,6 +353,7 @@ def _helper_bad_cache_file(sleeptime, separate_files):
             'trash_cache': False,
             'separate_files': separate_files,
         },
+        daemon=True,
     )
     thread1.start()
     sleep(sleeptime)
@@ -427,6 +433,7 @@ def _helper_delete_cache_file(sleeptime, separate_files):
             'del_cache': True,
             'separate_files': separate_files,
         },
+        daemon=True,
     )
     thread2 = threading.Thread(
         target=_calls_delete_cache,
@@ -436,6 +443,7 @@ def _helper_delete_cache_file(sleeptime, separate_files):
             'del_cache': False,
             'separate_files': separate_files,
         },
+        daemon=True,
     )
     thread1.start()
     sleep(sleeptime)
