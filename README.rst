@@ -310,7 +310,7 @@ Note, however, that ``cachier``'s in-memory core is simple, and has no monitorin
 Contributing
 ============
 
-Package author and current maintainer is Shay Palachy (shay.palachy@gmail.com); You are more than welcome to approach him for help. Contributions are very welcomed.
+Current maintainers are Shay Palachy Affek (`shay.palachy@gmail.com <mailto:shay.palachy@gmail.com>`_, `@shaypal5 <https://github.com/shaypal5>`_) and Judson Neer (`@lordjabez <https://github.com/lordjabez>`_); You are more than welcome to approach them for help. Contributions are very welcomed! :)
 
 Installing for development
 --------------------------
@@ -379,27 +379,31 @@ Additionally, if you update this ``README.rst`` file, use ``python setup.py chec
 Credits
 =======
 
-Created by `Shay Palachy <https://github.com/shaypal5>`_ (shay.palachy@gmail.com).
+Created by `Shay Palachy Affek <https://github.com/shaypal5>`_ (shay.palachy@gmail.com).
+
+Current lead developer/contributor: `Judson Neer <https://github.com/lordjabez>`_ (`@lordjabez <https://github.com/lordjabez>`_ on GitHub).
 
 Other major contributors:
 
-  * `cthoyt <https://github.com/cthoyt>`_ - Base memory core implementation.
+* `Judson Neer <https://github.com/lordjabez>`_ - Precaching, method caching support and numerous improvements and bugfixes.
 
-  * `amarczew <https://github.com/amarczew>`_ - The ``hash_func`` kwarg.
+* `cthoyt <https://github.com/cthoyt>`_ - Base memory core implementation.
 
-  * `non-senses <https://github.com/non-senses>`_ - The ``wait_for_calc_timeout`` kwarg.
+* `amarczew <https://github.com/amarczew>`_ - The ``hash_func`` kwarg.
 
-  * `Elad Rapapor <https://github.com/erap129>`_ - Multi-file Pickle core, a.k.a ``separate_files`` (released on ``v1.5.3``).
+* `non-senses <https://github.com/non-senses>`_ - The ``wait_for_calc_timeout`` kwarg.
 
-  * `John Didion <https://github.com/jdidion>`_ - Support for pickle-based caching for cases where two identically-named methods of different classes are defined in the same module.
+* `Elad Rapapor <https://github.com/erap129>`_ - Multi-file Pickle core, a.k.a ``separate_files`` (released on ``v1.5.3``).
+
+* `John Didion <https://github.com/jdidion>`_ - Support for pickle-based caching for cases where two identically-named methods of different classes are defined in the same module.
 
 Notable bugfixers:
 
-  * `MichaelRazum <https://github.com/MichaelRazum>`_.
+* `MichaelRazum <https://github.com/MichaelRazum>`_.
 
-  * `Eric Ma <https://github.com/ericmjl>`_ - The iNotify bugfix (released on ``v1.5.3``).
+* `Eric Ma <https://github.com/ericmjl>`_ - The iNotify bugfix (released on ``v1.5.3``).
 
-  * `Ofir <https://github.com/ofirnk>`_ - The iNotify bugfix (released on ``v1.5.3``).
+* `Ofir <https://github.com/ofirnk>`_ - The iNotify bugfix (released on ``v1.5.3``).
 
 
 
