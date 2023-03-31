@@ -172,9 +172,13 @@ def test_memory_being_calculated():
     _takes_time.clear_cache()
     res_queue = queue.Queue()
     thread1 = threading.Thread(
-            target=_calls_takes_time, kwargs={'res_queue': res_queue})
+        target=_calls_takes_time,
+        kwargs={'res_queue': res_queue},
+        daemon=True)
     thread2 = threading.Thread(
-            target=_calls_takes_time, kwargs={'res_queue': res_queue})
+        target=_calls_takes_time,
+        kwargs={'res_queue': res_queue},
+        daemon=True)
     thread1.start()
     sleep(0.5)
     thread2.start()
@@ -206,9 +210,13 @@ def test_being_calc_next_time():
     sleep(1.1)
     res_queue = queue.Queue()
     thread1 = threading.Thread(
-        target=_calls_being_calc_next_time, kwargs={'res_queue': res_queue})
+        target=_calls_being_calc_next_time,
+        kwargs={'res_queue': res_queue},
+        daemon=True)
     thread2 = threading.Thread(
-        target=_calls_being_calc_next_time, kwargs={'res_queue': res_queue})
+        target=_calls_being_calc_next_time,
+        kwargs={'res_queue': res_queue},
+        daemon=True)
     thread1.start()
     sleep(0.5)
     thread2.start()
@@ -240,9 +248,13 @@ def test_clear_being_calculated():
     _takes_time.clear_cache()
     res_queue = queue.Queue()
     thread1 = threading.Thread(
-            target=_calls_takes_time, kwargs={'res_queue': res_queue})
+        target=_calls_takes_time,
+        kwargs={'res_queue': res_queue},
+        daemon=True)
     thread2 = threading.Thread(
-            target=_calls_takes_time, kwargs={'res_queue': res_queue})
+        target=_calls_takes_time,
+        kwargs={'res_queue': res_queue},
+        daemon=True)
     thread1.start()
     _takes_time.clear_being_calculated()
     sleep(0.5)

@@ -144,9 +144,13 @@ def test_mongo_being_calculated():
     _takes_time.clear_cache()
     res_queue = queue.Queue()
     thread1 = threading.Thread(
-        target=_calls_takes_time, kwargs={'res_queue': res_queue})
+        target=_calls_takes_time,
+        kwargs={'res_queue': res_queue},
+        daemon=True)
     thread2 = threading.Thread(
-        target=_calls_takes_time, kwargs={'res_queue': res_queue})
+        target=_calls_takes_time,
+        kwargs={'res_queue': res_queue},
+        daemon=True)
     thread1.start()
     sleep(1)
     thread2.start()
