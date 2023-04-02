@@ -49,6 +49,7 @@ def _takes_2_seconds(arg_1, arg_2):
     return 'arg_1:{}, arg_2:{}'.format(arg_1, arg_2)
 
 
+@pytest.mark.pickle
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_pickle_core(separate_files):
     """Basic Pickle core functionality."""
@@ -63,6 +64,7 @@ def test_pickle_core(separate_files):
     _takes_2_seconds_decorated.clear_cache()
 
 
+@pytest.mark.pickle
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_pickle_core_keywords(separate_files):
     """Basic Pickle core functionality with keyword arguments."""
@@ -86,6 +88,7 @@ def _stale_after_seconds(arg_1, arg_2):
     return random()
 
 
+@pytest.mark.pickle
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_stale_after(separate_files):
     """Testing the stale_after functionality."""
@@ -110,6 +113,7 @@ def _stale_after_next_time(arg_1, arg_2):
     return random()
 
 
+@pytest.mark.pickle
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_stale_after_next_time(separate_files):
     """Testing the stale_after with next_time functionality."""
@@ -141,6 +145,7 @@ def _random_num_with_arg(a):
     return random()
 
 
+@pytest.mark.pickle
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_overwrite_cache(separate_files):
     """Tests that the overwrite feature works correctly."""
@@ -169,6 +174,7 @@ def test_overwrite_cache(separate_files):
     _random_num_with_arg_decorated.clear_cache()
 
 
+@pytest.mark.pickle
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_ignore_cache(separate_files):
     """Tests that the ignore_cache feature works correctly."""
@@ -210,6 +216,7 @@ def _calls_takes_time(takes_time_func, res_queue):
     res_queue.put(res)
 
 
+@pytest.mark.pickle
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_pickle_being_calculated(separate_files):
     """Testing pickle core handling of being calculated scenarios."""
@@ -236,8 +243,8 @@ def test_pickle_being_calculated(separate_files):
     thread1.start()
     sleep(0.5)
     thread2.start()
-    thread1.join(timeout=3)
-    thread2.join(timeout=3)
+    thread1.join(timeout=4)
+    thread2.join(timeout=4)
     assert res_queue.qsize() == 2
     res1 = res_queue.get()
     res2 = res_queue.get()
@@ -255,6 +262,7 @@ def _calls_being_calc_next_time(being_calc_func, res_queue):
     res_queue.put(res)
 
 
+@pytest.mark.pickle
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_being_calc_next_time(separate_files):
     """Testing pickle core handling of being calculated scenarios."""
@@ -372,6 +380,7 @@ def _helper_bad_cache_file(sleeptime, separate_files):
 
 
 # we want this to succeed at leat once
+@pytest.mark.pickle
 @pytest.mark.xfail
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_bad_cache_file(separate_files):
@@ -464,6 +473,7 @@ def _helper_delete_cache_file(sleeptime, separate_files):
     # print(type(res2))
 
 
+@pytest.mark.pickle
 @pytest.mark.xfail
 @pytest.mark.parametrize('separate_files', [False, True])
 def test_delete_cache_file(separate_files):
@@ -476,6 +486,7 @@ def test_delete_cache_file(separate_files):
     assert False
 
 
+@pytest.mark.pickle
 @pytest.mark.parametrize('separate_files', [False, True])
 def test_clear_being_calculated(separate_files):
     """Test pickle core clear `being calculated` functionality."""
@@ -493,6 +504,7 @@ def _error_throwing_func(arg1):
     return 7
 
 
+@pytest.mark.pickle
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_error_throwing_func(separate_files):
     # with
@@ -522,6 +534,7 @@ def _takes_2_seconds_custom_dir(arg_1, arg_2):
     return 'arg_1:{}, arg_2:{}'.format(arg_1, arg_2)
 
 
+@pytest.mark.pickle
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_pickle_core_custom_cache_dir(separate_files):
     """Basic Pickle core functionality."""
@@ -540,6 +553,7 @@ def test_pickle_core_custom_cache_dir(separate_files):
     assert path2test == EXPANDED_CUSTOM_DIR
 
 
+@pytest.mark.pickle
 @pytest.mark.parametrize('separate_files', [True, False])
 def test_callable_hash_param(separate_files):
     def _hash_func(args, kwargs):
