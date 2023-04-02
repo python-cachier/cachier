@@ -50,11 +50,13 @@ def _takes_2_seconds(arg_1, arg_2):
 
 
 @pytest.mark.pickle
+@pytest.mark.parametrize('reload', [True, False])
 @pytest.mark.parametrize('separate_files', [True, False])
-def test_pickle_core(separate_files):
+def test_pickle_core(reload, separate_files):
     """Basic Pickle core functionality."""
     _takes_2_seconds_decorated = _get_decorated_func(
-        _takes_2_seconds, next_time=False, separate_files=separate_files)
+        _takes_2_seconds, next_time=False,
+        pickle_reload=reload, separate_files=separate_files)
     _takes_2_seconds_decorated.clear_cache()
     _takes_2_seconds_decorated('a', 'b')
     start = time()

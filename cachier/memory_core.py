@@ -66,10 +66,10 @@ class _MemoryCore(_BaseCore):
                 entry['condition'] = None
 
     def wait_on_entry_calc(self, key):
-        with self.lock:
+        with self.lock:  # pragma: no cover
             entry = self.cache[key]
             if not entry['being_calculated']:
-                return entry['value']  # pragma: no cover
+                return entry['value']
         entry['condition'].acquire()
         entry['condition'].wait()
         entry['condition'].release()

@@ -263,6 +263,15 @@ def test_stalled_mong_db_core(monkeypatch):
     res = _stalled_func_2()
     assert res == 2
 
+    @cachier(mongetter=_test_mongetter,
+             stale_after=stale_after, next_time=True)
+    def _stalled_func_3():
+        """Testing stalled function"""
+        return 3
+
+    res = _stalled_func_3()
+    assert res == 1
+
 
 @pytest.mark.mongo
 def test_callable_hash_param():

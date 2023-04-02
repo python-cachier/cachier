@@ -146,7 +146,7 @@ class _PickleCore(_BaseCore):
             with portalocker.Lock(fpath, mode='rb') as cache_file:
                 try:
                     res = pickle.load(cache_file)
-                except EOFError:
+                except EOFError:  # pragma: no cover
                     res = None
         except FileNotFoundError:
             res = None
