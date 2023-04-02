@@ -19,7 +19,6 @@ from warnings import warn
 import datetime
 import functools
 import hashlib
-import inspect
 import pickle
 from concurrent.futures import ThreadPoolExecutor
 
@@ -94,6 +93,7 @@ class MissingMongetter(ValueError):
 
 
 _default_params = {
+    'caching_enabled': True,
     'hash_func': _default_hash_func,
     'backend': 'pickle',
     'mongetter': None,
@@ -228,7 +228,7 @@ def cachier(
             _print = lambda x: None  # skipcq: FLK-E731  # noqa: E731
             if verbose_cache:
                 _print = print
-            if ignore_cache:
+            if ignore_cache or not _default_params['caching_enabled']:
                 return func(*args, **kwds)
             if core.func_is_method:
                 key, entry = core.get_entry(args[1:], kwds)
@@ -318,9 +318,6 @@ def cachier(
     return _cachier_decorator
 
 
-_valid_param_names = tuple(inspect.getcallargs(cachier).keys())
-
-
 def set_default_params(**params):
     """Configure global parameters applicable to all memoized functions.
 
@@ -333,10 +330,20 @@ def set_default_params(**params):
     changed after the memoization decorator has been applied. Other parameters
     will only have an effect on decorators applied after this function is run.
     """
-    valid_params = (p for p in params.items() if p[0] in _valid_param_names)
+    valid_params = (p for p in params.items() if p[0] in _default_params)
     _default_params.update(valid_params)
 
 
 def get_default_params():
     """Get current set of default parameters."""
     return _default_params
+
+
+def enable_caching():
+    """Enable caching globally."""
+    _default_params['caching_enabled'] = True
+
+
+def disable_caching():
+    """Disable caching globally."""
+    _default_params['caching_enabled'] = False

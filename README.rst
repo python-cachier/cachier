@@ -139,6 +139,7 @@ The following parameters will only be applied to decorators defined after `set_d
 
 These parameters can be changed at any time and they will apply to all decorators:
 
+*  `caching_enabled`
 *  `stale_after`
 *  `next_time`
 *  `wait_for_calc_timeout`
@@ -149,6 +150,14 @@ Threads Limit
 ~~~~~~~~~~~~~
 
 To limit the number of threads Cachier is allowed to spawn, set the ``CACHIER_MAX_WORKERS`` with the desired number. The defeault is 8, so to enable Cachier to spawn even more threads, you'll have to set a higher limit explicitly.
+
+
+Global Enable/Disable
+---------------------
+
+Caching can be turned off across all decorators by calling `disable_caching`, and then re-activated by calling `enable_caching`.
+
+These functions are convenience wrappers around the `caching_enabled` default setting.
 
 
 Cache Shelf Life
