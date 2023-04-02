@@ -1,4 +1,4 @@
-"""Testing the MongoDB core of cachier."""
+"""Testing a few basic cachier interfaces."""
 
 from cachier import cachier, get_default_params
 from cachier.core import MissingMongetter
