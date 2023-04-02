@@ -1,7 +1,23 @@
 """Testing the MongoDB core of cachier."""
 
-from cachier import cachier
+from cachier import cachier, get_default_params
 from cachier.core import MissingMongetter
+
+
+def test_get_default_params():
+    params = get_default_params()
+    assert tuple(sorted(params)) == (
+        'backend',
+        'cache_dir',
+        'caching_enabled',
+        'hash_func',
+        'mongetter',
+        'next_time',
+        'pickle_reload',
+        'separate_files',
+        'stale_after',
+        'wait_for_calc_timeout',
+    )
 
 
 def test_bad_name():

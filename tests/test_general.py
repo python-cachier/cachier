@@ -9,8 +9,7 @@ import threading
 from random import random
 from time import sleep, time
 import pytest
-import cachier as cachier_dir
-from cachier import cachier
+import cachier
 from cachier.core import (
     MAX_WORKERS_ENVAR_NAME,
     DEFAULT_MAX_WORKERS,
@@ -26,7 +25,7 @@ from tests.test_mongo_core import (
 
 def test_information():
     print("\ncachier version: ", end="")
-    print(cachier_dir.__version__)
+    print(cachier.__version__)
 
 
 def test_max_workers():
@@ -61,7 +60,7 @@ parametrize_values = [
 
 @pytest.mark.parametrize(parametrize_keys, parametrize_values)
 def test_wait_for_calc_timeout_ok(mongetter, stale_after, separate_files):
-    @cachier(
+    @cachier.cachier(
         mongetter=mongetter,
         stale_after=stale_after,
         separate_files=separate_files,
@@ -106,7 +105,7 @@ def test_wait_for_calc_timeout_ok(mongetter, stale_after, separate_files):
 
 @pytest.mark.parametrize(parametrize_keys, parametrize_values)
 def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
-    @cachier(
+    @cachier.cachier(
         mongetter=mongetter,
         stale_after=stale_after,
         separate_files=separate_files,
@@ -159,7 +158,7 @@ def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
 )
 def test_precache_value(mongetter, backend):
 
-    @cachier(backend=backend, mongetter=mongetter)
+    @cachier.cachier(backend=backend, mongetter=mongetter)
     def func(arg_1, arg_2):
         """Some function."""
         return arg_1 + arg_2
@@ -188,7 +187,7 @@ def test_precache_value(mongetter, backend):
 def test_ignore_self_in_methods(mongetter, backend):
 
     class TestClass():
-        @cachier(backend=backend, mongetter=mongetter)
+        @cachier.cachier(backend=backend, mongetter=mongetter)
         def takes_2_seconds(self, arg_1, arg_2):
             """Some function."""
             sleep(2)
@@ -209,7 +208,7 @@ def test_ignore_self_in_methods(mongetter, backend):
 
 def test_hash_params_deprecation():
     with pytest.deprecated_call(match='hash_params will be removed'):
-        @cachier(hash_params=lambda a, k: 'key')
+        @cachier.cachier(hash_params=lambda a, k: 'key')
         def test():
             return 'value'
     assert test() == 'value'
@@ -226,3 +225,18 @@ def test_separate_processes():
     end = time()
     assert result.stdout.strip() == 'two 2'
     assert end - start < 3
+
+
+def test_global_disable():
+    @cachier.cachier()
+    def get_random():
+        return random()
+    get_random.clear_cache()
+    result_1 = get_random()
+    result_2 = get_random()
+    cachier.disable_caching()
+    result_3 = get_random()
+    cachier.enable_caching()
+    result_4 = get_random()
+    assert result_1 == result_2 == result_4
+    assert result_1 != result_3
