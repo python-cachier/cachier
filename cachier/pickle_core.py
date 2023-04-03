@@ -6,7 +6,6 @@
 # Licensed under the MIT license:
 # http://www.opensource.org/licenses/MIT-license
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
-import hashlib
 import os
 import pickle  # for local caching
 from datetime import datetime
@@ -139,7 +138,7 @@ class _PickleCore(_BaseCore):
     def _get_cache_by_key(self, key=None, hash=None):
         fpath = self._cache_fpath()
         if hash is None:
-            fpath += f'_{hashlib.sha256(pickle.dumps(key)).hexdigest()}'
+            fpath += f'_{key}'
         else:
             fpath += f'_{hash}'
         try:
@@ -174,7 +173,7 @@ class _PickleCore(_BaseCore):
             self.cache = cache
             fpath = self._cache_fpath()
             if key is not None:
-                fpath += f'_{hashlib.sha256(pickle.dumps(key)).hexdigest()}'
+                fpath += f'_{key}'
             elif hash is not None:
                 fpath += f'_{hash}'
             with portalocker.Lock(fpath, mode='wb') as cache_file:
@@ -249,8 +248,7 @@ class _PickleCore(_BaseCore):
     def wait_on_entry_calc(self, key):
         if self.separate_files:
             entry = self._get_cache_by_key(key)
-            hexdg = hashlib.sha256(pickle.dumps(key)).hexdigest()
-            filename = f'{self._cache_fname()}_{hexdg}'
+            filename = f'{self._cache_fname()}_{key}'
         else:
             with self.lock:
                 self._reload_cache()
