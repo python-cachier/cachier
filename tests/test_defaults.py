@@ -1,16 +1,15 @@
 import datetime
 import os
-import pytest
 import queue
 import random
 import tempfile
 import threading
 import time
 
+import pytest
+
 import cachier
-
-from tests.test_mongo_core import _test_mongetter, MONGO_DELTA
-
+from tests.test_mongo_core import MONGO_DELTA, _test_mongetter
 
 _default_params = cachier.get_default_params().copy()
 
@@ -123,6 +122,35 @@ def test_separate_files_default_param():
     cache_dir_2 = global_test_2.cache_dpath()
     assert len(os.listdir(cache_dir_1)) == 2
     assert len(os.listdir(cache_dir_2)) == 1
+
+def test_allow_none_default_param():
+    cachier.set_default_params(allow_none=True, separate_files=True, verbose_cache=True)
+
+    allow_count = 0
+    @cachier.cachier(cache_dir=tempfile.mkdtemp())
+    def allow_none():
+        nonlocal allow_count
+        allow_count += 1
+        return None
+
+    disallow_count = 0
+    @cachier.cachier(cache_dir=tempfile.mkdtemp(), allow_none=False)
+    def disallow_none():
+        nonlocal disallow_count
+        disallow_count += 1
+        return None
+
+    allow_none.clear_cache()
+    assert allow_count == 0
+    allow_none()
+    allow_none()
+    assert allow_count == 1
+
+    disallow_none.clear_cache()
+    assert disallow_count == 0
+    disallow_none()
+    disallow_none()
+    assert disallow_count == 2
 
 
 parametrize_keys = 'backend,mongetter'
