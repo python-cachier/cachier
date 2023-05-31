@@ -1,6 +1,7 @@
 """Non-core-specific tests for cachier."""
 
 from __future__ import print_function
+
 import functools
 import os
 import queue
@@ -8,18 +9,20 @@ import subprocess  # nosec: B404
 import threading
 from random import random
 from time import sleep, time
+
 import pytest
+
 import cachier
 from cachier.core import (
-    MAX_WORKERS_ENVAR_NAME,
     DEFAULT_MAX_WORKERS,
+    MAX_WORKERS_ENVAR_NAME,
+    _get_executor,
     _max_workers,
     _set_max_workers,
-    _get_executor
 )
 from tests.test_mongo_core import (
-    _test_mongetter,
     MONGO_DELTA_LONG,
+    _test_mongetter,
 )
 
 
@@ -240,3 +243,35 @@ def test_global_disable():
     result_4 = get_random()
     assert result_1 == result_2 == result_4
     assert result_1 != result_3
+
+
+def test_none_not_cached_by_default():
+    count = 0
+
+    @cachier.cachier()
+    def do_operation():
+        nonlocal count
+        count += 1
+        return None
+
+    do_operation.clear_cache()
+    assert count == 0
+    do_operation()
+    do_operation()
+    assert count == 2
+
+
+def test_allow_caching_none():
+    count = 0
+
+    @cachier.cachier(allow_none=True)
+    def do_operation():
+        nonlocal count
+        count += 1
+        return None
+
+    do_operation.clear_cache()
+    assert count == 0
+    do_operation()
+    do_operation()
+    assert count == 1

@@ -7,6 +7,7 @@ from cachier.core import MissingMongetter
 def test_get_default_params():
     params = get_default_params()
     assert tuple(sorted(params)) == (
+        'allow_none',
         'backend',
         'cache_dir',
         'caching_enabled',

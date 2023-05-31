@@ -107,6 +107,7 @@ class Params(TypedDict):
     pickle_reload: bool
     separate_files: bool
     wait_for_calc_timeout: int
+    allow_none: bool
 
 
 _default_params: Params = {
@@ -120,6 +121,7 @@ _default_params: Params = {
     'pickle_reload': True,
     'separate_files': False,
     'wait_for_calc_timeout': 0,
+    'allow_none': False,
 }
 
 
@@ -134,6 +136,7 @@ def cachier(
     pickle_reload: Optional[bool] = None,
     separate_files: Optional[bool] = None,
     wait_for_calc_timeout: Optional[int] = None,
+    allow_none: Optional[bool] = None,
 ):
     """A persistent, stale-free memoization decorator.
 
@@ -187,6 +190,9 @@ def cachier(
         True, any process trying to read the same entry will wait a maximum of
         seconds specified in this parameter. 0 means wait forever.
         Once the timeout expires the calculation will be triggered.
+    allow_none: bool, optional
+        Allows storing None values in the cache. If False, functions returning
+        None will not be cached and are recalculated every call.
     """
     # Check for deprecated parameters
     if hash_params is not None:
@@ -234,6 +240,12 @@ def cachier(
 
         @wraps(func)
         def func_wrapper(*args, **kwds):  # pylint: disable=C0111,R0911
+            nonlocal allow_none
+            _allow_none = (
+                allow_none
+                if allow_none is not None else
+                _default_params['allow_none']
+            )
             # print('Inside general wrapper for {}.'.format(func.__name__))
             ignore_cache = kwds.pop('ignore_cache', False)
             overwrite_cache = kwds.pop('overwrite_cache', False)
@@ -251,7 +263,7 @@ def cachier(
                 return _calc_entry(core, key, func, args, kwds)
             if entry is not None:  # pylint: disable=R0101
                 _print('Entry found.')
-                if entry.get('value', None) is not None:
+                if (_allow_none or entry.get('value', None) is not None):
                     _print('Cached result found.')
                     local_stale_after = stale_after if stale_after is not None else _default_params['stale_after']  # noqa: E501
                     local_next_time = next_time if next_time is not None else _default_params['next_time']  # noqa: E501
