@@ -349,10 +349,11 @@ https://creativecommons.org/publicdomain/zero/1.0/ .
 """
 
 from __future__ import print_function
+
 try:
     import configparser
 except ImportError:
-    import ConfigParser as configparser
+    import ConfigParser as configparser  # type: ignore
 import errno
 import json
 import os
@@ -1547,7 +1548,7 @@ def get_cmdclass():
     cmds["build_py"] = cmd_build_py
 
     if "cx_Freeze" in sys.modules:  # cx_freeze enabled?
-        from cx_Freeze.dist import build_exe as _build_exe
+        from cx_Freeze.dist import build_exe as _build_exe  # type: ignore[import]
 
         class cmd_build_exe(_build_exe):
             def run(self):
