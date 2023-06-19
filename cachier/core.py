@@ -90,21 +90,24 @@ def _default_hash_func(args, kwds):
 class MissingMongetter(ValueError):
     """Thrown when the mongetter keyword argument is missing."""
 
+
 HashFunc = Callable[..., str]
 Mongetter = Callable[[], Collection]
 Backend = Literal["pickle", "mongo", "memory"]
+
 
 class Params(TypedDict):
     caching_enabled: bool
     hash_func: HashFunc
     backend: Backend
     mongetter: Optional[Mongetter]
-    stale_after:  datetime.timedelta
+    stale_after: datetime.timedelta
     next_time: bool
     cache_dir: Union[str, os.PathLike]
-    pickle_reload:  bool
+    pickle_reload: bool
     separate_files: bool
     wait_for_calc_timeout: int
+
 
 _default_params: Params = {
     'caching_enabled': True,
@@ -119,6 +122,7 @@ _default_params: Params = {
     'wait_for_calc_timeout': 0,
 }
 
+
 def cachier(
     hash_func: Optional[HashFunc] = None,
     hash_params: Optional[HashFunc] = None,
@@ -126,7 +130,7 @@ def cachier(
     mongetter: Optional[Mongetter] = None,
     stale_after: Optional[datetime.timedelta] = None,
     next_time: Optional[bool] = None,
-    cache_dir:Optional[Union[str, os.PathLike]] = None,
+    cache_dir: Optional[Union[str, os.PathLike]] = None,
     pickle_reload: Optional[bool] = None,
     separate_files: Optional[bool] = None,
     wait_for_calc_timeout: Optional[int] = None,
