@@ -259,7 +259,11 @@ def cachier(
             if entry is not None:  # pylint: disable=R0101
                 _print('Entry found.')
                 if (
-                    (allow_none if allow_none is not None else _default_params['allow_none'])
+                    (
+                        allow_none
+                        if allow_none is not None else
+                        _default_params['allow_none']
+                    )
                     or entry.get('value', None) is not None
                 ):
                     _print('Cached result found.')

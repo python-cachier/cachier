@@ -123,17 +123,22 @@ def test_separate_files_default_param():
     assert len(os.listdir(cache_dir_1)) == 2
     assert len(os.listdir(cache_dir_2)) == 1
 
-def test_allow_none_default_param():
-    cachier.set_default_params(allow_none=True, separate_files=True, verbose_cache=True)
 
+def test_allow_none_default_param():
+    cachier.set_default_params(
+        allow_none=True,
+        separate_files=True,
+        verbose_cache=True,
+    )
     allow_count = 0
+    disallow_count = 0
+
     @cachier.cachier(cache_dir=tempfile.mkdtemp())
     def allow_none():
         nonlocal allow_count
         allow_count += 1
         return None
 
-    disallow_count = 0
     @cachier.cachier(cache_dir=tempfile.mkdtemp(), allow_none=False)
     def disallow_none():
         nonlocal disallow_count

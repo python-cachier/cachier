@@ -244,8 +244,10 @@ def test_global_disable():
     assert result_1 == result_2 == result_4
     assert result_1 != result_3
 
+
 def test_none_not_cached_by_default():
     count = 0
+
     @cachier.cachier()
     def do_operation():
         nonlocal count
@@ -261,6 +263,7 @@ def test_none_not_cached_by_default():
 
 def test_allow_caching_none():
     count = 0
+
     @cachier.cachier(allow_none=True)
     def do_operation():
         nonlocal count
