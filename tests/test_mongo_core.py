@@ -1,26 +1,24 @@
 """Testing the MongoDB core of cachier."""
 
-import sys
-import platform
 import datetime
+import hashlib
+import platform
+import queue
+import sys
+import threading
 from datetime import timedelta
 from random import random
 from time import sleep
-import threading
-import queue
 
-import pytest
-import pymongo
-import hashlib
 import pandas as pd
+import pymongo
+import pytest
 from pymongo.errors import OperationFailure
+from pymongo_inmemory import MongoClient
 
 from cachier import cachier
 from cachier.base_core import RecalculationNeeded
 from cachier.mongo_core import _MongoCore
-
-from pymongo_inmemory import MongoClient
-
 
 _COLLECTION_NAME = 'cachier_test_{}_{}.{}.{}'.format(
     platform.system(), sys.version_info[0], sys.version_info[1],
