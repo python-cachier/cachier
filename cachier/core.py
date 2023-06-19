@@ -241,6 +241,11 @@ def cachier(
         @wraps(func)
         def func_wrapper(*args, **kwds):  # pylint: disable=C0111,R0911
             nonlocal allow_none
+            _allow_none = (
+                allow_none
+                if allow_none is not None else
+                _default_params['allow_none']
+            )
             # print('Inside general wrapper for {}.'.format(func.__name__))
             ignore_cache = kwds.pop('ignore_cache', False)
             overwrite_cache = kwds.pop('overwrite_cache', False)
@@ -258,14 +263,7 @@ def cachier(
                 return _calc_entry(core, key, func, args, kwds)
             if entry is not None:  # pylint: disable=R0101
                 _print('Entry found.')
-                if (
-                    (
-                        allow_none
-                        if allow_none is not None else
-                        _default_params['allow_none']
-                    )
-                    or entry.get('value', None) is not None
-                ):
+                if (_allow_none or entry.get('value', None) is not None):
                     _print('Cached result found.')
                     local_stale_after = stale_after if stale_after is not None else _default_params['stale_after']  # noqa: E501
                     local_next_time = next_time if next_time is not None else _default_params['next_time']  # noqa: E501
