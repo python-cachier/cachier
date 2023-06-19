@@ -8,25 +8,24 @@
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 
 # python 2 compatibility
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import os
-from functools import wraps
-from warnings import warn
+from __future__ import absolute_import, division, print_function
 
 import datetime
 import functools
 import hashlib
+import os
 import pickle
 from concurrent.futures import ThreadPoolExecutor
+from functools import wraps
+from typing import Callable, Literal, Optional, TypedDict, Union
+from warnings import warn
 
-from .base_core import RecalculationNeeded
-from .pickle_core import _PickleCore
-from .mongo_core import _MongoCore
+from pymongo.collection import Collection
+
+from .base_core import RecalculationNeeded, _BaseCore
 from .memory_core import _MemoryCore
-
+from .mongo_core import _MongoCore
+from .pickle_core import _PickleCore
 
 MAX_WORKERS_ENVAR_NAME = 'CACHIER_MAX_WORKERS'
 DEFAULT_MAX_WORKERS = 8
@@ -91,8 +90,23 @@ def _default_hash_func(args, kwds):
 class MissingMongetter(ValueError):
     """Thrown when the mongetter keyword argument is missing."""
 
+HashFunc = Callable[..., str]
+Mongetter = Callable[[], Collection]
+Backend = Literal["pickle", "mongo", "memory"]
 
-_default_params = {
+class Params(TypedDict):
+    caching_enabled: bool
+    hash_func: HashFunc
+    backend: Backend
+    mongetter: Optional[Mongetter]
+    stale_after:  datetime.timedelta
+    next_time: bool
+    cache_dir: Union[str, os.PathLike]
+    pickle_reload:  bool
+    separate_files: bool
+    wait_for_calc_timeout: int
+
+_default_params: Params = {
     'caching_enabled': True,
     'hash_func': _default_hash_func,
     'backend': 'pickle',
@@ -105,18 +119,17 @@ _default_params = {
     'wait_for_calc_timeout': 0,
 }
 
-
 def cachier(
-    hash_func=None,
-    hash_params=None,
-    backend=None,
-    mongetter=None,
-    stale_after=None,
-    next_time=None,
-    cache_dir=None,
-    pickle_reload=None,
-    separate_files=None,
-    wait_for_calc_timeout=None,
+    hash_func: Optional[HashFunc] = None,
+    hash_params: Optional[HashFunc] = None,
+    backend: Optional[Backend] = None,
+    mongetter: Optional[Mongetter] = None,
+    stale_after: Optional[datetime.timedelta] = None,
+    next_time: Optional[bool] = None,
+    cache_dir:Optional[Union[str, os.PathLike]] = None,
+    pickle_reload: Optional[bool] = None,
+    separate_files: Optional[bool] = None,
+    wait_for_calc_timeout: Optional[int] = None,
 ):
     """A persistent, stale-free memoization decorator.
 
@@ -184,6 +197,7 @@ def cachier(
         backend = 'mongo'
     if backend is None:
         backend = _default_params['backend']
+    core: _BaseCore
     if backend == 'pickle':
         core = _PickleCore(  # pylint: disable=R0204
             hash_func=hash_func,
@@ -207,11 +221,6 @@ def cachier(
         core = _MemoryCore(
             hash_func=hash_func,
             default_params=_default_params,
-        )
-    elif backend == 'redis':
-        raise NotImplementedError(
-            'A Redis backend has not yet been implemented. '
-            'Please see https://github.com/python-cachier/cachier/issues/4'
         )
     else:
         raise ValueError('specified an invalid core: {}'.format(backend))
