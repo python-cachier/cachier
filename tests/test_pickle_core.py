@@ -13,22 +13,20 @@
 # )
 import os
 import pickle
-from time import (
-    time,
-    sleep
-)
+import threading
 from datetime import timedelta
 from random import random
-import threading
+from time import sleep, time
 
 import pytest
 
 try:
     import queue
 except ImportError:  # python 2
-    import Queue as queue
+    import Queue as queue  # type: ignore
 
 import hashlib
+
 import pandas as pd
 
 from cachier import cachier
@@ -376,7 +374,7 @@ def _helper_bad_cache_file(sleeptime, separate_files):
     if not isinstance(res1, float):
         return False
     res2 = res_queue.get()
-    if not (res2 is None) or isinstance(res2, KeyError):
+    if res2 is not None or isinstance(res2, KeyError):
         return False
     return True
 
