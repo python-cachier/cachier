@@ -10,16 +10,17 @@
 try:
     from setuptools import setup
 except ImportError:
-    from distutils.core import setup
+    from distutils.core import setup  # type: ignore
 
 import versioneer
-
 
 TEST_REQUIRES = [
     # tests and coverages
     'pytest', 'coverage', 'pytest-cov',
     # linting and code quality
     'bandit', 'flake8', 'pylint', 'safety',
+    # type checking
+    'mypy', 'types-setuptools', 'pandas-stubs',
     # to connect to the test mongodb server
     'pymongo', 'dnspython', 'pymongo-inmemory',
     # to test pandas dataframe as-param hashing with mongodb core
