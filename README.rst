@@ -139,6 +139,7 @@ The following parameters will only be applied to decorators defined after `set_d
 
 These parameters can be changed at any time and they will apply to all decorators:
 
+*  `allow_none`
 *  `caching_enabled`
 *  `stale_after`
 *  `next_time`
@@ -256,6 +257,10 @@ Verbose Cache Call
 
 You can have ``cachier`` print out a detailed explanation of the logic of a specific call by passing ``verbose_cache=True`` to the function call. This can be useful if you are not sure why a certain function result is, or is not, returned.
 
+Cache `None` Values
+~~~~~~~~~~~~~~~~~~
+
+By default, ``cachier`` does not cache ``None`` values. You can override this behaviour by passing ``allow_none=True`` to the function call.
 
 
 Cachier Cores

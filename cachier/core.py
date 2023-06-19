@@ -190,7 +190,7 @@ def cachier(
         True, any process trying to read the same entry will wait a maximum of
         seconds specified in this parameter. 0 means wait forever.
         Once the timeout expires the calculation will be triggered.
-    allow_none: bool, default False
+    allow_none: bool, optional
         Allows storing None values in the cache. If False, functions returning
         None will not be cached and are recalculated every call.
     """
