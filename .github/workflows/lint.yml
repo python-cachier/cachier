@@ -27,14 +27,12 @@ jobs:
       # Install your linters here
       - name: Install linters
         run: |
-          python -m pip install flake8 mypy
+          python -m pip install -e ".[test]"
 
       - name: Run flake8
         uses: wearerequired/lint-action@v2.3.0
         with:
           flake8: true
+          mypy: true
           continue_on_error: false
           # Enable your linters here
-
-      - name: Run mypy
-        run: python -m mypy .
