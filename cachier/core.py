@@ -17,15 +17,17 @@ import os
 import pickle
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
-from typing import Callable, Literal, Optional, TypedDict, Union
+from typing import TYPE_CHECKING, Callable, Literal, Optional, TypedDict, Union
 from warnings import warn
-
-from pymongo.collection import Collection
 
 from .base_core import RecalculationNeeded, _BaseCore
 from .memory_core import _MemoryCore
 from .mongo_core import _MongoCore
 from .pickle_core import _PickleCore
+
+if TYPE_CHECKING:
+    import pymongo.collection
+
 
 MAX_WORKERS_ENVAR_NAME = 'CACHIER_MAX_WORKERS'
 DEFAULT_MAX_WORKERS = 8
@@ -92,7 +94,7 @@ class MissingMongetter(ValueError):
 
 
 HashFunc = Callable[..., str]
-Mongetter = Callable[[], Collection]
+Mongetter = Callable[[], "pymongo.collection.Collection"]
 Backend = Literal["pickle", "mongo", "memory"]
 
 
