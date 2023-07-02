@@ -15,3 +15,6 @@ exclude_lines =
 
     # Don't complain if tests don't hit defensive assertion code:
     raise NotImplementedError
+
+    # Is only true when running mypy, not tests
+    if TYPE_CHECKING:
