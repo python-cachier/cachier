@@ -16,7 +16,7 @@ import versioneer
 
 TEST_REQUIRES = [
     # tests and coverages
-    'pytest', 'coverage', 'pytest-cov',
+    'pytest', 'coverage', 'pytest-cov', 'birch',
     # linting and code quality
     'bandit', 'flake8', 'pylint', 'safety',
     # type checking

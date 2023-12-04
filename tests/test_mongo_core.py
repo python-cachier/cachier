@@ -9,16 +9,46 @@ import threading
 from datetime import timedelta
 from random import random
 from time import sleep
+from urllib.parse import quote_plus
 
+from birch import Birch  # type: ignore[import-not-found]
 import pandas as pd
 import pymongo
 import pytest
 from pymongo.errors import OperationFailure
-from pymongo_inmemory import MongoClient
+from pymongo.mongo_client import MongoClient
+from pymongo_inmemory import MongoClient as InMemoryMongoClient
 
 from cachier import cachier
 from cachier.base_core import RecalculationNeeded
 from cachier.mongo_core import _MongoCore
+
+
+# === Enables testing vs a real MongoDB instance ===
+CFG = Birch("cachier")
+
+
+class CfgKey():
+    HOST = "TEST_HOST"
+    UNAME = "TEST_USERNAME"
+    PWD = "TEST_PASSWORD"
+    DB = "TEST_DB"
+    TEST_VS_LIVE_MONGO = "TEST_VS_LIVE_MONGO"
+
+
+URI_TEMPLATE = (
+    "mongodb+srv://{uname}:{pwd}@{host}/{db}?retrywrites=true&w=majority")
+
+
+def _get_cachier_db_mongo_client():
+    host = quote_plus(CFG[CfgKey.HOST])
+    uname = quote_plus(CFG[CfgKey.UNAME])
+    pwd = quote_plus(CFG[CfgKey.PWD])
+    db = quote_plus(CFG[CfgKey.DB])
+    uri = URI_TEMPLATE.format(host=host, uname=uname, pwd=pwd, db=db)
+    client = MongoClient(uri)
+    return client
+
 
 _COLLECTION_NAME = 'cachier_test_{}_{}.{}.{}'.format(
     platform.system(), sys.version_info[0], sys.version_info[1],
@@ -27,7 +57,12 @@ _COLLECTION_NAME = 'cachier_test_{}_{}.{}.{}'.format(
 
 def _test_mongetter():
     if not hasattr(_test_mongetter, 'client'):
-        _test_mongetter.client = MongoClient()
+        if CFG.mget(CfgKey.TEST_VS_LIVE_MONGO, bool):
+            print("Using live MongoDB instance for testing.")
+            _test_mongetter.client = _get_cachier_db_mongo_client()
+        else:
+            print("Using in-memory MongoDB instance for testing.")
+            _test_mongetter.client = InMemoryMongoClient()
     db_obj = _test_mongetter.client['cachier_test']
     if _COLLECTION_NAME not in db_obj.list_collection_names():
         db_obj.create_collection(_COLLECTION_NAME)

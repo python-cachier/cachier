@@ -401,6 +401,14 @@ To run all tests EXCEPT memory core AND MongoDB core related tests, use:
   pytest -m "not (mongo or memory)"
 
 
+Running MongoDB tests against a live MongoDB instance
+-----------------------------------------------------
+
+**Note to developers:** By default, all MongoDB tests are run against a mocked MongoDB instance, provided by the ``pymongo_inmemory`` package. To run them against a live MongoDB instance, the ``CACHIER_TEST_VS_LIVE_MONGO`` environment variable is set to ``True`` in the ``test`` environment of this repository (and additional environment variables are populated with the appropriate credentials), used by the GitHub Action running tests on every commit and pull request.
+
+Contributers are not expected to run these tests against a live MongoDB instance when developing, as credentials for the testing instance used will NOT be shared, but rather use the testing against the in-memory MongoDB instance as a good proxy. HOWEVER, the tests run against a live MongoDB instance when you submit a PR are the determining tests for deciding whether your code functions correctly against MongoDB.
+
+
 Adding documentation
 --------------------
 
