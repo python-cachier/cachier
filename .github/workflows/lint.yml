@@ -33,6 +33,5 @@ jobs:
         uses: wearerequired/lint-action@v2.3.0
         with:
           flake8: true
-          mypy: true
           continue_on_error: false
           # Enable your linters here

@@ -406,7 +406,9 @@ Running MongoDB tests against a live MongoDB instance
 
 **Note to developers:** By default, all MongoDB tests are run against a mocked MongoDB instance, provided by the ``pymongo_inmemory`` package. To run them against a live MongoDB instance, the ``CACHIER_TEST_VS_LIVE_MONGO`` environment variable is set to ``True`` in the ``test`` environment of this repository (and additional environment variables are populated with the appropriate credentials), used by the GitHub Action running tests on every commit and pull request.
 
-Contributers are not expected to run these tests against a live MongoDB instance when developing, as credentials for the testing instance used will NOT be shared, but rather use the testing against the in-memory MongoDB instance as a good proxy. HOWEVER, the tests run against a live MongoDB instance when you submit a PR are the determining tests for deciding whether your code functions correctly against MongoDB.
+Contributers are not expected to run these tests against a live MongoDB instance when developing, as credentials for the testing instance used will NOT be shared, but rather use the testing against the in-memory MongoDB instance as a good proxy.
+
+**HOWEVER, the tests run against a live MongoDB instance when you submit a PR are the determining tests for deciding whether your code functions correctly against MongoDB.**
 
 
 Adding documentation
@@ -423,7 +425,7 @@ Additionally, if you update this ``README.rst`` file, use ``python setup.py chec
 Credits
 =======
 
-Created by `Shay Palachy Affek <https://github.com/shaypal5>`_ (shay.palachy@gmail.com).
+Created by `Shay Palachy Affek <https://github.com/shaypal5>`_ (shay.palachy@gmail.com), which currently assists in maintenance.
 
 Current lead developer/contributor: `Judson Neer <https://github.com/lordjabez>`_ (`@lordjabez <https://github.com/lordjabez>`_ on GitHub).
 
@@ -437,7 +439,7 @@ Other major contributors:
 
 * `non-senses <https://github.com/non-senses>`_ - The ``wait_for_calc_timeout`` kwarg.
 
-* `Elad Rapapor <https://github.com/erap129>`_ - Multi-file Pickle core, a.k.a ``separate_files`` (released on ``v1.5.3``).
+* `Elad Rapaport <https://github.com/erap129>`_ - Multi-file Pickle core, a.k.a ``separate_files`` (released on ``v1.5.3``).
 
 * `John Didion <https://github.com/jdidion>`_ - Support for pickle-based caching for cases where two identically-named methods of different classes are defined in the same module.
 
