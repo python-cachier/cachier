@@ -15,6 +15,7 @@ import functools
 import hashlib
 import os
 import pickle
+from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
 from typing import TYPE_CHECKING, Callable, Literal, Optional, TypedDict, Union
@@ -257,10 +258,11 @@ def cachier(
                 _print = print
             if ignore_cache or not _default_params['caching_enabled']:
                 return func(*args, **kwds)
+            kwds_ordered = OrderedDict(sorted(kwds.items()))
             if core.func_is_method:
-                key, entry = core.get_entry(args[1:], kwds)
+                key, entry = core.get_entry(args[1:], kwds_ordered)
             else:
-                key, entry = core.get_entry(args, kwds)
+                key, entry = core.get_entry(args, kwds_ordered)
             if overwrite_cache:
                 return _calc_entry(core, key, func, args, kwds)
             if entry is not None:  # pylint: disable=R0101
