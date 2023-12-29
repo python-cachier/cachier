@@ -293,4 +293,3 @@ def test_order_independent_kwargs_handling():
     assert count == 1
     func(b=2, a=1)
     assert count == 1
-
