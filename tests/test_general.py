@@ -275,3 +275,21 @@ def test_allow_caching_none():
     do_operation()
     do_operation()
     assert count == 1
+
+
+def test_order_independent_kwargs_handling():
+    count = 0
+
+    @cachier.cachier()
+    def func(a=None, b=None):
+        nonlocal count
+        count += 1
+        return 0
+
+    func.clear_cache()
+    assert count == 0
+    func(a=1, b=2)
+    func(a=1, b=2)
+    assert count == 1
+    func(b=2, a=1)
+    assert count == 1
