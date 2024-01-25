@@ -97,18 +97,18 @@ Class and object methods can also be cached. Cachier will automatically ignore t
 
     # Instance method does not depend on object's internal state, so good to cache
     @cachier()
-    def good_usage_1(self, arg_1, arg_2)
+    def good_usage_1(self, arg_1, arg_2):
       return arg_1 + arg_2
 
     # Instance method is calling external service, probably okay to cache
     @cachier()
-    def good_usage_2(self, arg_1, arg_2)
+    def good_usage_2(self, arg_1, arg_2):
       result = self.call_api(arg_1, arg_2)
       return result
 
     # Instance method relies on object attribute, NOT good to cache
     @cachier()
-    def bad_usage(self, arg_1, arg_2)
+    def bad_usage(self, arg_1, arg_2):
       return arg_1 + arg_2 + self.arg_3
 
 
