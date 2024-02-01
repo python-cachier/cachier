@@ -8,7 +8,7 @@ import sys
 import threading
 from datetime import timedelta
 from random import random
-from time import sleep
+from time import sleep, time
 from urllib.parse import quote_plus
 
 from birch import Birch  # type: ignore[import-not-found]
@@ -25,8 +25,6 @@ from cachier.mongo_core import _MongoCore
 
 
 # === Enables testing vs a real MongoDB instance ===
-CFG = Birch("cachier")
-
 
 class CfgKey():
     HOST = "TEST_HOST"
@@ -34,6 +32,14 @@ class CfgKey():
     PWD = "TEST_PASSWORD"
     DB = "TEST_DB"
     TEST_VS_LIVE_MONGO = "TEST_VS_LIVE_MONGO"
+
+
+CFG = Birch(
+    namespace="cachier",
+    defaults={
+        CfgKey.TEST_VS_LIVE_MONGO: False,
+    },
+)
 
 
 URI_TEMPLATE = (
@@ -112,6 +118,50 @@ def test_mongo_core():
     assert val5 != val1
     val6 = _test_mongo_caching(1, 2)
     assert val6 == val5
+
+
+@pytest.mark.mongo
+def test_mongo_precache_value():
+
+    @cachier(backend='mongo', mongetter=_test_mongetter)
+    def func(arg_1, arg_2):
+        """Some function."""
+        return arg_1 + arg_2
+
+    result = func.precache_value(2, 2, value_to_cache=5)
+    assert result == 5
+    result = func(2, 2)
+    assert result == 5
+    func.clear_cache()
+    result = func(2, 2)
+    assert result == 4
+    result = func.precache_value(2, arg_2=2, value_to_cache=5)
+    assert result == 5
+    result = func(2, arg_2=2)
+    assert result == 5
+
+
+@pytest.mark.mongo
+def test_mongo_ignore_self_in_methods():
+
+    class TestClass():
+        @cachier(backend='mongo', mongetter=_test_mongetter)
+        def takes_2_seconds(self, arg_1, arg_2):
+            """Some function."""
+            sleep(2)
+            return arg_1 + arg_2
+
+    test_object_1 = TestClass()
+    test_object_2 = TestClass()
+    test_object_1.takes_2_seconds.clear_cache()
+    test_object_2.takes_2_seconds.clear_cache()
+    result_1 = test_object_1.takes_2_seconds(1, 2)
+    assert result_1 == 3
+    start = time()
+    result_2 = test_object_2.takes_2_seconds(1, 2)
+    end = time()
+    assert result_2 == 3
+    assert end - start < 1
 
 
 @pytest.mark.mongo
