@@ -14,21 +14,6 @@ except ImportError:
 
 import versioneer
 
-TEST_REQUIRES = [
-    # tests and coverages
-    'pytest', 'coverage', 'pytest-cov', 'birch',
-    # linting and code quality
-    'bandit', 'flake8', 'pylint', 'safety',
-    # type checking
-    'mypy', 'types-setuptools', 'pandas-stubs',
-    # to connect to the test mongodb server
-    'pymongo', 'dnspython', 'pymongo-inmemory',
-    # to test pandas dataframe as-param hashing with mongodb core
-    'pandas',
-    # to be able to run `python setup.py checkdocs`
-    'collective.checkdocs', 'pygments',
-]
-
 README_RST = ''
 with open('README.rst') as f:
     README_RST = f.read()
@@ -54,9 +39,6 @@ setup(
         'watchdog', 'portalocker',
         'setuptools>=67.6.0',  # to avoid vulnerability in 56.0.0
     ],
-    extras_require={
-        'test': TEST_REQUIRES,
-    },
     platforms=['linux', 'osx', 'windows'],
     keywords=['cache', 'persistence', 'mongo', 'memoization', 'decorator'],
     classifiers=[

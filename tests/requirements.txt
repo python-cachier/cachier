@@ -1,0 +1,24 @@
+# todo: add some version range or pinning latest versions
+# tests and coverages
+pytest
+coverage
+pytest-cov
+birch
+# linting and code quality; todo: remove after precommint lands
+bandit
+flake8
+pylint
+safety
+# type checking; todo: remove after precommint lands
+mypy
+types-setuptools
+pandas-stubs
+# to connect to the test mongodb server
+pymongo
+dnspython
+pymongo-inmemory
+# to test pandas dataframe as-param hashing with mongodb core
+pandas
+# to be able to run `python setup.py checkdocs`
+collective.checkdocs
+pygments
