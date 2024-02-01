@@ -34,7 +34,7 @@ jobs:
           python -m pip install -e . -r tests/requirements.txt
       - name: Unit tests (local)
         if: matrix.backend == 'local'
-        run: pytest -m "NOT mongo"
+        run: pytest -m "not mongo"
       - name: Unit tests (DB)
         if: matrix.backend == 'db'
         env:
