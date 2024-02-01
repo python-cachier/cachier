@@ -2,7 +2,7 @@ import pytest
 import subprocess
 
 
-@pytest.mark.skip
+@pytest.mark.skip  # todo: dead check, so let's replace it with Ruff
 def test_bandit():
     """Bandit security scan passes with no warnings or errors."""
     command = ['bandit']
@@ -12,7 +12,7 @@ def test_bandit():
     subprocess.check_call(command + parameters)
 
 
-@pytest.mark.skip
+@pytest.mark.skip  # todo: dead check, so let's enable it in separate PR within pre-commit
 def test_safety():
     """Safety security scan passes with no warnings or errors."""
     command = ['safety']
