@@ -363,7 +363,7 @@ Install in development mode with test dependencies:
 .. code-block:: bash
 
   cd cachier
-  pip install -e ".[test]"
+  pip install -e . -r tests/requirements.txt
 
 
 Running the tests
