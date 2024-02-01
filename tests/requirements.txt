@@ -4,15 +4,6 @@ pytest
 coverage
 pytest-cov
 birch
-# linting and code quality; todo: remove after precommint lands
-bandit
-flake8
-pylint
-safety
-# type checking; todo: remove after precommint lands
-mypy
-types-setuptools
-pandas-stubs
 # to connect to the test mongodb server
 pymongo
 dnspython
