@@ -68,11 +68,11 @@ def _function_thread(core, key, func, args, kwds):
         )
 
 
-def _calc_entry(core, key, func, kwds):
+def _calc_entry(core, key, func, args, kwds):
     try:
         core.mark_entry_being_calculated(key)
         # _get_executor().submit(core.mark_entry_being_calculated, key)
-        func_res = func(**kwds)
+        func_res = func(*args, **kwds)
         core.set_entry(key, func_res)
         # _get_executor().submit(core.set_entry, key, func_res)
         return func_res
@@ -87,6 +87,17 @@ def _default_hash_func(args, kwds):
     for item in key:
         hash.update(pickle.dumps(item))
     return hash.hexdigest()
+
+
+def _convert_args_kwargs(func, _is_method: bool, args: tuple, kwds: dict) -> dict:
+    """Convert mix of positional and keyword arguments to aggregated kwargs."""
+    args_as_kw = dict(
+        zip(func.__code__.co_varnames[1:], args[1:])
+        if _is_method else
+        zip(func.__code__.co_varnames, args)
+    )
+    # merge args expanded as kwargs and the original kwds
+    return dict(**args_as_kw, **kwds)
 
 
 class MissingMongetter(ValueError):
@@ -252,13 +263,8 @@ def cachier(
             ignore_cache = kwds.pop('ignore_cache', False)
             overwrite_cache = kwds.pop('overwrite_cache', False)
             verbose_cache = kwds.pop('verbose_cache', False)
-            # convert args to kwargs and if called as method, remove self
-            args_as_kw = dict(
-                zip(func.__code__.co_varnames[1:], args)
-                if core.func_is_method else zip(func.__code__.co_varnames, args)
-            )
             # merge args expanded as kwargs and the original kwds
-            kwargs = dict(**args_as_kw, **kwds)
+            kwargs = _convert_args_kwargs(func, _is_method=core.func_is_method, args=args, kwds=kwds)
 
             _print = lambda x: None  # skipcq: FLK-E731  # noqa: E731
             if verbose_cache:
@@ -267,7 +273,7 @@ def cachier(
                 return func(**kwargs)
             key, entry = core.get_entry(tuple(), kwargs)
             if overwrite_cache:
-                return _calc_entry(core, key, func, kwargs)
+                return _calc_entry(core, key, func, args, kwds)
             if entry is not None:  # pylint: disable=R0101
                 _print('Entry found.')
                 if (_allow_none or entry.get('value', None) is not None):
@@ -285,7 +291,7 @@ def cachier(
                             try:
                                 return core.wait_on_entry_calc(key)
                             except RecalculationNeeded:
-                                return _calc_entry(core, key, func, kwargs)
+                                return _calc_entry(core, key, func, args, kwds)
                         if local_next_time:
                             _print('Async calc and return stale')
                             try:
@@ -297,7 +303,7 @@ def cachier(
                                 core.mark_entry_not_calculated(key)
                             return entry['value']
                         _print('Calling decorated function and waiting')
-                        return _calc_entry(core, key, func, kwargs)
+                        return _calc_entry(core, key, func, args, kwds)
                     _print('And it is fresh!')
                     return entry['value']
                 if entry['being_calculated']:
@@ -305,9 +311,9 @@ def cachier(
                     try:
                         return core.wait_on_entry_calc(key)
                     except RecalculationNeeded:
-                        return _calc_entry(core, key, func, kwargs)
+                        return _calc_entry(core, key, func, args, kwds)
             _print('No entry found. No current calc. Calling like a boss.')
-            return _calc_entry(core, key, func, kwargs)
+            return _calc_entry(core, key, func, args, kwds)
 
         def clear_cache():
             """Clear the cache."""
@@ -332,7 +338,9 @@ def cachier(
             value : any
                 entry to be written into the cache
             """
-            return core.precache_value(args, kwds, value_to_cache)
+            # merge args expanded as kwargs and the original kwds
+            kwargs = _convert_args_kwargs(func, _is_method=core.func_is_method, args=args, kwds=kwds)
+            return core.precache_value(tuple(), kwargs, value_to_cache)
 
         func_wrapper.clear_cache = clear_cache
         func_wrapper.clear_being_calculated = clear_being_calculated
