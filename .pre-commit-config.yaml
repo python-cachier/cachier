@@ -32,32 +32,20 @@ repos:
 #        args: []
 #        exclude: pyproject.toml
 
-  - repo: https://github.com/PyCQA/docformatter
-    rev: v1.7.5
-    hooks:
-      - id: docformatter
-        additional_dependencies: [tomli]
-        args: ["--in-place"]
-
-  - repo: https://github.com/PyCQA/pylint
-    rev: v3.0.3
-    hooks:
-      - id: pylint
+#  - repo: https://github.com/PyCQA/docformatter
+#    rev: v1.7.5
+#    hooks:
+#      - id: docformatter
+#        additional_dependencies: [tomli]
+#        args: ["--in-place"]
 
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 24.1.1
     hooks:
       - id: black
         name: Format code
-
-  - repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.17
-    hooks:
-      - id: mdformat
-        additional_dependencies:
-          - mdformat-gfm
-          - mdformat-black
-          - mdformat_frontmatter
+        args:
+          - "--skip-string-normalization"
 
 # todo: unify formatting all GH actions files
 #  - repo: https://github.com/pre-commit/mirrors-prettier
