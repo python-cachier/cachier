@@ -57,13 +57,8 @@ repos:
   #    hooks:
   #      - id: mypy
 
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.0.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.9
     hooks:
-      - id: flake8
-# todo: replacement for flake8
-#  - repo: https://github.com/astral-sh/ruff-pre-commit
-#    rev: v0.1.9
-#    hooks:
-#      - id: ruff
-#        args: ["--fix"]
+      - id: ruff
+        args: ["--fix"]
