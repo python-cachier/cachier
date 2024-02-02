@@ -12,7 +12,7 @@ Persistent, stale-free, local and cross-machine caching for Python functions.
 
   @cachier(stale_after=datetime.timedelta(days=3))
   def foo(arg1, arg2):
-    """foo now has a persistent cache, trigerring recalculation for values stored more than 3 days."""
+    """foo now has a persistent cache, triggering recalculation for values stored more than 3 days."""
     return {'arg1': arg1, 'arg2': arg2}
 
 
@@ -150,7 +150,7 @@ The current defaults can be fetched by calling `get_default_params`.
 Threads Limit
 ~~~~~~~~~~~~~
 
-To limit the number of threads Cachier is allowed to spawn, set the ``CACHIER_MAX_WORKERS`` with the desired number. The defeault is 8, so to enable Cachier to spawn even more threads, you'll have to set a higher limit explicitly.
+To limit the number of threads Cachier is allowed to spawn, set the ``CACHIER_MAX_WORKERS`` with the desired number. The default is 8, so to enable Cachier to spawn even more threads, you'll have to set a higher limit explicitly.
 
 
 Global Enable/Disable
@@ -406,7 +406,7 @@ Running MongoDB tests against a live MongoDB instance
 
 **Note to developers:** By default, all MongoDB tests are run against a mocked MongoDB instance, provided by the ``pymongo_inmemory`` package. To run them against a live MongoDB instance, the ``CACHIER_TEST_VS_LIVE_MONGO`` environment variable is set to ``True`` in the ``test`` environment of this repository (and additional environment variables are populated with the appropriate credentials), used by the GitHub Action running tests on every commit and pull request.
 
-Contributers are not expected to run these tests against a live MongoDB instance when developing, as credentials for the testing instance used will NOT be shared, but rather use the testing against the in-memory MongoDB instance as a good proxy.
+Contributors are not expected to run these tests against a live MongoDB instance when developing, as credentials for the testing instance used will NOT be shared, but rather use the testing against the in-memory MongoDB instance as a good proxy.
 
 **HOWEVER, the tests run against a live MongoDB instance when you submit a PR are the determining tests for deciding whether your code functions correctly against MongoDB.**
 
