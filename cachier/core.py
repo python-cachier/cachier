@@ -98,7 +98,8 @@ def _convert_args_kwargs(func, _is_method: bool, args: tuple, kwds: dict) -> dic
         zip(func.__code__.co_varnames, args)
     )
     # merge args expanded as kwargs and the original kwds
-    return OrderedDict(**args_as_kw, **kwds)
+    kwargs = dict(**args_as_kw, **kwds)
+    return OrderedDict(sorted(kwargs.items()))
 
 
 class MissingMongetter(ValueError):
