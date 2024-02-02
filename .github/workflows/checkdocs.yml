@@ -2,7 +2,9 @@ name: Check Docs
 
 on:
   pull_request:
+    branches: [master]
   push:
+    branches: [master]
 
 jobs:
   checkdocs:
