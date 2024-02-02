@@ -11,8 +11,6 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-    environment:
-      name: test
     strategy:
       fail-fast: false
       matrix:
