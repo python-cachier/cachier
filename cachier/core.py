@@ -89,6 +89,17 @@ def _default_hash_func(args, kwds):
     return hash.hexdigest()
 
 
+def _convert_args_kwargs(func, _is_method: bool, args: tuple, kwds: dict) -> dict:
+    """Convert mix of positional and keyword arguments to aggregated kwargs."""
+    args_as_kw = dict(
+        zip(func.__code__.co_varnames[1:], args[1:])
+        if _is_method else
+        zip(func.__code__.co_varnames, args)
+    )
+    # merge args expanded as kwargs and the original kwds
+    return dict(**args_as_kw, **kwds)
+
+
 class MissingMongetter(ValueError):
     """Thrown when the mongetter keyword argument is missing."""
 
@@ -252,23 +263,23 @@ def cachier(
             ignore_cache = kwds.pop('ignore_cache', False)
             overwrite_cache = kwds.pop('overwrite_cache', False)
             verbose_cache = kwds.pop('verbose_cache', False)
+            # merge args expanded as kwargs and the original kwds
+            kwargs = _convert_args_kwargs(func, _is_method=core.func_is_method, args=args, kwds=kwds)
+
             _print = lambda x: None  # skipcq: FLK-E731  # noqa: E731
             if verbose_cache:
                 _print = print
             if ignore_cache or not _default_params['caching_enabled']:
-                return func(*args, **kwds)
-            if core.func_is_method:
-                key, entry = core.get_entry(args[1:], kwds)
-            else:
-                key, entry = core.get_entry(args, kwds)
+                return func(**kwargs)
+            key, entry = core.get_entry(tuple(), kwargs)
             if overwrite_cache:
                 return _calc_entry(core, key, func, args, kwds)
             if entry is not None:  # pylint: disable=R0101
                 _print('Entry found.')
                 if (_allow_none or entry.get('value', None) is not None):
                     _print('Cached result found.')
-                    local_stale_after = stale_after if stale_after is not None else _default_params['stale_after']  # noqa: E501
-                    local_next_time = next_time if next_time is not None else _default_params['next_time']  # noqa: E501
+                    local_stale_after = stale_after or _default_params['stale_after']  # noqa: E501
+                    local_next_time = next_time or _default_params['next_time']  # noqa: E501
                     now = datetime.datetime.now()
                     if now - entry['time'] > local_stale_after:
                         _print('But it is stale... :(')
@@ -280,20 +291,13 @@ def cachier(
                             try:
                                 return core.wait_on_entry_calc(key)
                             except RecalculationNeeded:
-                                return _calc_entry(
-                                    core, key, func, args, kwds
-                                )
+                                return _calc_entry(core, key, func, args, kwds)
                         if local_next_time:
                             _print('Async calc and return stale')
                             try:
                                 core.mark_entry_being_calculated(key)
                                 _get_executor().submit(
-                                    _function_thread,
-                                    core,
-                                    key,
-                                    func,
-                                    args,
-                                    kwds,
+                                    _function_thread, core, key, func, args, kwds,
                                 )
                             finally:
                                 core.mark_entry_not_calculated(key)
@@ -334,7 +338,9 @@ def cachier(
             value : any
                 entry to be written into the cache
             """
-            return core.precache_value(args, kwds, value_to_cache)
+            # merge args expanded as kwargs and the original kwds
+            kwargs = _convert_args_kwargs(func, _is_method=core.func_is_method, args=args, kwds=kwds)
+            return core.precache_value(tuple(), kwargs, value_to_cache)
 
         func_wrapper.clear_cache = clear_cache
         func_wrapper.clear_being_calculated = clear_being_calculated
