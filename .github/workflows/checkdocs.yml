@@ -5,7 +5,7 @@ on:
   push:
 
 jobs:
-  build:
+  checkdocs:
     runs-on: ${{ matrix.os }}
     environment:
       name: checkdocs
