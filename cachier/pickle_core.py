@@ -15,7 +15,7 @@ import portalocker  # to lock on pickle cache IO
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
-# Altenative:  https://github.com/WoLpH/portalocker
+# Alternative:  https://github.com/WoLpH/portalocker
 
 from .base_core import _BaseCore
 
@@ -58,11 +58,11 @@ class _PickleCore(_BaseCore):
             # print(entry)
             try:
                 if not entry['being_calculated']:
-                    # print('stoping observer!')
+                    # print('stopping observer!')
                     self.value = entry['value']
                     self.observer.stop()
                 # else:
-                # print('NOT stoping observer... :(')
+                # print('NOT stopping observer... :(')
             except TypeError:
                 self.value = None
                 self.observer.stop()

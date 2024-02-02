@@ -25,8 +25,6 @@ from cachier.mongo_core import _MongoCore
 
 
 # === Enables testing vs a real MongoDB instance ===
-CFG = Birch("cachier")
-
 
 class CfgKey():
     HOST = "TEST_HOST"
@@ -34,6 +32,14 @@ class CfgKey():
     PWD = "TEST_PASSWORD"
     DB = "TEST_DB"
     TEST_VS_LIVE_MONGO = "TEST_VS_LIVE_MONGO"
+
+
+CFG = Birch(
+    namespace="cachier",
+    defaults={
+        CfgKey.TEST_VS_LIVE_MONGO: False,
+    },
+)
 
 
 URI_TEMPLATE = (

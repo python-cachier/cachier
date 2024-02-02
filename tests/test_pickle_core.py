@@ -379,7 +379,7 @@ def _helper_bad_cache_file(sleeptime, separate_files):
     return True
 
 
-# we want this to succeed at leat once
+# we want this to succeed at least once
 @pytest.mark.pickle
 @pytest.mark.xfail
 @pytest.mark.parametrize('separate_files', [True, False])

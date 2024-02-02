@@ -154,7 +154,7 @@ def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
 @pytest.mark.parametrize(
     'mongetter,backend',
     [
-        (_test_mongetter, 'mongo'),
+        pytest.param(_test_mongetter, 'mongo', marks=pytest.mark.mongo),
         (None, 'memory'),
         (None, 'pickle'),
     ]
@@ -182,7 +182,7 @@ def test_precache_value(mongetter, backend):
 @pytest.mark.parametrize(
     'mongetter,backend',
     [
-        (_test_mongetter, 'mongo'),
+        pytest.param(_test_mongetter, 'mongo', marks=pytest.mark.mongo),
         (None, 'memory'),
         (None, 'pickle'),
     ]
@@ -274,6 +274,24 @@ def test_allow_caching_none():
     assert count == 0
     do_operation()
     do_operation()
+    assert count == 1
+
+
+def test_identical_inputs():
+    count = 0
+
+    @cachier.cachier()
+    def func(a: int, b: int = 2, c: int = 3):
+        nonlocal count
+        count += 1
+        return a + b + c
+
+    func.clear_cache()
+    assert count == 0
+    func(1, 2, 3)
+    func(1, 2, c=3)
+    func(1, b=2, c=3)
+    func(a=1, b=2, c=3)
     assert count == 1
 
 
