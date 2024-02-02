@@ -14,12 +14,12 @@ coverage:
     project: false
 
 comment:
-  layout: header, changes, diff
-    behavior: default
-    require_changes: false
-    branches: null
-    flags: null
-    paths: null
+  layout: "header, changes, diff"
+  behavior: default
+  require_changes: false
+  branches: null
+  flags: null
+  paths: null
 
 ignore:
   - "versioneer.py"
