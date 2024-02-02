@@ -4,9 +4,9 @@ on:
   push:
   pull_request:
   schedule:
-     # * is a special character in YAML so you have to quote this string
-     # min hours day(month) month day(week)
-    - cron: '0 0 * * 0'
+    # * is a special character in YAML so you have to quote this string
+    # min hours day(month) month day(week)
+    - cron: "0 0 * * 0"
 
 jobs:
   test:
@@ -16,9 +16,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
         os: [ubuntu-latest, macOS-latest, windows-latest]
-        backend: ['local', 'db']
+        backend: ["local", "db"]
 
     steps:
       - uses: actions/checkout@v3.4.0
