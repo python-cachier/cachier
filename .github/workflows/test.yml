@@ -9,7 +9,7 @@ on:
     - cron: '0 0 * * 0'
 
 jobs:
-  build:
+  test:
     runs-on: ${{ matrix.os }}
     environment:
       name: test
