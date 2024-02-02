@@ -23,14 +23,13 @@ repos:
 #      - id: check-added-large-files
 #      - id: detect-private-key
 
-# todo: another great hook
-#  - repo: https://github.com/crate-ci/typos
-#    rev: v1.16.26
-#    hooks:
-#      - id: typos
-#        # empty to do not write fixes
-#        args: []
-#        exclude: pyproject.toml
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.16.26
+    hooks:
+      - id: typos
+        # empty to do not write fixes
+        args: []
+        exclude: versioneer.py
 
 #  - repo: https://github.com/PyCQA/docformatter
 #    rev: v1.7.5

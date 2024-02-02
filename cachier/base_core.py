@@ -23,7 +23,7 @@ class _BaseCore():
 
     def set_func(self, func):
         """Sets the function this core will use. This has to be set before any
-        method is called. Also determine if the funtion is an object method."""
+        method is called. Also determine if the function is an object method."""
         func_params = list(inspect.signature(func).parameters)
         self.func_is_method = func_params and func_params[0] == 'self'
         self.func = func
@@ -48,7 +48,7 @@ class _BaseCore():
         return value_to_cache
 
     def check_calc_timeout(self, time_spent):
-        """Raise an exception if a recalulation is needed."""
+        """Raise an exception if a recalculation is needed."""
         if self.wait_for_calc_timeout is not None:
             calc_timeout = self.wait_for_calc_timeout
         else:
