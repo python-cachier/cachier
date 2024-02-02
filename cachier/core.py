@@ -15,6 +15,7 @@ import functools
 import hashlib
 import os
 import pickle
+from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
 from typing import TYPE_CHECKING, Callable, Literal, Optional, TypedDict, Union
@@ -97,7 +98,8 @@ def _convert_args_kwargs(func, _is_method: bool, args: tuple, kwds: dict) -> dic
         zip(func.__code__.co_varnames, args)
     )
     # merge args expanded as kwargs and the original kwds
-    return dict(**args_as_kw, **kwds)
+    kwargs = dict(**args_as_kw, **kwds)
+    return OrderedDict(sorted(kwargs.items()))
 
 
 class MissingMongetter(ValueError):
