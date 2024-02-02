@@ -12,8 +12,8 @@ norecursedirs=["dist", "build"]
 addopts = [
     "--color=yes",
     "--cov=cachier",
-    "--cov-report term",
-    "--cov-report xml:cov.xml",
+    "--cov-report=term",
+    "--cov-report=xml:cov.xml",
     "-r a",
     "-v",
     "-s",
