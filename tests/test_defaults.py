@@ -23,13 +23,12 @@ def teardown_function():
 
 
 def test_hash_func_default_param():
-
     def slow_hash_func(args, kwds):
         time.sleep(2)
-        return 'hash'
+        return "hash"
 
     def fast_hash_func(args, kwds):
-        return 'hash'
+        return "hash"
 
     cachier.set_default_params(hash_func=slow_hash_func)
 
@@ -52,14 +51,13 @@ def test_hash_func_default_param():
 
 
 def test_backend_default_param():
-
-    cachier.set_default_params(backend='memory')
+    cachier.set_default_params(backend="memory")
 
     @cachier.cachier()
     def global_test_1():
         return None
 
-    @cachier.cachier(backend='pickle')
+    @cachier.cachier(backend="pickle")
     def global_test_2():
         return None
 
@@ -69,7 +67,6 @@ def test_backend_default_param():
 
 @pytest.mark.mongo
 def test_mongetter_default_param():
-
     cachier.set_default_params(mongetter=_test_mongetter)
 
     @cachier.cachier()
@@ -85,23 +82,21 @@ def test_mongetter_default_param():
 
 
 def test_cache_dir_default_param():
-
-    cachier.set_default_params(cache_dir='/path_1')
+    cachier.set_default_params(cache_dir="/path_1")
 
     @cachier.cachier()
     def global_test_1():
         return None
 
-    @cachier.cachier(cache_dir='/path_2')
+    @cachier.cachier(cache_dir="/path_2")
     def global_test_2():
         return None
 
-    assert global_test_1.cache_dpath() == '/path_1'
-    assert global_test_2.cache_dpath() == '/path_2'
+    assert global_test_1.cache_dpath() == "/path_1"
+    assert global_test_2.cache_dpath() == "/path_2"
 
 
 def test_separate_files_default_param():
-
     cachier.set_default_params(separate_files=True)
 
     @cachier.cachier(cache_dir=tempfile.mkdtemp())
@@ -159,16 +154,15 @@ def test_allow_none_default_param():
     assert disallow_count == 2
 
 
-parametrize_keys = 'backend,mongetter'
+parametrize_keys = "backend,mongetter"
 parametrize_values = [
-    pytest.param('pickle', None, marks=pytest.mark.pickle),
-    pytest.param('mongo', _test_mongetter, marks=pytest.mark.mongo),
+    pytest.param("pickle", None, marks=pytest.mark.pickle),
+    pytest.param("mongo", _test_mongetter, marks=pytest.mark.mongo),
 ]
 
 
 @pytest.mark.parametrize(parametrize_keys, parametrize_values)
 def test_stale_after_applies_dynamically(backend, mongetter):
-
     @cachier.cachier(backend=backend, mongetter=mongetter)
     def _stale_after_test(arg_1, arg_2):
         """Some function."""
@@ -187,7 +181,6 @@ def test_stale_after_applies_dynamically(backend, mongetter):
 
 @pytest.mark.parametrize(parametrize_keys, parametrize_values)
 def test_next_time_applies_dynamically(backend, mongetter):
-
     NEXT_AFTER_DELTA = datetime.timedelta(seconds=3)
 
     @cachier.cachier(backend=backend, mongetter=mongetter)
@@ -214,7 +207,6 @@ def test_next_time_applies_dynamically(backend, mongetter):
 
 @pytest.mark.parametrize(parametrize_keys, parametrize_values)
 def test_wait_for_calc_applies_dynamically(backend, mongetter):
-
     @cachier.cachier(backend=backend, mongetter=mongetter)
     def _wait_for_calc_timeout_slow(arg_1, arg_2):
         time.sleep(3)
@@ -229,14 +221,8 @@ def test_wait_for_calc_applies_dynamically(backend, mongetter):
     """Testing for calls timing out to be performed twice when needed."""
     _wait_for_calc_timeout_slow.clear_cache()
     res_queue = queue.Queue()
-    thread1 = threading.Thread(
-        target=_calls_wait_for_calc_timeout_slow,
-        kwargs={'res_queue': res_queue},
-        daemon=True)
-    thread2 = threading.Thread(
-        target=_calls_wait_for_calc_timeout_slow,
-        kwargs={'res_queue': res_queue},
-        daemon=True)
+    thread1 = threading.Thread(target=_calls_wait_for_calc_timeout_slow, kwargs={"res_queue": res_queue}, daemon=True)
+    thread2 = threading.Thread(target=_calls_wait_for_calc_timeout_slow, kwargs={"res_queue": res_queue}, daemon=True)
 
     thread1.start()
     thread2.start()

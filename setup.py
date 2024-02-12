@@ -14,49 +14,49 @@ except ImportError:
 
 import versioneer
 
-README_RST = ''
-with open('README.rst') as f:
+README_RST = ""
+with open("README.rst") as f:
     README_RST = f.read()
 
 
 setup(
-    name='cachier',
+    name="cachier",
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    description=('Persistent, stale-free, local and cross-machine caching for'
-                 ' Python functions.'),
+    description=("Persistent, stale-free, local and cross-machine caching for" " Python functions."),
     long_description=README_RST,
-    license='MIT',
-    author='Shay Palachy',
-    author_email='shay.palachy@gmail.com',
-    url='https://github.com/python-cachier/cachier',
-    packages=['cachier', 'cachier.scripts'],
-    entry_points='''
+    license="MIT",
+    author="Shay Palachy",
+    author_email="shay.palachy@gmail.com",
+    url="https://github.com/python-cachier/cachier",
+    packages=["cachier", "cachier.scripts"],
+    entry_points="""
         [console_scripts]
         cachier=cachier.scripts.cli:cli
-    ''',
+    """,
     install_requires=[
-        'watchdog', 'portalocker',
-        'setuptools>=67.6.0',  # to avoid vulnerability in 56.0.0
+        "watchdog",
+        "portalocker",
+        "setuptools>=67.6.0",  # to avoid vulnerability in 56.0.0
     ],
-    platforms=['linux', 'osx', 'windows'],
-    keywords=['cache', 'persistence', 'mongo', 'memoization', 'decorator'],
+    platforms=["linux", "osx", "windows"],
+    keywords=["cache", "persistence", "mongo", "memoization", "decorator"],
     classifiers=[
         # Trove classifiers
         # (https://pypi.python.org/pypi?%3Aaction=list_classifiers)
-        'Development Status :: 4 - Beta',
-        'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
-        'Programming Language :: Python :: 3.11',
-        'Programming Language :: Python :: 3.12',
-        'Topic :: Software Development :: Libraries',
-        'Topic :: Software Development :: Libraries :: Python Modules',
-        'Topic :: Utilities',
-        'Topic :: Other/Nonlisted Topic',
-        'Intended Audience :: Developers',
+        "Development Status :: 4 - Beta",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Topic :: Software Development :: Libraries",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+        "Topic :: Utilities",
+        "Topic :: Other/Nonlisted Topic",
+        "Intended Audience :: Developers",
     ],
 )

@@ -24,15 +24,15 @@ class _MemoryCore(_BaseCore):
                 # we need to retain the existing condition so that
                 # mark_entry_not_calculated can notify all possibly-waiting
                 # threads about it
-                cond = self.cache[key]['condition']
+                cond = self.cache[key]["condition"]
             except KeyError:  # pragma: no cover
                 cond = None
             self.cache[key] = {
-                'value': func_res,
-                'time': datetime.now(),
-                'stale': False,
-                'being_calculated': False,
-                'condition': cond,
+                "value": func_res,
+                "time": datetime.now(),
+                "stale": False,
+                "being_calculated": False,
+                "condition": cond,
             }
 
     def mark_entry_being_calculated(self, key):
@@ -40,15 +40,15 @@ class _MemoryCore(_BaseCore):
             condition = threading.Condition()
             # condition.acquire()
             try:
-                self.cache[key]['being_calculated'] = True
-                self.cache[key]['condition'] = condition
+                self.cache[key]["being_calculated"] = True
+                self.cache[key]["condition"] = condition
             except KeyError:
                 self.cache[key] = {
-                    'value': None,
-                    'time': datetime.now(),
-                    'stale': False,
-                    'being_calculated': True,
-                    'condition': condition,
+                    "value": None,
+                    "time": datetime.now(),
+                    "stale": False,
+                    "being_calculated": True,
+                    "condition": condition,
                 }
 
     def mark_entry_not_calculated(self, key):
@@ -57,23 +57,23 @@ class _MemoryCore(_BaseCore):
                 entry = self.cache[key]
             except KeyError:  # pragma: no cover
                 return  # that's ok, we don't need an entry in that case
-            entry['being_calculated'] = False
-            cond = entry['condition']
+            entry["being_calculated"] = False
+            cond = entry["condition"]
             if cond:
                 cond.acquire()
                 cond.notify_all()
                 cond.release()
-                entry['condition'] = None
+                entry["condition"] = None
 
     def wait_on_entry_calc(self, key):
         with self.lock:  # pragma: no cover
             entry = self.cache[key]
-            if not entry['being_calculated']:
-                return entry['value']
-        entry['condition'].acquire()
-        entry['condition'].wait()
-        entry['condition'].release()
-        return self.cache[key]['value']
+            if not entry["being_calculated"]:
+                return entry["value"]
+        entry["condition"].acquire()
+        entry["condition"].wait()
+        entry["condition"].release()
+        return self.cache[key]["value"]
 
     def clear_cache(self):
         with self.lock:
@@ -82,5 +82,5 @@ class _MemoryCore(_BaseCore):
     def clear_being_calculated(self):
         with self.lock:
             for entry in self.cache.values():
-                entry['being_calculated'] = False
-                entry['condition'] = None
+                entry["being_calculated"] = False
+                entry["condition"] = None

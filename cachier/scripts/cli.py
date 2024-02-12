@@ -11,7 +11,7 @@ def cli():
 
 
 @cli.command("Limits the number of worker threads used by cachier.")
-@click.argument('max_workers', nargs=1, type=int)
+@click.argument("max_workers", nargs=1, type=int)
 def set_max_workers(max_workers):
     """Limits the number of worker threads used by cachier."""
     _set_max_workers(max_workers)
