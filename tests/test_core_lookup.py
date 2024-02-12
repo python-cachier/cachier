@@ -22,8 +22,8 @@ def test_get_default_params():
 
 
 def test_bad_name():
-    """Test that the appropriate exception is thrown when an invalid backend
-    is given."""
+    """Test that the appropriate exception is thrown when an invalid backend is
+    given."""
 
     name = 'nope'
     try:
@@ -37,8 +37,8 @@ def test_bad_name():
 
 
 def test_missing_mongetter():
-    """Test that the appropriate exception is thrown when forgetting to
-    specify the mongetter."""
+    """Test that the appropriate exception is thrown when forgetting to specify
+    the mongetter."""
     try:
         @cachier(backend='mongo', mongetter=None)
         def func():

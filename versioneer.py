@@ -1,6 +1,5 @@
 
 # Version: 0.16
-
 """The Versioneer - like a rocketeer, but for versions.
 
 The Versioneer
@@ -1128,8 +1127,8 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
 def do_vcs_install(manifest_in, versionfile_source, ipy):
     """Git-specific installation logic for Versioneer.
 
-    For Git, this means creating/changing .gitattributes to mark _version.py
-    for export-time keyword substitution.
+    For Git, this means creating/changing .gitattributes to mark
+    _version.py for export-time keyword substitution.
     """
     GITS = ["git"]
     if sys.platform == "win32":
