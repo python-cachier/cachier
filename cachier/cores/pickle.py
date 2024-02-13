@@ -247,9 +247,8 @@ class _PickleCore(_BaseCore):
             self.mark_entry_not_calculated_separate_files(key)
         with self.lock:
             cache = self._get_cache()
-            with suppress(
-                KeyError
-            ):  # that's ok, we don't need an entry in that case
+            # that's ok, we don't need an entry in that case
+            with suppress(KeyError):
                 cache[key]["being_calculated"] = False
                 self._save_cache(cache)
 
