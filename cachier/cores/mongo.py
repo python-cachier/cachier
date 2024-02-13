@@ -33,10 +33,8 @@ class _MongoCore(_BaseCore):
     ):
         if "pymongo" not in sys.modules:
             warnings.warn(
-                (
-                    "Cachier warning: pymongo was not found. "
-                    "MongoDB cores will not function."
-                )
+                "Cachier warning: pymongo was not found. "
+                "MongoDB cores will not function."
             )  # pragma: no cover
         super().__init__(hash_func, default_params)
         self.mongetter = mongetter
@@ -52,7 +50,7 @@ class _MongoCore(_BaseCore):
 
     @staticmethod
     def _get_func_str(func):
-        return ".{}.{}".format(func.__module__, func.__name__)
+        return f".{func.__module__}.{func.__name__}"
 
     def get_entry_by_key(self, key):
         res = self.mongo_collection.find_one(

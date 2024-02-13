@@ -8,7 +8,6 @@
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 
 # python 2 compatibility
-from __future__ import absolute_import, division, print_function
 
 import datetime
 import functools
@@ -254,7 +253,7 @@ def cachier(
             default_params=_default_params,
         )
     else:
-        raise ValueError("specified an invalid core: {}".format(backend))
+        raise ValueError(f"specified an invalid core: {backend}")
 
     def _cachier_decorator(func):
         core.set_func(func)
