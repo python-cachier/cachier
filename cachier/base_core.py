@@ -24,8 +24,9 @@ class _BaseCore:
     def set_func(self, func):
         """Sets the function this core will use.
 
-        This has to be set before any method is called. Also determine
-        if the function is an object method.
+        This has to be set before any method is called. Also determine if the
+        function is an object method.
+
         """
         func_params = list(inspect.signature(func).parameters)
         self.func_is_method = func_params and func_params[0] == "self"

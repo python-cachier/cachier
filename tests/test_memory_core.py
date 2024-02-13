@@ -171,8 +171,12 @@ def test_memory_being_calculated():
     """Testing memory core handling of being calculated scenarios."""
     _takes_time.clear_cache()
     res_queue = queue.Queue()
-    thread1 = threading.Thread(target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True)
-    thread2 = threading.Thread(target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True)
+    thread1 = threading.Thread(
+        target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True
+    )
+    thread2 = threading.Thread(
+        target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True
+    )
     thread1.start()
     sleep(0.5)
     thread2.start()
@@ -203,8 +207,16 @@ def test_being_calc_next_time():
     _being_calc_next_time(0.13, 0.02)
     sleep(1.1)
     res_queue = queue.Queue()
-    thread1 = threading.Thread(target=_calls_being_calc_next_time, kwargs={"res_queue": res_queue}, daemon=True)
-    thread2 = threading.Thread(target=_calls_being_calc_next_time, kwargs={"res_queue": res_queue}, daemon=True)
+    thread1 = threading.Thread(
+        target=_calls_being_calc_next_time,
+        kwargs={"res_queue": res_queue},
+        daemon=True,
+    )
+    thread2 = threading.Thread(
+        target=_calls_being_calc_next_time,
+        kwargs={"res_queue": res_queue},
+        daemon=True,
+    )
     thread1.start()
     sleep(0.5)
     thread2.start()
@@ -235,8 +247,12 @@ def test_clear_being_calculated():
     """Test memory core clear `being calculated` functionality."""
     _takes_time.clear_cache()
     res_queue = queue.Queue()
-    thread1 = threading.Thread(target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True)
-    thread2 = threading.Thread(target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True)
+    thread1 = threading.Thread(
+        target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True
+    )
+    thread2 = threading.Thread(
+        target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True
+    )
     thread1.start()
     _takes_time.clear_being_calculated()
     sleep(0.5)
@@ -280,11 +296,15 @@ def test_callable_hash_param():
     def _hash_func(args, kwargs):
         def _hash(obj):
             if isinstance(obj, pd.core.frame.DataFrame):
-                return hashlib.sha256(pd.util.hash_pandas_object(obj).values.tobytes()).hexdigest()
+                return hashlib.sha256(
+                    pd.util.hash_pandas_object(obj).values.tobytes()
+                ).hexdigest()
             return obj
 
         k_args = tuple(map(_hash, args))
-        k_kwargs = tuple(sorted({k: _hash(v) for k, v in kwargs.items()}.items()))
+        k_kwargs = tuple(
+            sorted({k: _hash(v) for k, v in kwargs.items()}.items())
+        )
         return k_args + k_kwargs
 
     @cachier(backend="memory", hash_func=_hash_func)

@@ -25,7 +25,9 @@ def test_pickle_speed():
         _test_int_pickling_compare(i, i + 1)
         toc = time()
         times.append(toc - tic)
-    print("  - Non-decorated average = {:.8f}".format(sum(times) / num_of_vals))
+    print(
+        "  - Non-decorated average = {:.8f}".format(sum(times) / num_of_vals)
+    )
 
     _test_int_pickling.clear_cache()
     times = []

@@ -43,7 +43,9 @@ CFG = Birch(
 )
 
 
-URI_TEMPLATE = "mongodb+srv://{uname}:{pwd}@{host}/{db}?retrywrites=true&w=majority"
+URI_TEMPLATE = (
+    "mongodb+srv://{uname}:{pwd}@{host}/{db}?retrywrites=true&w=majority"
+)
 
 
 def _get_cachier_db_mongo_client():
@@ -57,7 +59,10 @@ def _get_cachier_db_mongo_client():
 
 
 _COLLECTION_NAME = "cachier_test_{}_{}.{}.{}".format(
-    platform.system(), sys.version_info[0], sys.version_info[1], sys.version_info[2]
+    platform.system(),
+    sys.version_info[0],
+    sys.version_info[1],
+    sys.version_info[2],
 )
 
 
@@ -155,7 +160,9 @@ MONGO_DELTA_LONG = timedelta(seconds=10)
 def test_mongo_stale_after():
     """Testing MongoDB core stale_after functionality."""
 
-    @cachier(mongetter=_test_mongetter, stale_after=MONGO_DELTA, next_time=False)
+    @cachier(
+        mongetter=_test_mongetter, stale_after=MONGO_DELTA, next_time=False
+    )
     def _stale_after_mongo(arg_1, arg_2):
         """Some function."""
         return random() + arg_1 + arg_2
@@ -192,8 +199,12 @@ def test_mongo_being_calculated():
 
     _takes_time.clear_cache()
     res_queue = queue.Queue()
-    thread1 = threading.Thread(target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True)
-    thread2 = threading.Thread(target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True)
+    thread1 = threading.Thread(
+        target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True
+    )
+    thread2 = threading.Thread(
+        target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True
+    )
     thread1.start()
     sleep(1)
     thread2.start()
@@ -268,14 +279,20 @@ def test_stalled_mongo_db_cache():
 
 @pytest.mark.mongo
 def test_stalled_mong_db_core(monkeypatch):
-    def mock_get_entry(self, args, kwargs):  # skipcq: PYL-R0201, PYL-W0613  # noqa: E501
+    def mock_get_entry(
+        self, args, kwargs
+    ):  # skipcq: PYL-R0201, PYL-W0613  # noqa: E501
         return "key", {"being_calculated": True}
 
     def mock_get_entry_by_key(self, key):  # skipcq: PYL-R0201, PYL-W0613
         return "key", None
 
-    monkeypatch.setattr("cachier.mongo_core._MongoCore.get_entry", mock_get_entry)
-    monkeypatch.setattr("cachier.mongo_core._MongoCore.get_entry_by_key", mock_get_entry_by_key)
+    monkeypatch.setattr(
+        "cachier.mongo_core._MongoCore.get_entry", mock_get_entry
+    )
+    monkeypatch.setattr(
+        "cachier.mongo_core._MongoCore.get_entry_by_key", mock_get_entry_by_key
+    )
 
     @cachier(mongetter=_test_mongetter)
     def _stalled_func():
@@ -285,10 +302,16 @@ def test_stalled_mong_db_core(monkeypatch):
     assert res == 1
 
     def mock_get_entry_2(self, args, kwargs):  # skipcq: PYL-W0613
-        entry = {"being_calculated": True, "value": 1, "time": datetime.datetime.now() - datetime.timedelta(seconds=10)}
+        entry = {
+            "being_calculated": True,
+            "value": 1,
+            "time": datetime.datetime.now() - datetime.timedelta(seconds=10),
+        }
         return "key", entry
 
-    monkeypatch.setattr("cachier.mongo_core._MongoCore.get_entry", mock_get_entry_2)
+    monkeypatch.setattr(
+        "cachier.mongo_core._MongoCore.get_entry", mock_get_entry_2
+    )
 
     stale_after = datetime.timedelta(seconds=1)
 
@@ -300,7 +323,9 @@ def test_stalled_mong_db_core(monkeypatch):
     res = _stalled_func_2()
     assert res == 2
 
-    @cachier(mongetter=_test_mongetter, stale_after=stale_after, next_time=True)
+    @cachier(
+        mongetter=_test_mongetter, stale_after=stale_after, next_time=True
+    )
     def _stalled_func_3():
         """Testing stalled function."""
         return 3
@@ -314,11 +339,15 @@ def test_callable_hash_param():
     def _hash_func(args, kwargs):
         def _hash(obj):
             if isinstance(obj, pd.core.frame.DataFrame):
-                return hashlib.sha256(pd.util.hash_pandas_object(obj).values.tobytes()).hexdigest()
+                return hashlib.sha256(
+                    pd.util.hash_pandas_object(obj).values.tobytes()
+                ).hexdigest()
             return obj
 
         k_args = tuple(map(_hash, args))
-        k_kwargs = tuple(sorted({k: _hash(v) for k, v in kwargs.items()}.items()))
+        k_kwargs = tuple(
+            sorted({k: _hash(v) for k, v in kwargs.items()}.items())
+        )
         return k_args + k_kwargs
 
     @cachier(mongetter=_test_mongetter, hash_func=_hash_func)

@@ -29,6 +29,7 @@ class _PickleCore(_BaseCore):
         See core.cachier() documentation.
     cache_dir : str, optional.
         See core.cachier() documentation.
+
     """
 
     class CacheChangeHandler(PatternMatchingEventHandler):
@@ -75,7 +76,15 @@ class _PickleCore(_BaseCore):
             """A Watchdog Event Handler method."""
             self._check_calculation()
 
-    def __init__(self, hash_func, pickle_reload, cache_dir, separate_files, wait_for_calc_timeout, default_params):
+    def __init__(
+        self,
+        hash_func,
+        pickle_reload,
+        cache_dir,
+        separate_files,
+        wait_for_calc_timeout,
+        default_params,
+    ):
         super().__init__(hash_func, default_params)
         self.cache = None
         if pickle_reload is not None:
@@ -85,7 +94,9 @@ class _PickleCore(_BaseCore):
         if cache_dir is not None:
             self.cache_dir = os.path.expanduser(cache_dir)
         else:
-            self.cache_dir = os.path.expanduser(self.default_params["cache_dir"])  # noqa: E501
+            self.cache_dir = os.path.expanduser(
+                self.default_params["cache_dir"]
+            )  # noqa: E501
         if separate_files is not None:
             self.separate_files = separate_files
         else:
@@ -97,8 +108,12 @@ class _PickleCore(_BaseCore):
 
     def _cache_fname(self):
         if self.cache_fname is None:
-            self.cache_fname = ".{}.{}".format(self.func.__module__, self.func.__qualname__)
-            self.cache_fname = self.cache_fname.replace("<", "_").replace(">", "_")
+            self.cache_fname = ".{}.{}".format(
+                self.func.__module__, self.func.__qualname__
+            )
+            self.cache_fname = self.cache_fname.replace("<", "_").replace(
+                ">", "_"
+            )
         return self.cache_fname
 
     def _cache_fpath(self):
@@ -255,7 +270,9 @@ class _PickleCore(_BaseCore):
             filename = self._cache_fname()
         if not entry["being_calculated"]:
             return entry["value"]
-        event_handler = _PickleCore.CacheChangeHandler(filename=filename, core=self, key=key)
+        event_handler = _PickleCore.CacheChangeHandler(
+            filename=filename, core=self, key=key
+        )
         observer = Observer()
         event_handler.inject_observer(observer)
         observer.schedule(event_handler, path=self.cache_dir, recursive=True)

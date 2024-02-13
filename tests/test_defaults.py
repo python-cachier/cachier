@@ -220,8 +220,16 @@ def test_wait_for_calc_applies_dynamically(backend, mongetter):
     """Testing for calls timing out to be performed twice when needed."""
     _wait_for_calc_timeout_slow.clear_cache()
     res_queue = queue.Queue()
-    thread1 = threading.Thread(target=_calls_wait_for_calc_timeout_slow, kwargs={"res_queue": res_queue}, daemon=True)
-    thread2 = threading.Thread(target=_calls_wait_for_calc_timeout_slow, kwargs={"res_queue": res_queue}, daemon=True)
+    thread1 = threading.Thread(
+        target=_calls_wait_for_calc_timeout_slow,
+        kwargs={"res_queue": res_queue},
+        daemon=True,
+    )
+    thread2 = threading.Thread(
+        target=_calls_wait_for_calc_timeout_slow,
+        kwargs={"res_queue": res_queue},
+        daemon=True,
+    )
 
     thread1.start()
     thread2.start()

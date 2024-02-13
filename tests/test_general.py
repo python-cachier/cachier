@@ -53,7 +53,9 @@ def test_set_max_workers():
 
 parametrize_keys = "mongetter,stale_after,separate_files"
 parametrize_values = [
-    pytest.param(_test_mongetter, MONGO_DELTA_LONG, False, marks=pytest.mark.mongo),
+    pytest.param(
+        _test_mongetter, MONGO_DELTA_LONG, False, marks=pytest.mark.mongo
+    ),
     (None, None, False),
     (None, None, True),
 ]
@@ -84,8 +86,16 @@ def test_wait_for_calc_timeout_ok(mongetter, stale_after, separate_files):
     assert val1 == val2
 
     res_queue = queue.Queue()
-    thread1 = threading.Thread(target=_calls_wait_for_calc_timeout_fast, kwargs={"res_queue": res_queue}, daemon=True)
-    thread2 = threading.Thread(target=_calls_wait_for_calc_timeout_fast, kwargs={"res_queue": res_queue}, daemon=True)
+    thread1 = threading.Thread(
+        target=_calls_wait_for_calc_timeout_fast,
+        kwargs={"res_queue": res_queue},
+        daemon=True,
+    )
+    thread2 = threading.Thread(
+        target=_calls_wait_for_calc_timeout_fast,
+        kwargs={"res_queue": res_queue},
+        daemon=True,
+    )
 
     thread1.start()
     thread2.start()
@@ -118,8 +128,16 @@ def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
     """Testing for calls timing out to be performed twice when needed."""
     _wait_for_calc_timeout_slow.clear_cache()
     res_queue = queue.Queue()
-    thread1 = threading.Thread(target=_calls_wait_for_calc_timeout_slow, kwargs={"res_queue": res_queue}, daemon=True)
-    thread2 = threading.Thread(target=_calls_wait_for_calc_timeout_slow, kwargs={"res_queue": res_queue}, daemon=True)
+    thread1 = threading.Thread(
+        target=_calls_wait_for_calc_timeout_slow,
+        kwargs={"res_queue": res_queue},
+        daemon=True,
+    )
+    thread2 = threading.Thread(
+        target=_calls_wait_for_calc_timeout_slow,
+        kwargs={"res_queue": res_queue},
+        daemon=True,
+    )
 
     thread1.start()
     thread2.start()

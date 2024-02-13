@@ -62,7 +62,11 @@ def _function_thread(core, key, func, args, kwds):
         func_res = func(*args, **kwds)
         core.set_entry(key, func_res)
     except BaseException as exc:  # pylint: disable=W0703
-        print("Function call failed with the following exception:\n{}".format(exc))
+        print(
+            "Function call failed with the following exception:\n{}".format(
+                exc
+            )
+        )
 
 
 def _calc_entry(core, key, func, args, kwds):
@@ -86,10 +90,14 @@ def _default_hash_func(args, kwds):
     return hash.hexdigest()
 
 
-def _convert_args_kwargs(func, _is_method: bool, args: tuple, kwds: dict) -> dict:
+def _convert_args_kwargs(
+    func, _is_method: bool, args: tuple, kwds: dict
+) -> dict:
     """Convert mix of positional and keyword arguments to aggregated kwargs."""
     args_as_kw = dict(
-        zip(func.__code__.co_varnames[1:], args[1:]) if _is_method else zip(func.__code__.co_varnames, args)
+        zip(func.__code__.co_varnames[1:], args[1:])
+        if _is_method
+        else zip(func.__code__.co_varnames, args)
     )
     # merge args expanded as kwargs and the original kwds
     kwargs = dict(**args_as_kw, **kwds)
@@ -202,10 +210,14 @@ def cachier(
     allow_none: bool, optional
         Allows storing None values in the cache. If False, functions returning
         None will not be cached and are recalculated every call.
+
     """
     # Check for deprecated parameters
     if hash_params is not None:
-        message = "hash_params will be removed in a future release, " "please use hash_func instead"
+        message = (
+            "hash_params will be removed in a future release, "
+            "please use hash_func instead"
+        )
         warn(message, DeprecationWarning, stacklevel=2)
         hash_func = hash_params
     # Override the backend parameter if a mongetter is provided.
@@ -227,7 +239,9 @@ def cachier(
         )
     elif backend == "mongo":
         if mongetter is None:
-            raise MissingMongetter("must specify ``mongetter`` when using the mongo core")
+            raise MissingMongetter(
+                "must specify ``mongetter`` when using the mongo core"
+            )
         core = _MongoCore(
             mongetter=mongetter,
             hash_func=hash_func,
@@ -248,13 +262,19 @@ def cachier(
         @wraps(func)
         def func_wrapper(*args, **kwds):  # pylint: disable=C0111,R0911
             nonlocal allow_none
-            _allow_none = allow_none if allow_none is not None else _default_params["allow_none"]
+            _allow_none = (
+                allow_none
+                if allow_none is not None
+                else _default_params["allow_none"]
+            )
             # print('Inside general wrapper for {}.'.format(func.__name__))
             ignore_cache = kwds.pop("ignore_cache", False)
             overwrite_cache = kwds.pop("overwrite_cache", False)
             verbose_cache = kwds.pop("verbose_cache", False)
             # merge args expanded as kwargs and the original kwds
-            kwargs = _convert_args_kwargs(func, _is_method=core.func_is_method, args=args, kwds=kwds)
+            kwargs = _convert_args_kwargs(
+                func, _is_method=core.func_is_method, args=args, kwds=kwds
+            )
 
             _print = lambda x: None  # skipcq: FLK-E731  # noqa: E731
             if verbose_cache:
@@ -268,7 +288,9 @@ def cachier(
                 _print("Entry found.")
                 if _allow_none or entry.get("value", None) is not None:
                     _print("Cached result found.")
-                    local_stale_after = stale_after or _default_params["stale_after"]  # noqa: E501
+                    local_stale_after = (
+                        stale_after or _default_params["stale_after"]
+                    )  # noqa: E501
                     local_next_time = next_time or _default_params["next_time"]  # noqa: E501
                     now = datetime.datetime.now()
                     if now - entry["time"] > local_stale_after:
@@ -332,9 +354,12 @@ def cachier(
             ---------
             value : any
                 entry to be written into the cache
+
             """
             # merge args expanded as kwargs and the original kwds
-            kwargs = _convert_args_kwargs(func, _is_method=core.func_is_method, args=args, kwds=kwds)
+            kwargs = _convert_args_kwargs(
+                func, _is_method=core.func_is_method, args=args, kwds=kwds
+            )
             return core.precache_value(tuple(), kwargs, value_to_cache)
 
         func_wrapper.clear_cache = clear_cache
@@ -349,15 +374,15 @@ def cachier(
 def set_default_params(**params):
     """Configure global parameters applicable to all memoized functions.
 
-    This function takes the same keyword parameters as the ones defined
-    in the decorator, which can be passed all at once or with multiple
-    calls. Parameters given directly to a decorator take precedence over
-    any values set by this function.
+    This function takes the same keyword parameters as the ones defined in the
+    decorator, which can be passed all at once or with multiple calls.
+    Parameters given directly to a decorator take precedence over any values
+    set by this function.
 
-    Only 'stale_after', 'next_time', and 'wait_for_calc_timeout' can be
-    changed after the memoization decorator has been applied. Other
-    parameters will only have an effect on decorators applied after this
-    function is run.
+    Only 'stale_after', 'next_time', and 'wait_for_calc_timeout' can be changed
+    after the memoization decorator has been applied. Other parameters will
+    only have an effect on decorators applied after this function is run.
+
     """
     valid_params = (p for p in params.items() if p[0] in _default_params)
     _default_params.update(valid_params)
