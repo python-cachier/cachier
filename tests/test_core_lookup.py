@@ -26,7 +26,7 @@ def test_bad_name(name="nope"):
     """Test that the appropriate exception is thrown when an invalid backend is
     given."""
 
-    with pytest.raises(ValueError, match=f"*{name}*"):
+    with pytest.raises(ValueError, match=f"specified an invalid core: {name}"):
 
         @cachier(backend=name)
         def dummy_func():
