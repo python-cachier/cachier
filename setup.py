@@ -34,7 +34,7 @@ setup(
     packages=find_packages(exclude=['tests']),
     entry_points='''
         [console_scripts]
-        cachier=cachier.scripts.cli:cli
+        cachier=cachier.__naim__:cli
     ''',
     install_requires=[
         'watchdog', 'portalocker',
