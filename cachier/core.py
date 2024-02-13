@@ -62,9 +62,7 @@ def _function_thread(core, key, func, args, kwds):
         func_res = func(*args, **kwds)
         core.set_entry(key, func_res)
     except BaseException as exc:  # pylint: disable=W0703
-        print(
-            f"Function call failed with the following exception:\n{exc}"
-        )
+        print(f"Function call failed with the following exception:\n{exc}")
 
 
 def _calc_entry(core, key, func, args, kwds):
