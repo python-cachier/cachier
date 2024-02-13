@@ -20,8 +20,8 @@ from pymongo.mongo_client import MongoClient
 from pymongo_inmemory import MongoClient as InMemoryMongoClient
 
 from cachier import cachier
-from cachier.base_core import RecalculationNeeded
-from cachier.mongo_core import _MongoCore
+from cachier.cores.base import RecalculationNeeded
+from cachier.cores.mongo import _MongoCore
 
 
 # === Enables testing vs a real MongoDB instance ===
