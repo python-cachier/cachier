@@ -13,6 +13,7 @@ from __future__ import absolute_import, division, print_function
 import datetime
 import functools
 import hashlib
+import inspect
 import os
 import pickle
 from collections import OrderedDict
@@ -92,13 +93,12 @@ def _default_hash_func(args, kwds):
 
 def _convert_args_kwargs(func, _is_method: bool, args: tuple, kwds: dict) -> dict:
     """Convert mix of positional and keyword arguments to aggregated kwargs."""
-    args_as_kw = dict(
-        zip(func.__code__.co_varnames[1:], args[1:])
-        if _is_method else
-        zip(func.__code__.co_varnames, args)
-    )
+    func_params = list(inspect.signature(func).parameters)
+    args_as_kw = dict(zip(func_params[1:], args[1:]) if _is_method else zip(func_params, args))
+    # init with default values
+    kwargs = {k: v.default for k, v in inspect.signature(func).parameters.items() if v.default is not inspect.Parameter.empty}
     # merge args expanded as kwargs and the original kwds
-    kwargs = dict(**args_as_kw, **kwds)
+    kwargs.update(dict(**args_as_kw, **kwds))
     return OrderedDict(sorted(kwargs.items()))
 
 

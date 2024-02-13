@@ -310,3 +310,17 @@ def test_order_independent_kwargs_handling():
     assert count == 1
     func(b=2, a=1)
     assert count == 1
+
+
+def test_default_kwargs_handling():
+    count = 0
+
+    @cachier.cachier()
+    def dummy_func(a, b=2):
+        nonlocal count
+        count += 1
+
+    dummy_func.clear_cache()
+    assert count == 0
+    dummy_func(a=1)
+    dummy_func(a=1, b=2)
