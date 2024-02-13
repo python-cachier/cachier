@@ -335,7 +335,7 @@ def test_default_kwargs_handling():
     assert count == 1
 
 
-def test_runtime_handling():
+def test_runtime_handling(tmpdir):
     count = 0
 
     def dummy_func(a, b):
@@ -343,8 +343,7 @@ def test_runtime_handling():
         count += 1
         return a + b
 
-    cachier_ = cachier.cachier()
-    cachier_.clear_cache()
+    cachier_ = cachier.cachier(cache_dir=tmpdir)
     assert count == 0
     cachier_(dummy_func(a=1, b=2))
     cachier_(dummy_func(a=1, b=2))
