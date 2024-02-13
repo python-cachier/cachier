@@ -22,8 +22,11 @@ class _BaseCore():
         self.hash_func = hash_func
 
     def set_func(self, func):
-        """Sets the function this core will use. This has to be set before any
-        method is called. Also determine if the function is an object method."""
+        """Sets the function this core will use.
+
+        This has to be set before any method is called. Also determine
+        if the function is an object method.
+        """
         func_params = list(inspect.signature(func).parameters)
         self.func_is_method = func_params and func_params[0] == 'self'
         self.func = func
@@ -58,8 +61,8 @@ class _BaseCore():
 
     @abc.abstractmethod
     def get_entry_by_key(self, key):
-        """Returns the result mapped to the given key in this core's cache,
-        if such a mapping exists."""
+        """Returns the result mapped to the given key in this core's cache, if
+        such a mapping exists."""
 
     @abc.abstractmethod
     def set_entry(self, key, func_res):

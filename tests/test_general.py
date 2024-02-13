@@ -7,6 +7,7 @@ import os
 import queue
 import subprocess  # nosec: B404
 import threading
+from contextlib import suppress
 from random import random
 from time import sleep, time
 
@@ -33,10 +34,8 @@ def test_information():
 
 def test_max_workers():
     """Just call this function for coverage."""
-    try:
+    with suppress(KeyError):
         del os.environ[MAX_WORKERS_ENVAR_NAME]
-    except KeyError:
-        pass
     assert _max_workers() == DEFAULT_MAX_WORKERS
 
 
