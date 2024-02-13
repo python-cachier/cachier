@@ -349,6 +349,8 @@ https://creativecommons.org/publicdomain/zero/1.0/ .
 
 from __future__ import print_function
 
+from contextlib import suppress
+
 try:
     import configparser
 except ImportError:
@@ -386,7 +388,7 @@ def get_root():
                "or in a way that lets it use sys.argv[0] to find the root "
                "(like 'python path/to/setup.py COMMAND').")
         raise VersioneerBadRootError(err)
-    try:
+    with suppress(NameError):
         # Certain runtime workflows (setup.py install/develop in a setuptools
         # tree) execute all dependencies in a single python process, so
         # "versioneer" may be imported multiple times, and python's shared
@@ -397,8 +399,6 @@ def get_root():
         if os.path.splitext(me)[0] != os.path.splitext(versioneer_py)[0]:
             print("Warning: build in %s is using versioneer.py from %s"
                   % (os.path.dirname(me), versioneer_py))
-    except NameError:
-        pass
     return root
 
 
@@ -977,7 +977,7 @@ def git_get_keywords(versionfile_abs):
     # so we do it with a regexp instead. This function is not used from
     # _version.py.
     keywords = {}
-    try:
+    with suppress(EnvironmentError):
         f = open(versionfile_abs, "r")
         for line in f.readlines():
             if line.strip().startswith("git_refnames ="):
@@ -989,8 +989,6 @@ def git_get_keywords(versionfile_abs):
                 if mo:
                     keywords["full"] = mo.group(1)
         f.close()
-    except EnvironmentError:
-        pass
     return keywords
 
 
@@ -1145,15 +1143,13 @@ def do_vcs_install(manifest_in, versionfile_source, ipy):
         versioneer_file = "versioneer.py"
     files.append(versioneer_file)
     present = False
-    try:
+    with suppress(EnvironmentError):
         f = open(".gitattributes", "r")
         for line in f.readlines():
             if line.strip().startswith(versionfile_source):
                 if "export-subst" in line.strip().split()[1:]:
                     present = True
         f.close()
-    except EnvironmentError:
-        pass
     if not present:
         f = open(".gitattributes", "a+")
         f.write("%s export-subst\n" % versionfile_source)
@@ -1424,42 +1420,34 @@ def get_versions(verbose=False):
     get_keywords_f = handlers.get("get_keywords")
     from_keywords_f = handlers.get("keywords")
     if get_keywords_f and from_keywords_f:
-        try:
+        with suppress(NotThisMethod):
             keywords = get_keywords_f(versionfile_abs)
             ver = from_keywords_f(keywords, cfg.tag_prefix, verbose)
             if verbose:
                 print("got version from expanded keyword %s" % ver)
             return ver
-        except NotThisMethod:
-            pass
 
-    try:
+    with suppress(NotThisMethod):
         ver = versions_from_file(versionfile_abs)
         if verbose:
             print("got version from file %s %s" % (versionfile_abs, ver))
         return ver
-    except NotThisMethod:
-        pass
 
     from_vcs_f = handlers.get("pieces_from_vcs")
     if from_vcs_f:
-        try:
+        with suppress(NotThisMethod):
             pieces = from_vcs_f(cfg.tag_prefix, root, verbose)
             ver = render(pieces, cfg.style)
             if verbose:
                 print("got version from VCS %s" % ver)
             return ver
-        except NotThisMethod:
-            pass
 
-    try:
+    with suppress(NotThisMethod):
         if cfg.parentdir_prefix:
             ver = versions_from_parentdir(cfg.parentdir_prefix, root, verbose)
             if verbose:
                 print("got version from parentdir %s" % ver)
             return ver
-    except NotThisMethod:
-        pass
 
     if verbose:
         print("unable to compute version")
@@ -1696,14 +1684,11 @@ def do_setup():
     # install the package without this.
     manifest_in = os.path.join(root, "MANIFEST.in")
     simple_includes = set()
-    try:
-        with open(manifest_in, "r") as f:
-            for line in f:
-                if line.startswith("include "):
-                    for include in line.split()[1:]:
-                        simple_includes.add(include)
-    except EnvironmentError:
-        pass
+    with suppress(EnvironmentError), open(manifest_in, "r") as f:
+        for line in f:
+            if line.startswith("include "):
+                for include in line.split()[1:]:
+                    simple_includes.add(include)
     # That doesn't cover everything MANIFEST.in can do
     # (http://docs.python.org/2/distutils/sourcedist.html#commands), so
     # it might give some false negatives. Appending redundant 'include'

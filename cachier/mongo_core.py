@@ -9,16 +9,15 @@
 
 import sys  # to make sure that pymongo was imported
 import pickle  # for serialization of python objects
+from contextlib import suppress
 from datetime import datetime
 import time   # to sleep when waiting on Mongo cache\
 import warnings  # to warn if pymongo is missing
 
-try:
+with suppress(ImportError):
     from pymongo import (IndexModel, ASCENDING)
     from pymongo.errors import OperationFailure
     from bson.binary import Binary  # to save binary data to mongodb
-except ImportError:  # pragma: no cover
-    pass
 
 from .base_core import _BaseCore, RecalculationNeeded
 
@@ -107,7 +106,7 @@ class _MongoCore(_BaseCore):
         )
 
     def mark_entry_not_calculated(self, key):
-        try:
+        with suppress(OperationFailure):  # don't care in this case
             self.mongo_collection.update_one(
                 filter={
                     'func': _MongoCore._get_func_str(self.func),
@@ -118,8 +117,6 @@ class _MongoCore(_BaseCore):
                 },
                 upsert=False  # should not insert in this case
             )
-        except OperationFailure:
-            pass  # don't care in this case
 
     def wait_on_entry_calc(self, key):
         time_spent = 0
