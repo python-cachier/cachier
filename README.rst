@@ -427,9 +427,11 @@ Credits
 
 Created by `Shay Palachy Affek <https://github.com/shaypal5>`_ (shay.palachy@gmail.com), which currently assists in maintenance.
 
-Current lead developer/contributor: `Judson Neer <https://github.com/lordjabez>`_ (`@lordjabez <https://github.com/lordjabez>`_ on GitHub).
+Current lead developer/contributor: `Jirka Borovec <https://github.com/Borda>`_ (`@Borda <https://github.com/Borda>`_ on GitHub).
 
 Other major contributors:
+
+* `Jirka Borovec <https://github.com/Borda>`_ - Arg order independence, args-to-kwargs for less unique keys and numerous development and CI contributions.
 
 * `Judson Neer <https://github.com/lordjabez>`_ - Precaching, method caching support and numerous improvements and bugfixes.
 

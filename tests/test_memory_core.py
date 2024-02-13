@@ -13,20 +13,20 @@ import pandas as pd
 from cachier import cachier
 
 
-@cachier(backend='memory', next_time=False)
+@cachier(backend="memory", next_time=False)
 def _takes_2_seconds(arg_1, arg_2):
     """Some function."""
     sleep(2)
-    return 'arg_1:{}, arg_2:{}'.format(arg_1, arg_2)
+    return "arg_1:{}, arg_2:{}".format(arg_1, arg_2)
 
 
 @pytest.mark.memory
 def test_memory_core():
     """Basic memory core functionality."""
     _takes_2_seconds.clear_cache()
-    _takes_2_seconds('a', 'b')
+    _takes_2_seconds("a", "b")
     start = time()
-    _takes_2_seconds('a', 'b', verbose_cache=True)
+    _takes_2_seconds("a", "b", verbose_cache=True)
     end = time()
     assert end - start < 1
     _takes_2_seconds.clear_cache()
@@ -36,9 +36,9 @@ def test_memory_core():
 def test_memory_core_keywords():
     """Basic memory core functionality with keyword arguments."""
     _takes_2_seconds.clear_cache()
-    _takes_2_seconds('a', arg_2='b')
+    _takes_2_seconds("a", arg_2="b")
     start = time()
-    _takes_2_seconds('a', arg_2='b', verbose_cache=True)
+    _takes_2_seconds("a", arg_2="b", verbose_cache=True)
     end = time()
     assert end - start < 1
     _takes_2_seconds.clear_cache()
@@ -48,7 +48,7 @@ SECONDS_IN_DELTA = 3
 DELTA = timedelta(seconds=SECONDS_IN_DELTA)
 
 
-@cachier(backend='memory', stale_after=DELTA, next_time=False)
+@cachier(backend="memory", stale_after=DELTA, next_time=False)
 def _stale_after_seconds(arg_1, arg_2):
     """Some function."""
     return random()
@@ -69,7 +69,7 @@ def test_stale_after():
     _stale_after_seconds.clear_cache()
 
 
-@cachier(backend='memory', stale_after=DELTA, next_time=True)
+@cachier(backend="memory", stale_after=DELTA, next_time=True)
 def _stale_after_next_time(arg_1, arg_2):
     """Some function."""
     return random()
@@ -93,12 +93,12 @@ def test_stale_after_next_time():
     _stale_after_next_time.clear_cache()
 
 
-@cachier(backend='memory')
+@cachier(backend="memory")
 def _random_num():
     return random()
 
 
-@cachier(backend='memory')
+@cachier(backend="memory")
 def _random_num_with_arg(a):
     # print(a)
     return random()
@@ -118,12 +118,12 @@ def test_overwrite_cache():
     _random_num.clear_cache()
 
     _random_num_with_arg.clear_cache()
-    int1 = _random_num_with_arg('a')
-    int2 = _random_num_with_arg('a')
+    int1 = _random_num_with_arg("a")
+    int2 = _random_num_with_arg("a")
     assert int2 == int1
-    int3 = _random_num_with_arg('a', overwrite_cache=True)
+    int3 = _random_num_with_arg("a", overwrite_cache=True)
     assert int3 != int1
-    int4 = _random_num_with_arg('a')
+    int4 = _random_num_with_arg("a")
     assert int4 == int3
     _random_num_with_arg.clear_cache()
 
@@ -143,18 +143,18 @@ def test_ignore_cache():
     _random_num.clear_cache()
 
     _random_num_with_arg.clear_cache()
-    int1 = _random_num_with_arg('a')
-    int2 = _random_num_with_arg('a')
+    int1 = _random_num_with_arg("a")
+    int2 = _random_num_with_arg("a")
     assert int2 == int1
-    int3 = _random_num_with_arg('a', ignore_cache=True)
+    int3 = _random_num_with_arg("a", ignore_cache=True)
     assert int3 != int1
-    int4 = _random_num_with_arg('a')
+    int4 = _random_num_with_arg("a")
     assert int4 != int3
     assert int4 == int1
     _random_num_with_arg.clear_cache()
 
 
-@cachier(backend='memory')
+@cachier(backend="memory")
 def _takes_time(arg_1, arg_2):
     """Some function."""
     sleep(2)  # this has to be enough time for check_calculation to run twice
@@ -172,13 +172,11 @@ def test_memory_being_calculated():
     _takes_time.clear_cache()
     res_queue = queue.Queue()
     thread1 = threading.Thread(
-        target=_calls_takes_time,
-        kwargs={'res_queue': res_queue},
-        daemon=True)
+        target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True
+    )
     thread2 = threading.Thread(
-        target=_calls_takes_time,
-        kwargs={'res_queue': res_queue},
-        daemon=True)
+        target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True
+    )
     thread1.start()
     sleep(0.5)
     thread2.start()
@@ -190,7 +188,7 @@ def test_memory_being_calculated():
     assert res1 == res2
 
 
-@cachier(backend='memory', stale_after=timedelta(seconds=1), next_time=True)
+@cachier(backend="memory", stale_after=timedelta(seconds=1), next_time=True)
 def _being_calc_next_time(arg_1, arg_2):
     """Some function."""
     sleep(1)
@@ -211,12 +209,14 @@ def test_being_calc_next_time():
     res_queue = queue.Queue()
     thread1 = threading.Thread(
         target=_calls_being_calc_next_time,
-        kwargs={'res_queue': res_queue},
-        daemon=True)
+        kwargs={"res_queue": res_queue},
+        daemon=True,
+    )
     thread2 = threading.Thread(
         target=_calls_being_calc_next_time,
-        kwargs={'res_queue': res_queue},
-        daemon=True)
+        kwargs={"res_queue": res_queue},
+        daemon=True,
+    )
     thread1.start()
     sleep(0.5)
     thread2.start()
@@ -228,14 +228,14 @@ def test_being_calc_next_time():
     assert res1 == res2
 
 
-@cachier(backend='memory')
+@cachier(backend="memory")
 def _bad_cache(arg_1, arg_2):
     """Some function."""
     sleep(1)
     return random() + arg_1 + arg_2
 
 
-@cachier(backend='memory')
+@cachier(backend="memory")
 def _delete_cache(arg_1, arg_2):
     """Some function."""
     sleep(1)
@@ -248,13 +248,11 @@ def test_clear_being_calculated():
     _takes_time.clear_cache()
     res_queue = queue.Queue()
     thread1 = threading.Thread(
-        target=_calls_takes_time,
-        kwargs={'res_queue': res_queue},
-        daemon=True)
+        target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True
+    )
     thread2 = threading.Thread(
-        target=_calls_takes_time,
-        kwargs={'res_queue': res_queue},
-        daemon=True)
+        target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True
+    )
     thread1.start()
     _takes_time.clear_being_calculated()
     sleep(0.5)
@@ -274,9 +272,9 @@ def test_clear_being_calculated_with_empty_cache():
     _takes_time.clear_being_calculated()
 
 
-@cachier(backend='memory', stale_after=timedelta(seconds=1), next_time=True)
+@cachier(backend="memory", stale_after=timedelta(seconds=1), next_time=True)
 def _error_throwing_func(arg1):
-    if not hasattr(_error_throwing_func, 'count'):
+    if not hasattr(_error_throwing_func, "count"):
         _error_throwing_func.count = 0
     _error_throwing_func.count += 1
     if _error_throwing_func.count > 1:
@@ -299,15 +297,17 @@ def test_callable_hash_param():
         def _hash(obj):
             if isinstance(obj, pd.core.frame.DataFrame):
                 return hashlib.sha256(
-                        pd.util.hash_pandas_object(obj).values.tobytes()
+                    pd.util.hash_pandas_object(obj).values.tobytes()
                 ).hexdigest()
             return obj
+
         k_args = tuple(map(_hash, args))
-        k_kwargs = tuple(sorted(
-            {k: _hash(v) for k, v in kwargs.items()}.items()))
+        k_kwargs = tuple(
+            sorted({k: _hash(v) for k, v in kwargs.items()}.items())
+        )
         return k_args + k_kwargs
 
-    @cachier(backend='memory', hash_func=_hash_func)
+    @cachier(backend="memory", hash_func=_hash_func)
     def _params_with_dataframe(*args, **kwargs):
         """Some function."""
         return random()
@@ -327,5 +327,5 @@ def test_callable_hash_param():
     assert value_a == value_b  # same content --> same key
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_memory_being_calculated()

@@ -372,6 +372,7 @@ def get_root():
 
     We require that all commands are run from the project root, i.e. the
     directory that contains setup.py, setup.cfg, and versioneer.py .
+
     """
     root = os.path.realpath(os.path.abspath(os.getcwd()))
     setup_py = os.path.join(root, "setup.py")
@@ -1045,6 +1046,7 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
     This only gets called if the git-archive 'subst' keywords were *not*
     expanded, and _version.py hasn't already been rewritten with a short
     version string, meaning we're inside a checked out source tree.
+
     """
     if not os.path.exists(os.path.join(root, ".git")):
         if verbose:
@@ -1125,8 +1127,9 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
 def do_vcs_install(manifest_in, versionfile_source, ipy):
     """Git-specific installation logic for Versioneer.
 
-    For Git, this means creating/changing .gitattributes to mark
-    _version.py for export-time keyword substitution.
+    For Git, this means creating/changing .gitattributes to mark _version.py
+    for export-time keyword substitution.
+
     """
     GITS = ["git"]
     if sys.platform == "win32":
@@ -1161,8 +1164,9 @@ def do_vcs_install(manifest_in, versionfile_source, ipy):
 def versions_from_parentdir(parentdir_prefix, root, verbose):
     """Try to determine the version from the parent directory name.
 
-    Source tarballs conventionally unpack into a directory that includes
-    both the project name and a version string.
+    Source tarballs conventionally unpack into a directory that includes both
+    the project name and a version string.
+
     """
     dirname = os.path.basename(root)
     if not dirname.startswith(parentdir_prefix):
@@ -1233,6 +1237,7 @@ def render_pep440(pieces):
 
     Exceptions:
     1: no tags. git_describe was just HEX. 0+untagged.DISTANCE.gHEX[.dirty]
+
     """
     if pieces["closest-tag"]:
         rendered = pieces["closest-tag"]
@@ -1275,6 +1280,7 @@ def render_pep440_post(pieces):
 
     Exceptions:
     1: no tags. 0.postDISTANCE[.dev0]
+
     """
     if pieces["closest-tag"]:
         rendered = pieces["closest-tag"]
@@ -1300,6 +1306,7 @@ def render_pep440_old(pieces):
 
     Eexceptions:
     1: no tags. 0.postDISTANCE[.dev0]
+
     """
     if pieces["closest-tag"]:
         rendered = pieces["closest-tag"]
@@ -1322,6 +1329,7 @@ def render_git_describe(pieces):
 
     Exceptions:
     1: no tags. HEX[-dirty]  (note: no 'g' prefix)
+
     """
     if pieces["closest-tag"]:
         rendered = pieces["closest-tag"]
@@ -1343,6 +1351,7 @@ def render_git_describe_long(pieces):
 
     Exceptions:
     1: no tags. HEX[-dirty]  (note: no 'g' prefix)
+
     """
     if pieces["closest-tag"]:
         rendered = pieces["closest-tag"]
@@ -1393,6 +1402,7 @@ def get_versions(verbose=False):
     """Get the project version from whatever source is available.
 
     Returns dict with two keys: 'version' and 'full'.
+
     """
     if "versioneer" in sys.modules:
         # see the discussion in cmdclass.py:get_cmdclass()
