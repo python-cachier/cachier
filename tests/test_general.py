@@ -330,3 +330,4 @@ def test_default_kwargs_handling():
     assert count == 0
     dummy_func(a=1)
     dummy_func(a=1, b=2)
+    assert count == 0
