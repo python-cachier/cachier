@@ -28,6 +28,9 @@ class _BaseCore:
         function is an object method.
 
         """
+        # unwrap if the function is functools.partial
+        if hasattr(func, "func"):
+            func = func.func
         func_params = list(inspect.signature(func).parameters)
         self.func_is_method = func_params and func_params[0] == "self"
         self.func = func
