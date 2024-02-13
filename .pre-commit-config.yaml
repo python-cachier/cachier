@@ -28,6 +28,7 @@ repos:
       - id: pyupgrade
         args: ["--py38-plus"]
         name: Upgrade code
+        exclude: versioneer.py
 
   - repo: https://github.com/crate-ci/typos
     rev: v1.16.26
