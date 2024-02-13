@@ -3,7 +3,7 @@
 import threading
 from datetime import datetime
 
-from .base_core import _BaseCore
+from .base import _BaseCore
 
 
 class _MemoryCore(_BaseCore):

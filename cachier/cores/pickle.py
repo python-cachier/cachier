@@ -17,7 +17,7 @@ from watchdog.events import PatternMatchingEventHandler
 
 # Alternative:  https://github.com/WoLpH/portalocker
 
-from .base_core import _BaseCore
+from .base import _BaseCore
 
 
 class _PickleCore(_BaseCore):
