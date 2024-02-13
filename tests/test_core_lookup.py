@@ -28,7 +28,7 @@ def test_bad_name():
     name = 'nope'
     try:
         @cachier(backend=name)
-        def func():
+        def dummy_func():
             pass
     except ValueError as e:
         assert name in e.args[0]
@@ -41,7 +41,7 @@ def test_missing_mongetter():
     the mongetter."""
     try:
         @cachier(backend='mongo', mongetter=None)
-        def func():
+        def dummy_func():
             pass
     except MissingMongetter:
         assert True

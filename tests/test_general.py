@@ -161,20 +161,20 @@ def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
 def test_precache_value(mongetter, backend):
 
     @cachier.cachier(backend=backend, mongetter=mongetter)
-    def func(arg_1, arg_2):
+    def dummy_func(arg_1, arg_2):
         """Some function."""
         return arg_1 + arg_2
 
-    result = func.precache_value(2, 2, value_to_cache=5)
+    result = dummy_func.precache_value(2, 2, value_to_cache=5)
     assert result == 5
-    result = func(2, 2)
+    result = dummy_func(2, 2)
     assert result == 5
-    func.clear_cache()
-    result = func(2, 2)
+    dummy_func.clear_cache()
+    result = dummy_func(2, 2)
     assert result == 4
-    result = func.precache_value(2, arg_2=2, value_to_cache=5)
+    result = dummy_func.precache_value(2, arg_2=2, value_to_cache=5)
     assert result == 5
-    result = func(2, arg_2=2)
+    result = dummy_func(2, arg_2=2)
     assert result == 5
 
 
@@ -188,15 +188,15 @@ def test_precache_value(mongetter, backend):
 )
 def test_ignore_self_in_methods(mongetter, backend):
 
-    class TestClass():
+    class DummyClass():
         @cachier.cachier(backend=backend, mongetter=mongetter)
         def takes_2_seconds(self, arg_1, arg_2):
             """Some function."""
             sleep(2)
             return arg_1 + arg_2
 
-    test_object_1 = TestClass()
-    test_object_2 = TestClass()
+    test_object_1 = DummyClass()
+    test_object_2 = DummyClass()
     test_object_1.takes_2_seconds.clear_cache()
     test_object_2.takes_2_seconds.clear_cache()
     result_1 = test_object_1.takes_2_seconds(1, 2)
@@ -280,17 +280,17 @@ def test_identical_inputs():
     count = 0
 
     @cachier.cachier()
-    def func(a: int, b: int = 2, c: int = 3):
+    def dummy_func(a: int, b: int = 2, c: int = 3):
         nonlocal count
         count += 1
         return a + b + c
 
-    func.clear_cache()
+    dummy_func.clear_cache()
     assert count == 0
-    func(1, 2, 3)
-    func(1, 2, c=3)
-    func(1, b=2, c=3)
-    func(a=1, b=2, c=3)
+    dummy_func(1, 2, 3)
+    dummy_func(1, 2, c=3)
+    dummy_func(1, b=2, c=3)
+    dummy_func(a=1, b=2, c=3)
     assert count == 1
 
 
@@ -298,15 +298,15 @@ def test_order_independent_kwargs_handling():
     count = 0
 
     @cachier.cachier()
-    def func(a=None, b=None):
+    def dummy_func(a=None, b=None):
         nonlocal count
         count += 1
         return 0
 
-    func.clear_cache()
+    dummy_func.clear_cache()
     assert count == 0
-    func(a=1, b=2)
-    func(a=1, b=2)
+    dummy_func(a=1, b=2)
+    dummy_func(a=1, b=2)
     assert count == 1
-    func(b=2, a=1)
+    dummy_func(b=2, a=1)
     assert count == 1
