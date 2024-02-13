@@ -22,10 +22,10 @@ from functools import wraps
 from typing import TYPE_CHECKING, Callable, Literal, Optional, TypedDict, Union
 from warnings import warn
 
-from .base_core import RecalculationNeeded, _BaseCore
-from .memory_core import _MemoryCore
-from .mongo_core import _MongoCore
-from .pickle_core import _PickleCore
+from .cores.base import RecalculationNeeded, _BaseCore
+from .cores.memory import _MemoryCore
+from .cores.mongo import _MongoCore
+from .cores.pickle import _PickleCore
 
 if TYPE_CHECKING:
     import pymongo.collection

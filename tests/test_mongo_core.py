@@ -20,8 +20,8 @@ from pymongo.mongo_client import MongoClient
 from pymongo_inmemory import MongoClient as InMemoryMongoClient
 
 from cachier import cachier
-from cachier.base_core import RecalculationNeeded
-from cachier.mongo_core import _MongoCore
+from cachier.cores.base import RecalculationNeeded
+from cachier.cores.mongo import _MongoCore
 
 
 # === Enables testing vs a real MongoDB instance ===
@@ -270,9 +270,9 @@ def test_stalled_mong_db_core(monkeypatch):
         return "key", None
 
     monkeypatch.setattr(
-        "cachier.mongo_core._MongoCore.get_entry", mock_get_entry)
+        "cachier.cores.mongo._MongoCore.get_entry", mock_get_entry)
     monkeypatch.setattr(
-        "cachier.mongo_core._MongoCore.get_entry_by_key", mock_get_entry_by_key
+        "cachier.cores.mongo._MongoCore.get_entry_by_key", mock_get_entry_by_key
     )
 
     @cachier(mongetter=_test_mongetter)
@@ -290,7 +290,7 @@ def test_stalled_mong_db_core(monkeypatch):
         return "key", entry
 
     monkeypatch.setattr(
-        "cachier.mongo_core._MongoCore.get_entry", mock_get_entry_2)
+        "cachier.cores.mongo._MongoCore.get_entry", mock_get_entry_2)
 
     stale_after = datetime.timedelta(seconds=1)
 

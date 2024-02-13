@@ -19,7 +19,7 @@ with suppress(ImportError):
     from pymongo.errors import OperationFailure
     from bson.binary import Binary  # to save binary data to mongodb
 
-from .base_core import _BaseCore, RecalculationNeeded
+from .base import _BaseCore, RecalculationNeeded
 
 
 MONGO_SLEEP_DURATION_IN_SEC = 1

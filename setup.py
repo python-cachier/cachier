@@ -1,4 +1,5 @@
 """Setup file for the Cachier package."""
+from setuptools.config.expand import find_packages
 
 # This file is part of Cachier.
 # https://github.com/shaypal5/cachier
@@ -30,10 +31,10 @@ setup(
     author='Shay Palachy',
     author_email='shay.palachy@gmail.com',
     url='https://github.com/python-cachier/cachier',
-    packages=['cachier', 'cachier.scripts'],
+    packages=find_packages(exclude=['tests']),
     entry_points='''
         [console_scripts]
-        cachier=cachier.scripts.cli:cli
+        cachier=cachier.__naim__:cli
     ''',
     install_requires=[
         'watchdog', 'portalocker',
