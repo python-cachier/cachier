@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     import pymongo.collection
 
 
-MAX_WORKERS_ENVAR_NAME = 'CACHIER_MAX_WORKERS'
+MAX_WORKERS_ENVAR_NAME = "CACHIER_MAX_WORKERS"
 DEFAULT_MAX_WORKERS = 8
 
 
@@ -64,7 +64,7 @@ def _function_thread(core, key, func, args, kwds):
         core.set_entry(key, func_res)
     except BaseException as exc:  # pylint: disable=W0703
         print(
-            'Function call failed with the following exception:\n{}'.format(
+            "Function call failed with the following exception:\n{}".format(
                 exc
             )
         )
@@ -91,14 +91,22 @@ def _default_hash_func(args, kwds):
     return hash.hexdigest()
 
 
-def _convert_args_kwargs(func, _is_method: bool, args: tuple, kwds: dict) -> dict:
+def _convert_args_kwargs(
+    func, _is_method: bool, args: tuple, kwds: dict
+) -> dict:
     """Convert mix of positional and keyword arguments to aggregated kwargs."""
     func_params = list(inspect.signature(func).parameters)
-    args_as_kw = dict(zip(func_params[1:], args[1:]) if _is_method else zip(func_params, args))
+    args_as_kw = dict(
+        zip(func_params[1:], args[1:])
+        if _is_method
+        else zip(func_params, args)
+    )
     # init with default values
-    kwargs = {k: v.default
-              for k, v in inspect.signature(func).parameters.items()
-              if v.default is not inspect.Parameter.empty}
+    kwargs = {
+        k: v.default
+        for k, v in inspect.signature(func).parameters.items()
+        if v.default is not inspect.Parameter.empty
+    }
     # merge args expanded as kwargs and the original kwds
     kwargs.update(dict(**args_as_kw, **kwds))
     return OrderedDict(sorted(kwargs.items()))
@@ -128,17 +136,17 @@ class Params(TypedDict):
 
 
 _default_params: Params = {
-    'caching_enabled': True,
-    'hash_func': _default_hash_func,
-    'backend': 'pickle',
-    'mongetter': None,
-    'stale_after': datetime.timedelta.max,
-    'next_time': False,
-    'cache_dir': '~/.cachier/',
-    'pickle_reload': True,
-    'separate_files': False,
-    'wait_for_calc_timeout': 0,
-    'allow_none': False,
+    "caching_enabled": True,
+    "hash_func": _default_hash_func,
+    "backend": "pickle",
+    "mongetter": None,
+    "stale_after": datetime.timedelta.max,
+    "next_time": False,
+    "cache_dir": "~/.cachier/",
+    "pickle_reload": True,
+    "separate_files": False,
+    "wait_for_calc_timeout": 0,
+    "allow_none": False,
 }
 
 
@@ -210,22 +218,25 @@ def cachier(
     allow_none: bool, optional
         Allows storing None values in the cache. If False, functions returning
         None will not be cached and are recalculated every call.
+
     """
     # Check for deprecated parameters
     if hash_params is not None:
-        message = 'hash_params will be removed in a future release, ' \
-                  'please use hash_func instead'
+        message = (
+            "hash_params will be removed in a future release, "
+            "please use hash_func instead"
+        )
         warn(message, DeprecationWarning, stacklevel=2)
         hash_func = hash_params
     # Override the backend parameter if a mongetter is provided.
     if mongetter is None:
-        mongetter = _default_params['mongetter']
+        mongetter = _default_params["mongetter"]
     if callable(mongetter):
-        backend = 'mongo'
+        backend = "mongo"
     if backend is None:
-        backend = _default_params['backend']
+        backend = _default_params["backend"]
     core: _BaseCore
-    if backend == 'pickle':
+    if backend == "pickle":
         core = _PickleCore(  # pylint: disable=R0204
             hash_func=hash_func,
             pickle_reload=pickle_reload,
@@ -234,23 +245,24 @@ def cachier(
             wait_for_calc_timeout=wait_for_calc_timeout,
             default_params=_default_params,
         )
-    elif backend == 'mongo':
+    elif backend == "mongo":
         if mongetter is None:
             raise MissingMongetter(
-                'must specify ``mongetter`` when using the mongo core')
+                "must specify ``mongetter`` when using the mongo core"
+            )
         core = _MongoCore(
             mongetter=mongetter,
             hash_func=hash_func,
             wait_for_calc_timeout=wait_for_calc_timeout,
             default_params=_default_params,
         )
-    elif backend == 'memory':
+    elif backend == "memory":
         core = _MemoryCore(
             hash_func=hash_func,
             default_params=_default_params,
         )
     else:
-        raise ValueError('specified an invalid core: {}'.format(backend))
+        raise ValueError("specified an invalid core: {}".format(backend))
 
     def _cachier_decorator(func):
         core.set_func(func)
@@ -260,63 +272,72 @@ def cachier(
             nonlocal allow_none
             _allow_none = (
                 allow_none
-                if allow_none is not None else
-                _default_params['allow_none']
+                if allow_none is not None
+                else _default_params["allow_none"]
             )
             # print('Inside general wrapper for {}.'.format(func.__name__))
-            ignore_cache = kwds.pop('ignore_cache', False)
-            overwrite_cache = kwds.pop('overwrite_cache', False)
-            verbose_cache = kwds.pop('verbose_cache', False)
+            ignore_cache = kwds.pop("ignore_cache", False)
+            overwrite_cache = kwds.pop("overwrite_cache", False)
+            verbose_cache = kwds.pop("verbose_cache", False)
             # merge args expanded as kwargs and the original kwds
-            kwargs = _convert_args_kwargs(func, _is_method=core.func_is_method, args=args, kwds=kwds)
+            kwargs = _convert_args_kwargs(
+                func, _is_method=core.func_is_method, args=args, kwds=kwds
+            )
 
             _print = lambda x: None  # skipcq: FLK-E731  # noqa: E731
             if verbose_cache:
                 _print = print
-            if ignore_cache or not _default_params['caching_enabled']:
+            if ignore_cache or not _default_params["caching_enabled"]:
                 return func(**kwargs)
             key, entry = core.get_entry(tuple(), kwargs)
             if overwrite_cache:
                 return _calc_entry(core, key, func, args, kwds)
             if entry is not None:  # pylint: disable=R0101
-                _print('Entry found.')
-                if (_allow_none or entry.get('value', None) is not None):
-                    _print('Cached result found.')
-                    local_stale_after = stale_after or _default_params['stale_after']  # noqa: E501
-                    local_next_time = next_time or _default_params['next_time']  # noqa: E501
+                _print("Entry found.")
+                if _allow_none or entry.get("value", None) is not None:
+                    _print("Cached result found.")
+                    local_stale_after = (
+                        stale_after or _default_params["stale_after"]
+                    )  # noqa: E501
+                    local_next_time = next_time or _default_params["next_time"]  # noqa: E501
                     now = datetime.datetime.now()
-                    if now - entry['time'] > local_stale_after:
-                        _print('But it is stale... :(')
-                        if entry['being_calculated']:
+                    if now - entry["time"] > local_stale_after:
+                        _print("But it is stale... :(")
+                        if entry["being_calculated"]:
                             if local_next_time:
-                                _print('Returning stale.')
-                                return entry['value']  # return stale val
-                            _print('Already calc. Waiting on change.')
+                                _print("Returning stale.")
+                                return entry["value"]  # return stale val
+                            _print("Already calc. Waiting on change.")
                             try:
                                 return core.wait_on_entry_calc(key)
                             except RecalculationNeeded:
                                 return _calc_entry(core, key, func, args, kwds)
                         if local_next_time:
-                            _print('Async calc and return stale')
+                            _print("Async calc and return stale")
                             try:
                                 core.mark_entry_being_calculated(key)
                                 _get_executor().submit(
-                                    _function_thread, core, key, func, args, kwds,
+                                    _function_thread,
+                                    core,
+                                    key,
+                                    func,
+                                    args,
+                                    kwds,
                                 )
                             finally:
                                 core.mark_entry_not_calculated(key)
-                            return entry['value']
-                        _print('Calling decorated function and waiting')
+                            return entry["value"]
+                        _print("Calling decorated function and waiting")
                         return _calc_entry(core, key, func, args, kwds)
-                    _print('And it is fresh!')
-                    return entry['value']
-                if entry['being_calculated']:
-                    _print('No value but being calculated. Waiting.')
+                    _print("And it is fresh!")
+                    return entry["value"]
+                if entry["being_calculated"]:
+                    _print("No value but being calculated. Waiting.")
                     try:
                         return core.wait_on_entry_calc(key)
                     except RecalculationNeeded:
                         return _calc_entry(core, key, func, args, kwds)
-            _print('No entry found. No current calc. Calling like a boss.')
+            _print("No entry found. No current calc. Calling like a boss.")
             return _calc_entry(core, key, func, args, kwds)
 
         def clear_cache():
@@ -341,9 +362,12 @@ def cachier(
             ---------
             value : any
                 entry to be written into the cache
+
             """
             # merge args expanded as kwargs and the original kwds
-            kwargs = _convert_args_kwargs(func, _is_method=core.func_is_method, args=args, kwds=kwds)
+            kwargs = _convert_args_kwargs(
+                func, _is_method=core.func_is_method, args=args, kwds=kwds
+            )
             return core.precache_value(tuple(), kwargs, value_to_cache)
 
         func_wrapper.clear_cache = clear_cache
@@ -358,15 +382,15 @@ def cachier(
 def set_default_params(**params):
     """Configure global parameters applicable to all memoized functions.
 
-    This function takes the same keyword parameters as the ones defined
-    in the decorator, which can be passed all at once or with multiple
-    calls. Parameters given directly to a decorator take precedence over
-    any values set by this function.
+    This function takes the same keyword parameters as the ones defined in the
+    decorator, which can be passed all at once or with multiple calls.
+    Parameters given directly to a decorator take precedence over any values
+    set by this function.
 
-    Only 'stale_after', 'next_time', and 'wait_for_calc_timeout' can be
-    changed after the memoization decorator has been applied. Other
-    parameters will only have an effect on decorators applied after this
-    function is run.
+    Only 'stale_after', 'next_time', and 'wait_for_calc_timeout' can be changed
+    after the memoization decorator has been applied. Other parameters will
+    only have an effect on decorators applied after this function is run.
+
     """
     valid_params = (p for p in params.items() if p[0] in _default_params)
     _default_params.update(valid_params)
@@ -379,9 +403,9 @@ def get_default_params():
 
 def enable_caching():
     """Enable caching globally."""
-    _default_params['caching_enabled'] = True
+    _default_params["caching_enabled"] = True
 
 
 def disable_caching():
     """Disable caching globally."""
-    _default_params['caching_enabled'] = False
+    _default_params["caching_enabled"] = False
