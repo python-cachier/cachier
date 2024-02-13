@@ -16,7 +16,7 @@ def _test_int_pickling_compare(int_1, int_2):
 
 
 def test_pickle_speed():
-    """Test speeds"""
+    """Test speeds."""
     print("Comparing speeds of decorated vs non-decorated functions...")
     num_of_vals = 1000
     times = []

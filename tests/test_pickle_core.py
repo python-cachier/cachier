@@ -364,7 +364,7 @@ def _helper_bad_cache_file(sleeptime, separate_files):
     thread2.start()
     thread1.join(timeout=2)
     thread2.join(timeout=2)
-    if not res_queue.qsize() == 2:
+    if res_queue.qsize() != 2:
         return False
     res1 = res_queue.get()
     if not isinstance(res1, float):
@@ -452,7 +452,7 @@ def _helper_delete_cache_file(sleeptime, separate_files):
     thread2.start()
     thread1.join(timeout=2)
     thread2.join(timeout=2)
-    if not res_queue.qsize() == 2:
+    if res_queue.qsize() != 2:
         return False
     res1 = res_queue.get()
     # print(res1)

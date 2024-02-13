@@ -217,7 +217,6 @@ def test_wait_for_calc_applies_dynamically(backend, mongetter):
         res_queue.put(res)
 
     cachier.set_default_params(wait_for_calc_timeout=2)
-
     """Testing for calls timing out to be performed twice when needed."""
     _wait_for_calc_timeout_slow.clear_cache()
     res_queue = queue.Queue()

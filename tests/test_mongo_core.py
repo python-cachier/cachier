@@ -294,7 +294,7 @@ def test_stalled_mong_db_core(monkeypatch):
 
     @cachier(mongetter=_test_mongetter, stale_after=stale_after)
     def _stalled_func_2():
-        """Testing stalled function"""
+        """Testing stalled function."""
         return 2
 
     res = _stalled_func_2()
@@ -302,7 +302,7 @@ def test_stalled_mong_db_core(monkeypatch):
 
     @cachier(mongetter=_test_mongetter, stale_after=stale_after, next_time=True)
     def _stalled_func_3():
-        """Testing stalled function"""
+        """Testing stalled function."""
         return 3
 
     res = _stalled_func_3()
