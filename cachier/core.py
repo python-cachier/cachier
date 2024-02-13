@@ -36,11 +36,7 @@ DEFAULT_MAX_WORKERS = 8
 
 
 def _max_workers():
-    try:
-        return int(os.environ[MAX_WORKERS_ENVAR_NAME])
-    except KeyError:
-        os.environ[MAX_WORKERS_ENVAR_NAME] = str(DEFAULT_MAX_WORKERS)
-        return DEFAULT_MAX_WORKERS
+    return int(os.environ.get(MAX_WORKERS_ENVAR_NAME, DEFAULT_MAX_WORKERS))
 
 
 def _set_max_workers(max_workers):
@@ -49,13 +45,9 @@ def _set_max_workers(max_workers):
 
 
 def _get_executor(reset=False):
-    if reset:
+    if reset or not hasattr(_get_executor, "executor"):
         _get_executor.executor = ThreadPoolExecutor(_max_workers())
-    try:
-        return _get_executor.executor
-    except AttributeError:
-        _get_executor.executor = ThreadPoolExecutor(_max_workers())
-        return _get_executor.executor
+    return _get_executor.executor
 
 
 def _function_thread(core, key, func, args, kwds):
@@ -350,10 +342,7 @@ def cachier(
 
         def cache_dpath():
             """Returns the path to the cache dir, if exists; None if not."""
-            try:
-                return core.cache_dir
-            except AttributeError:
-                return None
+            return getattr(core, "cache_dir", None)
 
         def precache_value(*args, value_to_cache, **kwds):
             """Add an initial value to the cache.

@@ -8,6 +8,7 @@
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 import os
 import pickle  # for local caching
+from contextlib import suppress
 from datetime import datetime
 import threading
 
@@ -148,19 +149,12 @@ class _PickleCore(_BaseCore):
 
     def _get_cache_by_key(self, key=None, hash=None):
         fpath = self._cache_fpath()
-        if hash is None:
-            fpath += f"_{key}"
-        else:
-            fpath += f"_{hash}"
+        fpath += f"_{key}" if hash is None else f"_{hash}"
         try:
             with portalocker.Lock(fpath, mode="rb") as cache_file:
-                try:
-                    res = pickle.load(cache_file)
-                except EOFError:  # pragma: no cover
-                    res = None
-        except FileNotFoundError:
-            res = None
-        return res
+                return pickle.load(cache_file)
+        except (FileNotFoundError, EOFError):
+            return None
 
     def _clear_all_cache_files(self):
         fpath = self._cache_fpath()
@@ -253,11 +247,11 @@ class _PickleCore(_BaseCore):
             self.mark_entry_not_calculated_separate_files(key)
         with self.lock:
             cache = self._get_cache()
-            try:
+            with suppress(
+                KeyError
+            ):  # that's ok, we don't need an entry in that case
                 cache[key]["being_calculated"] = False
                 self._save_cache(cache)
-            except KeyError:
-                pass  # that's ok, we don't need an entry in that case
 
     def wait_on_entry_calc(self, key):
         if self.separate_files:
