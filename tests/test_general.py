@@ -188,15 +188,15 @@ def test_precache_value(mongetter, backend):
 )
 def test_ignore_self_in_methods(mongetter, backend):
 
-    class TestClass():
+    class DummyClass():
         @cachier.cachier(backend=backend, mongetter=mongetter)
         def takes_2_seconds(self, arg_1, arg_2):
             """Some function."""
             sleep(2)
             return arg_1 + arg_2
 
-    test_object_1 = TestClass()
-    test_object_2 = TestClass()
+    test_object_1 = DummyClass()
+    test_object_2 = DummyClass()
     test_object_1.takes_2_seconds.clear_cache()
     test_object_2.takes_2_seconds.clear_cache()
     result_1 = test_object_1.takes_2_seconds(1, 2)
