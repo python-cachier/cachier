@@ -52,10 +52,10 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.9
     hooks:
+      # use black formatting
+      - id: ruff-format
+        name: Black by Ruff
       # basic check
       - id: ruff
         name: Ruff check
         args: ["--fix"]
-      # use black formatting
-      - id: ruff-format
-        name: Black by Ruff
