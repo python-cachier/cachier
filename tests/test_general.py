@@ -338,7 +338,7 @@ def test_default_kwargs_handling():
 def test_runtime_handling():
     count = 0
 
-    def func(a, b):
+    def dummy_func(a, b):
         nonlocal count
         count += 1
         return a + b
@@ -346,6 +346,6 @@ def test_runtime_handling():
     cachier_ = cachier.cachier()
     cachier_.clear_cache()
     assert count == 0
-    cachier_(func(a=1, b=2))
-    cachier_(func(a=1, b=2))
+    cachier_(dummy_func(a=1, b=2))
+    cachier_(dummy_func(a=1, b=2))
     assert count == 1
