@@ -79,7 +79,7 @@ class _BaseCore:
 
     @abc.abstractmethod
     def wait_on_entry_calc(self, key):
-        """Waits on the entry mapped by key being calculated and returns the
+        """Waits on the entry mapped by key being calculated and returns
         result."""
 
     @abc.abstractmethod

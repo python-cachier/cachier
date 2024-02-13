@@ -108,9 +108,7 @@ class _PickleCore(_BaseCore):
 
     def _cache_fname(self):
         if self.cache_fname is None:
-            self.cache_fname = ".{}.{}".format(
-                self.func.__module__, self.func.__qualname__
-            )
+            self.cache_fname = f".{self.func.__module__}.{self.func.__qualname__}"
             self.cache_fname = self.cache_fname.replace("<", "_").replace(
                 ">", "_"
             )

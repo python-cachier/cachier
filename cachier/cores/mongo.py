@@ -52,7 +52,7 @@ class _MongoCore(_BaseCore):
 
     @staticmethod
     def _get_func_str(func):
-        return ".{}.{}".format(func.__module__, func.__name__)
+        return f".{func.__module__}.{func.__name__}"
 
     def get_entry_by_key(self, key):
         res = self.mongo_collection.find_one(
