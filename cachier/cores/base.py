@@ -14,7 +14,7 @@ class RecalculationNeeded(Exception):
     pass
 
 
-class _BaseCore():
+class _BaseCore:
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, hash_func, default_params):
@@ -24,11 +24,12 @@ class _BaseCore():
     def set_func(self, func):
         """Sets the function this core will use.
 
-        This has to be set before any method is called. Also determine
-        if the function is an object method.
+        This has to be set before any method is called. Also determine if the
+        function is an object method.
+
         """
         func_params = list(inspect.signature(func).parameters)
-        self.func_is_method = func_params and func_params[0] == 'self'
+        self.func_is_method = func_params and func_params[0] == "self"
         self.func = func
 
     def get_key(self, args, kwds):
@@ -36,7 +37,7 @@ class _BaseCore():
         if self.hash_func is not None:
             return self.hash_func(args, kwds)
         else:
-            return self.default_params['hash_func'](args, kwds)
+            return self.default_params["hash_func"](args, kwds)
 
     def get_entry(self, args, kwds):
         """Returns the result mapped to the given arguments in this core's
@@ -55,7 +56,7 @@ class _BaseCore():
         if self.wait_for_calc_timeout is not None:
             calc_timeout = self.wait_for_calc_timeout
         else:
-            calc_timeout = self.default_params['wait_for_calc_timeout']
+            calc_timeout = self.default_params["wait_for_calc_timeout"]
         if calc_timeout > 0 and (time_spent >= calc_timeout):
             raise RecalculationNeeded()
 

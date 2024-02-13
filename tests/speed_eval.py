@@ -25,8 +25,9 @@ def test_pickle_speed():
         _test_int_pickling_compare(i, i + 1)
         toc = time()
         times.append(toc - tic)
-    print('  - Non-decorated average = {:.8f}'.format(
-        sum(times) / num_of_vals))
+    print(
+        "  - Non-decorated average = {:.8f}".format(sum(times) / num_of_vals)
+    )
 
     _test_int_pickling.clear_cache()
     times = []
@@ -35,8 +36,7 @@ def test_pickle_speed():
         _test_int_pickling(i, i + 1)
         toc = time()
         times.append(toc - tic)
-    print('  - Decorated average = {:.8f}'.format(
-        sum(times) / num_of_vals))
+    print("  - Decorated average = {:.8f}".format(sum(times) / num_of_vals))
 
 
 @cachier()
@@ -60,13 +60,13 @@ def test_separate_files_vs_single_file():
     for i in range(3):
         for j in range(10):
             _test_separate_files_speed(j, 2)
-    print(f'separate files time: {time() - start_time}')
+    print(f"separate files time: {time() - start_time}")
     start_time = time()
     for i in range(3):
         for j in range(10):
             _test_single_file_speed(j, 2)
-    print(f'single file time: {time() - start_time}')
+    print(f"single file time: {time() - start_time}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_pickle_speed()

@@ -25,21 +25,16 @@ markers = [
 ]
 
 
-#[tool.black]
-## https://github.com/psf/black
-#line-length = 120
-#exclude = "(.eggs|.git|.hg|.mypy_cache|.venv|_build|buck-out|build|dist)"
-
-#[tool.docformatter]
-#recursive = true
-## some docstring start with r"""
-#wrap-summaries = 119
-#wrap-descriptions = 120
-#blank = true
+[tool.docformatter]
+recursive = true
+# some docstring start with r"""
+wrap-summaries = 79
+wrap-descriptions = 79
+blank = true
 
 [tool.ruff]
 target-version = "py38"
-line-length = 120
+line-length = 79
 # Enable Pyflakes `E` and `F` codes by default.
 select = [
     "E",
