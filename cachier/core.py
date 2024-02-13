@@ -250,7 +250,7 @@ def cachier(
             default_params=_default_params,
         )
     else:
-        raise ValueError("specified an invalid core: %r", backend)
+        raise ValueError("specified an invalid core: %s" % backend)
 
     def _cachier_decorator(func):
         core.set_func(func)
