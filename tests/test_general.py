@@ -304,10 +304,10 @@ def test_order_independent_kwargs_handling():
     count = 0
 
     @cachier.cachier()
-    def dummy_func(a=None, b=None):
+    def dummy_func(a, b):
         nonlocal count
         count += 1
-        return 0
+        return a + b
 
     dummy_func.clear_cache()
     assert count == 0
@@ -345,8 +345,8 @@ def test_runtime_handling(tmpdir):
 
     cachier_ = cachier.cachier(cache_dir=tmpdir)
     assert count == 0
-    cachier_(dummy_func(a=1, b=2))
-    cachier_(dummy_func(a=1, b=2))
+    cachier_(dummy_func)(a=1, b=2)
+    cachier_(dummy_func)(a=1, b=2)
     assert count == 1
 
 
@@ -369,5 +369,10 @@ def test_partial_handling(tmpdir):
 
     dummy_ = functools.partial(dummy_func, b=2)
     cachier_(dummy_)(1)
+
+    assert count == 1
+
+    cachier_(dummy_func)(1, 2)
+    cachier_(dummy_func)(a=1, b=2)
 
     assert count == 1
