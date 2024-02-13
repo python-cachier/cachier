@@ -362,8 +362,9 @@ def set_default_params(**params):
     any values set by this function.
 
     Only 'stale_after', 'next_time', and 'wait_for_calc_timeout' can be
-    changed after the memoization decorator has been applied. Other parameters
-    will only have an effect on decorators applied after this function is run.
+    changed after the memoization decorator has been applied. Other
+    parameters will only have an effect on decorators applied after this
+    function is run.
     """
     valid_params = (p for p in params.items() if p[0] in _default_params)
     _default_params.update(valid_params)
