@@ -348,3 +348,17 @@ def test_runtime_handling(tmpdir):
     cachier_(dummy_func(a=1, b=2))
     cachier_(dummy_func(a=1, b=2))
     assert count == 1
+
+
+def test_default_kwargs_handling():
+    count = 0
+
+    @cachier.cachier()
+    def dummy_func(a, b=2):
+        nonlocal count
+        count += 1
+
+    dummy_func.clear_cache()
+    assert count == 0
+    dummy_func(a=1)
+    dummy_func(a=1, b=2)
