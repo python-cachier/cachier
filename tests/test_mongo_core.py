@@ -270,9 +270,9 @@ def test_stalled_mong_db_core(monkeypatch):
         return "key", None
 
     monkeypatch.setattr(
-        "cachier.mongo_core._MongoCore.get_entry", mock_get_entry)
+        "cachier.cores.mongo._MongoCore.get_entry", mock_get_entry)
     monkeypatch.setattr(
-        "cachier.mongo_core._MongoCore.get_entry_by_key", mock_get_entry_by_key
+        "cachier.cores.mongo._MongoCore.get_entry_by_key", mock_get_entry_by_key
     )
 
     @cachier(mongetter=_test_mongetter)
@@ -290,7 +290,7 @@ def test_stalled_mong_db_core(monkeypatch):
         return "key", entry
 
     monkeypatch.setattr(
-        "cachier.mongo_core._MongoCore.get_entry", mock_get_entry_2)
+        "cachier.cores.mongo._MongoCore.get_entry", mock_get_entry_2)
 
     stale_after = datetime.timedelta(seconds=1)
 
