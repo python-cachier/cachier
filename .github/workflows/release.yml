@@ -37,7 +37,7 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload dist artifact for the publish job
-        uses: actions/upload-artifact@master
+        uses: actions/upload-artifact@v4
         with:
           name: cachier_dist
           path: dist
