@@ -17,7 +17,7 @@ from cachier import cachier
 def _takes_2_seconds(arg_1, arg_2):
     """Some function."""
     sleep(2)
-    return "arg_1:{}, arg_2:{}".format(arg_1, arg_2)
+    return f"arg_1:{arg_1}, arg_2:{arg_2}"
 
 
 @pytest.mark.memory

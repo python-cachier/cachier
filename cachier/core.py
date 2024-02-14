@@ -63,11 +63,7 @@ def _function_thread(core, key, func, args, kwds):
         func_res = func(*args, **kwds)
         core.set_entry(key, func_res)
     except BaseException as exc:  # pylint: disable=W0703
-        print(
-            "Function call failed with the following exception:\n{}".format(
-                exc
-            )
-        )
+        print(f"Function call failed with the following exception:\n{exc}")
 
 
 def _calc_entry(core, key, func, args, kwds):
@@ -194,7 +190,7 @@ def cachier(
         object with writing permissions. If unset a local pickle cache is used
         instead.
     stale_after : datetime.timedelta, optional
-        The time delta afterwhich a cached result is considered stale. Calls
+        The time delta after which a cached result is considered stale. Calls
         made after the result goes stale will trigger a recalculation of the
         result, but whether a stale or fresh result will be returned is
         determined by the optional next_time argument.
@@ -267,7 +263,7 @@ def cachier(
             default_params=_default_params,
         )
     else:
-        raise ValueError("specified an invalid core: {}".format(backend))
+        raise ValueError("specified an invalid core: %s" % backend)
 
     def _cachier_decorator(func):
         core.set_func(func)
@@ -365,7 +361,7 @@ def cachier(
 
             Arguments
             ---------
-            value : any
+            value_to_cache : any
                 entry to be written into the cache
 
             """
