@@ -15,11 +15,6 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v3.4.0
-      - name: Write setup.py install_requires into requirements.txt
-        run: |
-          python .github/workflows/install_requires_to_requirements.py "$PWD/setup.py" "$PWD/requirements.txt"
-          cat requirements.txt
-
       - name: Security vulnerabilities scan
         uses: aufdenpunkt/python-safety-check@v1.0.5
         with:

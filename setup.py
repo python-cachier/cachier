@@ -1,4 +1,7 @@
 """Setup file for the Cachier package."""
+import os
+
+from pkg_resources import parse_requirements
 from setuptools.config.expand import find_packages
 
 # This file is part of Cachier.
@@ -15,9 +18,18 @@ except ImportError:
 
 import versioneer
 
-README_RST = ""
+_PATH_ROOT = os.path.dirname(__file__)
+
 with open("README.rst") as f:
     README_RST = f.read()
+
+
+def _load_requirements(
+    path_dir: str = _PATH_ROOT, file_name: str = "requirements.txt"
+) -> list:
+    with open(os.path.join(path_dir, file_name)) as fp:
+        reqs = parse_requirements(fp.readlines())
+    return list(map(str, reqs))
 
 
 setup(
@@ -38,11 +50,7 @@ setup(
         [console_scripts]
         cachier=cachier.__naim__:cli
     """,
-    install_requires=[
-        "watchdog>=2.3.1",
-        "portalocker>=2.3.2",
-        "setuptools>=67.6.0",  # to avoid vulnerability in 56.0.0
-    ],
+    install_requires=_load_requirements(),
     platforms=["linux", "osx", "windows"],
     keywords=["cache", "persistence", "mongo", "memoization", "decorator"],
     classifiers=[
