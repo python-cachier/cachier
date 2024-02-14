@@ -152,7 +152,7 @@ class _PickleCore(_BaseCore):
         fpath += f"_{key}" if hash is None else f"_{hash}"
         try:
             with portalocker.Lock(fpath, mode="rb") as cache_file:
-                return pickle.load(cache_file)
+                return pickle.load(cache_file)  # noqa: S301
         except (FileNotFoundError, EOFError):
             return None
 
