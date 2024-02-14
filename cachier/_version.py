@@ -7,9 +7,11 @@
 
 import os
 import subprocess
+from contextlib import suppress
 from subprocess import DEVNULL
 
 _PATH_HERE = os.path.dirname(__file__)
+_PATH_ROOT = os.path.dirname(_PATH_HERE)
 _PATH_VERSION = os.path.join(_PATH_HERE, "version.info")
 _RELEASING_PROCESS = os.getenv("RELEASING_PROCESS", "0") == "1"
 
@@ -28,13 +30,14 @@ def _get_git_sha():
 
 
 if not _RELEASING_PROCESS:
-    try:
-        sha_short = _get_git_sha()
-        # print(f"Version enriched with git commit hash: {__version__}.")
-    except Exception:
-        # print("Failed to get the git commit hash,"
-        #       f" falling back to base version {__version__}.")
-        sha_short = ""
+    sha_short = ""
+    if os.path.isdir(os.path.join(_PATH_ROOT, ".git")):
+        with suppress(Exception):
+            sha_short = _get_git_sha()
+            # print(f"Version enriched with git commit hash: {__version__}.")
+        # except Exception:
+        #     print("Failed to get the git commit hash,"
+        #           f" falling back to base version {__version__}.")
     __version__ += f".dev+{sha_short}" if sha_short else ".dev"
 
 
