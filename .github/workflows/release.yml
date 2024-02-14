@@ -47,7 +47,7 @@ jobs:
     environment: pypi_publish
     steps:
       - name: Download dist artifact
-        uses: actions/download-artifact@master
+        uses: actions/download-artifact@v4
         with:
           name: cachier_dist
           path: dist
