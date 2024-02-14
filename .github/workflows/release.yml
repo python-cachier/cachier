@@ -1,0 +1,34 @@
+name: PyPI Release
+
+on:
+  push:
+    branches: [master]
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      RELEASING_PROCESS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: pip install -U build twine
+      - name: Build package
+        run: python -m build
+      - name: List package
+        run: ls -lh dist/
+      - name: Check package
+        run: twine check dist/*
+
+      - name: Publish distribution 📦 to PyPI
+        if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'release'
+        uses: pypa/gh-action-pypi-publish@v1.8.11
+        with:
+          user: __token__
+          password: ${{ secrets.pypi_password }}

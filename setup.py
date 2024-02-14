@@ -1,5 +1,4 @@
 """Setup file for the Cachier package."""
-from setuptools.config.expand import find_packages
 
 # This file is part of Cachier.
 # https://github.com/shaypal5/cachier
@@ -7,23 +6,34 @@ from setuptools.config.expand import find_packages
 # Licensed under the MIT license:
 # http://www.opensource.org/licenses/MIT-license
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
+# Copyright (c) 2024, Jirka Borovec <***@gmail.com>
 
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup  # type: ignore
+import os.path
+from importlib.util import spec_from_file_location, module_from_spec
+from setuptools import setup, find_packages
 
-import versioneer
+_PATH_HERE = os.path.dirname(__file__)
 
-README_RST = ""
-with open("README.rst") as f:
-    README_RST = f.read()
 
+def _load_py_module(fname: str, pkg: str = "torchmetrics"):
+    spec = spec_from_file_location(
+        os.path.join("cachier", fname),
+        os.path.join(_PATH_HERE, "cachier", fname),
+    )
+    py = module_from_spec(spec)
+    spec.loader.exec_module(py)
+    return py
+
+
+with open(os.path.join(_PATH_HERE, "cachier", "README.rst")) as fp:
+    README_RST = fp.read()
+
+
+_version = _load_py_module("_version.py")
 
 setup(
     name="cachier",
-    version=versioneer.get_version(),
-    cmdclass=versioneer.get_cmdclass(),
+    version=_version.__version__,
     description=(
         "Persistent, stale-free, local and cross-machine caching for"
         " Python functions."
