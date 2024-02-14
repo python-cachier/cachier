@@ -14,6 +14,14 @@ class RecalculationNeeded(Exception):
     pass
 
 
+def _convert_list_to_tuple(val):
+    return (
+        tuple(_convert_list_to_tuple(x) for x in val)
+        if isinstance(val, list)
+        else val
+    )
+
+
 class _BaseCore:
     __metaclass__ = abc.ABCMeta
 
@@ -40,6 +48,9 @@ class _BaseCore:
         if self.hash_func is not None:
             return self.hash_func(args, kwds)
         else:
+            # convert lists to tuples to make them hashable
+            args = _convert_list_to_tuple(args)
+            kwds = {k: _convert_list_to_tuple(v) for k, v in kwds.items()}
             return self.default_params["hash_func"](args, kwds)
 
     def get_entry(self, args, kwds):

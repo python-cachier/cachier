@@ -299,6 +299,24 @@ def test_identical_inputs():
     assert count == 1
 
 
+def test_list_inputs():
+    count = 0
+
+    @cachier.cachier()
+    def dummy_func(a: list, b: list = [2]):
+        nonlocal count
+        count += 1
+        return a + b
+
+    dummy_func.clear_cache()
+    assert count == 0
+    dummy_func([1])
+    dummy_func([1], [2])
+    dummy_func([1], b=[2])
+    dummy_func(a=[1], b=[2])
+    assert count == 1
+
+
 def test_order_independent_kwargs_handling():
     count = 0
 
