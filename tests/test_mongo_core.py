@@ -58,11 +58,9 @@ def _get_cachier_db_mongo_client():
     return client
 
 
-_COLLECTION_NAME = "cachier_test_{}_{}.{}.{}".format(
-    platform.system(),
-    sys.version_info[0],
-    sys.version_info[1],
-    sys.version_info[2],
+_COLLECTION_NAME = (
+    f"cachier_test_{platform.system()}"
+    f"_{'.'.join(map(str, sys.version_info[:3]))}"
 )
 
 

@@ -6,8 +6,12 @@ from .core import (
     disable_caching,
 )
 
-from ._version import get_versions
+from ._version import *  # noqa: F403
 
-__version__ = get_versions()["version"]
-del get_versions
-# flake8: noqa
+__all__ = [
+    "cachier",
+    "set_default_params",
+    "get_default_params",
+    "enable_caching",
+    "disable_caching",
+]
