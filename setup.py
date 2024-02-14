@@ -44,6 +44,7 @@ setup(
     author_email="shay.palachy@gmail.com",
     url="https://github.com/python-cachier/cachier",
     packages=find_packages(exclude=["tests"]),
+    include_package_data=True,
     entry_points="""
         [console_scripts]
         cachier=cachier.__naim__:cli
