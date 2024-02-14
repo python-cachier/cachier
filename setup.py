@@ -32,6 +32,7 @@ with open(os.path.join(_PATH_HERE, "README.rst")) as fp:
 
 _version = _load_py_module("_version.py")
 
+
 def _load_requirements(
     path_dir: str = _PATH_HERE, file_name: str = "requirements.txt"
 ) -> list:
