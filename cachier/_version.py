@@ -70,8 +70,8 @@ def register_vcs_handler(vcs, method):  # decorator
 
 def run_command(commands, args, cwd=None, verbose=False, hide_stderr=False):
     """Call the given command(s)."""
-    assert isinstance(commands, list)
-    p = None
+    if not isinstance(commands, list):
+        raise ValueError("commands must be a list")
     for c in commands:
         try:
             dispcmd = str([c] + args)

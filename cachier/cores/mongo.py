@@ -61,7 +61,7 @@ class _MongoCore(_BaseCore):
         if res:
             try:
                 entry = {
-                    "value": pickle.loads(res["value"]),
+                    "value": pickle.loads(res["value"]),  # noqa: S301
                     "time": res.get("time", None),
                     "stale": res.get("stale", False),
                     "being_calculated": res.get("being_calculated", False),

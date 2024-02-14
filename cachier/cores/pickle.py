@@ -134,7 +134,7 @@ class _PickleCore(_BaseCore):
             try:
                 with portalocker.Lock(fpath, mode="rb") as cache_file:
                     try:
-                        self.cache = pickle.load(cache_file)
+                        self.cache = pickle.load(cache_file)  # noqa: S301
                     except EOFError:
                         self.cache = {}
             except FileNotFoundError:
@@ -155,7 +155,7 @@ class _PickleCore(_BaseCore):
         try:
             with portalocker.Lock(fpath, mode="rb") as cache_file:
                 try:
-                    res = pickle.load(cache_file)
+                    res = pickle.load(cache_file)  # noqa: S301
                 except EOFError:  # pragma: no cover
                     res = None
         except FileNotFoundError:
