@@ -1,11 +1,11 @@
 # This file is part of Cachier.
 # https://github.com/python-cachier/cachier
-import os.path
-from contextlib import suppress
 
 # Licensed under the MIT license:
 # http://www.opensource.org/licenses/MIT-license
 # Copyright (c) 2024, Jirka Borovec <***@gmail.com>
+
+import os
 
 _PATH_HERE = os.path.dirname(__file__)
 _PATH_VERSION = os.path.join(_PATH_HERE, "version.info")

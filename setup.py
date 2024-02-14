@@ -40,7 +40,7 @@ setup(
     ),
     long_description=README_RST,
     license="MIT",
-    author="Shay Palachy",
+    author="Shay Palachy & al.",
     author_email="shay.palachy@gmail.com",
     url="https://github.com/python-cachier/cachier",
     packages=find_packages(exclude=["tests"]),
