@@ -1,3 +1,7 @@
-include versioneer.py
-include cachier/_version.py
+# Manifest syntax https://docs.python.org/2/distutils/sourcedist.html
+graft wheelhouse
+
+recursive-exclude __pycache__  *.py[cod] *.orig
+include cachier/version.info
+include README.rst
 include requirements.txt

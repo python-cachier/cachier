@@ -8,7 +8,6 @@
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 
 # python 2 compatibility
-from __future__ import absolute_import, division, print_function
 
 import datetime
 import functools
@@ -36,11 +35,7 @@ DEFAULT_MAX_WORKERS = 8
 
 
 def _max_workers():
-    try:
-        return int(os.environ[MAX_WORKERS_ENVAR_NAME])
-    except KeyError:
-        os.environ[MAX_WORKERS_ENVAR_NAME] = str(DEFAULT_MAX_WORKERS)
-        return DEFAULT_MAX_WORKERS
+    return int(os.environ.get(MAX_WORKERS_ENVAR_NAME, DEFAULT_MAX_WORKERS))
 
 
 def _set_max_workers(max_workers):
@@ -49,13 +44,9 @@ def _set_max_workers(max_workers):
 
 
 def _get_executor(reset=False):
-    if reset:
+    if reset or not hasattr(_get_executor, "executor"):
         _get_executor.executor = ThreadPoolExecutor(_max_workers())
-    try:
-        return _get_executor.executor
-    except AttributeError:
-        _get_executor.executor = ThreadPoolExecutor(_max_workers())
-        return _get_executor.executor
+    return _get_executor.executor
 
 
 def _function_thread(core, key, func, args, kwds):
@@ -63,11 +54,7 @@ def _function_thread(core, key, func, args, kwds):
         func_res = func(*args, **kwds)
         core.set_entry(key, func_res)
     except BaseException as exc:  # pylint: disable=W0703
-        print(
-            "Function call failed with the following exception:\n{}".format(
-                exc
-            )
-        )
+        print(f"Function call failed with the following exception:\n{exc}")
 
 
 def _calc_entry(core, key, func, args, kwds):
@@ -95,6 +82,11 @@ def _convert_args_kwargs(
     func, _is_method: bool, args: tuple, kwds: dict
 ) -> dict:
     """Convert mix of positional and keyword arguments to aggregated kwargs."""
+    # unwrap if the function is functools.partial
+    if hasattr(func, "func"):
+        args = func.args + args
+        kwds = dict(**func.keywords, **kwds)
+        func = func.func
     func_params = list(inspect.signature(func).parameters)
     args_as_kw = dict(
         zip(func_params[1:], args[1:])
@@ -189,7 +181,7 @@ def cachier(
         object with writing permissions. If unset a local pickle cache is used
         instead.
     stale_after : datetime.timedelta, optional
-        The time delta afterwhich a cached result is considered stale. Calls
+        The time delta after which a cached result is considered stale. Calls
         made after the result goes stale will trigger a recalculation of the
         result, but whether a stale or fresh result will be returned is
         determined by the optional next_time argument.
@@ -262,7 +254,7 @@ def cachier(
             default_params=_default_params,
         )
     else:
-        raise ValueError("specified an invalid core: {}".format(backend))
+        raise ValueError("specified an invalid core: %s" % backend)
 
     def _cachier_decorator(func):
         core.set_func(func)
@@ -350,17 +342,14 @@ def cachier(
 
         def cache_dpath():
             """Returns the path to the cache dir, if exists; None if not."""
-            try:
-                return core.cache_dir
-            except AttributeError:
-                return None
+            return getattr(core, "cache_dir", None)
 
         def precache_value(*args, value_to_cache, **kwds):
             """Add an initial value to the cache.
 
             Arguments
             ---------
-            value : any
+            value_to_cache : any
                 entry to be written into the cache
 
             """

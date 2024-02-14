@@ -1,6 +1,5 @@
 """Non-core-specific tests for cachier."""
 
-from __future__ import print_function
 
 import functools
 import os
@@ -304,10 +303,10 @@ def test_order_independent_kwargs_handling():
     count = 0
 
     @cachier.cachier()
-    def dummy_func(a=None, b=None):
+    def dummy_func(a, b):
         nonlocal count
         count += 1
-        return 0
+        return a + b
 
     dummy_func.clear_cache()
     assert count == 0
@@ -332,4 +331,47 @@ def test_default_kwargs_handling():
     dummy_func(1)
     dummy_func(a=1)
     dummy_func(a=1, b=2)
+    assert count == 1
+
+
+def test_runtime_handling(tmpdir):
+    count = 0
+
+    def dummy_func(a, b):
+        nonlocal count
+        count += 1
+        return a + b
+
+    cachier_ = cachier.cachier(cache_dir=tmpdir)
+    assert count == 0
+    cachier_(dummy_func)(a=1, b=2)
+    cachier_(dummy_func)(a=1, b=2)
+    assert count == 1
+
+
+def test_partial_handling(tmpdir):
+    count = 0
+
+    def dummy_func(a, b=2):
+        nonlocal count
+        count += 1
+        return a + b
+
+    cachier_ = cachier.cachier(cache_dir=tmpdir)
+    assert count == 0
+
+    dummy_ = functools.partial(dummy_func, 1)
+    cachier_(dummy_)()
+
+    dummy_ = functools.partial(dummy_func, a=1)
+    cachier_(dummy_)()
+
+    dummy_ = functools.partial(dummy_func, b=2)
+    cachier_(dummy_)(1)
+
+    assert count == 1
+
+    cachier_(dummy_func)(1, 2)
+    cachier_(dummy_func)(a=1, b=2)
+
     assert count == 1
