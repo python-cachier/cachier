@@ -22,8 +22,6 @@ comment:
   paths: null
 
 ignore:
-  - "versioneer.py"
   - "tests"
   - "**/_version.py"
   - "**/__init__.py"
-  - "cachier/scripts"

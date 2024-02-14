@@ -1,4 +1,3 @@
-versioneer.py
 *.ipynb
 .venv/
 .idea/
