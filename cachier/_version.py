@@ -16,7 +16,7 @@ with open(_PATH_VERSION) as fopen:
 
 
 def _get_git_sha():
-    sha = os.popen("git rev-parse HEAD").read().strip()
+    sha = os.popen("git rev-parse HEAD").read().strip()  # noqa: S605, S607 todo
     # SHA short
     return sha[:7]
 
