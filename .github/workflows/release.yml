@@ -15,6 +15,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: pypi_publish
     env:
       RELEASING_PROCESS: "1"
     steps:
