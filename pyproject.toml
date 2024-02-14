@@ -59,7 +59,6 @@ exclude = [
     "_build",
     "build",
     "dist",
-    "versioneer.py",
 ]
 ignore-init-module-imports = true
 unfixable = ["F401"]

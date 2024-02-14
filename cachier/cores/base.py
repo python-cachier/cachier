@@ -28,6 +28,9 @@ class _BaseCore:
         function is an object method.
 
         """
+        # unwrap if the function is functools.partial
+        if hasattr(func, "func"):
+            func = func.func
         func_params = list(inspect.signature(func).parameters)
         self.func_is_method = func_params and func_params[0] == "self"
         self.func = func
@@ -79,7 +82,7 @@ class _BaseCore:
 
     @abc.abstractmethod
     def wait_on_entry_calc(self, key):
-        """Waits on the entry mapped by key being calculated and returns the
+        """Waits on the entry mapped by key being calculated and returns
         result."""
 
     @abc.abstractmethod
