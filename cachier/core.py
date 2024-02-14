@@ -95,6 +95,11 @@ def _convert_args_kwargs(
     func, _is_method: bool, args: tuple, kwds: dict
 ) -> dict:
     """Convert mix of positional and keyword arguments to aggregated kwargs."""
+    # unwrap if the function is functools.partial
+    if hasattr(func, "func"):
+        args = func.args + args
+        kwds = dict(**func.keywords, **kwds)
+        func = func.func
     func_params = list(inspect.signature(func).parameters)
     args_as_kw = dict(
         zip(func_params[1:], args[1:])
