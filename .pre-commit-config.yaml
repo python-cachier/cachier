@@ -22,6 +22,14 @@ repos:
       - id: check-added-large-files
       - id: detect-private-key
 
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.15.0
+    hooks:
+      - id: pyupgrade
+        args: ["--py38-plus"]
+        name: Upgrade code
+        exclude: versioneer.py
+
   - repo: https://github.com/crate-ci/typos
     rev: v1.16.26
     hooks:

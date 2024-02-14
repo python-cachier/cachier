@@ -8,7 +8,6 @@
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 
 # python 2 compatibility
-from __future__ import absolute_import, division, print_function
 
 import datetime
 import functools
