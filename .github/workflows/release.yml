@@ -43,7 +43,9 @@ jobs:
           path: dist
 
   publish:
+    needs: build
     runs-on: ubuntu-latest
+    if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'release'
     environment: pypi_publish
     steps:
       - name: Download dist artifact
