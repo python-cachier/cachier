@@ -6,6 +6,8 @@
 # Copyright (c) 2024, Jirka Borovec <***@gmail.com>
 
 import os
+import subprocess
+from subprocess import DEVNULL
 
 _PATH_HERE = os.path.dirname(__file__)
 _PATH_VERSION = os.path.join(_PATH_HERE, "version.info")
@@ -16,7 +18,11 @@ with open(_PATH_VERSION) as fopen:
 
 
 def _get_git_sha():
-    sha = os.popen("git rev-parse HEAD").read().strip()  # noqa: S605, S607 todo
+    out = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"],  # noqa: S603 S607
+        stderr=DEVNULL,
+    )
+    sha = out.decode("utf-8").strip()
     # SHA short
     return sha[:7]
 
@@ -29,10 +35,7 @@ if not _RELEASING_PROCESS:
         # print("Failed to get the git commit hash,"
         #       f" falling back to base version {__version__}.")
         sha_short = ""
-    if sha_short:
-        __version__ += f".dev+{sha_short}"
-    else:
-        __version__ += ".dev"
+    __version__ += f".dev+{sha_short}" if sha_short else ".dev"
 
 
 __all__ = ["__version__"]
