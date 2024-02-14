@@ -39,8 +39,8 @@ setup(
         cachier=cachier.__naim__:cli
     """,
     install_requires=[
-        "watchdog",
-        "portalocker",
+        "watchdog>=2.3.1",
+        "portalocker>=2.3.2",
         "setuptools>=67.6.0",  # to avoid vulnerability in 56.0.0
     ],
     platforms=["linux", "osx", "windows"],
