@@ -22,12 +22,17 @@ def _get_git_sha():
 
 
 if not _RELEASING_PROCESS:
-    with suppress(Exception):
-        __version__ += ".dev+" + _get_git_sha()
+    try:
+        sha_short = _get_git_sha()
         # print(f"Version enriched with git commit hash: {__version__}.")
-    # except Exception:
-    #     print("Failed to get the git commit hash,"
-    #           f" falling back to base version {__version__}.")
+    except Exception:
+        # print("Failed to get the git commit hash,"
+        #       f" falling back to base version {__version__}.")
+        sha_short = ""
+    if sha_short:
+        __version__ += f".dev+{sha_short}"
+    else:
+        __version__ += ".dev"
 
 
 __all__ = ["__version__"]
