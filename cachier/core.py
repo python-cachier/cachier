@@ -53,7 +53,7 @@ def _function_thread(core, key, func, args, kwds):
     try:
         func_res = func(*args, **kwds)
         core.set_entry(key, func_res)
-    except BaseException as exc:  # pylint: disable=W0703
+    except BaseException as exc:
         print(f"Function call failed with the following exception:\n{exc}")
 
 
@@ -70,7 +70,6 @@ def _calc_entry(core, key, func, args, kwds):
 
 
 def _default_hash_func(args, kwds):
-    # pylint: disable-next=protected-access
     key = functools._make_key(args, kwds, typed=True)
     hash = hashlib.sha256()
     for item in key:
@@ -229,7 +228,7 @@ def cachier(
         backend = _default_params["backend"]
     core: _BaseCore
     if backend == "pickle":
-        core = _PickleCore(  # pylint: disable=R0204
+        core = _PickleCore(
             hash_func=hash_func,
             pickle_reload=pickle_reload,
             cache_dir=cache_dir,
@@ -260,7 +259,7 @@ def cachier(
         core.set_func(func)
 
         @wraps(func)
-        def func_wrapper(*args, **kwds):  # pylint: disable=C0111,R0911
+        def func_wrapper(*args, **kwds):
             nonlocal allow_none
             _allow_none = (
                 allow_none
@@ -284,7 +283,7 @@ def cachier(
             key, entry = core.get_entry(tuple(), kwargs)
             if overwrite_cache:
                 return _calc_entry(core, key, func, args, kwds)
-            if entry is not None:  # pylint: disable=R0101
+            if entry is not None:
                 _print("Entry found.")
                 if _allow_none or entry.get("value", None) is not None:
                     _print("Cached result found.")

@@ -186,7 +186,7 @@ class _PickleCore(_BaseCore):
             if key is None:
                 self._reload_cache()
 
-    def get_entry_by_key(self, key, reload=False):  # pylint: disable=W0221
+    def get_entry_by_key(self, key, reload=False):
         with self.lock:
             if self.separate_files:
                 return key, self._get_cache_by_key(key)
