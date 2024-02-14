@@ -11,8 +11,8 @@ _PATH_HERE = os.path.dirname(__file__)
 _PATH_VERSION = os.path.join(_PATH_HERE, "version.info")
 _RELEASING_PROCESS = os.getenv("RELEASING_PROCESS", "0") == "1"
 
-with open(_PATH_VERSION) as file:
-    __version__ = file.read().strip()
+with open(_PATH_VERSION) as fopen:
+    __version__ = fopen.read().strip()
 
 
 def _get_git_sha():
