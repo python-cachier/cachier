@@ -3,8 +3,14 @@ name: PyPI Release
 on:
   push:
     branches: [master]
+  pull_request:
+    branches: [master]
   release:
     types: [published]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}-${{ github.head_ref }}
+  cancel-in-progress: ${{ ! (github.ref != 'refs/heads/master' || startsWith(github.event.ref, 'refs/tags') || github.event_name == 'release') }}
 
 jobs:
   build:
@@ -25,6 +31,13 @@ jobs:
         run: ls -lh dist/
       - name: Check package
         run: twine check dist/*
+
+      - name: Upload to release
+        if: github.event_name == 'release'
+        uses: AButler/upload-release-assets@v3.0
+        with:
+          files: "dist/*"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish distribution 📦 to PyPI
         if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'release'

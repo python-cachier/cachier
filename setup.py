@@ -25,7 +25,7 @@ def _load_py_module(fname: str, pkg: str = "torchmetrics"):
     return py
 
 
-with open(os.path.join(_PATH_HERE, "cachier", "README.rst")) as fp:
+with open(os.path.join(_PATH_HERE, "README.rst")) as fp:
     README_RST = fp.read()
 
 
