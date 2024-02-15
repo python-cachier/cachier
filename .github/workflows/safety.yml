@@ -13,9 +13,9 @@ concurrency:
 jobs:
   safety:
     runs-on: "ubuntu-latest"
+    environment: safety_check
     steps:
       - uses: actions/checkout@v3.4.0
-      - run: mv requirements.txt requirenments.txt
       - name: Security vulnerabilities scan
         uses: aufdenpunkt/python-safety-check@v1.0.5
         with:
