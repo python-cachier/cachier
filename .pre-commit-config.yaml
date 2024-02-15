@@ -63,6 +63,13 @@ repos:
         # https://prettier.io/docs/en/options.html#print-width
         args: ["--print-width=120"]
 
+  - repo: https://github.com/asottile/yesqa
+    rev: v1.5.0
+    hooks:
+      - id: yesqa
+        additional_dependencies:
+          - flake8-bandit
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.9
     hooks:
