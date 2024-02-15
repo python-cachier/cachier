@@ -69,11 +69,11 @@ class _PickleCore(_BaseCore):
                 self.value = None
                 self.observer.stop()
 
-        def on_created(self, event):  # skipcq: PYL-W0613
+        def on_created(self, event):
             """A Watchdog Event Handler method."""
             self._check_calculation()  # pragma: no cover
 
-        def on_modified(self, event):  # skipcq: PYL-W0613
+        def on_modified(self, event):
             """A Watchdog Event Handler method."""
             self._check_calculation()
 
@@ -97,7 +97,7 @@ class _PickleCore(_BaseCore):
         else:
             self.cache_dir = os.path.expanduser(
                 self.default_params["cache_dir"]
-            )  # noqa: E501
+            )
         if separate_files is not None:
             self.separate_files = separate_files
         else:
