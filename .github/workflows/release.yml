@@ -22,7 +22,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
-
       - name: Install dependencies
         run: pip install -U build twine
       - name: Build package
@@ -39,8 +38,24 @@ jobs:
           files: "dist/*"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Upload dist artifact for the publish job
+        uses: actions/upload-artifact@v4
+        with:
+          name: cachier_dist
+          path: dist
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'release'
+    environment: pypi_publish
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cachier_dist
+          path: dist
       - name: Publish distribution 📦 to PyPI
-        if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'release'
         uses: pypa/gh-action-pypi-publish@v1.8.11
         with:
           user: __token__
