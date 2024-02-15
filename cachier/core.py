@@ -10,7 +10,6 @@
 # python 2 compatibility
 
 import datetime
-import functools
 import hashlib
 import inspect
 import os
@@ -70,11 +69,12 @@ def _calc_entry(core, key, func, args, kwds):
 
 
 def _default_hash_func(args, kwds):
-    key = functools._make_key(args, kwds, typed=True)
-    hash = hashlib.sha256()
-    for item in key:
-        hash.update(pickle.dumps(item))
-    return hash.hexdigest()
+    # Sort the kwargs to ensure consistent ordering
+    sorted_kwargs = sorted(kwds.items())
+    # Serialize args and sorted_kwargs using pickle or similar
+    serialized = pickle.dumps((args, sorted_kwargs))
+    # Create a hash of the serialized data
+    return hashlib.sha256(serialized).hexdigest()
 
 
 def _convert_args_kwargs(
