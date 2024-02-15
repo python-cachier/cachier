@@ -10,7 +10,6 @@
 # python 2 compatibility
 
 import datetime
-import functools
 import hashlib
 import inspect
 import os
@@ -70,11 +69,12 @@ def _calc_entry(core, key, func, args, kwds):
 
 
 def _default_hash_func(args, kwds):
-    key = functools._make_key(args, kwds, typed=True)
-    hash = hashlib.sha256()
-    for item in key:
-        hash.update(pickle.dumps(item))
-    return hash.hexdigest()
+    # Sort the kwargs to ensure consistent ordering
+    sorted_kwargs = sorted(kwds.items())
+    # Serialize args and sorted_kwargs using pickle or similar
+    serialized = pickle.dumps((args, sorted_kwargs))
+    # Create a hash of the serialized data
+    return hashlib.sha256(serialized).hexdigest()
 
 
 def _convert_args_kwargs(
@@ -275,7 +275,7 @@ def cachier(
                 func, _is_method=core.func_is_method, args=args, kwds=kwds
             )
 
-            _print = lambda x: None  # skipcq: FLK-E731  # noqa: E731
+            _print = lambda x: None  # noqa: E731
             if verbose_cache:
                 _print = print
             if ignore_cache or not _default_params["caching_enabled"]:
@@ -291,7 +291,7 @@ def cachier(
                 _print("Cached result found.")
                 local_stale_after = (
                     stale_after or _default_params["stale_after"]
-                )  # noqa: E501
+                )
                 local_next_time = next_time or _default_params["next_time"]  # noqa: E501
                 now = datetime.datetime.now()
                 if now - entry["time"] <= local_stale_after:
