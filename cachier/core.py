@@ -292,36 +292,31 @@ def cachier(
                     )  # noqa: E501
                     local_next_time = next_time or _default_params["next_time"]  # noqa: E501
                     now = datetime.datetime.now()
-                    if now - entry["time"] > local_stale_after:
-                        _print("But it is stale... :(")
-                        if entry["being_calculated"]:
-                            if local_next_time:
-                                _print("Returning stale.")
-                                return entry["value"]  # return stale val
-                            _print("Already calc. Waiting on change.")
-                            try:
-                                return core.wait_on_entry_calc(key)
-                            except RecalculationNeeded:
-                                return _calc_entry(core, key, func, args, kwds)
+                    if now - entry["time"] <= local_stale_after:
+                        _print("And it is fresh!")
+                        return entry["value"]
+                    _print("But it is stale... :(")
+                    if entry["being_calculated"]:
                         if local_next_time:
-                            _print("Async calc and return stale")
-                            try:
-                                core.mark_entry_being_calculated(key)
-                                _get_executor().submit(
-                                    _function_thread,
-                                    core,
-                                    key,
-                                    func,
-                                    args,
-                                    kwds,
-                                )
-                            finally:
-                                core.mark_entry_not_calculated(key)
-                            return entry["value"]
-                        _print("Calling decorated function and waiting")
-                        return _calc_entry(core, key, func, args, kwds)
-                    _print("And it is fresh!")
-                    return entry["value"]
+                            _print("Returning stale.")
+                            return entry["value"]  # return stale val
+                        _print("Already calc. Waiting on change.")
+                        try:
+                            return core.wait_on_entry_calc(key)
+                        except RecalculationNeeded:
+                            return _calc_entry(core, key, func, args, kwds)
+                    if local_next_time:
+                        _print("Async calc and return stale")
+                        try:
+                            core.mark_entry_being_calculated(key)
+                            _get_executor().submit(
+                                _function_thread, core, key, func, args, kwds
+                            )
+                        finally:
+                            core.mark_entry_not_calculated(key)
+                        return entry["value"]
+                    _print("Calling decorated function and waiting")
+                    return _calc_entry(core, key, func, args, kwds)
                 if entry["being_calculated"]:
                     _print("No value but being calculated. Waiting.")
                     try:
