@@ -51,7 +51,7 @@ jobs:
           CACHIER_TEST_VS_LIVE_MONGO: ${{ secrets.CACHIER_TEST_VS_LIVE_MONGO  }}
         run: pytest -m "mongo"
       - name: "Upload coverage to Codecov"
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: true
 
