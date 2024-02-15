@@ -14,7 +14,7 @@ jobs:
   checkdocs:
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v3.4.0
+      - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v4.5.0
         with:
