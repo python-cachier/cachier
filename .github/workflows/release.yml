@@ -44,6 +44,27 @@ jobs:
           name: cachier_dist
           path: dist
 
+  install:
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macOS-latest, windows-latest]
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cachier_dist
+          path: dist
+      - name: Install package
+        run: pip install dist/*.whl
+      - name: Try importing the package
+        run: python -c "import cachier"
+
   publish:
     needs: build
     runs-on: ubuntu-latest
