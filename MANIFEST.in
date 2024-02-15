@@ -4,5 +4,6 @@ graft wheelhouse
 recursive-exclude __pycache__  *.py[cod] *.orig
 include cachier/version.info
 include README.rst
+include requirements.txt
 
 prune tests

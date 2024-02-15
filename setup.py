@@ -11,6 +11,7 @@
 import os.path
 from importlib.util import spec_from_file_location, module_from_spec
 from setuptools import setup, find_packages
+from pkg_resources import parse_requirements
 
 _PATH_HERE = os.path.dirname(__file__)
 
@@ -31,6 +32,15 @@ with open(os.path.join(_PATH_HERE, "README.rst")) as fp:
 
 _version = _load_py_module("_version.py")
 
+
+def _load_requirements(
+    path_dir: str = _PATH_HERE, file_name: str = "requirements.txt"
+) -> list:
+    with open(os.path.join(path_dir, file_name)) as fp:
+        reqs = parse_requirements(fp.readlines())
+    return list(map(str, reqs))
+
+
 setup(
     name="cachier",
     version=_version.__version__,
@@ -49,11 +59,7 @@ setup(
         [console_scripts]
         cachier=cachier.__naim__:cli
     """,
-    install_requires=[
-        "watchdog",
-        "portalocker",
-        "setuptools>=67.6.0",  # to avoid vulnerability in 56.0.0
-    ],
+    install_requires=_load_requirements(),
     platforms=["linux", "osx", "windows"],
     keywords=["cache", "persistence", "mongo", "memoization", "decorator"],
     classifiers=[

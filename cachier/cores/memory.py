@@ -14,7 +14,7 @@ class _MemoryCore(_BaseCore):
         self.cache = {}
         self.lock = threading.RLock()
 
-    def get_entry_by_key(self, key, reload=False):  # pylint: disable=W0221
+    def get_entry_by_key(self, key, reload=False):
         with self.lock:
             return key, self.cache.get(key, None)
 
