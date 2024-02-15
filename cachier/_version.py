@@ -23,7 +23,7 @@ def _get_git_sha() -> str:
         # Run the git command to get the SHA of the current commit.
         # The --short flag gets the abbreviated SHA.
         git_sha = subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"], stderr=subprocess.STDOUT
+            ["git", "rev-parse", "--short", "HEAD"], stderr=subprocess.DEVNULL
         ).strip()
 
         # Decode the output from bytes to a string.
