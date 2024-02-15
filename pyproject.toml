@@ -64,8 +64,6 @@ lint.ignore-init-module-imports = true
 lint.unfixable = ["F401"]
 
 [tool.ruff.lint.per-file-ignores]
-"cachier/_version.py" = ["S603", "S607"]  # todo
-
 "tests/**" = ["S101", "S311", "S105", "S603"]
 
 #[tool.ruff.pydocstyle]
