@@ -291,7 +291,7 @@ def cachier(
                 _print("Cached result found.")
                 local_stale_after = (
                     stale_after or _default_params["stale_after"]
-                )  # noqa: E501
+                )
                 local_next_time = next_time or _default_params["next_time"]  # noqa: E501
                 now = datetime.datetime.now()
                 if now - entry["time"] <= local_stale_after:

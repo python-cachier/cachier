@@ -31,7 +31,7 @@ repos:
         exclude: versioneer.py
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.16.26
+    rev: typos-v0.10.21
     hooks:
       - id: typos
         # empty to do not write fixes
@@ -56,13 +56,6 @@ repos:
   #    hooks:
   #      - id: mypy
 
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
-    hooks:
-      - id: prettier
-        # https://prettier.io/docs/en/options.html#print-width
-        args: ["--print-width=120"]
-
   - repo: https://github.com/asottile/yesqa
     rev: v1.5.0
     hooks:
@@ -71,7 +64,7 @@ repos:
           - flake8-bandit
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.9
+    rev: v0.2.1
     hooks:
       # use black formatting
       - id: ruff-format
