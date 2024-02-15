@@ -7,10 +7,8 @@
 
 import os
 import subprocess
-from subprocess import DEVNULL
 
 _PATH_HERE = os.path.dirname(__file__)
-_PATH_ROOT = os.path.dirname(_PATH_HERE)
 _PATH_VERSION = os.path.join(_PATH_HERE, "version.info")
 _RELEASING_PROCESS = os.getenv("RELEASING_PROCESS", "0") == "1"
 
@@ -19,15 +17,22 @@ with open(_PATH_VERSION) as fopen:
 
 
 def _get_git_sha() -> str:
-    if not os.path.isdir(os.path.join(_PATH_ROOT, ".git")):
+    try:
+        os.chdir(_PATH_HERE)
+
+        # Run the git command to get the SHA of the current commit.
+        # The --short flag gets the abbreviated SHA.
+        git_sha = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"], stderr=subprocess.STDOUT
+        ).strip()
+
+        # Decode the output from bytes to a string.
+        return git_sha.decode("utf-8")
+
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        # CalledProcessError - raised if git returns a non-zero error code
+        # FileNotFoundError - raised if git is not installed
         return ""
-    out = subprocess.check_output(  # noqa: S603, S607
-        ["git", "rev-parse", "HEAD"],
-        stderr=DEVNULL,
-    )
-    sha = out.decode("utf-8").strip()
-    # SHA short
-    return sha[:7]
 
 
 if not _RELEASING_PROCESS:
