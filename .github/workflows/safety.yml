@@ -1,0 +1,22 @@
+name: Check safety
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.head_ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
+jobs:
+  safety:
+    runs-on: "ubuntu-latest"
+    environment: safety_check
+    steps:
+      - uses: actions/checkout@v3.4.0
+      - name: Security vulnerabilities scan
+        uses: shaypal5/python-safety-checker@v1.0.6
+        with:
+          scan_requirements_file_only: "true"
