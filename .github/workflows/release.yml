@@ -71,7 +71,7 @@ jobs:
         run: python -c "import cachier"
 
   publish:
-    needs: build
+    needs: [build, install]
     runs-on: ubuntu-latest
     if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'release'
     environment: pypi_publish
