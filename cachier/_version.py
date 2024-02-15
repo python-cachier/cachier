@@ -21,8 +21,8 @@ with open(_PATH_VERSION) as fopen:
 def _get_git_sha() -> str:
     if not os.path.isdir(os.path.join(_PATH_ROOT, ".git")):
         return ""
-    out = subprocess.check_output(
-        ["git", "rev-parse", "HEAD"],  # noqa: S603 S607
+    out = subprocess.check_output(  # noqa: S603, S607
+        ["git", "rev-parse", "HEAD"],
         stderr=DEVNULL,
     )
     sha = out.decode("utf-8").strip()

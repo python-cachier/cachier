@@ -31,7 +31,7 @@ repos:
         exclude: versioneer.py
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.16.26
+    rev: typos-v0.10.21
     hooks:
       - id: typos
         # empty to do not write fixes
@@ -56,8 +56,15 @@ repos:
   #    hooks:
   #      - id: mypy
 
+  - repo: https://github.com/asottile/yesqa
+    rev: v1.5.0
+    hooks:
+      - id: yesqa
+        additional_dependencies:
+          - flake8-bandit
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.9
+    rev: v0.2.1
     hooks:
       # use black formatting
       - id: ruff-format

@@ -348,7 +348,7 @@ def _calls_bad_cache(bad_cache_func, res_queue, trash_cache, separate_files):
                 cache_file.seek(0)
                 cache_file.truncate()
         res_queue.put(res)
-    except Exception as exc:  # skipcq: PYL-W0703
+    except Exception as exc:
         res_queue.put(exc)
 
 
@@ -440,7 +440,7 @@ def _calls_delete_cache(del_cache_func, res_queue, del_cache, separate_files):
             os.remove(_DEL_CACHE_FPATHS[separate_files])
             # print(os.path.isfile(_DEL_CACHE_FPATH))
         res_queue.put(res)
-    except Exception as exc:  # skipcq: PYL-W0703
+    except Exception as exc:
         # print('found')
         res_queue.put(exc)
 
