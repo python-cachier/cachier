@@ -15,7 +15,7 @@ jobs:
     runs-on: "ubuntu-latest"
     environment: safety_check
     steps:
-      - uses: actions/checkout@v3.4.0
+      - uses: actions/checkout@v4
       - name: Security vulnerabilities scan
         uses: shaypal5/python-safety-checker@v1.0.6
         with:

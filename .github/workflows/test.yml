@@ -27,7 +27,7 @@ jobs:
         backend: ["local", "db"]
 
     steps:
-      - uses: actions/checkout@v3.4.0
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4.5.0
@@ -51,9 +51,10 @@ jobs:
           CACHIER_TEST_VS_LIVE_MONGO: ${{ secrets.CACHIER_TEST_VS_LIVE_MONGO  }}
         run: pytest -m "mongo"
       - name: "Upload coverage to Codecov"
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }} # required
 
   testing-guardian:
     runs-on: ubuntu-latest
