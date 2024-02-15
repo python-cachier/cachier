@@ -283,46 +283,48 @@ def cachier(
             key, entry = core.get_entry(tuple(), kwargs)
             if overwrite_cache:
                 return _calc_entry(core, key, func, args, kwds)
-            if entry is not None:
-                _print("Entry found.")
-                if _allow_none or entry.get("value", None) is not None:
-                    _print("Cached result found.")
-                    local_stale_after = (
-                        stale_after or _default_params["stale_after"]
-                    )  # noqa: E501
-                    local_next_time = next_time or _default_params["next_time"]  # noqa: E501
-                    now = datetime.datetime.now()
-                    if now - entry["time"] <= local_stale_after:
-                        _print("And it is fresh!")
-                        return entry["value"]
-                    _print("But it is stale... :(")
-                    if entry["being_calculated"]:
-                        if local_next_time:
-                            _print("Returning stale.")
-                            return entry["value"]  # return stale val
-                        _print("Already calc. Waiting on change.")
-                        try:
-                            return core.wait_on_entry_calc(key)
-                        except RecalculationNeeded:
-                            return _calc_entry(core, key, func, args, kwds)
-                    if local_next_time:
-                        _print("Async calc and return stale")
-                        try:
-                            core.mark_entry_being_calculated(key)
-                            _get_executor().submit(
-                                _function_thread, core, key, func, args, kwds
-                            )
-                        finally:
-                            core.mark_entry_not_calculated(key)
-                        return entry["value"]
-                    _print("Calling decorated function and waiting")
-                    return _calc_entry(core, key, func, args, kwds)
+            if entry is None:
+                _print("No entry found. No current calc. Calling like a boss.")
+                return _calc_entry(core, key, func, args, kwds)
+            _print("Entry found.")
+            if _allow_none or entry.get("value", None) is not None:
+                _print("Cached result found.")
+                local_stale_after = (
+                    stale_after or _default_params["stale_after"]
+                )  # noqa: E501
+                local_next_time = next_time or _default_params["next_time"]  # noqa: E501
+                now = datetime.datetime.now()
+                if now - entry["time"] <= local_stale_after:
+                    _print("And it is fresh!")
+                    return entry["value"]
+                _print("But it is stale... :(")
                 if entry["being_calculated"]:
-                    _print("No value but being calculated. Waiting.")
+                    if local_next_time:
+                        _print("Returning stale.")
+                        return entry["value"]  # return stale val
+                    _print("Already calc. Waiting on change.")
                     try:
                         return core.wait_on_entry_calc(key)
                     except RecalculationNeeded:
                         return _calc_entry(core, key, func, args, kwds)
+                if local_next_time:
+                    _print("Async calc and return stale")
+                    try:
+                        core.mark_entry_being_calculated(key)
+                        _get_executor().submit(
+                            _function_thread, core, key, func, args, kwds
+                        )
+                    finally:
+                        core.mark_entry_not_calculated(key)
+                    return entry["value"]
+                _print("Calling decorated function and waiting")
+                return _calc_entry(core, key, func, args, kwds)
+            if entry["being_calculated"]:
+                _print("No value but being calculated. Waiting.")
+                try:
+                    return core.wait_on_entry_calc(key)
+                except RecalculationNeeded:
+                    return _calc_entry(core, key, func, args, kwds)
             _print("No entry found. No current calc. Calling like a boss.")
             return _calc_entry(core, key, func, args, kwds)
 
