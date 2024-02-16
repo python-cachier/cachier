@@ -7,26 +7,26 @@
 # http://www.opensource.org/licenses/MIT-license
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 
-# python 2 compatibility
-
 import datetime
-import hashlib
 import inspect
 import os
-import pickle
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
-from typing import TYPE_CHECKING, Callable, Literal, Optional, TypedDict, Union
+from typing import Optional, Union
 from warnings import warn
 
 from .cores.base import RecalculationNeeded, _BaseCore
 from .cores.memory import _MemoryCore
 from .cores.mongo import _MongoCore
 from .cores.pickle import _PickleCore
-
-if TYPE_CHECKING:
-    import pymongo.collection
+from .config import (
+    _Type_Mongetter,
+    _Type_HashFunc,
+    _Type_Backend,
+    _default_params,
+    _update_with_defaults,
+)
 
 
 MAX_WORKERS_ENVAR_NAME = "CACHIER_MAX_WORKERS"
@@ -68,15 +68,6 @@ def _calc_entry(core, key, func, args, kwds):
         core.mark_entry_not_calculated(key)
 
 
-def _default_hash_func(args, kwds):
-    # Sort the kwargs to ensure consistent ordering
-    sorted_kwargs = sorted(kwds.items())
-    # Serialize args and sorted_kwargs using pickle or similar
-    serialized = pickle.dumps((args, sorted_kwargs))
-    # Create a hash of the serialized data
-    return hashlib.sha256(serialized).hexdigest()
-
-
 def _convert_args_kwargs(
     func, _is_method: bool, args: tuple, kwds: dict
 ) -> dict:
@@ -103,49 +94,11 @@ def _convert_args_kwargs(
     return OrderedDict(sorted(kwargs.items()))
 
 
-class MissingMongetter(ValueError):
-    """Thrown when the mongetter keyword argument is missing."""
-
-
-HashFunc = Callable[..., str]
-Mongetter = Callable[[], "pymongo.collection.Collection"]
-Backend = Literal["pickle", "mongo", "memory"]
-
-
-class Params(TypedDict):
-    caching_enabled: bool
-    hash_func: HashFunc
-    backend: Backend
-    mongetter: Optional[Mongetter]
-    stale_after: datetime.timedelta
-    next_time: bool
-    cache_dir: Union[str, os.PathLike]
-    pickle_reload: bool
-    separate_files: bool
-    wait_for_calc_timeout: int
-    allow_none: bool
-
-
-_default_params: Params = {
-    "caching_enabled": True,
-    "hash_func": _default_hash_func,
-    "backend": "pickle",
-    "mongetter": None,
-    "stale_after": datetime.timedelta.max,
-    "next_time": False,
-    "cache_dir": "~/.cachier/",
-    "pickle_reload": True,
-    "separate_files": False,
-    "wait_for_calc_timeout": 0,
-    "allow_none": False,
-}
-
-
 def cachier(
-    hash_func: Optional[HashFunc] = None,
-    hash_params: Optional[HashFunc] = None,
-    backend: Optional[Backend] = None,
-    mongetter: Optional[Mongetter] = None,
+    hash_func: Optional[_Type_HashFunc] = None,
+    hash_params: Optional[_Type_HashFunc] = None,
+    backend: Optional[_Type_Backend] = None,
+    mongetter: Optional[_Type_Mongetter] = None,
     stale_after: Optional[datetime.timedelta] = None,
     next_time: Optional[bool] = None,
     cache_dir: Optional[Union[str, os.PathLike]] = None,
@@ -220,12 +173,17 @@ def cachier(
         warn(message, DeprecationWarning, stacklevel=2)
         hash_func = hash_params
     # Override the backend parameter if a mongetter is provided.
-    if mongetter is None:
-        mongetter = _default_params["mongetter"]
+    hash_func = _update_with_defaults(hash_func, "hash_func")
+    mongetter = _update_with_defaults(mongetter, "mongetter")
+    backend = _update_with_defaults(backend, "backend")
+    pickle_reload = _update_with_defaults(pickle_reload, "pickle_reload")
+    cache_dir = _update_with_defaults(cache_dir, "cache_dir")
+    separate_files = _update_with_defaults(separate_files, "separate_files")
+    wait_for_calc_timeout = _update_with_defaults(
+        wait_for_calc_timeout, "wait_for_calc_timeout"
+    )
     if callable(mongetter):
         backend = "mongo"
-    if backend is None:
-        backend = _default_params["backend"]
     core: _BaseCore
     if backend == "pickle":
         core = _PickleCore(
@@ -234,23 +192,16 @@ def cachier(
             cache_dir=cache_dir,
             separate_files=separate_files,
             wait_for_calc_timeout=wait_for_calc_timeout,
-            default_params=_default_params,
         )
     elif backend == "mongo":
-        if mongetter is None:
-            raise MissingMongetter(
-                "must specify ``mongetter`` when using the mongo core"
-            )
         core = _MongoCore(
             mongetter=mongetter,
             hash_func=hash_func,
             wait_for_calc_timeout=wait_for_calc_timeout,
-            default_params=_default_params,
         )
     elif backend == "memory":
         core = _MemoryCore(
-            hash_func=hash_func,
-            default_params=_default_params,
+            hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout
         )
     else:
         raise ValueError("specified an invalid core: %s" % backend)
@@ -261,11 +212,7 @@ def cachier(
         @wraps(func)
         def func_wrapper(*args, **kwds):
             nonlocal allow_none
-            _allow_none = (
-                allow_none
-                if allow_none is not None
-                else _default_params["allow_none"]
-            )
+            _allow_none = _update_with_defaults(allow_none, "allow_none")
             # print('Inside general wrapper for {}.'.format(func.__name__))
             ignore_cache = kwds.pop("ignore_cache", False)
             overwrite_cache = kwds.pop("overwrite_cache", False)
@@ -289,10 +236,10 @@ def cachier(
             _print("Entry found.")
             if _allow_none or entry.get("value", None) is not None:
                 _print("Cached result found.")
-                local_stale_after = (
-                    stale_after or _default_params["stale_after"]
+                local_stale_after = _update_with_defaults(
+                    stale_after, "stale_after"
                 )
-                local_next_time = next_time or _default_params["next_time"]  # noqa: E501
+                local_next_time = _update_with_defaults(next_time, "next_time")
                 now = datetime.datetime.now()
                 if now - entry["time"] <= local_stale_after:
                     _print("And it is fresh!")
@@ -362,35 +309,3 @@ def cachier(
         return func_wrapper
 
     return _cachier_decorator
-
-
-def set_default_params(**params):
-    """Configure global parameters applicable to all memoized functions.
-
-    This function takes the same keyword parameters as the ones defined in the
-    decorator, which can be passed all at once or with multiple calls.
-    Parameters given directly to a decorator take precedence over any values
-    set by this function.
-
-    Only 'stale_after', 'next_time', and 'wait_for_calc_timeout' can be changed
-    after the memoization decorator has been applied. Other parameters will
-    only have an effect on decorators applied after this function is run.
-
-    """
-    valid_params = (p for p in params.items() if p[0] in _default_params)
-    _default_params.update(valid_params)
-
-
-def get_default_params():
-    """Get current set of default parameters."""
-    return _default_params
-
-
-def enable_caching():
-    """Enable caching globally."""
-    _default_params["caching_enabled"] = True
-
-
-def disable_caching():
-    """Disable caching globally."""
-    _default_params["caching_enabled"] = False

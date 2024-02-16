@@ -19,19 +19,11 @@ from watchdog.events import PatternMatchingEventHandler
 # Alternative:  https://github.com/WoLpH/portalocker
 
 from .base import _BaseCore
+from ..config import _Type_HashFunc
 
 
 class _PickleCore(_BaseCore):
-    """The pickle core class for cachier.
-
-    Parameters
-    ----------
-    pickle_reload : bool, optional
-        See core.cachier() documentation.
-    cache_dir : str, optional.
-        See core.cachier() documentation.
-
-    """
+    """The pickle core class for cachier."""
 
     class CacheChangeHandler(PatternMatchingEventHandler):
         """Handles cache-file modification events."""
@@ -79,36 +71,23 @@ class _PickleCore(_BaseCore):
 
     def __init__(
         self,
-        hash_func,
-        pickle_reload,
-        cache_dir,
-        separate_files,
-        wait_for_calc_timeout,
-        default_params,
+        hash_func: _Type_HashFunc,
+        pickle_reload: bool,
+        cache_dir: str,
+        separate_files: bool,
+        wait_for_calc_timeout: int,
     ):
-        super().__init__(hash_func, default_params)
+        super().__init__(hash_func, wait_for_calc_timeout)
         self.cache = None
-        if pickle_reload is not None:
-            self.reload = pickle_reload
-        else:
-            self.reload = self.default_params["pickle_reload"]
-        if cache_dir is not None:
-            self.cache_dir = os.path.expanduser(cache_dir)
-        else:
-            self.cache_dir = os.path.expanduser(
-                self.default_params["cache_dir"]
-            )
-        if separate_files is not None:
-            self.separate_files = separate_files
-        else:
-            self.separate_files = self.default_params["separate_files"]
-        self.wait_for_calc_timeout = wait_for_calc_timeout
+        self.reload = pickle_reload
+        self.cache_dir = os.path.expanduser(cache_dir)
+        self.separate_files = separate_files
         self.cache_fname = None
         self.cache_fpath = None
         self.lock = threading.RLock()
 
     def _cache_fname(self):
-        if self.cache_fname is None:
+        if self.cache_fname is not None:
             self.cache_fname = (
                 f".{self.func.__module__}.{self.func.__qualname__}"
             )
