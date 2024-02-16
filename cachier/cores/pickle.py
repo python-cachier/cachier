@@ -87,7 +87,7 @@ class _PickleCore(_BaseCore):
         self.lock = threading.RLock()
 
     def _cache_fname(self):
-        if self.cache_fname is not None:
+        if self.cache_fname is None:
             self.cache_fname = (
                 f".{self.func.__module__}.{self.func.__qualname__}"
             )
