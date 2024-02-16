@@ -88,22 +88,16 @@ class _PickleCore(_BaseCore):
 
     def _cache_fname(self):
         if self.cache_fname is None:
-            self.cache_fname = (
-                f".{self.func.__module__}.{self.func.__qualname__}"
-            )
-            self.cache_fname = self.cache_fname.replace("<", "_").replace(
-                ">", "_"
-            )
+            fname = f".{self.func.__module__}.{self.func.__qualname__}"
+            self.cache_fname = fname.replace("<", "_").replace(">", "_")
         return self.cache_fname
 
     def _cache_fpath(self):
         if self.cache_fpath is None:
-            if not os.path.exists(self.cache_dir):
-                os.makedirs(self.cache_dir)
+            os.makedirs(self.cache_dir, exist_ok=True)
             self.cache_fpath = os.path.abspath(
                 os.path.join(
-                    os.path.realpath(self.cache_dir),
-                    self._cache_fname(),
+                    os.path.realpath(self.cache_dir), self._cache_fname()
                 )
             )
         return self.cache_fpath
