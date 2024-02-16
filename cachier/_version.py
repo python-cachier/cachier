@@ -6,11 +6,8 @@
 # Copyright (c) 2024, Jirka Borovec <***@gmail.com>
 
 import os
-import subprocess
-from subprocess import DEVNULL
 
 _PATH_HERE = os.path.dirname(__file__)
-_PATH_ROOT = os.path.dirname(_PATH_HERE)
 _PATH_VERSION = os.path.join(_PATH_HERE, "version.info")
 _RELEASING_PROCESS = os.getenv("RELEASING_PROCESS", "0") == "1"
 
@@ -19,15 +16,10 @@ with open(_PATH_VERSION) as fopen:
 
 
 def _get_git_sha() -> str:
-    if not os.path.isdir(os.path.join(_PATH_ROOT, ".git")):
-        return ""
-    out = subprocess.check_output(  # noqa: S603, S607
-        ["git", "rev-parse", "HEAD"],
-        stderr=DEVNULL,
-    )
-    sha = out.decode("utf-8").strip()
-    # SHA short
-    return sha[:7]
+    from subprocess import check_output, DEVNULL
+
+    out = check_output(["git", "rev-parse", "--short", "HEAD"], stderr=DEVNULL)  # noqa: S603, S607
+    return out.decode("utf-8").strip()
 
 
 if not _RELEASING_PROCESS:

@@ -36,7 +36,7 @@ blank = true
 target-version = "py38"
 line-length = 79
 # Enable Pyflakes `E` and `F` codes by default.
-select = [
+lint.select = [
     "E",
     "W", # see: https://pypi.org/project/pycodestyle
     "F", # see: https://pypi.org/project/pyflakes
@@ -46,7 +46,7 @@ select = [
     "S", # see: https://pypi.org/project/flake8-bandit
     "SIM",
 ]
-ignore = [
+lint.ignore = [
     "E203",
     "C901",
 ]
@@ -60,10 +60,10 @@ exclude = [
     "build",
     "dist",
 ]
-ignore-init-module-imports = true
-unfixable = ["F401"]
+lint.ignore-init-module-imports = true
+lint.unfixable = ["F401"]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "S311", "S105", "S603"]
 
 #[tool.ruff.pydocstyle]
@@ -73,6 +73,6 @@ unfixable = ["F401"]
 #[tool.ruff.pycodestyle]
 #ignore-overlong-task-comments = true
 
-[tool.ruff.mccabe]
+[tool.ruff.lint.mccabe]
 # Unlike Flake8, default to a complexity level of 10.
 max-complexity = 10
