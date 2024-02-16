@@ -9,9 +9,10 @@
 # Copyright (c) 2024, Jirka Borovec <***@gmail.com>
 
 import os.path
-from importlib.util import spec_from_file_location, module_from_spec
-from setuptools import setup, find_packages
+from importlib.util import module_from_spec, spec_from_file_location
+
 from pkg_resources import parse_requirements
+from setuptools import find_packages, setup
 
 _PATH_HERE = os.path.dirname(__file__)
 

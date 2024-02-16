@@ -11,10 +11,10 @@ from random import random
 from time import sleep
 from urllib.parse import quote_plus
 
-from birch import Birch  # type: ignore[import-not-found]
 import pandas as pd
 import pymongo
 import pytest
+from birch import Birch  # type: ignore[import-not-found]
 from pymongo.errors import OperationFailure
 from pymongo.mongo_client import MongoClient
 from pymongo_inmemory import MongoClient as InMemoryMongoClient
@@ -22,7 +22,6 @@ from pymongo_inmemory import MongoClient as InMemoryMongoClient
 from cachier import cachier
 from cachier.cores.base import RecalculationNeeded
 from cachier.cores.mongo import _MongoCore
-
 
 # === Enables testing vs a real MongoDB instance ===
 
