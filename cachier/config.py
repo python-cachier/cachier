@@ -2,8 +2,7 @@ import datetime
 import hashlib
 import os
 import pickle
-from typing import Callable, Optional, Union, TypedDict, TYPE_CHECKING
-from typing_extensions import Literal
+from typing import Callable, Optional, Union, TypedDict, TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
     import pymongo.collection
