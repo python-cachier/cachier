@@ -7,20 +7,19 @@
 # http://www.opensource.org/licenses/MIT-license
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 
-import sys  # to make sure that pymongo was imported
 import pickle  # for serialization of python objects
-from contextlib import suppress
-from datetime import datetime
+import sys  # to make sure that pymongo was imported
 import time  # to sleep when waiting on Mongo cache\
 import warnings  # to warn if pymongo is missing
+from contextlib import suppress
+from datetime import datetime
 
 with suppress(ImportError):
-    from pymongo import IndexModel, ASCENDING
-    from pymongo.errors import OperationFailure
     from bson.binary import Binary  # to save binary data to mongodb
+    from pymongo import ASCENDING, IndexModel
+    from pymongo.errors import OperationFailure
 
-from .base import _BaseCore, RecalculationNeeded
-
+from .base import RecalculationNeeded, _BaseCore
 
 MONGO_SLEEP_DURATION_IN_SEC = 1
 

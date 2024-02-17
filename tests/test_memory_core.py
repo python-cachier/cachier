@@ -7,8 +7,8 @@ from datetime import timedelta
 from random import random
 from time import sleep, time
 
-import pytest
 import pandas as pd
+import pytest
 
 from cachier import cachier
 
