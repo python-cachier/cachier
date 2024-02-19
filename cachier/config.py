@@ -46,9 +46,10 @@ _default_params: Params = {
 
 
 def _update_with_defaults(param, name: str):
-    nonlocal _default_params
+    import cachier
+
     if param is None:
-        return _default_params[name]
+        return cachier.config._default_params[name]
     return param
 
 
@@ -65,24 +66,30 @@ def set_default_params(**params):
     only have an effect on decorators applied after this function is run.
 
     """
-    nonlocal _default_params
-    valid_params = (p for p in params.items() if p[0] in _default_params)
+    import cachier
+
+    valid_params = (
+        p for p in params.items() if p[0] in cachier.config._default_params
+    )
     _default_params.update(valid_params)
 
 
 def get_default_params():
     """Get current set of default parameters."""
-    nonlocal _default_params
-    return _default_params
+    import cachier
+
+    return cachier.config._default_params
 
 
 def enable_caching():
     """Enable caching globally."""
-    nonlocal _default_params
-    _default_params["caching_enabled"] = True
+    import cachier
+
+    cachier.config._default_params["caching_enabled"] = True
 
 
 def disable_caching():
     """Disable caching globally."""
-    nonlocal _default_params
-    _default_params["caching_enabled"] = False
+    import cachier
+
+    cachier.config._default_params["caching_enabled"] = False
