@@ -8,7 +8,6 @@
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 import os
 import pickle  # for local caching
-import threading
 from contextlib import suppress
 from datetime import datetime
 
@@ -16,21 +15,15 @@ import portalocker  # to lock on pickle cache IO
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
+from .._types import HashFunc
+from ..config import _update_with_defaults
+
 # Alternative:  https://github.com/WoLpH/portalocker
 from .base import _BaseCore
 
 
 class _PickleCore(_BaseCore):
-    """The pickle core class for cachier.
-
-    Parameters
-    ----------
-    pickle_reload : bool, optional
-        See core.cachier() documentation.
-    cache_dir : str, optional.
-        See core.cachier() documentation.
-
-    """
+    """The pickle core class for cachier."""
 
     class CacheChangeHandler(PatternMatchingEventHandler):
         """Handles cache-file modification events."""
@@ -78,52 +71,36 @@ class _PickleCore(_BaseCore):
 
     def __init__(
         self,
-        hash_func,
-        pickle_reload,
-        cache_dir,
-        separate_files,
-        wait_for_calc_timeout,
-        default_params,
+        hash_func: HashFunc,
+        pickle_reload: bool,
+        cache_dir: str,
+        separate_files: bool,
+        wait_for_calc_timeout: int,
     ):
-        super().__init__(hash_func, default_params)
+        super().__init__(hash_func, wait_for_calc_timeout)
         self.cache = None
-        if pickle_reload is not None:
-            self.reload = pickle_reload
-        else:
-            self.reload = self.default_params["pickle_reload"]
-        if cache_dir is not None:
-            self.cache_dir = os.path.expanduser(cache_dir)
-        else:
-            self.cache_dir = os.path.expanduser(
-                self.default_params["cache_dir"]
-            )
-        if separate_files is not None:
-            self.separate_files = separate_files
-        else:
-            self.separate_files = self.default_params["separate_files"]
-        self.wait_for_calc_timeout = wait_for_calc_timeout
+        self.reload = _update_with_defaults(pickle_reload, "pickle_reload")
+        self.cache_dir = os.path.expanduser(
+            _update_with_defaults(cache_dir, "cache_dir")
+        )
+        self.separate_files = _update_with_defaults(
+            separate_files, "separate_files"
+        )
         self.cache_fname = None
         self.cache_fpath = None
-        self.lock = threading.RLock()
 
     def _cache_fname(self):
         if self.cache_fname is None:
-            self.cache_fname = (
-                f".{self.func.__module__}.{self.func.__qualname__}"
-            )
-            self.cache_fname = self.cache_fname.replace("<", "_").replace(
-                ">", "_"
-            )
+            fname = f".{self.func.__module__}.{self.func.__qualname__}"
+            self.cache_fname = fname.replace("<", "_").replace(">", "_")
         return self.cache_fname
 
     def _cache_fpath(self):
         if self.cache_fpath is None:
-            if not os.path.exists(self.cache_dir):
-                os.makedirs(self.cache_dir)
+            os.makedirs(self.cache_dir, exist_ok=True)
             self.cache_fpath = os.path.abspath(
                 os.path.join(
-                    os.path.realpath(self.cache_dir),
-                    self._cache_fname(),
+                    os.path.realpath(self.cache_dir), self._cache_fname()
                 )
             )
         return self.cache_fpath

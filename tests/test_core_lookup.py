@@ -2,7 +2,7 @@
 import pytest
 
 from cachier import cachier, get_default_params
-from cachier.core import MissingMongetter
+from cachier.cores.mongo import MissingMongetter
 
 
 def test_get_default_params():

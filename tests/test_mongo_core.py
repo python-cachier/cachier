@@ -267,7 +267,7 @@ def test_stalled_mongo_db_cache():
     def _stalled_func():
         return 1
 
-    core = _MongoCore(_test_mongetter, None, 0, {})
+    core = _MongoCore(None, _test_mongetter, 0)
     core.set_func(_stalled_func)
     core.clear_cache()
     with pytest.raises(RecalculationNeeded):

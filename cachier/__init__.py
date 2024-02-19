@@ -1,11 +1,11 @@
 from ._version import *  # noqa: F403
-from .core import (
-    cachier,
+from .config import (
     disable_caching,
     enable_caching,
     get_default_params,
     set_default_params,
 )
+from .core import cachier
 
 __all__ = [
     "cachier",

@@ -14,6 +14,8 @@ import warnings  # to warn if pymongo is missing
 from contextlib import suppress
 from datetime import datetime
 
+from .._types import HashFunc, Mongetter
+
 with suppress(ImportError):
     from bson.binary import Binary  # to save binary data to mongodb
     from pymongo import ASCENDING, IndexModel
@@ -24,21 +26,32 @@ from .base import RecalculationNeeded, _BaseCore
 MONGO_SLEEP_DURATION_IN_SEC = 1
 
 
+class MissingMongetter(ValueError):
+    """Thrown when the mongetter keyword argument is missing."""
+
+
 class _MongoCore(_BaseCore):
     _INDEX_NAME = "func_1_key_1"
 
     def __init__(
-        self, mongetter, hash_func, wait_for_calc_timeout, default_params
+        self,
+        hash_func: HashFunc,
+        mongetter: Mongetter,
+        wait_for_calc_timeout: int,
     ):
         if "pymongo" not in sys.modules:
             warnings.warn(
                 "Cachier warning: pymongo was not found. "
                 "MongoDB cores will not function."
             )  # pragma: no cover
-        super().__init__(hash_func, default_params)
+
+        super().__init__(hash_func, wait_for_calc_timeout)
+        if mongetter is None:
+            raise MissingMongetter(
+                "must specify ``mongetter`` when using the mongo core"
+            )
         self.mongetter = mongetter
         self.mongo_collection = self.mongetter()
-        self.wait_for_calc_timeout = wait_for_calc_timeout
         index_inf = self.mongo_collection.index_information()
         if _MongoCore._INDEX_NAME not in index_inf:
             func1key1 = IndexModel(
@@ -55,23 +68,23 @@ class _MongoCore(_BaseCore):
         res = self.mongo_collection.find_one(
             {"func": _MongoCore._get_func_str(self.func), "key": key}
         )
-        if res:
-            try:
-                entry = {
-                    "value": pickle.loads(res["value"]),  # noqa: S301
-                    "time": res.get("time", None),
-                    "stale": res.get("stale", False),
-                    "being_calculated": res.get("being_calculated", False),
-                }
-            except KeyError:
-                entry = {
-                    "value": None,
-                    "time": res.get("time", None),
-                    "stale": res.get("stale", False),
-                    "being_calculated": res.get("being_calculated", False),
-                }
-            return key, entry
-        return key, None
+        if not res:
+            return key, None
+        try:
+            entry = {
+                "value": pickle.loads(res["value"]),  # noqa: S301
+                "time": res.get("time", None),
+                "stale": res.get("stale", False),
+                "being_calculated": res.get("being_calculated", False),
+            }
+        except KeyError:
+            entry = {
+                "value": None,
+                "time": res.get("time", None),
+                "stale": res.get("stale", False),
+                "being_calculated": res.get("being_calculated", False),
+            }
+        return key, entry
 
     def set_entry(self, key, func_res):
         thebytes = pickle.dumps(func_res)
