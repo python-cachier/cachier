@@ -173,6 +173,7 @@ def cachier(
         hash_func = hash_params
     # Update parameters with defaults if input is None
     backend = _update_with_defaults(backend, "backend")
+    mongetter = _update_with_defaults(mongetter, "mongetter")
     # Override the backend parameter if a mongetter is provided.
     if callable(mongetter):
         backend = "mongo"
