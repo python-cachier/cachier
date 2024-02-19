@@ -46,7 +46,7 @@ _default_params: Params = {
 
 
 def _update_with_defaults(param, name: str):
-    global _default_params
+    nonlocal _default_params
     if param is None:
         return _default_params[name]
     return param
@@ -65,24 +65,24 @@ def set_default_params(**params):
     only have an effect on decorators applied after this function is run.
 
     """
-    global _default_params
+    nonlocal _default_params
     valid_params = (p for p in params.items() if p[0] in _default_params)
     _default_params.update(valid_params)
 
 
 def get_default_params():
     """Get current set of default parameters."""
-    global _default_params
+    nonlocal _default_params
     return _default_params
 
 
 def enable_caching():
     """Enable caching globally."""
-    global _default_params
+    nonlocal _default_params
     _default_params["caching_enabled"] = True
 
 
 def disable_caching():
     """Disable caching globally."""
-    global _default_params
+    nonlocal _default_params
     _default_params["caching_enabled"] = False
