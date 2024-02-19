@@ -28,6 +28,7 @@ from cachier.cores.mongo import _MongoCore
 
 class CfgKey:
     HOST = "TEST_HOST"
+    PORT = "TEST_PORT"
     UNAME = "TEST_USERNAME"
     PWD = "TEST_PASSWORD"
     DB = "TEST_DB"
@@ -42,17 +43,16 @@ CFG = Birch(
 )
 
 
-URI_TEMPLATE = (
-    "mongodb+srv://{uname}:{pwd}@{host}/{db}?retrywrites=true&w=majority"
-)
+URI_TEMPLATE = "mongodb+http://{host}:{port}?retrywrites=true&w=majority"
 
 
 def _get_cachier_db_mongo_client():
     host = quote_plus(CFG[CfgKey.HOST])
-    uname = quote_plus(CFG[CfgKey.UNAME])
-    pwd = quote_plus(CFG[CfgKey.PWD])
-    db = quote_plus(CFG[CfgKey.DB])
-    uri = URI_TEMPLATE.format(host=host, uname=uname, pwd=pwd, db=db)
+    port = quote_plus(CFG[CfgKey.PORT])
+    # uname = quote_plus(CFG[CfgKey.UNAME])
+    # pwd = quote_plus(CFG[CfgKey.PWD])
+    # db = quote_plus(CFG[CfgKey.DB])
+    uri = URI_TEMPLATE.format(host=host, port=port)
     client = MongoClient(uri)
     return client
 

@@ -27,8 +27,8 @@ jobs:
       CACHIER_TEST_HOST: "localhost"
       CACHIER_TEST_PORT: "27017"
       CACHIER_TEST_DB: "dummy_db"
-      CACHIER_TEST_USERNAME: "myuser"
-      CACHIER_TEST_PASSWORD: "yourpassword"
+      #  CACHIER_TEST_USERNAME: "myuser"
+      #  CACHIER_TEST_PASSWORD: "yourpassword"
       CACHIER_TEST_VS_LIVE_MONGO: "true"
 
     steps:
@@ -49,12 +49,12 @@ jobs:
         run: pytest -m "not mongo"
 
       - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@1.10.0
+        if: matrix.backend == 'db'
+        uses: MongoCamp/mongodb-github-action@1.2.0
         with:
           mongodb-port: ${{ env.CACHIER_TEST_PORT }}
-          mongodb-db: ${{ env.CACHIER_TEST_DB }}
           mongodb-username: ${{ env.CACHIER_TEST_USERNAME }}
-          mongodb-password: ${{ env.CACHIER_TEST_PASSWORD }}
+          mongodb-pwd: ${{ env.CACHIER_TEST_PASSWORD }}
       - name: Unit tests (DB)
         if: matrix.backend == 'db'
         run: pytest -m "mongo"
