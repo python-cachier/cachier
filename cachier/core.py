@@ -21,9 +21,9 @@ from .cores.memory import _MemoryCore
 from .cores.mongo import _MongoCore
 from .cores.pickle import _PickleCore
 from .config import (
-    _Type_Mongetter,
-    _Type_HashFunc,
-    _Type_Backend,
+    Mongetter,
+    HashFunc,
+    Backend,
     _default_params,
     _update_with_defaults,
 )
@@ -95,10 +95,10 @@ def _convert_args_kwargs(
 
 
 def cachier(
-    hash_func: Optional[_Type_HashFunc] = None,
-    hash_params: Optional[_Type_HashFunc] = None,
-    backend: Optional[_Type_Backend] = None,
-    mongetter: Optional[_Type_Mongetter] = None,
+    hash_func: Optional[HashFunc] = None,
+    hash_params: Optional[HashFunc] = None,
+    backend: Optional[Backend] = None,
+    mongetter: Optional[Mongetter] = None,
     stale_after: Optional[datetime.timedelta] = None,
     next_time: Optional[bool] = None,
     cache_dir: Optional[Union[str, os.PathLike]] = None,

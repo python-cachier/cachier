@@ -19,7 +19,7 @@ from watchdog.events import PatternMatchingEventHandler
 # Alternative:  https://github.com/WoLpH/portalocker
 
 from .base import _BaseCore
-from ..config import _Type_HashFunc
+from .._types import HashFunc
 
 
 class _PickleCore(_BaseCore):
@@ -71,7 +71,7 @@ class _PickleCore(_BaseCore):
 
     def __init__(
         self,
-        hash_func: _Type_HashFunc,
+        hash_func: HashFunc,
         pickle_reload: bool,
         cache_dir: str,
         separate_files: bool,

@@ -2,15 +2,9 @@ import datetime
 import hashlib
 import os
 import pickle
-from typing import Callable, Optional, Union, TypedDict, TYPE_CHECKING, Literal
+from typing import Optional, Union, TypedDict
 
-if TYPE_CHECKING:
-    import pymongo.collection
-
-
-_Type_HashFunc = Callable[..., str]
-_Type_Mongetter = Callable[[], "pymongo.collection.Collection"]
-_Type_Backend = Literal["pickle", "mongo", "memory"]
+from ._types import HashFunc, Backend, Mongetter
 
 
 def _default_hash_func(args, kwds):
@@ -24,9 +18,9 @@ def _default_hash_func(args, kwds):
 
 class Params(TypedDict):
     caching_enabled: bool
-    hash_func: _Type_HashFunc
-    backend: _Type_Backend
-    mongetter: Optional[_Type_Mongetter]
+    hash_func: HashFunc
+    backend: Backend
+    mongetter: Optional[Mongetter]
     stale_after: datetime.timedelta
     next_time: bool
     cache_dir: Union[str, os.PathLike]

@@ -13,7 +13,7 @@ from contextlib import suppress
 from datetime import datetime
 import time  # to sleep when waiting on Mongo cache\
 import warnings  # to warn if pymongo is missing
-from ..config import _Type_HashFunc, _Type_Mongetter
+from .._types import HashFunc, Mongetter
 
 with suppress(ImportError):
     from pymongo import IndexModel, ASCENDING
@@ -35,8 +35,8 @@ class _MongoCore(_BaseCore):
 
     def __init__(
         self,
-        mongetter: _Type_Mongetter,
-        hash_func: _Type_HashFunc,
+        mongetter: Mongetter,
+        hash_func: HashFunc,
         wait_for_calc_timeout: int,
     ):
         if "pymongo" not in sys.modules:

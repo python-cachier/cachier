@@ -4,13 +4,13 @@ import threading
 from datetime import datetime
 
 from .base import _BaseCore
-from ..config import _Type_HashFunc
+from .._types import HashFunc
 
 
 class _MemoryCore(_BaseCore):
     """The memory core class for cachier."""
 
-    def __init__(self, hash_func: _Type_HashFunc, wait_for_calc_timeout: int):
+    def __init__(self, hash_func: HashFunc, wait_for_calc_timeout: int):
         super().__init__(hash_func, wait_for_calc_timeout)
         self.cache = {}
         self.lock = threading.RLock()

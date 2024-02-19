@@ -9,7 +9,7 @@
 import abc  # for the _BaseCore abstract base class
 import inspect
 
-from ..config import _Type_HashFunc
+from .._types import HashFunc
 
 
 class RecalculationNeeded(Exception):
@@ -19,7 +19,7 @@ class RecalculationNeeded(Exception):
 class _BaseCore:
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, hash_func: _Type_HashFunc, wait_for_calc_timeout: int):
+    def __init__(self, hash_func: HashFunc, wait_for_calc_timeout: int):
         self.hash_func = hash_func
         self.wait_for_calc_timeout = wait_for_calc_timeout
 
