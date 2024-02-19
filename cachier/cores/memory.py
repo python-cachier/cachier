@@ -13,7 +13,6 @@ class _MemoryCore(_BaseCore):
     def __init__(self, hash_func: HashFunc, wait_for_calc_timeout: int):
         super().__init__(hash_func, wait_for_calc_timeout)
         self.cache = {}
-        self.lock = threading.RLock()
 
     def get_entry_by_key(self, key, reload=False):
         with self.lock:

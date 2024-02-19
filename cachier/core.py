@@ -172,15 +172,7 @@ def cachier(
         warn(message, DeprecationWarning, stacklevel=2)
         hash_func = hash_params
     # Update parameters with defaults if input is None
-    hash_func = _update_with_defaults(hash_func, "hash_func")
-    mongetter = _update_with_defaults(mongetter, "mongetter")
     backend = _update_with_defaults(backend, "backend")
-    pickle_reload = _update_with_defaults(pickle_reload, "pickle_reload")
-    cache_dir = _update_with_defaults(cache_dir, "cache_dir")
-    separate_files = _update_with_defaults(separate_files, "separate_files")
-    wait_for_calc_timeout = _update_with_defaults(
-        wait_for_calc_timeout, "wait_for_calc_timeout"
-    )
     # Override the backend parameter if a mongetter is provided.
     if callable(mongetter):
         backend = "mongo"

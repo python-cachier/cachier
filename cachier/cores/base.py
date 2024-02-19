@@ -8,8 +8,10 @@
 
 import abc  # for the _BaseCore abstract base class
 import inspect
+import threading
 
 from .._types import HashFunc
+from ..config import _update_with_defaults
 
 
 class RecalculationNeeded(Exception):
@@ -20,8 +22,9 @@ class _BaseCore:
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, hash_func: HashFunc, wait_for_calc_timeout: int):
-        self.hash_func = hash_func
+        self.hash_func = _update_with_defaults(hash_func, "hash_func")
         self.wait_for_calc_timeout = wait_for_calc_timeout
+        self.lock = threading.RLock()
 
     def set_func(self, func):
         """Sets the function this core will use.
@@ -55,7 +58,9 @@ class _BaseCore:
 
     def check_calc_timeout(self, time_spent):
         """Raise an exception if a recalculation is needed."""
-        calc_timeout = self.wait_for_calc_timeout
+        calc_timeout = _update_with_defaults(
+            self.wait_for_calc_timeout, "wait_for_calc_timeout"
+        )
         if calc_timeout > 0 and (time_spent >= calc_timeout):
             raise RecalculationNeeded()
 

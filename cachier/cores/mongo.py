@@ -15,6 +15,7 @@ from contextlib import suppress
 from datetime import datetime
 
 from .._types import HashFunc, Mongetter
+from ..config import _update_with_defaults
 
 with suppress(ImportError):
     from bson.binary import Binary  # to save binary data to mongodb
@@ -35,8 +36,8 @@ class _MongoCore(_BaseCore):
 
     def __init__(
         self,
-        mongetter: Mongetter,
         hash_func: HashFunc,
+        mongetter: Mongetter,
         wait_for_calc_timeout: int,
     ):
         if "pymongo" not in sys.modules:
@@ -50,7 +51,7 @@ class _MongoCore(_BaseCore):
                 "must specify ``mongetter`` when using the mongo core"
             )
         super().__init__(hash_func, wait_for_calc_timeout)
-        self.mongetter = mongetter
+        self.mongetter = _update_with_defaults(mongetter, "mongetter")
         self.mongo_collection = self.mongetter()
         index_inf = self.mongo_collection.index_information()
         if _MongoCore._INDEX_NAME not in index_inf:

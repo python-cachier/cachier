@@ -8,7 +8,6 @@
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 import os
 import pickle  # for local caching
-import threading
 from contextlib import suppress
 from datetime import datetime
 
@@ -17,6 +16,7 @@ from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 from .._types import HashFunc
+from ..config import _update_with_defaults
 
 # Alternative:  https://github.com/WoLpH/portalocker
 from .base import _BaseCore
@@ -79,12 +79,15 @@ class _PickleCore(_BaseCore):
     ):
         super().__init__(hash_func, wait_for_calc_timeout)
         self.cache = None
-        self.reload = pickle_reload
-        self.cache_dir = os.path.expanduser(cache_dir)
-        self.separate_files = separate_files
+        self.reload = _update_with_defaults(pickle_reload, "pickle_reload")
+        self.cache_dir = os.path.expanduser(
+            _update_with_defaults(cache_dir, "cache_dir")
+        )
+        self.separate_files = _update_with_defaults(
+            separate_files, "separate_files"
+        )
         self.cache_fname = None
         self.cache_fpath = None
-        self.lock = threading.RLock()
 
     def _cache_fname(self):
         if self.cache_fname is None:
