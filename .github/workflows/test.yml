@@ -17,14 +17,19 @@ concurrency:
 jobs:
   pytester:
     runs-on: ${{ matrix.os }}
-    environment:
-      name: test
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
         os: [ubuntu-latest, macOS-latest, windows-latest]
         backend: ["local", "db"]
+    env:
+      CACHIER_TEST_HOST: "localhost"
+      CACHIER_TEST_PORT: "27017"
+      CACHIER_TEST_DB: "dummy_db"
+      CACHIER_TEST_USERNAME: "myuser"
+      CACHIER_TEST_PASSWORD: "yourpassword"
+      CACHIER_TEST_VS_LIVE_MONGO: "true"
 
     steps:
       - uses: actions/checkout@v4
@@ -38,18 +43,22 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e . -r tests/requirements.txt
+
       - name: Unit tests (local)
         if: matrix.backend == 'local'
         run: pytest -m "not mongo"
+
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.10.0
+        with:
+          mongodb-port: ${{ env.CACHIER_TEST_PORT }}
+          mongodb-db: ${{ env.CACHIER_TEST_DB }}
+          mongodb-username: ${{ env.CACHIER_TEST_USERNAME }}
+          mongodb-password: ${{ env.CACHIER_TEST_PASSWORD }}
       - name: Unit tests (DB)
         if: matrix.backend == 'db'
-        env:
-          CACHIER_TEST_HOST: ${{ secrets.CACHIER_TEST_HOST  }}
-          CACHIER_TEST_DB: ${{ secrets.CACHIER_TEST_DB  }}
-          CACHIER_TEST_USERNAME: ${{ secrets.CACHIER_TEST_USERNAME  }}
-          CACHIER_TEST_PASSWORD: ${{ secrets.CACHIER_TEST_PASSWORD  }}
-          CACHIER_TEST_VS_LIVE_MONGO: ${{ secrets.CACHIER_TEST_VS_LIVE_MONGO  }}
         run: pytest -m "mongo"
+
       - name: "Upload coverage to Codecov"
         uses: codecov/codecov-action@v4
         with:
