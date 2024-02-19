@@ -46,12 +46,12 @@ class _MongoCore(_BaseCore):
                 "MongoDB cores will not function."
             )  # pragma: no cover
 
+        self.mongetter = _update_with_defaults(mongetter, "mongetter")
         if mongetter is None:
             raise MissingMongetter(
                 "must specify ``mongetter`` when using the mongo core"
             )
         super().__init__(hash_func, wait_for_calc_timeout)
-        self.mongetter = _update_with_defaults(mongetter, "mongetter")
         self.mongo_collection = self.mongetter()
         index_inf = self.mongo_collection.index_information()
         if _MongoCore._INDEX_NAME not in index_inf:

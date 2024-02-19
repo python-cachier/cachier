@@ -187,8 +187,8 @@ def cachier(
         )
     elif backend == "mongo":
         core = _MongoCore(
-            mongetter=mongetter,
             hash_func=hash_func,
+            mongetter=mongetter,
             wait_for_calc_timeout=wait_for_calc_timeout,
         )
     elif backend == "memory":
