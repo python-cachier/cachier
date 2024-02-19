@@ -172,7 +172,7 @@ def cachier(
         )
         warn(message, DeprecationWarning, stacklevel=2)
         hash_func = hash_params
-    # Override the backend parameter if a mongetter is provided.
+    # Update parameters with defaults if input is None
     hash_func = _update_with_defaults(hash_func, "hash_func")
     mongetter = _update_with_defaults(mongetter, "mongetter")
     backend = _update_with_defaults(backend, "backend")
@@ -182,6 +182,7 @@ def cachier(
     wait_for_calc_timeout = _update_with_defaults(
         wait_for_calc_timeout, "wait_for_calc_timeout"
     )
+    # Override the backend parameter if a mongetter is provided.
     if callable(mongetter):
         backend = "mongo"
     core: _BaseCore
