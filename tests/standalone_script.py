@@ -1,5 +1,6 @@
-import cachier
 import time
+
+import cachier
 
 
 @cachier.cachier()

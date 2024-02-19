@@ -8,16 +8,15 @@
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 import os
 import pickle  # for local caching
+import threading
 from contextlib import suppress
 from datetime import datetime
-import threading
 
 import portalocker  # to lock on pickle cache IO
-from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
+from watchdog.observers import Observer
 
 # Alternative:  https://github.com/WoLpH/portalocker
-
 from .base import _BaseCore
 from .._types import HashFunc
 
