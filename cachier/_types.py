@@ -1,4 +1,4 @@
-from typing import Callable, TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Callable, Literal
 
 if TYPE_CHECKING:
     import pymongo.collection

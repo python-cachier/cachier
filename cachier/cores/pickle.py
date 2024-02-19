@@ -16,9 +16,10 @@ import portalocker  # to lock on pickle cache IO
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
+from .._types import HashFunc
+
 # Alternative:  https://github.com/WoLpH/portalocker
 from .base import _BaseCore
-from .._types import HashFunc
 
 
 class _PickleCore(_BaseCore):

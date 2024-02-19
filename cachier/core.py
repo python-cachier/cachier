@@ -16,18 +16,17 @@ from functools import wraps
 from typing import Optional, Union
 from warnings import warn
 
+from .config import (
+    Backend,
+    HashFunc,
+    Mongetter,
+    _default_params,
+    _update_with_defaults,
+)
 from .cores.base import RecalculationNeeded, _BaseCore
 from .cores.memory import _MemoryCore
 from .cores.mongo import _MongoCore
 from .cores.pickle import _PickleCore
-from .config import (
-    Mongetter,
-    HashFunc,
-    Backend,
-    _default_params,
-    _update_with_defaults,
-)
-
 
 MAX_WORKERS_ENVAR_NAME = "CACHIER_MAX_WORKERS"
 DEFAULT_MAX_WORKERS = 8

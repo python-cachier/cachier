@@ -2,9 +2,9 @@ import datetime
 import hashlib
 import os
 import pickle
-from typing import Optional, Union, TypedDict
+from typing import Optional, TypedDict, Union
 
-from ._types import HashFunc, Backend, Mongetter
+from ._types import Backend, HashFunc, Mongetter
 
 
 def _default_hash_func(args, kwds):

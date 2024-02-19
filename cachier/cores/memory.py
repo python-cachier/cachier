@@ -3,8 +3,8 @@
 import threading
 from datetime import datetime
 
-from .base import _BaseCore
 from .._types import HashFunc
+from .base import _BaseCore
 
 
 class _MemoryCore(_BaseCore):
