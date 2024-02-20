@@ -51,15 +51,17 @@ jobs:
         if: matrix.backend == 'local'
         run: pytest -m "not mongo"
 
+      # ToDo: add support for macOS
       #- name: Install docker for macOS
       #  if: matrix.os == 'macOS-latest' && matrix.backend == 'db'
       #  uses: douglascamata/setup-docker-macos-action@v1-alpha
-      - name: Cache Container Images
-        if: matrix.backend == 'db'
-        uses: borda/cache-container-images-action@b32a5e804cb39af3c3d134fc03ab76eac0bfcfa9
-        with:
-          prefix-key: "mongo-db"
-          images: mongo:latest
+      # ToDo: find a way to cache docker images
+      #- name: Cache Container Images
+      #  if: matrix.backend == 'db'
+      #  uses: borda/cache-container-images-action@b32a5e804cb39af3c3d134fc03ab76eac0bfcfa9
+      #  with:
+      #    prefix-key: "mongo-db"
+      #    images: mongo:latest
       - name: Start MongoDB
         if: matrix.backend == 'db'
         run: |
