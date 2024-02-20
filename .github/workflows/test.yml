@@ -50,7 +50,7 @@ jobs:
 
       - name: Install docker for macOS
         if: matrix.os == 'macOS-latest' && matrix.backend == 'db'
-        uses: douglascamata/setup-docker-macos-action@naim
+        uses: douglascamata/setup-docker-macos-action@v1-alpha
       - name: Start MongoDB
         if: matrix.backend == 'db'
         run: |
