@@ -50,9 +50,8 @@ jobs:
 
       - name: Install docker for macOS
         if: matrix.os == 'macOS-latest' && matrix.backend == 'db'
-        run: |
-          brew install --cask docker
-          open /Applications/Docker.app
+        uses: docker-practice/actions-setup-docker@v1
+        timeout-minutes: 10
       - name: Start MongoDB
         if: matrix.backend == 'db'
         run: |
