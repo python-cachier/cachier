@@ -50,8 +50,7 @@ jobs:
 
       - name: Install docker for macOS
         if: matrix.os == 'macOS-latest' && matrix.backend == 'db'
-        uses: docker-practice/actions-setup-docker@v1
-        timeout-minutes: 10
+        uses: douglascamata/setup-docker-macos-action@naim
       - name: Start MongoDB
         if: matrix.backend == 'db'
         run: |
