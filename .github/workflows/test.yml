@@ -55,7 +55,8 @@ jobs:
       #  if: matrix.os == 'macOS-latest' && matrix.backend == 'db'
       #  uses: douglascamata/setup-docker-macos-action@v1-alpha
       - name: Cache Container Images
-        uses: jamesmortensen/cache-container-images-action@6295b9c88d53f429209c15a5400accc9de9ecefb
+        if: matrix.backend == 'db'
+        uses: borda/cache-container-images-action@b32a5e804cb39af3c3d134fc03ab76eac0bfcfa9
         with:
           prefix-key: "mongo-db"
           images: mongo:latest
