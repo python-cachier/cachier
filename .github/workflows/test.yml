@@ -23,6 +23,9 @@ jobs:
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
         os: ["ubuntu-latest", "macOS-latest", "windows-latest"]
         backend: ["local", "db"]
+        exclude:
+          # skip macOS as it has no support for docker
+          - { os: "macOS-latest", backend: "db"}
     env:
       CACHIER_TEST_HOST: "localhost"
       CACHIER_TEST_PORT: "27017"
@@ -48,9 +51,14 @@ jobs:
         if: matrix.backend == 'local'
         run: pytest -m "not mongo"
 
-      - name: Install docker for macOS
-        if: matrix.os == 'macOS-latest' && matrix.backend == 'db'
-        uses: douglascamata/setup-docker-macos-action@v1-alpha
+      #- name: Install docker for macOS
+      #  if: matrix.os == 'macOS-latest' && matrix.backend == 'db'
+      #  uses: douglascamata/setup-docker-macos-action@v1-alpha
+      - name: Cache Container Images
+        uses: jamesmortensen/cache-container-images-action@6295b9c88d53f429209c15a5400accc9de9ecefb
+        with:
+          prefix-key: 'mongo-db'
+          images: mongo:latest
       - name: Start MongoDB
         if: matrix.backend == 'db'
         run: |
