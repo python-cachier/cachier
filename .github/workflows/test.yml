@@ -21,7 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
-        os: [ubuntu-latest, macOS-latest, windows-latest]
+        os: ["ubuntu-latest", "macOS-latest", "windows-latest"]
         backend: ["local", "db"]
     env:
       CACHIER_TEST_HOST: "localhost"
@@ -48,6 +48,9 @@ jobs:
         if: matrix.backend == 'local'
         run: pytest -m "not mongo"
 
+      - name: Install docker for macOS
+        if: matrix.os == 'macOS-latest' && matrix.backend == 'db'
+        run: brew install --cask docker
       - name: Start MongoDB
         if: matrix.backend == 'db'
         run: |
