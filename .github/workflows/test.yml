@@ -26,9 +26,9 @@ jobs:
     env:
       CACHIER_TEST_HOST: "localhost"
       CACHIER_TEST_PORT: "27017"
-      CACHIER_TEST_DB: "dummy_db"
-      #  CACHIER_TEST_USERNAME: "myuser"
-      #  CACHIER_TEST_PASSWORD: "yourpassword"
+      #CACHIER_TEST_DB: "dummy_db"
+      #CACHIER_TEST_USERNAME: "myuser"
+      #CACHIER_TEST_PASSWORD: "yourpassword"
       CACHIER_TEST_VS_LIVE_MONGO: "true"
 
     steps:
@@ -50,11 +50,13 @@ jobs:
 
       - name: Start MongoDB
         if: matrix.backend == 'db'
-        uses: MongoCamp/mongodb-github-action@1.2.0
-        with:
-          mongodb-port: ${{ env.CACHIER_TEST_PORT }}
-          mongodb-username: ${{ env.CACHIER_TEST_USERNAME }}
-          mongodb-pwd: ${{ env.CACHIER_TEST_PASSWORD }}
+        run: |
+          # start MongoDB in a container
+          docker run -d -p ${{ env.CACHIER_TEST_PORT }}:27017 --name mongodb mongo:latest
+          # wait for MongoDB to start, which is in average 5 seconds
+          sleep 5
+          # show running containers
+          docker ps -a
       - name: Unit tests (DB)
         if: matrix.backend == 'db'
         run: pytest -m "mongo"
