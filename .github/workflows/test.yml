@@ -25,7 +25,7 @@ jobs:
         backend: ["local", "db"]
         exclude:
           # TODO: skip macOS as it has no support for docker
-          - { os: "macOS-latest", backend: "db"}
+          - { os: "macOS-latest", backend: "db" }
     env:
       CACHIER_TEST_HOST: "localhost"
       CACHIER_TEST_PORT: "27017"
