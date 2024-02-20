@@ -62,6 +62,7 @@ jobs:
         run: pytest -m "mongo"
 
       - name: "Upload coverage to Codecov"
+        continue-on-error: true
         uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: true
