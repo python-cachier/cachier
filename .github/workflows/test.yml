@@ -25,7 +25,7 @@ jobs:
         backend: ["local", "db"]
         exclude:
           # skip macOS as it has no support for docker
-          - { os: "macOS-latest", backend: "db"}
+          - { os: "macOS-latest", backend: "db" }
     env:
       CACHIER_TEST_HOST: "localhost"
       CACHIER_TEST_PORT: "27017"
@@ -57,7 +57,7 @@ jobs:
       - name: Cache Container Images
         uses: jamesmortensen/cache-container-images-action@6295b9c88d53f429209c15a5400accc9de9ecefb
         with:
-          prefix-key: 'mongo-db'
+          prefix-key: "mongo-db"
           images: mongo:latest
       - name: Start MongoDB
         if: matrix.backend == 'db'
