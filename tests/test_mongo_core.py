@@ -43,6 +43,7 @@ CFG = Birch(
 )
 
 
+# URI_TEMPLATE = "mongodb://myUser:myPassword@localhost:27017/"
 URI_TEMPLATE = "mongodb://{host}:{port}?retrywrites=true&w=majority"
 
 
