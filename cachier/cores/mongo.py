@@ -21,7 +21,7 @@ with suppress(ImportError):
     from pymongo import ASCENDING, IndexModel
     from pymongo.errors import OperationFailure
 
-from .base import RecalculationNeeded, _BaseCore
+from .base import RecalculationNeeded, _BaseCore, _get_func_str
 
 MONGO_SLEEP_DURATION_IN_SEC = 1
 
@@ -60,13 +60,9 @@ class _MongoCore(_BaseCore):
             )
             self.mongo_collection.create_indexes([func1key1])
 
-    @staticmethod
-    def _get_func_str(func):
-        return f".{func.__module__}.{func.__name__}"
-
     def get_entry_by_key(self, key):
         res = self.mongo_collection.find_one(
-            {"func": _MongoCore._get_func_str(self.func), "key": key}
+            {"func": _get_func_str(self.func), "key": key}
         )
         if not res:
             return key, None
@@ -89,10 +85,10 @@ class _MongoCore(_BaseCore):
     def set_entry(self, key, func_res):
         thebytes = pickle.dumps(func_res)
         self.mongo_collection.update_one(
-            filter={"func": _MongoCore._get_func_str(self.func), "key": key},
+            filter={"func": _get_func_str(self.func), "key": key},
             update={
                 "$set": {
-                    "func": _MongoCore._get_func_str(self.func),
+                    "func": _get_func_str(self.func),
                     "key": key,
                     "value": Binary(thebytes),
                     "time": datetime.now(),
@@ -105,7 +101,7 @@ class _MongoCore(_BaseCore):
 
     def mark_entry_being_calculated(self, key):
         self.mongo_collection.update_one(
-            filter={"func": _MongoCore._get_func_str(self.func), "key": key},
+            filter={"func": _get_func_str(self.func), "key": key},
             update={"$set": {"being_calculated": True}},
             upsert=True,
         )
@@ -114,7 +110,7 @@ class _MongoCore(_BaseCore):
         with suppress(OperationFailure):  # don't care in this case
             self.mongo_collection.update_one(
                 filter={
-                    "func": _MongoCore._get_func_str(self.func),
+                    "func": _get_func_str(self.func),
                     "key": key,
                 },
                 update={"$set": {"being_calculated": False}},
@@ -135,13 +131,13 @@ class _MongoCore(_BaseCore):
 
     def clear_cache(self):
         self.mongo_collection.delete_many(
-            filter={"func": _MongoCore._get_func_str(self.func)}
+            filter={"func": _get_func_str(self.func)}
         )
 
     def clear_being_calculated(self):
         self.mongo_collection.update_many(
             filter={
-                "func": _MongoCore._get_func_str(self.func),
+                "func": _get_func_str(self.func),
                 "being_calculated": True,
             },
             update={"$set": {"being_calculated": False}},

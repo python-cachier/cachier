@@ -352,16 +352,17 @@ def test_default_kwargs_handling():
     assert count == 1
 
 
-def test_diff_functions_same_args(tmpdir):
+@pytest.mark.parametrize("backend", ["memory", "pickle"])
+def test_diff_functions_same_args(tmpdir, backend: str):
     count_p = count_m = 0
 
-    @cachier.cachier(cache_dir=tmpdir)
+    @cachier.cachier(cache_dir=tmpdir, backend=backend)
     def fn_plus(a, b=2):
         nonlocal count_p
         count_p += 1
         return a + b
 
-    @cachier.cachier(cache_dir=tmpdir)
+    @cachier.cachier(cache_dir=tmpdir, backend=backend)
     def fn_minus(a, b=2):
         nonlocal count_m
         count_m += 1
@@ -376,7 +377,8 @@ def test_diff_functions_same_args(tmpdir):
     assert count_m == 1
 
 
-def test_runtime_handling(tmpdir):
+@pytest.mark.parametrize("backend", ["memory", "pickle"])
+def test_runtime_handling(tmpdir, backend):
     count_p = count_m = 0
 
     def fn_plus(a, b=2):
@@ -389,7 +391,7 @@ def test_runtime_handling(tmpdir):
         count_m += 1
         return a - b
 
-    cachier_ = cachier.cachier(cache_dir=tmpdir)
+    cachier_ = cachier.cachier(cache_dir=tmpdir, backend=backend)
     assert count_p == count_m == 0
 
     for fn, expected in [(fn_plus, 3), (fn_minus, -1)]:
