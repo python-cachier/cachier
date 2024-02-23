@@ -210,7 +210,7 @@ def test_ignore_cache(separate_files):
     int1 = _random_num_with_arg_decorated("a")
     int2 = _random_num_with_arg_decorated("a")
     assert int2 == int1
-    int3 = _random_num_with_arg_decorated("a", ignore_cache=True)
+    int3 = _random_num_with_arg_decorated("a", cachier__skip_cache=True)
     assert int3 != int1
     int4 = _random_num_with_arg_decorated("a")
     assert int4 != int3
