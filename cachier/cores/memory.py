@@ -18,7 +18,6 @@ class _MemoryCore(_BaseCore):
         return f"{_get_func_str(self.func)}:{key}"
 
     def get_entry_by_key(self, key, reload=False):
-
         with self.lock:
             return key, self.cache.get(self._hash_func_key(key), None)
 
