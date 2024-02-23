@@ -236,7 +236,7 @@ Cachier also accepts several keyword arguments in the calls of the function it w
 Ignore Cache
 ~~~~~~~~~~~~
 
-You can have ``cachier`` ignore any existing cache for a specific function call by passing ``ignore_cache=True`` to the function call. The cache will neither be checked nor updated with the new return value.
+You can have ``cachier`` ignore any existing cache for a specific function call by passing ``cachier__skip_cache=True`` to the function call. The cache will neither be checked nor updated with the new return value.
 
 .. code-block:: python
 
@@ -245,17 +245,17 @@ You can have ``cachier`` ignore any existing cache for a specific function call 
     return first_num + second_num
 
   def main():
-    print(sum(5, 3, ignore_cache=True))
+    print(sum(5, 3, cachier__skip_cache=True))
 
 Overwrite Cache
 ~~~~~~~~~~~~~~~
 
-You can have ``cachier`` overwrite an existing cache entry - if one exists - for a specific function call by passing ``overwrite_cache=True`` to the function call. The cache will not be checked but will be updated with the new return value.
+You can have ``cachier`` overwrite an existing cache entry - if one exists - for a specific function call by passing ``cachier__overwrite_cache=True`` to the function call. The cache will not be checked but will be updated with the new return value.
 
 Verbose Cache Call
 ~~~~~~~~~~~~~~~~~~
 
-You can have ``cachier`` print out a detailed explanation of the logic of a specific call by passing ``verbose_cache=True`` to the function call. This can be useful if you are not sure why a certain function result is, or is not, returned.
+You can have ``cachier`` print out a detailed explanation of the logic of a specific call by passing ``cachier__verbose=True`` to the function call. This can be useful if you are not sure why a certain function result is, or is not, returned.
 
 Cache `None` Values
 ~~~~~~~~~~~~~~~~~~~

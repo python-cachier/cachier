@@ -62,7 +62,7 @@ def test_pickle_core(reload, separate_files):
     _takes_2_seconds_decorated.clear_cache()
     _takes_2_seconds_decorated("a", "b")
     start = time()
-    _takes_2_seconds_decorated("a", "b", verbose_cache=True)
+    _takes_2_seconds_decorated("a", "b", cachier__verbose=True)
     end = time()
     assert end - start < 1
     _takes_2_seconds_decorated.clear_cache()
@@ -78,7 +78,7 @@ def test_pickle_core_keywords(separate_files):
     _takes_2_seconds_decorated.clear_cache()
     _takes_2_seconds_decorated("a", arg_2="b")
     start = time()
-    _takes_2_seconds_decorated("a", arg_2="b", verbose_cache=True)
+    _takes_2_seconds_decorated("a", arg_2="b", cachier__verbose=True)
     end = time()
     assert end - start < 1
     _takes_2_seconds_decorated.clear_cache()
@@ -168,7 +168,7 @@ def test_overwrite_cache(separate_files):
     int1 = _random_num_decorated()
     int2 = _random_num_decorated()
     assert int2 == int1
-    int3 = _random_num_decorated(overwrite_cache=True)
+    int3 = _random_num_decorated(cachier__overwrite_cache=True)
     assert int3 != int1
     int4 = _random_num_decorated()
     assert int4 == int3
@@ -178,7 +178,7 @@ def test_overwrite_cache(separate_files):
     int1 = _random_num_with_arg_decorated("a")
     int2 = _random_num_with_arg_decorated("a")
     assert int2 == int1
-    int3 = _random_num_with_arg_decorated("a", overwrite_cache=True)
+    int3 = _random_num_with_arg_decorated("a", cachier__overwrite_cache=True)
     assert int3 != int1
     int4 = _random_num_with_arg_decorated("a")
     assert int4 == int3
@@ -199,7 +199,7 @@ def test_ignore_cache(separate_files):
     int1 = _random_num_decorated()
     int2 = _random_num_decorated()
     assert int2 == int1
-    int3 = _random_num_decorated(ignore_cache=True)
+    int3 = _random_num_decorated(cachier__skip_cache=True)
     assert int3 != int1
     int4 = _random_num_decorated()
     assert int4 != int3
@@ -342,7 +342,7 @@ _BAD_CACHE_FPATHS = {
 
 def _calls_bad_cache(bad_cache_func, res_queue, trash_cache, separate_files):
     try:
-        res = bad_cache_func(0.13, 0.02, verbose_cache=True)
+        res = bad_cache_func(0.13, 0.02, cachier__verbose=True)
         if trash_cache:
             with open(_BAD_CACHE_FPATHS[separate_files], "w") as cache_file:
                 cache_file.seek(0)
@@ -566,7 +566,7 @@ def test_pickle_core_custom_cache_dir(separate_files):
     _takes_2_seconds_custom_dir_decorated.clear_cache()
     _takes_2_seconds_custom_dir_decorated("a", "b")
     start = time()
-    _takes_2_seconds_custom_dir_decorated("a", "b", verbose_cache=True)
+    _takes_2_seconds_custom_dir_decorated("a", "b", cachier__verbose=True)
     end = time()
     assert end - start < 1
     _takes_2_seconds_custom_dir_decorated.clear_cache()

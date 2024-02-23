@@ -207,16 +207,20 @@ def cachier(
             nonlocal allow_none
             _allow_none = _update_with_defaults(allow_none, "allow_none")
             # print('Inside general wrapper for {}.'.format(func.__name__))
-            ignore_cache = kwds.pop("ignore_cache", False)
-            overwrite_cache = kwds.pop("overwrite_cache", False)
-            verbose_cache = kwds.pop("verbose_cache", False)
+            ignore_cache = kwds.pop("cachier__skip_cache", False)
+            overwrite_cache = kwds.pop("cachier__overwrite_cache", False)
+            verbose = kwds.pop("cachier__verbose", False)
+            local_stale_after = _update_with_defaults(
+                stale_after, "stale_after", func_kwargs=kwds
+            )
+            local_next_time = _update_with_defaults(next_time, "next_time", func_kwargs=kwds)
             # merge args expanded as kwargs and the original kwds
             kwargs = _convert_args_kwargs(
                 func, _is_method=core.func_is_method, args=args, kwds=kwds
             )
 
             _print = lambda x: None  # noqa: E731
-            if verbose_cache:
+            if verbose:
                 _print = print
             if ignore_cache or not _default_params["caching_enabled"]:
                 return func(**kwargs)
@@ -229,10 +233,6 @@ def cachier(
             _print("Entry found.")
             if _allow_none or entry.get("value", None) is not None:
                 _print("Cached result found.")
-                local_stale_after = _update_with_defaults(
-                    stale_after, "stale_after"
-                )
-                local_next_time = _update_with_defaults(next_time, "next_time")
                 now = datetime.datetime.now()
                 if now - entry["time"] <= local_stale_after:
                     _print("And it is fresh!")
