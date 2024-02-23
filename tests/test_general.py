@@ -398,6 +398,12 @@ def test_runtime_handling(tmpdir):
     assert count_p == 1
     assert count_m == 1
 
+    for fn, expected in [(fn_plus, 5), (fn_minus, 1)]:
+        assert cachier_(fn)(3, 2) == expected
+        assert cachier_(fn)(a=3, b=2) == expected
+    assert count_p == 2
+    assert count_m == 2
+
 
 def test_partial_handling(tmpdir):
     count_p = count_m = 0
