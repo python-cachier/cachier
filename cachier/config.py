@@ -45,7 +45,9 @@ _default_params: Params = {
 }
 
 
-def _update_with_defaults(param, name: str, func_kwargs: Optional[dict] = None):
+def _update_with_defaults(
+    param, name: str, func_kwargs: Optional[dict] = None
+):
     import cachier
 
     kw_name = f"cachier__{name}"

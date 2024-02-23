@@ -213,7 +213,9 @@ def cachier(
             local_stale_after = _update_with_defaults(
                 stale_after, "stale_after", func_kwargs=kwds
             )
-            local_next_time = _update_with_defaults(next_time, "next_time", func_kwargs=kwds)
+            local_next_time = _update_with_defaults(
+                next_time, "next_time", func_kwargs=kwds
+            )
             # merge args expanded as kwargs and the original kwds
             kwargs = _convert_args_kwargs(
                 func, _is_method=core.func_is_method, args=args, kwds=kwds
