@@ -13,7 +13,6 @@ import time  # to sleep when waiting on Mongo cache\
 import warnings  # to warn if pymongo is missing
 from contextlib import suppress
 from datetime import datetime
-from functools import cached_property
 
 from .._types import HashFunc, Mongetter
 
@@ -61,7 +60,7 @@ class _MongoCore(_BaseCore):
             )
             self.mongo_collection.create_indexes([func1key1])
 
-    @cached_property
+    @property
     def _func_str(self) -> str:
         return _get_func_str(self.func)
 
