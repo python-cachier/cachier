@@ -4,7 +4,7 @@ import threading
 from datetime import datetime
 
 from .._types import HashFunc
-from .base import _BaseCore
+from .base import _BaseCore, _get_func_str
 
 
 class _MemoryCore(_BaseCore):
@@ -14,9 +14,13 @@ class _MemoryCore(_BaseCore):
         super().__init__(hash_func, wait_for_calc_timeout)
         self.cache = {}
 
+    def _hash_func_key(self, key):
+        return f"{_get_func_str(self.func)}:{key}"
+
     def get_entry_by_key(self, key, reload=False):
+
         with self.lock:
-            return key, self.cache.get(key, None)
+            return key, self.cache.get(self._hash_func_key(key), None)
 
     def set_entry(self, key, func_res):
         with self.lock:
@@ -24,10 +28,10 @@ class _MemoryCore(_BaseCore):
                 # we need to retain the existing condition so that
                 # mark_entry_not_calculated can notify all possibly-waiting
                 # threads about it
-                cond = self.cache[key]["condition"]
+                cond = self.cache[self._hash_func_key(key)]["condition"]
             except KeyError:  # pragma: no cover
                 cond = None
-            self.cache[key] = {
+            self.cache[self._hash_func_key(key)] = {
                 "value": func_res,
                 "time": datetime.now(),
                 "stale": False,
@@ -40,10 +44,10 @@ class _MemoryCore(_BaseCore):
             condition = threading.Condition()
             # condition.acquire()
             try:
-                self.cache[key]["being_calculated"] = True
-                self.cache[key]["condition"] = condition
+                self.cache[self._hash_func_key(key)]["being_calculated"] = True
+                self.cache[self._hash_func_key(key)]["condition"] = condition
             except KeyError:
-                self.cache[key] = {
+                self.cache[self._hash_func_key(key)] = {
                     "value": None,
                     "time": datetime.now(),
                     "stale": False,
@@ -54,7 +58,7 @@ class _MemoryCore(_BaseCore):
     def mark_entry_not_calculated(self, key):
         with self.lock:
             try:
-                entry = self.cache[key]
+                entry = self.cache[self._hash_func_key(key)]
             except KeyError:  # pragma: no cover
                 return  # that's ok, we don't need an entry in that case
             entry["being_calculated"] = False
@@ -67,13 +71,13 @@ class _MemoryCore(_BaseCore):
 
     def wait_on_entry_calc(self, key):
         with self.lock:  # pragma: no cover
-            entry = self.cache[key]
+            entry = self.cache[self._hash_func_key(key)]
             if not entry["being_calculated"]:
                 return entry["value"]
         entry["condition"].acquire()
         entry["condition"].wait()
         entry["condition"].release()
-        return self.cache[key]["value"]
+        return self.cache[self._hash_func_key(key)]["value"]
 
     def clear_cache(self):
         with self.lock:
