@@ -9,6 +9,7 @@
 import abc  # for the _BaseCore abstract base class
 import inspect
 import threading
+from typing import Callable
 
 from .._types import HashFunc
 from ..config import _update_with_defaults
@@ -16,6 +17,10 @@ from ..config import _update_with_defaults
 
 class RecalculationNeeded(Exception):
     pass
+
+
+def _get_func_str(func: Callable) -> str:
+    return f".{func.__module__}.{func.__name__}"
 
 
 class _BaseCore:
