@@ -50,9 +50,10 @@ def _update_with_defaults(
 ):
     import cachier
 
-    kw_name = f"cachier__{name}"
-    if kw_name in func_kwargs:
-        return func_kwargs.pop(kw_name)
+    if func_kwargs:
+        kw_name = f"cachier__{name}"
+        if kw_name in func_kwargs:
+            return func_kwargs.pop(kw_name)
     if param is None:
         return cachier.config._default_params[name]
     return param
