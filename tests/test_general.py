@@ -368,28 +368,33 @@ def test_runtime_handling(tmpdir):
 
 
 def test_partial_handling(tmpdir):
-    count = 0
+    count_p = count_m = 0
 
-    def dummy_func(a, b=2):
-        nonlocal count
-        count += 1
+    def fn_plus(a, b=2):
+        nonlocal count_p
+        count_p += 1
         return a + b
 
+    def fn_minus(a, b=2):
+        nonlocal count_m
+        count_m += 1
+        return a - b
+
     cachier_ = cachier.cachier(cache_dir=tmpdir)
-    assert count == 0
+    assert count_p == count_m == 0
 
-    dummy_ = functools.partial(dummy_func, 1)
-    cachier_(dummy_)()
+    for fn, expected in [(fn_plus, 3), (fn_minus, -1)]:
+        dummy_ = functools.partial(fn, 1)
+        assert cachier_(dummy_)() == expected
 
-    dummy_ = functools.partial(dummy_func, a=1)
-    cachier_(dummy_)()
+        dummy_ = functools.partial(fn, a=1)
+        assert cachier_(dummy_)() == expected
 
-    dummy_ = functools.partial(dummy_func, b=2)
-    cachier_(dummy_)(1)
+        dummy_ = functools.partial(fn, b=2)
+        assert cachier_(dummy_)(1) == expected
 
-    assert count == 1
+        assert cachier_(fn)(1, 2) == expected
+        assert cachier_(fn)(a=1, b=2) == expected
 
-    cachier_(dummy_func)(1, 2)
-    cachier_(dummy_func)(a=1, b=2)
-
-    assert count == 1
+    assert count_p == 1
+    assert count_m == 1
