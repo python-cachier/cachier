@@ -352,19 +352,51 @@ def test_default_kwargs_handling():
     assert count == 1
 
 
-def test_runtime_handling(tmpdir):
-    count = 0
+def test_diff_functions_same_args(tmpdir):
+    count_p = count_m = 0
 
-    def dummy_func(a, b):
-        nonlocal count
-        count += 1
+    @cachier.cachier(cache_dir=tmpdir)
+    def fn_plus(a, b=2):
+        nonlocal count_p
+        count_p += 1
         return a + b
 
+    @cachier.cachier(cache_dir=tmpdir)
+    def fn_minus(a, b=2):
+        nonlocal count_m
+        count_m += 1
+        return a - b
+
+    assert count_p == count_m == 0
+
+    for fn, expected in [(fn_plus, 3), (fn_minus, -1)]:
+        assert fn(1) == expected
+        assert fn(a=1, b=2) == expected
+    assert count_p == 1
+    assert count_m == 1
+
+
+def test_runtime_handling(tmpdir):
+    count_p = count_m = 0
+
+    def fn_plus(a, b=2):
+        nonlocal count_p
+        count_p += 1
+        return a + b
+
+    def fn_minus(a, b=2):
+        nonlocal count_m
+        count_m += 1
+        return a - b
+
     cachier_ = cachier.cachier(cache_dir=tmpdir)
-    assert count == 0
-    cachier_(dummy_func)(a=1, b=2)
-    cachier_(dummy_func)(a=1, b=2)
-    assert count == 1
+    assert count_p == count_m == 0
+
+    for fn, expected in [(fn_plus, 3), (fn_minus, -1)]:
+        assert cachier_(fn)(1, 2) == expected
+        assert cachier_(fn)(a=1, b=2) == expected
+    assert count_p == 1
+    assert count_m == 1
 
 
 def test_partial_handling(tmpdir):
