@@ -48,13 +48,13 @@ jobs:
         if: matrix.backend == 'local'
         run: pytest -m "not mongo"
 
-      - name: Switch DB to in-memory
+      - name: Setup docker (missing on MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'db'
-        run: echo "CACHIER_TEST_VS_DOCKERIZED_MONGO=false" >> $GITHUB_ENV
-      # ToDo: add support for macOS
-      #- name: Install docker for macOS
-      #  if: runner.os == 'macOS' && matrix.backend == 'db'
-      #  uses: douglascamata/setup-docker-macos-action@v1-alpha
+        run: |
+          brew install docker
+          colima start
+          # For testcontainers to find the Colima socket
+          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
       # ToDo: find a way to cache docker images
       #- name: Cache Container Images
       #  if: matrix.backend == 'db'
