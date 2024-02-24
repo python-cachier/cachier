@@ -63,7 +63,7 @@ _COLLECTION_NAME = (
 
 def _test_mongetter():
     if not hasattr(_test_mongetter, "client"):
-        if CFG.mget(CfgKey.TEST_VS_DOCKERIZED_MONGO, bool):
+        if str(CFG.mget(CfgKey.TEST_VS_DOCKERIZED_MONGO)).lower() == "true":
             print("Using live MongoDB instance for testing.")
             _test_mongetter.client = _get_cachier_db_mongo_client()
         else:
