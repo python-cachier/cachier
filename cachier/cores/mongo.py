@@ -60,9 +60,13 @@ class _MongoCore(_BaseCore):
             )
             self.mongo_collection.create_indexes([func1key1])
 
+    @property
+    def _func_str(self) -> str:
+        return _get_func_str(self.func)
+
     def get_entry_by_key(self, key):
         res = self.mongo_collection.find_one(
-            {"func": _get_func_str(self.func), "key": key}
+            {"func": self._func_str, "key": key}
         )
         if not res:
             return key, None
@@ -85,10 +89,10 @@ class _MongoCore(_BaseCore):
     def set_entry(self, key, func_res):
         thebytes = pickle.dumps(func_res)
         self.mongo_collection.update_one(
-            filter={"func": _get_func_str(self.func), "key": key},
+            filter={"func": self._func_str, "key": key},
             update={
                 "$set": {
-                    "func": _get_func_str(self.func),
+                    "func": self._func_str,
                     "key": key,
                     "value": Binary(thebytes),
                     "time": datetime.now(),
@@ -101,7 +105,7 @@ class _MongoCore(_BaseCore):
 
     def mark_entry_being_calculated(self, key):
         self.mongo_collection.update_one(
-            filter={"func": _get_func_str(self.func), "key": key},
+            filter={"func": self._func_str, "key": key},
             update={"$set": {"being_calculated": True}},
             upsert=True,
         )
@@ -110,7 +114,7 @@ class _MongoCore(_BaseCore):
         with suppress(OperationFailure):  # don't care in this case
             self.mongo_collection.update_one(
                 filter={
-                    "func": _get_func_str(self.func),
+                    "func": self._func_str,
                     "key": key,
                 },
                 update={"$set": {"being_calculated": False}},
@@ -130,14 +134,12 @@ class _MongoCore(_BaseCore):
             self.check_calc_timeout(time_spent)
 
     def clear_cache(self):
-        self.mongo_collection.delete_many(
-            filter={"func": _get_func_str(self.func)}
-        )
+        self.mongo_collection.delete_many(filter={"func": self._func_str})
 
     def clear_being_calculated(self):
         self.mongo_collection.update_many(
             filter={
-                "func": _get_func_str(self.func),
+                "func": self._func_str,
                 "being_calculated": True,
             },
             update={"$set": {"being_calculated": False}},

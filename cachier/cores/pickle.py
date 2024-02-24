@@ -88,12 +88,12 @@ class _PickleCore(_BaseCore):
         )
 
     @property
-    def cache_fname(self):
+    def cache_fname(self) -> str:
         fname = f".{self.func.__module__}.{self.func.__qualname__}"
         return fname.replace("<", "_").replace(">", "_")
 
     @property
-    def cache_fpath(self):
+    def cache_fpath(self) -> str:
         os.makedirs(self.cache_dir, exist_ok=True)
         return os.path.abspath(
             os.path.join(os.path.realpath(self.cache_dir), self.cache_fname)
