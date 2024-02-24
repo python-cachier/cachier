@@ -62,8 +62,8 @@ jobs:
       #  with:
       #    prefix-key: "mongo-db"
       #    images: mongo:latest
-      - name: Start MongoDB
-        if: matrix.backend == 'db' && runner.os != 'macOS'
+      - name: Start MongoDB in docker
+        if: matrix.backend == 'db'
         run: |
           # start MongoDB in a container
           docker run -d -p ${{ env.CACHIER_TEST_PORT }}:27017 --name mongodb mongo:latest
