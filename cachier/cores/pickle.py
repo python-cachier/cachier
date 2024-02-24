@@ -86,30 +86,33 @@ class _PickleCore(_BaseCore):
         self.separate_files = _update_with_defaults(
             separate_files, "separate_files"
         )
-        self.cache_fname = None
-        self.cache_fpath = None
+        self._cache_fname = None
+        self._cache_fpath = None
 
-    def _cache_fname(self):
-        if self.cache_fname is None:
+    @property
+    def cache_fname(self) -> str:
+        if self._cache_fname is None:
             fname = f".{self.func.__module__}.{self.func.__qualname__}"
-            self.cache_fname = fname.replace("<", "_").replace(">", "_")
-        return self.cache_fname
+            self._cache_fname = fname.replace("<", "_").replace(">", "_")
+        return self._cache_fname
 
-    def _cache_fpath(self):
-        if self.cache_fpath is None:
+    @property
+    def cache_fpath(self) -> str:
+        if self._cache_fpath is None:
             os.makedirs(self.cache_dir, exist_ok=True)
-            self.cache_fpath = os.path.abspath(
+            self._cache_fpath = os.path.abspath(
                 os.path.join(
-                    os.path.realpath(self.cache_dir), self._cache_fname()
+                    os.path.realpath(self.cache_dir), self.cache_fname
                 )
             )
-        return self.cache_fpath
+        return self._cache_fpath
 
     def _reload_cache(self):
         with self.lock:
-            fpath = self._cache_fpath()
             try:
-                with portalocker.Lock(fpath, mode="rb") as cache_file:
+                with portalocker.Lock(
+                    self.cache_fpath, mode="rb"
+                ) as cache_file:
                     try:
                         self.cache = pickle.load(cache_file)  # noqa: S301
                     except EOFError:
@@ -124,7 +127,7 @@ class _PickleCore(_BaseCore):
             return self.cache
 
     def _get_cache_by_key(self, key=None, hash=None):
-        fpath = self._cache_fpath()
+        fpath = self.cache_fpath
         fpath += f"_{key}" if hash is None else f"_{hash}"
         try:
             with portalocker.Lock(fpath, mode="rb") as cache_file:
@@ -133,15 +136,13 @@ class _PickleCore(_BaseCore):
             return None
 
     def _clear_all_cache_files(self):
-        fpath = self._cache_fpath()
-        path, name = os.path.split(fpath)
+        path, name = os.path.split(self.cache_fpath)
         for subpath in os.listdir(path):
             if subpath.startswith(f"{name}_"):
                 os.remove(os.path.join(path, subpath))
 
     def _clear_being_calculated_all_cache_files(self):
-        fpath = self._cache_fpath()
-        path, name = os.path.split(fpath)
+        path, name = os.path.split(self.cache_fpath)
         for subpath in os.listdir(path):
             if subpath.startswith(name):
                 entry = self._get_cache_by_key(hash=subpath.split("_")[-1])
@@ -150,13 +151,13 @@ class _PickleCore(_BaseCore):
                     self._save_cache(entry, hash=subpath.split("_")[-1])
 
     def _save_cache(self, cache, key=None, hash=None):
+        fpath = self.cache_fpath
+        if key is not None:
+            fpath += f"_{key}"
+        elif hash is not None:
+            fpath += f"_{hash}"
         with self.lock:
             self.cache = cache
-            fpath = self._cache_fpath()
-            if key is not None:
-                fpath += f"_{key}"
-            elif hash is not None:
-                fpath += f"_{hash}"
             with portalocker.Lock(fpath, mode="wb") as cache_file:
                 pickle.dump(cache, cache_file, protocol=4)
             if key is None:
@@ -231,12 +232,12 @@ class _PickleCore(_BaseCore):
     def wait_on_entry_calc(self, key):
         if self.separate_files:
             entry = self._get_cache_by_key(key)
-            filename = f"{self._cache_fname()}_{key}"
+            filename = f"{self.cache_fname}_{key}"
         else:
             with self.lock:
                 self._reload_cache()
                 entry = self._get_cache()[key]
-            filename = self._cache_fname()
+            filename = self.cache_fname
         if not entry["being_calculated"]:
             return entry["value"]
         event_handler = _PickleCore.CacheChangeHandler(
