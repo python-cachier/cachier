@@ -32,14 +32,12 @@ class CfgKey:
     # UNAME = "TEST_USERNAME"
     # PWD = "TEST_PASSWORD"
     # DB = "TEST_DB"
-    TEST_VS_LIVE_MONGO = "TEST_VS_LIVE_MONGO"
+    TEST_VS_DOCKERIZED_MONGO = "TEST_VS_DOCKERIZED_MONGO"
 
 
 CFG = Birch(
     namespace="cachier",
-    defaults={
-        CfgKey.TEST_VS_LIVE_MONGO: False,
-    },
+    defaults={CfgKey.TEST_VS_DOCKERIZED_MONGO: False},
 )
 
 
@@ -53,9 +51,8 @@ def _get_cachier_db_mongo_client():
     # uname = quote_plus(CFG[CfgKey.UNAME])
     # pwd = quote_plus(CFG[CfgKey.PWD])
     # db = quote_plus(CFG[CfgKey.DB])
-    uri = URI_TEMPLATE.format(host=host, port=port)
-    client = MongoClient(uri)
-    return client
+    uri = f"mongodb://{host}:{port}?retrywrites=true&w=majority"
+    return MongoClient(uri)
 
 
 _COLLECTION_NAME = (
@@ -66,7 +63,7 @@ _COLLECTION_NAME = (
 
 def _test_mongetter():
     if not hasattr(_test_mongetter, "client"):
-        if CFG.mget(CfgKey.TEST_VS_LIVE_MONGO, bool):
+        if CFG.mget(CfgKey.TEST_VS_DOCKERIZED_MONGO, bool):
             print("Using live MongoDB instance for testing.")
             _test_mongetter.client = _get_cachier_db_mongo_client()
         else:
