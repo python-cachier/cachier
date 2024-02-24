@@ -168,17 +168,12 @@ def test_precache_value(mongetter, backend):
         """Some function."""
         return arg_1 + arg_2
 
-    result = dummy_func.precache_value(2, 2, value_to_cache=5)
-    assert result == 5
-    result = dummy_func(2, 2)
-    assert result == 5
+    assert dummy_func.precache_value(2, 2, value_to_cache=5) == 5
+    assert dummy_func(2, 2) == 5
     dummy_func.clear_cache()
-    result = dummy_func(2, 2)
-    assert result == 4
-    result = dummy_func.precache_value(2, arg_2=2, value_to_cache=5)
-    assert result == 5
-    result = dummy_func(2, arg_2=2)
-    assert result == 5
+    assert dummy_func(2, 2) == 4
+    assert dummy_func.precache_value(2, arg_2=2, value_to_cache=5) == 5
+    assert dummy_func(2, arg_2=2) == 5
 
 
 @pytest.mark.parametrize(
@@ -201,12 +196,10 @@ def test_ignore_self_in_methods(mongetter, backend):
     test_object_2 = DummyClass()
     test_object_1.takes_2_seconds.clear_cache()
     test_object_2.takes_2_seconds.clear_cache()
-    result_1 = test_object_1.takes_2_seconds(1, 2)
-    assert result_1 == 3
+    assert test_object_1.takes_2_seconds(1, 2) == 3
     start = time()
-    result_2 = test_object_2.takes_2_seconds(1, 2)
+    assert test_object_2.takes_2_seconds(1, 2) == 3
     end = time()
-    assert result_2 == 3
     assert end - start < 1
 
 
@@ -292,10 +285,10 @@ def test_identical_inputs():
 
     dummy_func.clear_cache()
     assert count == 0
-    dummy_func(1, 2, 3)
-    dummy_func(1, 2, c=3)
-    dummy_func(1, b=2, c=3)
-    dummy_func(a=1, b=2, c=3)
+    assert dummy_func(1, 2, 3) == 6
+    assert dummy_func(1, 2, c=3) == 6
+    assert dummy_func(1, b=2, c=3) == 6
+    assert dummy_func(a=1, b=2, c=3) == 6
     assert count == 1
 
 
@@ -310,10 +303,10 @@ def test_list_inputs():
 
     dummy_func.clear_cache()
     assert count == 0
-    dummy_func([1])
-    dummy_func([1], [2])
-    dummy_func([1], b=[2])
-    dummy_func(a=[1], b=[2])
+    assert dummy_func([1]) == [1, 2]
+    assert dummy_func([1], [2]) == [1, 2]
+    assert dummy_func([1], b=[2]) == [1, 2]
+    assert dummy_func(a=[1], b=[2]) == [1, 2]
     assert count == 1
 
 
@@ -328,10 +321,9 @@ def test_order_independent_kwargs_handling():
 
     dummy_func.clear_cache()
     assert count == 0
-    dummy_func(a=1, b=2)
-    dummy_func(a=1, b=2)
-    assert count == 1
-    dummy_func(b=2, a=1)
+    assert dummy_func(a=1, b=2) == 3
+    assert dummy_func(a=1, b=2) == 3
+    assert dummy_func(b=2, a=1) == 3
     assert count == 1
 
 
@@ -346,9 +338,9 @@ def test_default_kwargs_handling():
 
     dummy_func.clear_cache()
     assert count == 0
-    dummy_func(1)
-    dummy_func(a=1)
-    dummy_func(a=1, b=2)
+    assert dummy_func(1) == 3
+    assert dummy_func(a=1) == 3
+    assert dummy_func(a=1, b=2) == 3
     assert count == 1
 
 
