@@ -268,19 +268,19 @@ def cachier(
             _print("No entry found. No current calc. Calling like a boss.")
             return _calc_entry(core, key, func, args, kwds)
 
-        def _clear_cache():
+        def clear_cache():
             """Clear the cache."""
             core.clear_cache()
 
-        def _clear_being_calculated():
+        def clear_being_calculated():
             """Marks all entries in this cache as not being calculated."""
             core.clear_being_calculated()
 
-        def _cache_dpath():
+        def cache_dpath():
             """Returns the path to the cache dir, if exists; None if not."""
             return getattr(core, "cache_dir", None)
 
-        def _precache_value(*args, value_to_cache, **kwds):
+        def precache_value(*args, value_to_cache, **kwds):
             """Add an initial value to the cache.
 
             Arguments
@@ -295,10 +295,10 @@ def cachier(
             )
             return core.precache_value(tuple(), kwargs, value_to_cache)
 
-        func_wrapper.clear_cache = _clear_cache
-        func_wrapper.clear_being_calculated = _clear_being_calculated
-        func_wrapper.cache_dpath = _cache_dpath
-        func_wrapper.precache_value = _precache_value
+        func_wrapper.clear_cache = clear_cache
+        func_wrapper.clear_being_calculated = clear_being_calculated
+        func_wrapper.cache_dpath = cache_dpath
+        func_wrapper.precache_value = precache_value
         return func_wrapper
 
     return _cachier_decorator
