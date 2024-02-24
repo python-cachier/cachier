@@ -93,6 +93,14 @@ def _convert_args_kwargs(
     return OrderedDict(sorted(kwargs.items()))
 
 
+def _pop_kwds_with_deprecation(kwds, name: str, default_value: bool):
+    if name in kwds:
+        raise DeprecationWarning(
+            "`ignore_cache` is deprecated, use `cachier__skip_cache` instead."
+        )
+    return kwds.pop(name, default_value)
+
+
 def cachier(
     hash_func: Optional[HashFunc] = None,
     hash_params: Optional[HashFunc] = None,
@@ -207,9 +215,18 @@ def cachier(
             nonlocal allow_none
             _allow_none = _update_with_defaults(allow_none, "allow_none")
             # print('Inside general wrapper for {}.'.format(func.__name__))
-            ignore_cache = kwds.pop("cachier__skip_cache", False)
-            overwrite_cache = kwds.pop("cachier__overwrite_cache", False)
-            verbose = kwds.pop("cachier__verbose", False)
+            ignore_cache = _pop_kwds_with_deprecation(
+                kwds, "ignore_cache", False
+            )
+            overwrite_cache = _pop_kwds_with_deprecation(
+                kwds, "overwrite_cache", False
+            )
+            verbose = _pop_kwds_with_deprecation(kwds, "verbose_cache", False)
+            ignore_cache = kwds.pop("cachier__skip_cache", ignore_cache)
+            overwrite_cache = kwds.pop(
+                "cachier__overwrite_cache", overwrite_cache
+            )
+            verbose = kwds.pop("cachier__verbose", verbose)
             local_stale_after = _update_with_defaults(
                 stale_after, "stale_after", func_kwargs=kwds
             )
