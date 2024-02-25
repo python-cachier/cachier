@@ -10,6 +10,7 @@
 import datetime
 import inspect
 import os
+import warnings
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
@@ -95,8 +96,11 @@ def _convert_args_kwargs(
 
 def _pop_kwds_with_deprecation(kwds, name: str, default_value: bool):
     if name in kwds:
-        raise DeprecationWarning(
-            "`ignore_cache` is deprecated, use `cachier__skip_cache` instead."
+        warnings.warn(
+            f"`{name}` is deprecated and will be removed in a future release,"
+            " use `cachier__` alternative instead.",
+            DeprecationWarning,
+            stacklevel=2,
         )
     return kwds.pop(name, default_value)
 
