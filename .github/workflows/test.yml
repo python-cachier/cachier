@@ -26,7 +26,7 @@ jobs:
         exclude:
           # ToDo: take if back when the connection become stable
           #  or resolve using `InMemoryMongoClient`
-          - {os: "macOS-latest", backend: "db"}
+          - { os: "macOS-latest", backend: "db" }
     env:
       CACHIER_TEST_HOST: "localhost"
       CACHIER_TEST_PORT: "27017"
