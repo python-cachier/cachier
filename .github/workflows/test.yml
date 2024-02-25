@@ -23,6 +23,10 @@ jobs:
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
         os: ["ubuntu-latest", "macOS-latest", "windows-latest"]
         backend: ["local", "db"]
+        exclude:
+          # ToDo: take if back when the connection become stable
+          #  or resolve using `InMemoryMongoClient`
+          - {os: "macOS-latest", backend: "db"}
     env:
       CACHIER_TEST_HOST: "localhost"
       CACHIER_TEST_PORT: "27017"
