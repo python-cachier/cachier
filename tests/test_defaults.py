@@ -2,7 +2,6 @@ import datetime
 import os
 import queue
 import random
-import tempfile
 import threading
 import time
 
@@ -116,7 +115,7 @@ def test_separate_files_default_param(tmpdir):
     assert len(os.listdir(global_test_2.cache_dpath())) == 1
 
 
-def test_allow_none_default_param():
+def test_allow_none_default_param(tmpdir):
     cachier.set_default_params(
         allow_none=True,
         separate_files=True,
