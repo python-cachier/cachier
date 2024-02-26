@@ -402,11 +402,17 @@ def test_partial_handling(tmpdir):
         dummy_ = functools.partial(fn, 1)
         assert cachier_(dummy_)() == expected
 
+        dummy_ = functools.partial(fn, 1)
+        assert cachier_(dummy_)(2) == expected
+
         dummy_ = functools.partial(fn, a=1)
         assert cachier_(dummy_)() == expected
 
         dummy_ = functools.partial(fn, b=2)
         assert cachier_(dummy_)(1) == expected
+
+        dummy_ = functools.partial(fn, b=2)
+        assert cachier_(dummy_)(1, b=2) == expected
 
         assert cachier_(fn)(1, 2) == expected
         assert cachier_(fn)(a=1, b=2) == expected
