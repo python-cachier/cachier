@@ -151,10 +151,13 @@ def test_allow_none_default_param():
     assert disallow_count == 2
 
 
-PARAMETRIZE_TEST = ("backend,mongetter", [
-    pytest.param("pickle", None, marks=pytest.mark.pickle),
-    pytest.param("mongo", _test_mongetter, marks=pytest.mark.mongo),]
-                    )
+PARAMETRIZE_TEST = (
+    "backend,mongetter",
+    [
+        pytest.param("pickle", None, marks=pytest.mark.pickle),
+        pytest.param("mongo", _test_mongetter, marks=pytest.mark.mongo),
+    ],
+)
 
 
 @pytest.mark.parametrize(*PARAMETRIZE_TEST)
@@ -204,6 +207,7 @@ def test_next_time_applies_dynamically(backend, mongetter):
 @pytest.mark.parametrize(*PARAMETRIZE_TEST)
 def test_wait_for_calc_applies_dynamically(backend, mongetter):
     """Testing for calls timing out to be performed twice when needed."""
+
     @cachier.cachier(backend=backend, mongetter=mongetter)
     def _wait_for_calc_timeout_slow(arg_1, arg_2):
         time.sleep(3)
