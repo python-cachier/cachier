@@ -75,7 +75,7 @@ def _convert_args_kwargs(
     # unwrap if the function is functools.partial
     if hasattr(func, "func"):
         args = func.args + args
-        kwds = dict(**func.keywords, **kwds)
+        kwds.update({k: v for k, v in func.keywords.items() if k not in kwds})
         func = func.func
     func_params = list(inspect.signature(func).parameters)
     args_as_kw = dict(
