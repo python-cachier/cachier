@@ -86,26 +86,18 @@ class _PickleCore(_BaseCore):
         self.separate_files = _update_with_defaults(
             separate_files, "separate_files"
         )
-        self._cache_fname = None
-        self._cache_fpath = None
 
     @property
     def cache_fname(self) -> str:
-        if self._cache_fname is None:
-            fname = f".{self.func.__module__}.{self.func.__qualname__}"
-            self._cache_fname = fname.replace("<", "_").replace(">", "_")
-        return self._cache_fname
+        fname = f".{self.func.__module__}.{self.func.__qualname__}"
+        return fname.replace("<", "_").replace(">", "_")
 
     @property
     def cache_fpath(self) -> str:
-        if self._cache_fpath is None:
-            os.makedirs(self.cache_dir, exist_ok=True)
-            self._cache_fpath = os.path.abspath(
-                os.path.join(
-                    os.path.realpath(self.cache_dir), self.cache_fname
-                )
-            )
-        return self._cache_fpath
+        os.makedirs(self.cache_dir, exist_ok=True)
+        return os.path.abspath(
+            os.path.join(os.path.realpath(self.cache_dir), self.cache_fname)
+        )
 
     def _reload_cache(self):
         with self.lock:
@@ -113,11 +105,8 @@ class _PickleCore(_BaseCore):
                 with portalocker.Lock(
                     self.cache_fpath, mode="rb"
                 ) as cache_file:
-                    try:
-                        self.cache = pickle.load(cache_file)  # noqa: S301
-                    except EOFError:
-                        self.cache = {}
-            except FileNotFoundError:
+                    self.cache = pickle.load(cache_file)  # noqa: S301
+            except (FileNotFoundError, EOFError):
                 self.cache = {}
 
     def _get_cache(self):
@@ -180,11 +169,12 @@ class _PickleCore(_BaseCore):
         }
         if self.separate_files:
             self._save_cache(key_data, key)
-        else:
-            with self.lock:
-                cache = self._get_cache()
-                cache[key] = key_data
-                self._save_cache(cache)
+            return  # pragma: no cover
+
+        with self.lock:
+            cache = self._get_cache()
+            cache[key] = key_data
+            self._save_cache(cache)
 
     def mark_entry_being_calculated_separate_files(self, key):
         self._save_cache(
@@ -205,19 +195,20 @@ class _PickleCore(_BaseCore):
     def mark_entry_being_calculated(self, key):
         if self.separate_files:
             self.mark_entry_being_calculated_separate_files(key)
-        else:
-            with self.lock:
-                cache = self._get_cache()
-                try:
-                    cache[key]["being_calculated"] = True
-                except KeyError:
-                    cache[key] = {
-                        "value": None,
-                        "time": datetime.now(),
-                        "stale": False,
-                        "being_calculated": True,
-                    }
-                self._save_cache(cache)
+            return  # pragma: no cover
+
+        with self.lock:
+            cache = self._get_cache()
+            try:
+                cache[key]["being_calculated"] = True
+            except KeyError:
+                cache[key] = {
+                    "value": None,
+                    "time": datetime.now(),
+                    "stale": False,
+                    "being_calculated": True,
+                }
+            self._save_cache(cache)
 
     def mark_entry_not_calculated(self, key):
         if self.separate_files:
@@ -263,9 +254,10 @@ class _PickleCore(_BaseCore):
     def clear_being_calculated(self):
         if self.separate_files:
             self._clear_being_calculated_all_cache_files()
-        else:
-            with self.lock:
-                cache = self._get_cache()
-                for key in cache:
-                    cache[key]["being_calculated"] = False
-                self._save_cache(cache)
+            return  # pragma: no cover
+
+        with self.lock:
+            cache = self._get_cache()
+            for key in cache:
+                cache[key]["being_calculated"] = False
+            self._save_cache(cache)
