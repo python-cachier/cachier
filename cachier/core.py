@@ -10,6 +10,7 @@
 import datetime
 import inspect
 import os
+import warnings
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
@@ -91,6 +92,17 @@ def _convert_args_kwargs(
     # merge args expanded as kwargs and the original kwds
     kwargs.update(dict(**args_as_kw, **kwds))
     return OrderedDict(sorted(kwargs.items()))
+
+
+def _pop_kwds_with_deprecation(kwds, name: str, default_value: bool):
+    if name in kwds:
+        warnings.warn(
+            f"`{name}` is deprecated and will be removed in a future release,"
+            " use `cachier__` alternative instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    return kwds.pop(name, default_value)
 
 
 def cachier(
@@ -205,18 +217,31 @@ def cachier(
         @wraps(func)
         def func_wrapper(*args, **kwds):
             nonlocal allow_none
-            _allow_none = _update_with_defaults(allow_none, "allow_none")
+            _allow_none = _update_with_defaults(allow_none, "allow_none", kwds)
             # print('Inside general wrapper for {}.'.format(func.__name__))
-            ignore_cache = kwds.pop("ignore_cache", False)
-            overwrite_cache = kwds.pop("overwrite_cache", False)
-            verbose_cache = kwds.pop("verbose_cache", False)
+            ignore_cache = _pop_kwds_with_deprecation(
+                kwds, "ignore_cache", False
+            )
+            overwrite_cache = _pop_kwds_with_deprecation(
+                kwds, "overwrite_cache", False
+            )
+            verbose = _pop_kwds_with_deprecation(kwds, "verbose_cache", False)
+            ignore_cache = kwds.pop("cachier__skip_cache", ignore_cache)
+            overwrite_cache = kwds.pop(
+                "cachier__overwrite_cache", overwrite_cache
+            )
+            verbose = kwds.pop("cachier__verbose", verbose)
+            _stale_after = _update_with_defaults(
+                stale_after, "stale_after", kwds
+            )
+            _next_time = _update_with_defaults(next_time, "next_time", kwds)
             # merge args expanded as kwargs and the original kwds
             kwargs = _convert_args_kwargs(
                 func, _is_method=core.func_is_method, args=args, kwds=kwds
             )
 
             _print = lambda x: None  # noqa: E731
-            if verbose_cache:
+            if verbose:
                 _print = print
             if ignore_cache or not _default_params["caching_enabled"]:
                 return func(**kwargs)
@@ -229,17 +254,13 @@ def cachier(
             _print("Entry found.")
             if _allow_none or entry.get("value", None) is not None:
                 _print("Cached result found.")
-                local_stale_after = _update_with_defaults(
-                    stale_after, "stale_after"
-                )
-                local_next_time = _update_with_defaults(next_time, "next_time")
                 now = datetime.datetime.now()
-                if now - entry["time"] <= local_stale_after:
+                if now - entry["time"] <= _stale_after:
                     _print("And it is fresh!")
                     return entry["value"]
                 _print("But it is stale... :(")
                 if entry["being_calculated"]:
-                    if local_next_time:
+                    if _next_time:
                         _print("Returning stale.")
                         return entry["value"]  # return stale val
                     _print("Already calc. Waiting on change.")
@@ -247,7 +268,7 @@ def cachier(
                         return core.wait_on_entry_calc(key)
                     except RecalculationNeeded:
                         return _calc_entry(core, key, func, args, kwds)
-                if local_next_time:
+                if _next_time:
                     _print("Async calc and return stale")
                     try:
                         core.mark_entry_being_calculated(key)

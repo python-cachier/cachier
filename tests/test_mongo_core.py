@@ -114,11 +114,11 @@ def test_mongo_core():
     val1 = _test_mongo_caching(1, 2)
     val2 = _test_mongo_caching(1, 2)
     assert val1 == val2
-    val3 = _test_mongo_caching(1, 2, ignore_cache=True)
+    val3 = _test_mongo_caching(1, 2, cachier__skip_cache=True)
     assert val3 != val1
     val4 = _test_mongo_caching(1, 2)
     assert val4 == val1
-    val5 = _test_mongo_caching(1, 2, overwrite_cache=True)
+    val5 = _test_mongo_caching(1, 2, cachier__overwrite_cache=True)
     assert val5 != val1
     val6 = _test_mongo_caching(1, 2)
     assert val6 == val5
@@ -137,11 +137,11 @@ def test_mongo_core_keywords():
     val1 = _test_mongo_caching(1, arg_2=2)
     val2 = _test_mongo_caching(1, arg_2=2)
     assert val1 == val2
-    val3 = _test_mongo_caching(1, arg_2=2, ignore_cache=True)
+    val3 = _test_mongo_caching(1, arg_2=2, cachier__skip_cache=True)
     assert val3 != val1
     val4 = _test_mongo_caching(1, arg_2=2)
     assert val4 == val1
-    val5 = _test_mongo_caching(1, arg_2=2, overwrite_cache=True)
+    val5 = _test_mongo_caching(1, arg_2=2, cachier__overwrite_cache=True)
     assert val5 != val1
     val6 = _test_mongo_caching(1, arg_2=2)
     assert val6 == val5

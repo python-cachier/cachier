@@ -126,8 +126,7 @@ def test_allow_none_default_param():
         separate_files=True,
         verbose_cache=True,
     )
-    allow_count = 0
-    disallow_count = 0
+    allow_count = disallow_count = 0
 
     @cachier.cachier(cache_dir=tempfile.mkdtemp())
     def allow_none():
@@ -141,16 +140,18 @@ def test_allow_none_default_param():
         disallow_count += 1
         return None
 
-    allow_none.clear_cache()
     assert allow_count == 0
     allow_none()
     allow_none()
     assert allow_count == 1
 
-    disallow_none.clear_cache()
     assert disallow_count == 0
     disallow_none()
     disallow_none()
+    assert disallow_count == 2
+
+    disallow_none(cachier__allow_none=True)
+    disallow_none(cachier__allow_none=True)
     assert disallow_count == 2
 
 
@@ -245,3 +246,48 @@ def test_wait_for_calc_applies_dynamically(backend, mongetter):
     res4 = _wait_for_calc_timeout_slow(1, 2)
     # One of the cached values is returned
     assert res1 == res4 or res2 == res4 or res3 == res4
+
+
+def test_default_kwargs_handling():
+    count = 0
+
+    @cachier.cachier()
+    def dummy_func(a, b=2):
+        nonlocal count
+        count += 1
+        return a + b
+
+    dummy_func.clear_cache()
+    assert count == 0
+    assert dummy_func(1) == 3
+    assert dummy_func(a=1) == 3
+    assert dummy_func(a=1, b=2) == 3
+    assert count == 1
+
+
+def test_deprecated_func_kwargs():
+    count = 0
+
+    @cachier.cachier()
+    def dummy_func(a, b=2):
+        nonlocal count
+        count += 1
+        return a + b
+
+    dummy_func.clear_cache()
+    assert count == 0
+    with pytest.deprecated_call(
+        match="`verbose_cache` is deprecated and will be removed"
+    ):
+        assert dummy_func(1, verbose_cache=True) == 3
+    assert count == 1
+    with pytest.deprecated_call(
+        match="`ignore_cache` is deprecated and will be removed"
+    ):
+        assert dummy_func(1, ignore_cache=True) == 3
+    assert count == 2
+    with pytest.deprecated_call(
+        match="`overwrite_cache` is deprecated and will be removed"
+    ):
+        assert dummy_func(1, overwrite_cache=True) == 3
+    assert count == 3

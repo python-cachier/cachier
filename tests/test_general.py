@@ -327,23 +327,6 @@ def test_order_independent_kwargs_handling():
     assert count == 1
 
 
-def test_default_kwargs_handling():
-    count = 0
-
-    @cachier.cachier()
-    def dummy_func(a, b=2):
-        nonlocal count
-        count += 1
-        return a + b
-
-    dummy_func.clear_cache()
-    assert count == 0
-    assert dummy_func(1) == 3
-    assert dummy_func(a=1) == 3
-    assert dummy_func(a=1, b=2) == 3
-    assert count == 1
-
-
 @pytest.mark.parametrize("backend", ["memory", "pickle"])
 def test_diff_functions_same_args(tmpdir, backend: str):
     count_p = count_m = 0

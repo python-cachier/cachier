@@ -26,7 +26,7 @@ def test_memory_core():
     _takes_2_seconds.clear_cache()
     _takes_2_seconds("a", "b")
     start = time()
-    _takes_2_seconds("a", "b", verbose_cache=True)
+    _takes_2_seconds("a", "b", cachier__verbose=True)
     end = time()
     assert end - start < 1
     _takes_2_seconds.clear_cache()
@@ -38,7 +38,7 @@ def test_memory_core_keywords():
     _takes_2_seconds.clear_cache()
     _takes_2_seconds("a", arg_2="b")
     start = time()
-    _takes_2_seconds("a", arg_2="b", verbose_cache=True)
+    _takes_2_seconds("a", arg_2="b", cachier__verbose=True)
     end = time()
     assert end - start < 1
     _takes_2_seconds.clear_cache()
@@ -111,7 +111,7 @@ def test_overwrite_cache():
     int1 = _random_num()
     int2 = _random_num()
     assert int2 == int1
-    int3 = _random_num(overwrite_cache=True)
+    int3 = _random_num(cachier__overwrite_cache=True)
     assert int3 != int1
     int4 = _random_num()
     assert int4 == int3
@@ -121,7 +121,7 @@ def test_overwrite_cache():
     int1 = _random_num_with_arg("a")
     int2 = _random_num_with_arg("a")
     assert int2 == int1
-    int3 = _random_num_with_arg("a", overwrite_cache=True)
+    int3 = _random_num_with_arg("a", cachier__overwrite_cache=True)
     assert int3 != int1
     int4 = _random_num_with_arg("a")
     assert int4 == int3
@@ -135,7 +135,7 @@ def test_ignore_cache():
     int1 = _random_num()
     int2 = _random_num()
     assert int2 == int1
-    int3 = _random_num(ignore_cache=True)
+    int3 = _random_num(cachier__skip_cache=True)
     assert int3 != int1
     int4 = _random_num()
     assert int4 != int3
@@ -146,7 +146,7 @@ def test_ignore_cache():
     int1 = _random_num_with_arg("a")
     int2 = _random_num_with_arg("a")
     assert int2 == int1
-    int3 = _random_num_with_arg("a", ignore_cache=True)
+    int3 = _random_num_with_arg("a", cachier__skip_cache=True)
     assert int3 != int1
     int4 = _random_num_with_arg("a")
     assert int4 != int3
