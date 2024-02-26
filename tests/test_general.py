@@ -344,44 +344,89 @@ def test_default_kwargs_handling():
     assert count == 1
 
 
-def test_runtime_handling(tmpdir):
-    count = 0
+@pytest.mark.parametrize("backend", ["memory", "pickle"])
+def test_diff_functions_same_args(tmpdir, backend: str):
+    count_p = count_m = 0
 
-    def dummy_func(a, b):
-        nonlocal count
-        count += 1
+    @cachier.cachier(cache_dir=tmpdir, backend=backend)
+    def fn_plus(a, b=2):
+        nonlocal count_p
+        count_p += 1
         return a + b
 
-    cachier_ = cachier.cachier(cache_dir=tmpdir)
-    assert count == 0
-    cachier_(dummy_func)(a=1, b=2)
-    cachier_(dummy_func)(a=1, b=2)
-    assert count == 1
+    @cachier.cachier(cache_dir=tmpdir, backend=backend)
+    def fn_minus(a, b=2):
+        nonlocal count_m
+        count_m += 1
+        return a - b
+
+    assert count_p == count_m == 0
+
+    for fn, expected in [(fn_plus, 3), (fn_minus, -1)]:
+        assert fn(1) == expected
+        assert fn(a=1, b=2) == expected
+    assert count_p == 1
+    assert count_m == 1
+
+
+@pytest.mark.parametrize("backend", ["memory", "pickle"])
+def test_runtime_handling(tmpdir, backend):
+    count_p = count_m = 0
+
+    def fn_plus(a, b=2):
+        nonlocal count_p
+        count_p += 1
+        return a + b
+
+    def fn_minus(a, b=2):
+        nonlocal count_m
+        count_m += 1
+        return a - b
+
+    cachier_ = cachier.cachier(cache_dir=tmpdir, backend=backend)
+    assert count_p == count_m == 0
+
+    for fn, expected in [(fn_plus, 3), (fn_minus, -1)]:
+        assert cachier_(fn)(1, 2) == expected
+        assert cachier_(fn)(a=1, b=2) == expected
+    assert count_p == 1
+    assert count_m == 1
+
+    for fn, expected in [(fn_plus, 5), (fn_minus, 1)]:
+        assert cachier_(fn)(3, 2) == expected
+        assert cachier_(fn)(a=3, b=2) == expected
+    assert count_p == 2
+    assert count_m == 2
 
 
 def test_partial_handling(tmpdir):
-    count = 0
+    count_p = count_m = 0
 
-    def dummy_func(a, b=2):
-        nonlocal count
-        count += 1
+    def fn_plus(a, b=2):
+        nonlocal count_p
+        count_p += 1
         return a + b
 
+    def fn_minus(a, b=2):
+        nonlocal count_m
+        count_m += 1
+        return a - b
+
     cachier_ = cachier.cachier(cache_dir=tmpdir)
-    assert count == 0
+    assert count_p == count_m == 0
 
-    dummy_ = functools.partial(dummy_func, 1)
-    cachier_(dummy_)()
+    for fn, expected in [(fn_plus, 3), (fn_minus, -1)]:
+        dummy_ = functools.partial(fn, 1)
+        assert cachier_(dummy_)() == expected
 
-    dummy_ = functools.partial(dummy_func, a=1)
-    cachier_(dummy_)()
+        dummy_ = functools.partial(fn, a=1)
+        assert cachier_(dummy_)() == expected
 
-    dummy_ = functools.partial(dummy_func, b=2)
-    cachier_(dummy_)(1)
+        dummy_ = functools.partial(fn, b=2)
+        assert cachier_(dummy_)(1) == expected
 
-    assert count == 1
+        assert cachier_(fn)(1, 2) == expected
+        assert cachier_(fn)(a=1, b=2) == expected
 
-    cachier_(dummy_func)(1, 2)
-    cachier_(dummy_func)(a=1, b=2)
-
-    assert count == 1
+    assert count_p == 1
+    assert count_m == 1
