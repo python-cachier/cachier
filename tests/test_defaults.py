@@ -126,8 +126,7 @@ def test_allow_none_default_param():
         separate_files=True,
         verbose_cache=True,
     )
-    allow_count = 0
-    disallow_count = 0
+    allow_count = disallow_count = 0
 
     @cachier.cachier(cache_dir=tempfile.mkdtemp())
     def allow_none():
@@ -137,12 +136,6 @@ def test_allow_none_default_param():
 
     @cachier.cachier(cache_dir=tempfile.mkdtemp(), allow_none=False)
     def disallow_none():
-        nonlocal disallow_count
-        disallow_count += 1
-        return None
-
-    @cachier.cachier(cache_dir=tempfile.mkdtemp())
-    def maybe_none():
         nonlocal disallow_count
         disallow_count += 1
         return None
@@ -157,10 +150,9 @@ def test_allow_none_default_param():
     disallow_none()
     assert disallow_count == 2
 
-    assert allow_count == 0
-    allow_none(cachier__allow_none=True)
-    allow_none(cachier__allow_none=True)
-    assert allow_count == 1
+    disallow_none(cachier__allow_none=True)
+    disallow_none(cachier__allow_none=True)
+    assert disallow_count == 2
 
 
 parametrize_keys = "backend,mongetter"

@@ -217,7 +217,7 @@ def cachier(
         @wraps(func)
         def func_wrapper(*args, **kwds):
             nonlocal allow_none
-            _allow_none = _update_with_defaults(allow_none, "allow_none")
+            _allow_none = _update_with_defaults(allow_none, "allow_none", kwds)
             # print('Inside general wrapper for {}.'.format(func.__name__))
             ignore_cache = _pop_kwds_with_deprecation(
                 kwds, "ignore_cache", False
@@ -231,12 +231,10 @@ def cachier(
                 "cachier__overwrite_cache", overwrite_cache
             )
             verbose = kwds.pop("cachier__verbose", verbose)
-            local_stale_after = _update_with_defaults(
-                stale_after, "stale_after", func_kwargs=kwds
+            _stale_after = _update_with_defaults(
+                stale_after, "stale_after", kwds
             )
-            local_next_time = _update_with_defaults(
-                next_time, "next_time", func_kwargs=kwds
-            )
+            _next_time = _update_with_defaults(next_time, "next_time", kwds)
             # merge args expanded as kwargs and the original kwds
             kwargs = _convert_args_kwargs(
                 func, _is_method=core.func_is_method, args=args, kwds=kwds
@@ -257,12 +255,12 @@ def cachier(
             if _allow_none or entry.get("value", None) is not None:
                 _print("Cached result found.")
                 now = datetime.datetime.now()
-                if now - entry["time"] <= local_stale_after:
+                if now - entry["time"] <= _stale_after:
                     _print("And it is fresh!")
                     return entry["value"]
                 _print("But it is stale... :(")
                 if entry["being_calculated"]:
-                    if local_next_time:
+                    if _next_time:
                         _print("Returning stale.")
                         return entry["value"]  # return stale val
                     _print("Already calc. Waiting on change.")
@@ -270,7 +268,7 @@ def cachier(
                         return core.wait_on_entry_calc(key)
                     except RecalculationNeeded:
                         return _calc_entry(core, key, func, args, kwds)
-                if local_next_time:
+                if _next_time:
                     _print("Async calc and return stale")
                     try:
                         core.mark_entry_being_calculated(key)
