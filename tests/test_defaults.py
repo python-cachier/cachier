@@ -81,18 +81,18 @@ def test_mongetter_default_param():
 
 
 def test_cache_dir_default_param(tmpdit):
-    cachier.set_default_params(cache_dir=tmpdit)
+    cachier.set_default_params(cache_dir=tmpdit / "1")
 
     @cachier.cachier()
     def global_test_1():
         return None
 
-    @cachier.cachier(cache_dir="/path_2")
+    @cachier.cachier(cache_dir=tmpdit / "2")
     def global_test_2():
         return None
 
-    assert global_test_1.cache_dpath() == tmpdit
-    assert global_test_2.cache_dpath() == tmpdit
+    assert global_test_1.cache_dpath() == tmpdit / "1"
+    assert global_test_2.cache_dpath() == tmpdit / "2"
 
 
 def test_separate_files_default_param(tmpdir):
