@@ -141,17 +141,26 @@ def test_allow_none_default_param():
         disallow_count += 1
         return None
 
-    allow_none.clear_cache()
+    @cachier.cachier(cache_dir=tempfile.mkdtemp())
+    def maybe_none():
+        nonlocal disallow_count
+        disallow_count += 1
+        return None
+
     assert allow_count == 0
     allow_none()
     allow_none()
     assert allow_count == 1
 
-    disallow_none.clear_cache()
     assert disallow_count == 0
     disallow_none()
     disallow_none()
     assert disallow_count == 2
+
+    assert allow_count == 0
+    allow_none(cachier__allow_none=True)
+    allow_none(cachier__allow_none=True)
+    assert allow_count == 1
 
 
 parametrize_keys = "backend,mongetter"
