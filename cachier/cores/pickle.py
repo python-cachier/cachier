@@ -115,9 +115,9 @@ class _PickleCore(_BaseCore):
                 self._reload_cache()
             return self.cache
 
-    def _get_cache_by_key(self, key=None, hash=None):
+    def _get_cache_by_key(self, key=None, hash_str=None):
         fpath = self.cache_fpath
-        fpath += f"_{key}" if hash is None else f"_{hash}"
+        fpath += f"_{hash_str or key}"
         try:
             with portalocker.Lock(fpath, mode="rb") as cache_file:
                 return pickle.load(cache_file)  # noqa: S301
@@ -134,17 +134,17 @@ class _PickleCore(_BaseCore):
         path, name = os.path.split(self.cache_fpath)
         for subpath in os.listdir(path):
             if subpath.startswith(name):
-                entry = self._get_cache_by_key(hash=subpath.split("_")[-1])
+                entry = self._get_cache_by_key(hash_str=subpath.split("_")[-1])
                 if entry is not None:
                     entry["being_calculated"] = False
-                    self._save_cache(entry, hash=subpath.split("_")[-1])
+                    self._save_cache(entry, hash_str=subpath.split("_")[-1])
 
-    def _save_cache(self, cache, key=None, hash=None):
+    def _save_cache(self, cache, key=None, hash_str=None):
         fpath = self.cache_fpath
         if key is not None:
             fpath += f"_{key}"
-        elif hash is not None:
-            fpath += f"_{hash}"
+        elif hash_str is not None:
+            fpath += f"_{hash_str}"
         with self.lock:
             self.cache = cache
             with portalocker.Lock(fpath, mode="wb") as cache_file:

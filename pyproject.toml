@@ -41,10 +41,11 @@ lint.select = [
     "W", # see: https://pypi.org/project/pycodestyle
     "F", # see: https://pypi.org/project/pyflakes
     "I", #see: https://pypi.org/project/isort/
-#    "D", # see: https://pypi.org/project/pydocstyle
-#    "N", # see: https://pypi.org/project/pep8-naming
+    #"D", # see: https://pypi.org/project/pydocstyle
+    #"N", # see: https://pypi.org/project/pep8-naming
     "S", # see: https://pypi.org/project/flake8-bandit
     "SIM",
+    "RUF100" # alternative to yesqa
 ]
 lint.extend-select = [
     "A",    # see: https://pypi.org/project/flake8-builtins

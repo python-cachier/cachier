@@ -41,8 +41,9 @@ class _MongoCore(_BaseCore):
     ):
         if "pymongo" not in sys.modules:
             warnings.warn(
-                "Cachier warning: pymongo was not found. "
-                "MongoDB cores will not function."
+                "`pymongo` was not found. MongoDB cores will not function.",
+                ImportWarning,
+                stacklevel=2,
             )  # pragma: no cover
 
         super().__init__(hash_func, wait_for_calc_timeout)
