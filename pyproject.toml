@@ -46,6 +46,11 @@ lint.select = [
     "S", # see: https://pypi.org/project/flake8-bandit
     "SIM",
 ]
+lint.extend-select = [
+    "A",    # see: https://pypi.org/project/flake8-builtins
+    "B",    # see: https://pypi.org/project/flake8-bugbear
+    "C4",   # see: https://pypi.org/project/flake8-comprehensions
+]
 lint.ignore = [
     "E203",
     "C901",
