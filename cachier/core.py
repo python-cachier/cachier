@@ -245,7 +245,7 @@ def cachier(
                 _print = print
             if ignore_cache or not _default_params["caching_enabled"]:
                 return func(**kwargs)
-            key, entry = core.get_entry(tuple(), kwargs)
+            key, entry = core.get_entry((), kwargs)
             if overwrite_cache:
                 return _calc_entry(core, key, func, args, kwds)
             if entry is None:
@@ -314,7 +314,7 @@ def cachier(
             kwargs = _convert_args_kwargs(
                 func, _is_method=core.func_is_method, args=args, kwds=kwds
             )
-            return core.precache_value(tuple(), kwargs, value_to_cache)
+            return core.precache_value((), kwargs, value_to_cache)
 
         func_wrapper.clear_cache = _clear_cache
         func_wrapper.clear_being_calculated = _clear_being_calculated
