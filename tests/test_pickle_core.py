@@ -406,7 +406,7 @@ def test_bad_cache_file(separate_files):
     for sleeptime in sleeptimes:
         if _helper_bad_cache_file(sleeptime, separate_files):
             return
-    assert False
+    raise AssertionError()
 
 
 def _delete_cache(arg_1, arg_2):
@@ -501,7 +501,7 @@ def test_delete_cache_file(separate_files):
     for sleeptime in sleeptimes:
         if _helper_delete_cache_file(sleeptime, separate_files):
             return
-    assert False
+    raise AssertionError()
 
 
 @pytest.mark.pickle
@@ -598,8 +598,8 @@ def test_callable_hash_param(separate_files):
 
     _params_with_dataframe.clear_cache()
 
-    df_a = pd.DataFrame.from_dict(dict(a=[0], b=[2], c=[3]))
-    df_b = pd.DataFrame.from_dict(dict(a=[0], b=[2], c=[3]))
+    df_a = pd.DataFrame.from_dict({"a": [0], "b": [2], "c": [3]})
+    df_b = pd.DataFrame.from_dict({"a": [0], "b": [2], "c": [3]})
     value_a = _params_with_dataframe(df_a, 1)
     value_b = _params_with_dataframe(df_b, 1)
 

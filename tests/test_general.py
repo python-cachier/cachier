@@ -296,7 +296,7 @@ def test_list_inputs():
     count = 0
 
     @cachier.cachier()
-    def dummy_func(a: list, b: list = [2]):
+    def dummy_func(a: list, b: list = [2]):  # noqa: B006
         nonlocal count
         count += 1
         return a + b

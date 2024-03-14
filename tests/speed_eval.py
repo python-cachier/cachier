@@ -55,12 +55,12 @@ def test_separate_files_vs_single_file():
     _test_separate_files_speed.clear_cache()
     _test_single_file_speed.clear_cache()
     start_time = time()
-    for i in range(3):
+    for _ in range(3):
         for j in range(10):
             _test_separate_files_speed(j, 2)
     print(f"separate files time: {time() - start_time}")
     start_time = time()
-    for i in range(3):
+    for _ in range(3):
         for j in range(10):
             _test_single_file_speed(j, 2)
     print(f"single file time: {time() - start_time}")
