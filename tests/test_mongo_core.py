@@ -27,8 +27,8 @@ from cachier.cores.mongo import _MongoCore
 
 
 class CfgKey:
-    HOST = "TEST_HOST"
-    PORT = "TEST_PORT"
+    HOST = "MONGODB_TEST_HOST"
+    PORT = "MONGODB_TEST_PORT"
     # UNAME = "TEST_USERNAME"
     # PWD = "TEST_PASSWORD"
     # DB = "TEST_DB"
