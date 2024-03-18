@@ -39,7 +39,6 @@ jobs:
       CACHIER_TEST_VS_DOCKERIZED_MYSQL: "true"
       CACHIER_TEST_PYODBC_CONNECTION_STRING: "DRIVER={MySQL ODBC Driver};SERVER=localhost;PORT=3306;DATABASE=test;USER=root;PASSWORD=password;"
 
-
     steps:
       - uses: actions/checkout@v4
 
