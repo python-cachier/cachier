@@ -27,6 +27,7 @@ from .config import (
 from .cores.base import RecalculationNeeded, _BaseCore
 from .cores.memory import _MemoryCore
 from .cores.mongo import _MongoCore
+from .cores.odbc import _OdbcCore
 from .cores.pickle import _PickleCore
 
 MAX_WORKERS_ENVAR_NAME = "CACHIER_MAX_WORKERS"
@@ -110,6 +111,8 @@ def cachier(
     hash_params: Optional[HashFunc] = None,
     backend: Optional[Backend] = None,
     mongetter: Optional[Mongetter] = None,
+    odbc_connection_string: Optional[str] = None,
+    odbc_table_name: Optional[str] = None,
     stale_after: Optional[datetime.timedelta] = None,
     next_time: Optional[bool] = None,
     cache_dir: Optional[Union[str, os.PathLike]] = None,
@@ -137,13 +140,21 @@ def cachier(
     hash_params : callable, optional
     backend : str, optional
         The name of the backend to use. Valid options currently include
-        'pickle', 'mongo' and 'memory'. If not provided, defaults to
+        'pickle', 'mongo', 'odbc' and 'memory'. If not provided, defaults to
         'pickle' unless the 'mongetter' argument is passed, in which
-        case the mongo backend is automatically selected.
+        case the mongo backend is automatically selected, or the
+        'odbc_connection_string' argument is passed, in which case the odbc
+        backend is automatically selected.
     mongetter : callable, optional
         A callable that takes no arguments and returns a pymongo.Collection
         object with writing permissions. If unset a local pickle cache is used
         instead.
+    odbc_connection_string : str, optional
+        A connection string to an ODBC database. If provided, the ODBC core
+        will be used.
+    odbc_table_name : str, optional
+        The name of the table to use in the ODBC database. If not provided,
+        defaults to 'cachier'.
     stale_after : datetime.timedelta, optional
         The time delta after which a cached result is considered stale. Calls
         made after the result goes stale will trigger a recalculation of the
@@ -190,6 +201,8 @@ def cachier(
     # Override the backend parameter if a mongetter is provided.
     if callable(mongetter):
         backend = "mongo"
+    if odbc_connection_string is not None:
+        backend = "odbc"
     core: _BaseCore
     if backend == "pickle":
         core = _PickleCore(
@@ -204,6 +217,13 @@ def cachier(
             hash_func=hash_func,
             mongetter=mongetter,
             wait_for_calc_timeout=wait_for_calc_timeout,
+        )
+    elif backend == "odbc":
+        core = _OdbcCore(
+            hash_func=hash_func,
+            wait_for_calc_timeout=wait_for_calc_timeout,
+            connection_string=odbc_connection_string,
+            table_name=odbc_table_name,
         )
     elif backend == "memory":
         core = _MemoryCore(
