@@ -9,7 +9,7 @@ ci:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -23,7 +23,7 @@ repos:
       - id: detect-private-key
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.15.0
+    rev: v3.15.2
     hooks:
       - id: pyupgrade
         args: ["--py38-plus"]
@@ -31,7 +31,7 @@ repos:
         exclude: versioneer.py
 
   - repo: https://github.com/crate-ci/typos
-    rev: typos-v0.10.21
+    rev: v1.20.7
     hooks:
       - id: typos
         # empty to do not write fixes
@@ -57,7 +57,7 @@ repos:
   #      - id: mypy
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.2.1
+    rev: v0.3.5
     hooks:
       # use black formatting
       - id: ruff-format
