@@ -9,7 +9,7 @@ ci:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -31,7 +31,7 @@ repos:
         exclude: versioneer.py
 
   - repo: https://github.com/crate-ci/typos
-    rev: typos-dict-v0.11.10
+    rev: v1.20.7
     hooks:
       - id: typos
         # empty to do not write fixes
