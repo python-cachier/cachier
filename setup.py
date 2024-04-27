@@ -1,7 +1,7 @@
 """Setup file for the Cachier package."""
 
 # This file is part of Cachier.
-# https://github.com/shaypal5/cachier
+# https://github.com/python-cachier/cachier
 
 # Licensed under the MIT license:
 # http://www.opensource.org/licenses/MIT-license
@@ -17,7 +17,7 @@ from setuptools import find_packages, setup
 _PATH_HERE = os.path.dirname(__file__)
 
 
-def _load_py_module(fname: str, pkg: str = "torchmetrics"):
+def _load_py_module(fname: str):
     spec = spec_from_file_location(
         os.path.join("cachier", fname),
         os.path.join(_PATH_HERE, "cachier", fname),
