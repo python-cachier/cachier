@@ -1,6 +1,7 @@
-[metadata]
-license_file = "LICENSE"
-description-file = "README.rst"
+[project]
+name = "cachier"
+license = {file = "LICENSE"}
+readme = "README.rst"
 
 [build-system]
 requires = ["setuptools", "wheel"]
