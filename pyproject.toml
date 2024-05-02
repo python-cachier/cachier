@@ -2,6 +2,12 @@
 name = "cachier"
 license = {file = "LICENSE"}
 readme = "README.rst"
+dynamic = ["version"]
+
+
+[tool.setuptools.dynamic]
+version = {attr = "package.__version__"}
+
 
 [build-system]
 requires = ["setuptools", "wheel"]
