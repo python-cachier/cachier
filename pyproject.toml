@@ -6,7 +6,7 @@ dynamic = ["version"]
 
 
 [tool.setuptools.dynamic]
-version = {attr = "cachier._version"}
+version = {attr = "cachier.__version__"}
 
 
 [build-system]
