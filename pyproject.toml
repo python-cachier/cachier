@@ -1,6 +1,6 @@
 [metadata]
 license_file = "LICENSE"
-description-file = "README.md"
+description-file = "README.rst"
 
 [build-system]
 requires = ["setuptools", "wheel"]
