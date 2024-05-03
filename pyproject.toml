@@ -1,17 +1,19 @@
 [project]
 name = "cachier"
-license = {file = "LICENSE"}
 readme = "README.rst"
-dynamic = ["version"]
-
+license = {file = "LICENSE"}
+dynamic = [
+  "version",
+]
 
 [tool.setuptools.dynamic]
 version = {attr = "cachier._version.__version__"}
 
-
 [build-system]
-requires = ["setuptools", "wheel"]
-
+requires = [
+  "setuptools",
+  "wheel",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["cachier", "tests"]
@@ -28,9 +30,8 @@ addopts = [
 markers = [
     "mongo: test the MongoDB core",
     "memory: test the memory core",
-    "pickle: test the pickle core",
+    "pickle: test the pickle core"
 ]
-
 
 [tool.docformatter]
 recursive = true
