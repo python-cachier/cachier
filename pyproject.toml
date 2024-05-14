@@ -14,7 +14,7 @@ keywords = [
 ]
 license = {file = "LICENSE"}
 authors = [
-   {name = "Shay Palachy", email = 'shay.palachy@gmail.com'},
+   {name = "Shay Palachy Affek", email = 'shay.palachy@gmail.com'},
 ]
 classifiers = [
   'Development Status :: 4 - Beta',
