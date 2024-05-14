@@ -1,10 +1,65 @@
-[metadata]
-license_file = "LICENSE"
-description-file = "README.md"
+[project]
+name = "cachier"
+description = "Persistent, stale-free, local and cross-machine caching for Python functions."
+readme = "README.rst"
+keywords = [
+  "cache",
+  "caching",
+  "cross-machine",
+  "decorator",
+  "local",
+  "memoization",
+  "mongo",
+  "persistent",
+]
+license = {file = "LICENSE"}
+authors = [
+   {name = "Shay Palachy Affek", email = 'shay.palachy@gmail.com'},
+]
+classifiers = [
+  'Development Status :: 4 - Beta',
+  'Intended Audience :: Developers',
+  'License :: OSI Approved :: MIT License',
+  'Programming Language :: Python',
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Other/Nonlisted Topic",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Utilities",
+]
+dynamic = [
+  "version",
+]
+dependencies = [
+  "portalocker>=2.3.2",
+  "watchdog>=2.3.1",
+]
+[project.urls]
+Source = "https://github.com/python-cachier/cachier"
+[project.scripts]
+cachier = "cachier.__naim__:cli"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "cachier._version.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["."]  # list of folders that contain the packages (["."] by default)
+include = ["cachier*"]  # package names should match these glob patterns (["*"] by default)
+namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
 
 [build-system]
-requires = ["setuptools", "wheel"]
-
+requires = [
+  "setuptools",
+  "wheel",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["cachier", "tests"]
@@ -21,9 +76,8 @@ addopts = [
 markers = [
     "mongo: test the MongoDB core",
     "memory: test the memory core",
-    "pickle: test the pickle core",
+    "pickle: test the pickle core"
 ]
-
 
 [tool.docformatter]
 recursive = true
