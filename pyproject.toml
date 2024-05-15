@@ -51,7 +51,7 @@ include-package-data = true
 version = {attr = "cachier._version.__version__"}
 
 [tool.setuptools.packages.find]
-where = ["."]  # list of folders that contain the packages (["."] by default)
+where = ["src"]  # list of folders that contain the packages (["."] by default)
 include = ["cachier*"]  # package names should match these glob patterns (["*"] by default)
 namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
 

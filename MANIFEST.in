@@ -1,9 +1,9 @@
 # Manifest syntax https://docs.python.org/2/distutils/sourcedist.html
 graft wheelhouse
 
-recursive-exclude __pycache__  *.py[cod] *.orig
-include cachier/version.info
+recursive-include src *.info
 include README.rst
 include LICENSE
 
+prune __pycache__
 prune tests

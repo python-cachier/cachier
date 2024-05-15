@@ -3,8 +3,8 @@ branch = True
 dynamic_context = test_function
 omit =
     tests/*
-    cachier/_version.py
-    cachier/__init__.py
+    src/cachier/_version.py
+    src/cachier/__init__.py
     **/scripts/**
 [report]
 show_missing = True
