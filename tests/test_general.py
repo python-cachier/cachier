@@ -9,9 +9,8 @@ from contextlib import suppress
 from random import random
 from time import sleep, time
 
-import pytest
-
 import cachier
+import pytest
 from cachier.core import (
     DEFAULT_MAX_WORKERS,
     MAX_WORKERS_ENVAR_NAME,
@@ -19,6 +18,7 @@ from cachier.core import (
     _max_workers,
     _set_max_workers,
 )
+
 from tests.test_mongo_core import (
     MONGO_DELTA_LONG,
     _test_mongetter,
