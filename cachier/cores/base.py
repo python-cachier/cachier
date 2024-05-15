@@ -32,7 +32,7 @@ class _BaseCore:
         self.lock = threading.RLock()
 
     def set_func(self, func):
-        """Sets the function this core will use.
+        """Set the function this core will use.
 
         This has to be set before any method is called. Also determine if the
         function is an object method.
@@ -46,18 +46,21 @@ class _BaseCore:
         self.func = func
 
     def get_key(self, args, kwds):
-        """Returns a unique key based on the arguments provided."""
+        """Return a unique key based on the arguments provided."""
         return self.hash_func(args, kwds)
 
     def get_entry(self, args, kwds):
-        """Returns the result mapped to the given arguments in this core's
-        cache, if such a mapping exists.
+        """Get entry based on given arguments.
+
+        Return the result mapped to the given arguments in this core's cache,
+        if such a mapping exists.
+
         """
         key = self.get_key(args, kwds)
         return self.get_entry_by_key(key)
 
     def precache_value(self, args, kwds, value_to_cache):
-        """Writes a precomputed value into the cache."""
+        """Write a precomputed value into the cache."""
         key = self.get_key(args, kwds)
         self.set_entry(key, value_to_cache)
         return value_to_cache
@@ -72,32 +75,35 @@ class _BaseCore:
 
     @abc.abstractmethod
     def get_entry_by_key(self, key):
-        """Returns the result mapped to the given key in this core's cache, if
-        such a mapping exists.
+        """Get entry based on given key.
+
+        Return the result mapped to the given key in this core's cache, if such
+        a mapping exists.
+
         """
 
     @abc.abstractmethod
     def set_entry(self, key, func_res):
-        """Maps the given result to the given key in this core's cache."""
+        """Map the given result to the given key in this core's cache."""
 
     @abc.abstractmethod
     def mark_entry_being_calculated(self, key):
-        """Marks the entry mapped by the given key as being calculated."""
+        """Mark the entry mapped by the given key as being calculated."""
 
     @abc.abstractmethod
     def mark_entry_not_calculated(self, key):
-        """Marks the entry mapped by the given key as not being calculated."""
+        """Mark the entry mapped by the given key as not being calculated."""
 
     @abc.abstractmethod
     def wait_on_entry_calc(self, key):
-        """Waits on the entry mapped by key being calculated and returns
+        """Wait on the entry mapped by key being calculated and returns
         result.
         """
 
     @abc.abstractmethod
     def clear_cache(self):
-        """Clears the cache of this core."""
+        """Clear the cache of this core."""
 
     @abc.abstractmethod
     def clear_being_calculated(self):
-        """Marks all entries in this cache as not being calculated."""
+        """Mark all entries in this cache as not being calculated."""

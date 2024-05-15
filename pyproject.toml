@@ -124,7 +124,10 @@ lint.ignore-init-module-imports = true
 lint.unfixable = ["F401"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "S311", "S105", "S603"]
+"tests/**" = [
+  "S101", "S311", "S105", "S603",
+  "D100", "D101", "D103", "D104", "D401"
+]
 
 #[tool.ruff.pydocstyle]
 ## Use Google-style docstrings.

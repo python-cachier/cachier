@@ -294,11 +294,11 @@ def cachier(
             core.clear_cache()
 
         def _clear_being_calculated():
-            """Marks all entries in this cache as not being calculated."""
+            """Mark all entries in this cache as not being calculated."""
             core.clear_being_calculated()
 
         def _cache_dpath():
-            """Returns the path to the cache dir, if exists; None if not."""
+            """Return the path to the cache dir, if exists; None if not."""
             return getattr(core, "cache_dir", None)
 
         def _precache_value(*args, value_to_cache, **kwds):
