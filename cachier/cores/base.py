@@ -51,7 +51,8 @@ class _BaseCore:
 
     def get_entry(self, args, kwds):
         """Returns the result mapped to the given arguments in this core's
-        cache, if such a mapping exists."""
+        cache, if such a mapping exists.
+        """
         key = self.get_key(args, kwds)
         return self.get_entry_by_key(key)
 
@@ -72,7 +73,8 @@ class _BaseCore:
     @abc.abstractmethod
     def get_entry_by_key(self, key):
         """Returns the result mapped to the given key in this core's cache, if
-        such a mapping exists."""
+        such a mapping exists.
+        """
 
     @abc.abstractmethod
     def set_entry(self, key, func_res):
@@ -89,7 +91,8 @@ class _BaseCore:
     @abc.abstractmethod
     def wait_on_entry_calc(self, key):
         """Waits on the entry mapped by key being calculated and returns
-        result."""
+        result.
+        """
 
     @abc.abstractmethod
     def clear_cache(self):

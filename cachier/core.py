@@ -127,7 +127,7 @@ def cachier(
     value is their id), equal objects across different sessions will not yield
     identical keys.
 
-    Arguments
+    Arguments:
     ---------
     hash_func : callable, optional
         A callable that gets the args and kwargs from the decorated function
@@ -304,7 +304,7 @@ def cachier(
         def _precache_value(*args, value_to_cache, **kwds):
             """Add an initial value to the cache.
 
-            Arguments
+            Arguments:
             ---------
             value_to_cache : any
                 entry to be written into the cache
