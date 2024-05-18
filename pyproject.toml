@@ -51,7 +51,7 @@ include-package-data = true
 version = {attr = "cachier._version.__version__"}
 
 [tool.setuptools.packages.find]
-where = ["."]  # list of folders that contain the packages (["."] by default)
+where = ["src"]  # list of folders that contain the packages (["."] by default)
 include = ["cachier*"]  # package names should match these glob patterns (["*"] by default)
 namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
 
@@ -139,3 +139,21 @@ lint.unfixable = ["F401"]
 [tool.ruff.lint.mccabe]
 # Unlike Flake8, default to a complexity level of 10.
 max-complexity = 10
+
+[tool.coverage.run]
+branch = true
+dynamic_context = "test_function"
+omit = [
+    "tests/*",
+    "cachier/_version.py",
+    "cachier/__init__.py",
+    "**/scripts/**",
+]
+[tool.coverage.report]
+show_missing = true
+# Regexes for lines to exclude from consideration
+exclude_lines = [
+    "pragma: no cover", # Have to re-enable the standard pragma
+    "raise NotImplementedError", # Don't complain if tests don't hit defensive assertion code:
+    "if TYPE_CHECKING:", # Is only true when running mypy, not tests
+]
