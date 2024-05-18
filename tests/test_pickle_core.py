@@ -28,7 +28,6 @@ except ImportError:  # python 2
 import hashlib
 
 import pandas as pd
-
 from cachier import cachier
 from cachier.core import _default_params
 
