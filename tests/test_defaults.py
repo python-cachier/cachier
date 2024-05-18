@@ -5,9 +5,9 @@ import random
 import threading
 import time
 
-import cachier
 import pytest
 
+import cachier
 from tests.test_mongo_core import MONGO_DELTA, _test_mongetter
 
 _default_params = cachier.get_default_params().copy()

@@ -17,6 +17,8 @@ def _default_hash_func(args, kwds):
 
 
 class Params(TypedDict):
+    """Type definition for cachier parameters."""
+
     caching_enabled: bool
     hash_func: HashFunc
     backend: Backend

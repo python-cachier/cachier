@@ -7,7 +7,7 @@ from cachier.core import _set_max_workers
 
 @click.group()
 def cli():
-    """A command-line interface for cachier."""
+    """A command-line interface for cachier."""  # noqa: D401
 
 
 @cli.command("Limits the number of worker threads used by cachier.")

@@ -124,6 +124,8 @@ lint.ignore-init-module-imports = true
 lint.unfixable = ["F401"]
 
 [tool.ruff.lint.per-file-ignores]
+"src/**/__init__.py" = ["D104"]
+"src/cachier/config.py" = ["D100"]
 "tests/**" = [
   "S101", "S311", "S105", "S603",
   "D100", "D101", "D103", "D104", "D401"

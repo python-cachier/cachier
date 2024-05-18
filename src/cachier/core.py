@@ -118,7 +118,7 @@ def cachier(
     wait_for_calc_timeout: Optional[int] = None,
     allow_none: Optional[bool] = None,
 ):
-    """A persistent, stale-free memoization decorator.
+    """Wrap as a persistent, stale-free memoization decorator.
 
     The positional and keyword arguments to the wrapped function must be
     hashable (i.e. Python's immutable built-in objects, not mutable
@@ -134,6 +134,7 @@ def cachier(
         and returns a hash key for them. This parameter can be used to enable
         the use of cachier with functions that get arguments that are not
         automatically hashable by Python.
+    hash_params : callable, optional
     backend : str, optional
         The name of the backend to use. Valid options currently include
         'pickle', 'mongo' and 'memory'. If not provided, defaults to
@@ -301,7 +302,7 @@ def cachier(
             """Return the path to the cache dir, if exists; None if not."""
             return getattr(core, "cache_dir", None)
 
-        def _precache_value(*args, value_to_cache, **kwds):
+        def _precache_value(*args, value_to_cache, **kwds):  # noqa: D417
             """Add an initial value to the cache.
 
             Arguments:

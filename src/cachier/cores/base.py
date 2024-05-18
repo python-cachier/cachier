@@ -16,6 +16,8 @@ from ..config import _update_with_defaults
 
 
 class RecalculationNeeded(Exception):
+    """Exception raised when a recalculation is needed."""
+
     pass
 
 
@@ -96,9 +98,7 @@ class _BaseCore:
 
     @abc.abstractmethod
     def wait_on_entry_calc(self, key):
-        """Wait on the entry mapped by key being calculated and returns
-        result.
-        """
+        """Wait on the entry with keys being calculated and returns result."""
 
     @abc.abstractmethod
     def clear_cache(self):
