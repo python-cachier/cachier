@@ -95,7 +95,7 @@ lint.select = [
     "W", # see: https://pypi.org/project/pycodestyle
     "F", # see: https://pypi.org/project/pyflakes
     "I", #see: https://pypi.org/project/isort/
-    #"D", # see: https://pypi.org/project/pydocstyle
+    "D", # see: https://pypi.org/project/pydocstyle
     #"N", # see: https://pypi.org/project/pep8-naming
     "S", # see: https://pypi.org/project/flake8-bandit
     "SIM",
@@ -124,7 +124,12 @@ lint.ignore-init-module-imports = true
 lint.unfixable = ["F401"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "S311", "S105", "S603"]
+"src/**/__init__.py" = ["D104"]
+"src/cachier/config.py" = ["D100"]
+"tests/**" = [
+  "S101", "S311", "S105", "S603",
+  "D100", "D101", "D103", "D104", "D401"
+]
 
 #[tool.ruff.pydocstyle]
 ## Use Google-style docstrings.

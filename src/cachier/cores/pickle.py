@@ -62,11 +62,11 @@ class _PickleCore(_BaseCore):
                 self.observer.stop()
 
         def on_created(self, event):
-            """A Watchdog Event Handler method."""
+            """A Watchdog Event Handler method."""  # noqa: D401
             self._check_calculation()  # pragma: no cover
 
         def on_modified(self, event):
-            """A Watchdog Event Handler method."""
+            """A Watchdog Event Handler method."""  # noqa: D401
             self._check_calculation()
 
     def __init__(
