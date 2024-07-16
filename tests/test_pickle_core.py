@@ -28,6 +28,7 @@ except ImportError:  # python 2
 import hashlib
 
 import pandas as pd
+
 from cachier import cachier
 from cachier.core import _default_params
 
@@ -389,9 +390,7 @@ def _helper_bad_cache_file(sleeptime, separate_files):
     if not isinstance(res1, float):
         return False
     res2 = res_queue.get()
-    if res2 is not None or isinstance(res2, KeyError):
-        return False
-    return True
+    return res2 is None
 
 
 # we want this to succeed at least once
@@ -483,11 +482,7 @@ def _helper_delete_cache_file(sleeptime, separate_files):
     if not isinstance(res1, float):
         return False
     res2 = res_queue.get()
-    if not ((isinstance(res2, KeyError)) or (res2 is None)):
-        return False
-    return True
-    # print(res2)
-    # print(type(res2))
+    return isinstance(res2, KeyError) or (res2 is None)
 
 
 @pytest.mark.pickle
