@@ -1,3 +1,9 @@
+[build-system]
+requires = [
+  "setuptools",
+  "wheel",
+]
+
 [project]
 name = "cachier"
 description = "Persistent, stale-free, local and cross-machine caching for Python functions."
@@ -12,15 +18,15 @@ keywords = [
   "mongo",
   "persistent",
 ]
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 authors = [
-   {name = "Shay Palachy Affek", email = 'shay.palachy@gmail.com'},
+  { name = "Shay Palachy Affek", email = 'shay.palachy@gmail.com' },
 ]
 classifiers = [
-  'Development Status :: 4 - Beta',
-  'Intended Audience :: Developers',
-  'License :: OSI Approved :: MIT License',
-  'Programming Language :: Python',
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
@@ -39,45 +45,86 @@ dependencies = [
   "portalocker>=2.3.2",
   "watchdog>=2.3.1",
 ]
-[project.urls]
-Source = "https://github.com/python-cachier/cachier"
-[project.scripts]
-cachier = "cachier.__naim__:cli"
+urls.Source = "https://github.com/python-cachier/cachier"
+scripts.cachier = "cachier.__naim__:cli"
 
 [tool.setuptools]
 include-package-data = true
 
 [tool.setuptools.dynamic]
-version = {attr = "cachier._version.__version__"}
+version = { attr = "cachier._version.__version__" }
 
 [tool.setuptools.packages.find]
-where = ["src"]  # list of folders that contain the packages (["."] by default)
-include = ["cachier*"]  # package names should match these glob patterns (["*"] by default)
-namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
+where = [
+  "src",
+] # list of folders that contain the packages (["."] by default)
+include = [
+  "cachier*",
+] # package names should match these glob patterns (["*"] by default)
+namespaces = false # to disable scanning PEP 420 namespaces (true by default)
 
-[build-system]
-requires = [
-  "setuptools",
-  "wheel",
+[tool.ruff]
+target-version = "py38"
+line-length = 79
+# Exclude a variety of commonly ignored directories.
+exclude = [
+  ".eggs",
+  ".git",
+  ".ruff_cache",
+  "__pypackages__",
+  "_build",
+  "build",
+  "dist",
+]
+# Enable Pyflakes `E` and `F` codes by default.
+lint.select = [
+  "D",      # see: https://pypi.org/project/pydocstyle
+  "E",
+  "F",      # see: https://pypi.org/project/pyflakes
+  "I",      #see: https://pypi.org/project/isort/
+  "RUF100", # alternative to yesqa
+  #"N", # see: https://pypi.org/project/pep8-naming
+  "S",   # see: https://pypi.org/project/flake8-bandit
+  "SIM",
+  "W",   # see: https://pypi.org/project/pycodestyle
+]
+lint.extend-select = [
+  "A",  # see: https://pypi.org/project/flake8-builtins
+  "B",  # see: https://pypi.org/project/flake8-bugbear
+  "C4", # see: https://pypi.org/project/flake8-comprehensions
+]
+lint.ignore = [
+  "C901",
+  "E203",
+]
+lint.per-file-ignores."src/**/__init__.py" = [
+  "D104",
+]
+lint.per-file-ignores."src/cachier/config.py" = [
+  "D100",
+]
+lint.per-file-ignores."tests/**" = [
+  "D100",
+  "D101",
+  "D103",
+  "D104",
+  "D401",
+  "S101",
+  "S105",
+  "S311",
+  "S603",
+]
+lint.unfixable = [
+  "F401",
 ]
 
-[tool.pytest.ini_options]
-testpaths = ["cachier", "tests"]
-norecursedirs=["dist", "build"]
-addopts = [
-    "--color=yes",
-    "--cov=cachier",
-    "--cov-report=term",
-    "--cov-report=xml:cov.xml",
-    "-r a",
-    "-v",
-    "-s",
-]
-markers = [
-    "mongo: test the MongoDB core",
-    "memory: test the memory core",
-    "pickle: test the pickle core"
-]
+#[tool.ruff.pydocstyle]
+## Use Google-style docstrings.
+#convention = "google"
+#[tool.ruff.pycodestyle]
+#ignore-overlong-task-comments = true
+# Unlike Flake8, default to a complexity level of 10.
+lint.mccabe.max-complexity = 10
 
 [tool.docformatter]
 recursive = true
@@ -86,76 +133,44 @@ wrap-summaries = 79
 wrap-descriptions = 79
 blank = true
 
-[tool.ruff]
-target-version = "py38"
-line-length = 79
-# Enable Pyflakes `E` and `F` codes by default.
-lint.select = [
-    "E",
-    "W", # see: https://pypi.org/project/pycodestyle
-    "F", # see: https://pypi.org/project/pyflakes
-    "I", #see: https://pypi.org/project/isort/
-    "D", # see: https://pypi.org/project/pydocstyle
-    #"N", # see: https://pypi.org/project/pep8-naming
-    "S", # see: https://pypi.org/project/flake8-bandit
-    "SIM",
-    "RUF100" # alternative to yesqa
+[tool.pytest.ini_options]
+testpaths = [
+  "cachier",
+  "tests",
 ]
-lint.extend-select = [
-    "A",    # see: https://pypi.org/project/flake8-builtins
-    "B",    # see: https://pypi.org/project/flake8-bugbear
-    "C4",   # see: https://pypi.org/project/flake8-comprehensions
+norecursedirs = [
+  "dist",
+  "build",
 ]
-lint.ignore = [
-    "E203",
-    "C901",
+addopts = [
+  "--color=yes",
+  "--cov=cachier",
+  "--cov-report=term",
+  "--cov-report=xml:cov.xml",
+  "-r a",
+  "-v",
+  "-s",
 ]
-# Exclude a variety of commonly ignored directories.
-exclude = [
-    ".eggs",
-    ".git",
-    ".ruff_cache",
-    "__pypackages__",
-    "_build",
-    "build",
-    "dist",
+markers = [
+  "mongo: test the MongoDB core",
+  "memory: test the memory core",
+  "pickle: test the pickle core",
 ]
-lint.ignore-init-module-imports = true
-lint.unfixable = ["F401"]
-
-[tool.ruff.lint.per-file-ignores]
-"src/**/__init__.py" = ["D104"]
-"src/cachier/config.py" = ["D100"]
-"tests/**" = [
-  "S101", "S311", "S105", "S603",
-  "D100", "D101", "D103", "D104", "D401"
-]
-
-#[tool.ruff.pydocstyle]
-## Use Google-style docstrings.
-#convention = "google"
-
-#[tool.ruff.pycodestyle]
-#ignore-overlong-task-comments = true
-
-[tool.ruff.lint.mccabe]
-# Unlike Flake8, default to a complexity level of 10.
-max-complexity = 10
 
 [tool.coverage.run]
 branch = true
 dynamic_context = "test_function"
 omit = [
-    "tests/*",
-    "cachier/_version.py",
-    "cachier/__init__.py",
-    "**/scripts/**",
+  "tests/*",
+  "cachier/_version.py",
+  "cachier/__init__.py",
+  "**/scripts/**",
 ]
 [tool.coverage.report]
 show_missing = true
 # Regexes for lines to exclude from consideration
 exclude_lines = [
-    "pragma: no cover", # Have to re-enable the standard pragma
-    "raise NotImplementedError", # Don't complain if tests don't hit defensive assertion code:
-    "if TYPE_CHECKING:", # Is only true when running mypy, not tests
+  "pragma: no cover",          # Have to re-enable the standard pragma
+  "raise NotImplementedError", # Don't complain if tests don't hit defensive assertion code:
+  "if TYPE_CHECKING:",         # Is only true when running mypy, not tests
 ]
