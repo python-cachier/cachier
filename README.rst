@@ -461,8 +461,8 @@ Notable bugfixers:
 .. |PyPI-Versions| image:: https://img.shields.io/pypi/pyversions/cachier.svg
    :target: https://pypi.python.org/pypi/cachier
 
-.. |Build-Status| image:: https://github.com/python-cachier/cachier/actions/workflows/test.yml/badge.svg
-  :target: https://github.com/python-cachier/cachier/actions/workflows/test.yml
+.. |Build-Status| image:: https://github.com/python-cachier/cachier/actions/workflows/ci-test.yml/badge.svg
+  :target: https://github.com/python-cachier/cachier/actions/workflows/ci-test.yml
 
 .. |LICENCE| image:: https://img.shields.io/pypi/l/cachier.svg
   :target: https://pypi.python.org/pypi/cachier
