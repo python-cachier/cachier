@@ -8,9 +8,13 @@
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 
 # standard library imports
-import datetime
-import pickle
+import sys
 import time
+import pickle
+import warnings
+import datetime
+from contextlib import suppress
+
 
 pyodbc = None
 # third party imports
