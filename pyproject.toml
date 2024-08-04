@@ -46,7 +46,7 @@ dependencies = [
   "watchdog>=2.3.1",
 ]
 urls.Source = "https://github.com/python-cachier/cachier"
-scripts.cachier = "cachier.__naim__:cli"
+scripts.cachier = "cachier.__main__:cli"
 
 [tool.setuptools]
 include-package-data = true
