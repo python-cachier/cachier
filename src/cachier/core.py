@@ -245,7 +245,11 @@ def cachier(
             if verbose:
                 _print = print
             if ignore_cache or not _default_params["caching_enabled"]:
-                return func(**kwargs)
+                return (
+                    func(args[0], **kwargs)
+                    if core.func_is_method
+                    else func(**kwargs)
+                )
             key, entry = core.get_entry((), kwargs)
             if overwrite_cache:
                 return _calc_entry(core, key, func, args, kwds)
