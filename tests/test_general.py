@@ -241,6 +241,76 @@ def test_global_disable():
     assert result_1 != result_3
 
 
+def test_global_disable_function():
+    @cachier.cachier()
+    def test():
+        return True
+
+    cachier.disable_caching()
+    try:
+        assert test()
+    finally:
+        cachier.enable_caching()
+
+
+def test_global_disable_method():
+    class Test:
+        @cachier.cachier()
+        def test(self):
+            return True
+
+    cachier.disable_caching()
+    try:
+        assert Test().test()
+    finally:
+        cachier.enable_caching()
+
+
+def test_global_disable_method_with_args():
+    class Test:
+        @cachier.cachier()
+        def test(self, test):
+            return test
+
+    cachier.disable_caching()
+    try:
+        assert Test().test(1) == 1
+    finally:
+        cachier.enable_caching()
+
+
+def test_global_disable_method_with_optional_parameters():
+    class Test:
+        def __init__(self, val):
+            self.val = val
+
+        @cachier.cachier()
+        def test(self, test=0):
+            return self.val + test
+
+    cachier.disable_caching()
+    try:
+        assert Test(1).test(test=1) == 2
+    finally:
+        cachier.enable_caching()
+
+
+def test_global_disable_method_with_args_and_optional_parameters():
+    class Test:
+        def __init__(self, val):
+            self.val = val
+
+        @cachier.cachier()
+        def test(self, test1, test2=0):
+            return self.val + test1 + test2
+
+    cachier.disable_caching()
+    try:
+        assert Test(1).test(2, 3) == 6
+    finally:
+        cachier.enable_caching()
+
+
 def test_none_not_cached_by_default():
     count = 0
 
