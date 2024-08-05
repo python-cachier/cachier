@@ -6,4 +6,4 @@ if TYPE_CHECKING:
 
 HashFunc = Callable[..., str]
 Mongetter = Callable[[], "pymongo.collection.Collection"]
-Backend = Literal["pickle", "mongo", "memory"]
+Backend = Literal["pickle", "mongo", "odbc", "memory"]

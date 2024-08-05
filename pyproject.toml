@@ -135,6 +135,7 @@ blank = true
 
 [tool.pytest.ini_options]
 testpaths = [
+  "src/cachier",
   "cachier",
   "tests",
 ]
