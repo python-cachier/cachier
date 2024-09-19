@@ -156,7 +156,7 @@ def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
 
 
 @pytest.mark.parametrize(
-    "mongetter,backend",
+    ("mongetter", "backend"),
     [
         pytest.param(_test_mongetter, "mongo", marks=pytest.mark.mongo),
         (None, "memory"),
@@ -178,7 +178,7 @@ def test_precache_value(mongetter, backend):
 
 
 @pytest.mark.parametrize(
-    "mongetter,backend",
+    ("mongetter", "backend"),
     [
         pytest.param(_test_mongetter, "mongo", marks=pytest.mark.mongo),
         (None, "memory"),

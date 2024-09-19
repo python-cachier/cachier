@@ -76,13 +76,13 @@ def _test_mongetter():
 # === Mongo core tests ===
 
 
-@pytest.mark.mongo
+@pytest.mark.mongo()
 def test_information():
     print("\npymongo version: ", end="")
     print(pymongo.__version__)
 
 
-@pytest.mark.mongo
+@pytest.mark.mongo()
 def test_mongo_index_creation():
     """Basic Mongo core functionality."""
 
@@ -99,7 +99,7 @@ def test_mongo_index_creation():
     assert _MongoCore._INDEX_NAME in collection.index_information()
 
 
-@pytest.mark.mongo
+@pytest.mark.mongo()
 def test_mongo_core():
     """Basic Mongo core functionality."""
 
@@ -122,7 +122,7 @@ def test_mongo_core():
     assert val6 == val5
 
 
-@pytest.mark.mongo
+@pytest.mark.mongo()
 def test_mongo_core_keywords():
     """Basic Mongo core functionality with keyword arguments."""
 
@@ -145,7 +145,7 @@ def test_mongo_core_keywords():
     assert val6 == val5
 
 
-@pytest.mark.mongo
+@pytest.mark.mongo()
 def test_mongo_stale_after():
     """Testing MongoDB core stale_after functionality."""
 
@@ -178,7 +178,7 @@ def _calls_takes_time(res_queue):
     res_queue.put(res)
 
 
-@pytest.mark.mongo
+@pytest.mark.mongo()
 def test_mongo_being_calculated():
     """Testing MongoDB core handling of being calculated scenarios."""
 
@@ -228,7 +228,7 @@ def _bad_mongetter():
     return _BadMongoCollection(_test_mongetter)
 
 
-@pytest.mark.mongo
+@pytest.mark.mongo()
 def test_mongo_write_failure():
     """Testing MongoDB core handling of writing failure scenarios."""
 
@@ -238,12 +238,13 @@ def test_mongo_write_failure():
         return random() + arg_1 + arg_2
 
     with pytest.raises(OperationFailure):
-        val1 = _func_w_bad_mongo(1, 2)
-        val2 = _func_w_bad_mongo(1, 2)
-        assert val1 == val2
+        _func_w_bad_mongo(1, 2)
+    with pytest.raises(OperationFailure):
+        _func_w_bad_mongo(1, 2)
+    # assert val1 == val2
 
 
-@pytest.mark.mongo
+@pytest.mark.mongo()
 def test_mongo_clear_being_calculated():
     """Testing MongoDB core clear_being_calculated."""
 
@@ -255,7 +256,7 @@ def test_mongo_clear_being_calculated():
     _func_w_bad_mongo.clear_being_calculated()
 
 
-@pytest.mark.mongo
+@pytest.mark.mongo()
 def test_stalled_mongo_db_cache():
     @cachier(mongetter=_test_mongetter)
     def _stalled_func():
@@ -268,7 +269,7 @@ def test_stalled_mongo_db_cache():
         core.wait_on_entry_calc(key=None)
 
 
-@pytest.mark.mongo
+@pytest.mark.mongo()
 def test_stalled_mong_db_core(monkeypatch):
     def mock_get_entry(self, args, kwargs):
         return "key", {"being_calculated": True}
@@ -324,7 +325,7 @@ def test_stalled_mong_db_core(monkeypatch):
     assert res == 1
 
 
-@pytest.mark.mongo
+@pytest.mark.mongo()
 def test_callable_hash_param():
     def _hash_func(args, kwargs):
         def _hash(obj):
