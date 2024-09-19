@@ -6,7 +6,6 @@ import platform
 import queue
 import sys
 import threading
-from datetime import timedelta
 from random import random
 from time import sleep
 from urllib.parse import quote_plus
