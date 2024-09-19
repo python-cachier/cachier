@@ -78,8 +78,10 @@ jobs:
       - name: Unit tests (DB)
         if: matrix.backend == 'db'
         run: pytest -m "mongo"
+      - name: Speed eval
+        run: python tests/speed_eval.py
 
-      - name: "Upload coverage to Codecov"
+      - name: Upload coverage to Codecov
         continue-on-error: true
         uses: codecov/codecov-action@v4
         with:

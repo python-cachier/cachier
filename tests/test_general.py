@@ -6,6 +6,7 @@ import queue
 import subprocess  # nosec: B404
 import threading
 from contextlib import suppress
+import datetime
 from random import random
 from time import sleep, time
 
@@ -20,10 +21,10 @@ from cachier.core import (
 )
 
 from tests.test_mongo_core import (
-    MONGO_DELTA_LONG,
     _test_mongetter,
 )
 
+MONGO_DELTA_LONG = datetime.timedelta(seconds=10)
 
 def test_information():
     print("\ncachier version: ", end="")

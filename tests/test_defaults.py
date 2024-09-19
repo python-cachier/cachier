@@ -8,8 +8,9 @@ import time
 import cachier
 import pytest
 
-from tests.test_mongo_core import MONGO_DELTA, _test_mongetter
+from tests.test_mongo_core import _test_mongetter
 
+MONGO_DELTA = datetime.timedelta(seconds=3)
 _default_params = cachier.get_default_params().copy()
 
 
