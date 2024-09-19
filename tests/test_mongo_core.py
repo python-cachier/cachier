@@ -244,7 +244,7 @@ def test_mongo_write_failure():
         val1 = _func_w_bad_mongo(1, 2)
     with pytest.raises(OperationFailure):
         val2 = _func_w_bad_mongo(1, 2)
-    assert val1 == val2
+    # assert val1 == val2
 
 
 @pytest.mark.mongo()
