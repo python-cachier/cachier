@@ -1,12 +1,12 @@
 """Non-core-specific tests for cachier."""
 
+import datetime
 import functools
 import os
 import queue
 import subprocess  # nosec: B404
 import threading
 from contextlib import suppress
-import datetime
 from random import random
 from time import sleep, time
 
@@ -25,6 +25,7 @@ from tests.test_mongo_core import (
 )
 
 MONGO_DELTA_LONG = datetime.timedelta(seconds=10)
+
 
 def test_information():
     print("\ncachier version: ", end="")

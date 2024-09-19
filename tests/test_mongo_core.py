@@ -146,16 +146,14 @@ def test_mongo_core_keywords():
     assert val6 == val5
 
 
-
-
-
-
 @pytest.mark.mongo
 def test_mongo_stale_after():
     """Testing MongoDB core stale_after functionality."""
 
     @cachier(
-        mongetter=_test_mongetter, stale_after=datetime.timedelta(seconds=3), next_time=False
+        mongetter=_test_mongetter,
+        stale_after=datetime.timedelta(seconds=3),
+        next_time=False,
     )
     def _stale_after_mongo(arg_1, arg_2):
         """Some function."""
