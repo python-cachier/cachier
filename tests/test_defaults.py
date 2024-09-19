@@ -64,7 +64,7 @@ def test_backend_default_param():
     assert global_test_2.cache_dpath() is not None
 
 
-@pytest.mark.mongo
+@pytest.mark.mongo()
 def test_mongetter_default_param():
     cachier.set_default_params(mongetter=_test_mongetter)
 
