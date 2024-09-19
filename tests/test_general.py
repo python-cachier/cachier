@@ -1,5 +1,6 @@
 """Non-core-specific tests for cachier."""
 
+import datetime
 import functools
 import os
 import queue
@@ -20,9 +21,10 @@ from cachier.core import (
 )
 
 from tests.test_mongo_core import (
-    MONGO_DELTA_LONG,
     _test_mongetter,
 )
+
+MONGO_DELTA_LONG = datetime.timedelta(seconds=10)
 
 
 def test_information():
