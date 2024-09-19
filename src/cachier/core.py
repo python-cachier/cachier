@@ -241,9 +241,7 @@ def cachier(
                 func, _is_method=core.func_is_method, args=args, kwds=kwds
             )
 
-            _print = lambda x: None  # noqa: E731
-            if verbose:
-                _print = print
+            _print = print if verbose else lambda x: None
             if ignore_cache or not _default_params["caching_enabled"]:
                 return (
                     func(args[0], **kwargs)
@@ -253,22 +251,22 @@ def cachier(
             key, entry = core.get_entry((), kwargs)
             if overwrite_cache:
                 return _calc_entry(core, key, func, args, kwds)
-            if entry is None:
+            if entry is None or not entry.get("being_calculated", False):
                 _print("No entry found. No current calc. Calling like a boss.")
                 return _calc_entry(core, key, func, args, kwds)
             _print("Entry found.")
             if _allow_none or entry.get("value", None) is not None:
-                _print("Cached result found.")
+                _print("Cached result found")
                 now = datetime.datetime.now()
                 if now - entry["time"] <= _stale_after:
-                    _print("And it is fresh!")
+                    _print(" and it is fresh!")
                     return entry["value"]
-                _print("But it is stale... :(")
+                _print(" but it is stale... :(")
                 if entry["being_calculated"]:
                     if _next_time:
                         _print("Returning stale.")
                         return entry["value"]  # return stale val
-                    _print("Already calc. Waiting on change.")
+                    _print("Already cal; waiting on change.")
                     try:
                         return core.wait_on_entry_calc(key)
                     except RecalculationNeeded:
@@ -285,14 +283,11 @@ def cachier(
                     return entry["value"]
                 _print("Calling decorated function and waiting")
                 return _calc_entry(core, key, func, args, kwds)
-            if entry["being_calculated"]:
-                _print("No value but being calculated. Waiting.")
-                try:
-                    return core.wait_on_entry_calc(key)
-                except RecalculationNeeded:
-                    return _calc_entry(core, key, func, args, kwds)
-            _print("No entry found. No current calc. Calling like a boss.")
-            return _calc_entry(core, key, func, args, kwds)
+            _print("No value but being calculated. Waiting.")
+            try:
+                return core.wait_on_entry_calc(key)
+            except RecalculationNeeded:
+                return _calc_entry(core, key, func, args, kwds)
 
         def _clear_cache():
             """Clear the cache."""
