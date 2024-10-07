@@ -9,6 +9,7 @@ from time import sleep, time
 
 import pandas as pd
 import pytest
+
 from cachier import cachier
 
 
@@ -19,7 +20,7 @@ def _takes_2_seconds(arg_1, arg_2):
     return f"arg_1:{arg_1}, arg_2:{arg_2}"
 
 
-@pytest.mark.memory()
+@pytest.mark.memory
 def test_memory_core():
     """Basic memory core functionality."""
     _takes_2_seconds.clear_cache()
@@ -31,7 +32,7 @@ def test_memory_core():
     _takes_2_seconds.clear_cache()
 
 
-@pytest.mark.memory()
+@pytest.mark.memory
 def test_memory_core_keywords():
     """Basic memory core functionality with keyword arguments."""
     _takes_2_seconds.clear_cache()
@@ -53,7 +54,7 @@ def _stale_after_seconds(arg_1, arg_2):
     return random()
 
 
-@pytest.mark.memory()
+@pytest.mark.memory
 def test_stale_after():
     """Testing the stale_after functionality."""
     _stale_after_seconds.clear_cache()
@@ -74,7 +75,7 @@ def _stale_after_next_time(arg_1, arg_2):
     return random()
 
 
-@pytest.mark.memory()
+@pytest.mark.memory
 def test_stale_after_next_time():
     """Testing the stale_after with next_time functionality."""
     _stale_after_next_time.clear_cache()
@@ -103,7 +104,7 @@ def _random_num_with_arg(a):
     return random()
 
 
-@pytest.mark.memory()
+@pytest.mark.memory
 def test_overwrite_cache():
     """Tests that the overwrite feature works correctly."""
     _random_num.clear_cache()
@@ -127,7 +128,7 @@ def test_overwrite_cache():
     _random_num_with_arg.clear_cache()
 
 
-@pytest.mark.memory()
+@pytest.mark.memory
 def test_ignore_cache():
     """Tests that the ignore_cache feature works correctly."""
     _random_num.clear_cache()
@@ -165,7 +166,7 @@ def _calls_takes_time(res_queue):
     res_queue.put(res)
 
 
-@pytest.mark.memory()
+@pytest.mark.memory
 def test_memory_being_calculated():
     """Testing memory core handling of being calculated scenarios."""
     _takes_time.clear_cache()
@@ -199,7 +200,7 @@ def _calls_being_calc_next_time(res_queue):
     res_queue.put(res)
 
 
-@pytest.mark.memory()
+@pytest.mark.memory
 def test_being_calc_next_time():
     """Testing memory core handling of being calculated scenarios."""
     _takes_time.clear_cache()
@@ -241,7 +242,7 @@ def _delete_cache(arg_1, arg_2):
     return random() + arg_1 + arg_2
 
 
-@pytest.mark.memory()
+@pytest.mark.memory
 def test_clear_being_calculated():
     """Test memory core clear `being calculated` functionality."""
     _takes_time.clear_cache()
@@ -264,7 +265,7 @@ def test_clear_being_calculated():
     assert res1 != res2
 
 
-@pytest.mark.memory()
+@pytest.mark.memory
 def test_clear_being_calculated_with_empty_cache():
     """Test memory core clear `being calculated` functionality."""
     _takes_time.clear_cache()
@@ -281,7 +282,7 @@ def _error_throwing_func(arg1):
     return 7
 
 
-@pytest.mark.memory()
+@pytest.mark.memory
 def test_error_throwing_func():
     # with
     res1 = _error_throwing_func(4)
@@ -290,7 +291,7 @@ def test_error_throwing_func():
     assert res1 == res2
 
 
-@pytest.mark.memory()
+@pytest.mark.memory
 def test_callable_hash_param():
     def _hash_func(args, kwargs):
         def _hash(obj):

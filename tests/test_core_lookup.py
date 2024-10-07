@@ -1,6 +1,7 @@
 """Testing a few basic cachier interfaces."""
 
 import pytest
+
 from cachier import cachier, get_default_params
 from cachier.cores.mongo import MissingMongetter
 
