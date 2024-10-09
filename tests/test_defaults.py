@@ -5,9 +5,9 @@ import random
 import threading
 import time
 
-import cachier
 import pytest
 
+import cachier
 from tests.test_mongo_core import _test_mongetter
 
 MONGO_DELTA = datetime.timedelta(seconds=3)
@@ -65,7 +65,7 @@ def test_backend_default_param():
     assert global_test_2.cache_dpath() is not None
 
 
-@pytest.mark.mongo()
+@pytest.mark.mongo
 def test_mongetter_default_param():
     cachier.set_default_params(mongetter=_test_mongetter)
 
