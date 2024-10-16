@@ -257,7 +257,7 @@ def cachier(
                 _print("No entry found. No current calc. Calling like a boss.")
                 return _calc_entry(core, key, func, args, kwds)
             _print("Entry found.")
-            if _allow_none or entry.get("value", None) is not None:
+            if _allow_none or entry.value is not None:
                 _print("Cached result found.")
                 now = datetime.datetime.now()
                 if now - entry.time <= _stale_after:

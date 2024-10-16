@@ -51,7 +51,7 @@ class _BaseCore:
         """Return a unique key based on the arguments provided."""
         return self.hash_func(args, kwds)
 
-    def get_entry(self, args, kwds):
+    def get_entry(self, args, kwds) -> Tuple[str, Optional[CacheEntry]]:
         """Get entry based on given arguments.
 
         Return the result mapped to the given arguments in this core's cache,
