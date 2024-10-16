@@ -12,7 +12,7 @@ import threading
 from typing import Callable
 
 from .._types import HashFunc
-from ..config import _update_with_defaults
+from ..config import _update_with_defaults, CacheEntry
 
 
 class RecalculationNeeded(Exception):

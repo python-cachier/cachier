@@ -260,14 +260,14 @@ def cachier(
             if _allow_none or entry.get("value", None) is not None:
                 _print("Cached result found.")
                 now = datetime.datetime.now()
-                if now - entry["time"] <= _stale_after:
+                if now - entry.time <= _stale_after:
                     _print("And it is fresh!")
-                    return entry["value"]
+                    return entry.value
                 _print("But it is stale... :(")
-                if entry["being_calculated"]:
+                if entry.being_calculated:
                     if _next_time:
                         _print("Returning stale.")
-                        return entry["value"]  # return stale val
+                        return entry.value  # return stale val
                     _print("Already calc. Waiting on change.")
                     try:
                         return core.wait_on_entry_calc(key)
@@ -282,10 +282,10 @@ def cachier(
                         )
                     finally:
                         core.mark_entry_not_calculated(key)
-                    return entry["value"]
+                    return entry.value
                 _print("Calling decorated function and waiting")
                 return _calc_entry(core, key, func, args, kwds)
-            if entry["being_calculated"]:
+            if entry.being_calculated:
                 _print("No value but being calculated. Waiting.")
                 try:
                     return core.wait_on_entry_calc(key)

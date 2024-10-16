@@ -2,7 +2,9 @@ import datetime
 import hashlib
 import os
 import pickle
-from typing import Optional, TypedDict, Union
+import threading
+from dataclasses import dataclass
+from typing import Optional, TypedDict, Union, Any
 
 from ._types import Backend, HashFunc, Mongetter
 
@@ -45,6 +47,15 @@ _default_params: Params = {
     "wait_for_calc_timeout": 0,
     "allow_none": False,
 }
+
+
+@dataclass
+class CacheEntry:
+    value: Any
+    time: datetime
+    stale: bool
+    being_calculated: bool
+    condition: Optional[threading.Condition]
 
 
 def _update_with_defaults(
