@@ -21,7 +21,6 @@ from .config import (
     Backend,
     HashFunc,
     Mongetter,
-    _default_params,
     _update_with_defaults,
 )
 from .cores.base import RecalculationNeeded, _BaseCore
@@ -176,6 +175,8 @@ def cachier(
         None will not be cached and are recalculated every call.
 
     """
+    from .config import _global_params
+
     # Check for deprecated parameters
     if hash_params is not None:
         message = (
@@ -244,7 +245,7 @@ def cachier(
             _print = lambda x: None  # noqa: E731
             if verbose:
                 _print = print
-            if ignore_cache or not _default_params.caching_enabled:
+            if ignore_cache or not _global_params.caching_enabled:
                 return (
                     func(args[0], **kwargs)
                     if core.func_is_method

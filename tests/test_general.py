@@ -236,10 +236,10 @@ def test_global_disable():
     result_1 = get_random()
     result_2 = get_random()
     cachier.disable_caching()
-    assert cachier.config._default_params.caching_enabled is False
+    assert cachier.config._global_params.caching_enabled is False
     result_3 = get_random()
     cachier.enable_caching()
-    assert cachier.config._default_params.caching_enabled is True
+    assert cachier.config._global_params.caching_enabled is True
     result_4 = get_random()
     assert result_1 == result_2 == result_4
     assert result_1 != result_3

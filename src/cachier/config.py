@@ -20,34 +20,22 @@ def _default_hash_func(args, kwds):
 
 @dataclass
 class Params:
-    """Type definition for cachier parameters."""
+    """Default definition for cachier parameters."""
 
-    caching_enabled: bool
-    hash_func: HashFunc
-    backend: Backend
-    mongetter: Optional[Mongetter]
-    stale_after: datetime.timedelta
-    next_time: bool
-    cache_dir: Union[str, os.PathLike]
-    pickle_reload: bool
-    separate_files: bool
-    wait_for_calc_timeout: int
-    allow_none: bool
+    caching_enabled: bool = True
+    hash_func: HashFunc = _default_hash_func
+    backend: Backend = "pickle"
+    mongetter: Optional[Mongetter] = None
+    stale_after: datetime.timedelta = datetime.timedelta.max
+    next_time: bool = False
+    cache_dir: Union[str, os.PathLike] = "~/.cachier/"
+    pickle_reload: bool = True
+    separate_files: bool = False
+    wait_for_calc_timeout: int = 0
+    allow_none: bool = False
 
 
-_default_params = Params(
-    caching_enabled=True,
-    hash_func=_default_hash_func,
-    backend="pickle",
-    mongetter=None,
-    stale_after=datetime.timedelta.max,
-    next_time=False,
-    cache_dir="~/.cachier/",
-    pickle_reload=True,
-    separate_files=False,
-    wait_for_calc_timeout=0,
-    allow_none=False,
-)
+_global_params = Params()
 
 
 def _update_with_defaults(
@@ -60,7 +48,7 @@ def _update_with_defaults(
         if kw_name in func_kwargs:
             return func_kwargs.pop(kw_name)
     if param is None:
-        return getattr(cachier.config._default_params, name)
+        return getattr(cachier.config._global_params, name)
     return param
 
 
@@ -82,10 +70,10 @@ def set_default_params(**params: Mapping) -> None:
     valid_params = {
         k: v
         for k, v in params.items()
-        if hasattr(cachier.config._default_params, k)
+        if hasattr(cachier.config._global_params, k)
     }
-    cachier.config._default_params = replace(
-        cachier.config._default_params, **valid_params
+    cachier.config._global_params = replace(
+        cachier.config._global_params, **valid_params
     )
 
 
@@ -93,18 +81,18 @@ def get_default_params() -> Params:
     """Get current set of default parameters."""
     import cachier
 
-    return cachier.config._default_params
+    return cachier.config._global_params
 
 
 def enable_caching():
     """Enable caching globally."""
     import cachier
 
-    cachier.config._default_params.caching_enabled = True
+    cachier.config._global_params.caching_enabled = True
 
 
 def disable_caching():
     """Disable caching globally."""
     import cachier
 
-    cachier.config._default_params.caching_enabled = False
+    cachier.config._global_params.caching_enabled = False
