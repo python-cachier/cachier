@@ -6,6 +6,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from typing import Optional, Union
 
+from docutils.nodes import warning
+
 from ._types import Backend, HashFunc, Mongetter
 
 
@@ -52,6 +54,19 @@ def _update_with_defaults(
     return param
 
 
+def set_default_params(**params: Mapping) -> None:
+    """Configure default parameters applicable to all memoized functions."""
+    # This function is kept for backwards compatibility with desperation warning
+    import warnings
+
+    warnings.warn(
+        "Called `set_default_params` is deprecated and will be removed in a future version. "
+        "Please use `set_global_params` instead.",
+        DeprecationWarning,
+    )
+    set_global_params(**params)
+
+
 def set_global_params(**params: Mapping) -> None:
     """Configure global parameters applicable to all memoized functions.
 
@@ -75,6 +90,19 @@ def set_global_params(**params: Mapping) -> None:
     cachier.config._global_params = replace(
         cachier.config._global_params, **valid_params
     )
+
+
+def get_default_params() -> Params:
+    """Get current set of default parameters."""
+    # This function is kept for backwards compatibility with desperation warning
+    import warnings
+
+    warnings.warn(
+        "Called `get_default_params` is deprecated and will be removed in a future version. "
+        "Please use `get_global_params` instead.",
+        DeprecationWarning,
+    )
+    return get_global_params()
 
 
 def get_global_params() -> Params:
