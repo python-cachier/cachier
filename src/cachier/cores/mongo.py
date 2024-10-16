@@ -13,7 +13,7 @@ import time  # to sleep when waiting on Mongo cache\
 import warnings  # to warn if pymongo is missing
 from contextlib import suppress
 from datetime import datetime
-from typing import Tuple, Optional
+from typing import Any, Optional, Tuple
 
 from .._types import HashFunc, Mongetter
 from ..config import CacheEntry

@@ -11,14 +11,14 @@ import pickle  # for local caching
 from collections.abc import Mapping
 from contextlib import suppress
 from datetime import datetime
-from typing import Optional, Tuple, Any
+from typing import Any, Optional, Tuple
 
 import portalocker  # to lock on pickle cache IO
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 from .._types import HashFunc
-from ..config import _update_with_defaults, CacheEntry
+from ..config import CacheEntry, _update_with_defaults
 
 # Alternative:  https://github.com/WoLpH/portalocker
 from .base import _BaseCore
@@ -117,7 +117,9 @@ class _PickleCore(_BaseCore):
                 self._reload_cache()
             return self.cache
 
-    def _get_cache_by_key(self, key=None, hash_str=None) -> Optional[Mapping[str, CacheEntry]]:
+    def _get_cache_by_key(
+        self, key=None, hash_str=None
+    ) -> Optional[Mapping[str, CacheEntry]]:
         fpath = self.cache_fpath
         fpath += f"_{hash_str or key}"
         try:
@@ -141,7 +143,9 @@ class _PickleCore(_BaseCore):
                     entry.being_calculated = False
                     self._save_cache(entry, hash_str=subpath.split("_")[-1])
 
-    def _save_cache(self, cache, key:str =None, hash_str: str=None) -> None:
+    def _save_cache(
+        self, cache, key: str = None, hash_str: str = None
+    ) -> None:
         fpath = self.cache_fpath
         if key is not None:
             fpath += f"_{key}"
@@ -154,7 +158,9 @@ class _PickleCore(_BaseCore):
             if key is None:
                 self._reload_cache()
 
-    def get_entry_by_key(self, key: str, reload: bool=False) -> Tuple[str, CacheEntry]:
+    def get_entry_by_key(
+        self, key: str, reload: bool = False
+    ) -> Tuple[str, CacheEntry]:
         with self.lock:
             if self.separate_files:
                 return key, self._get_cache_by_key(key)
@@ -180,7 +186,15 @@ class _PickleCore(_BaseCore):
             self._save_cache(cache)
 
     def mark_entry_being_calculated_separate_files(self, key: str) -> None:
-        self._save_cache(CacheEntry(value=None, time=datetime.now(), stale=False, being_calculated=True), key=key)
+        self._save_cache(
+            CacheEntry(
+                value=None,
+                time=datetime.now(),
+                stale=False,
+                being_calculated=True,
+            ),
+            key=key,
+        )
 
     def mark_entry_not_calculated_separate_files(self, key: str) -> None:
         _, entry = self.get_entry_by_key(key)
@@ -197,7 +211,12 @@ class _PickleCore(_BaseCore):
             try:
                 cache[key].being_calculated = True
             except KeyError:
-                cache[key] = CacheEntry(value=None, time=datetime.now(), stale=False, being_calculated=True)
+                cache[key] = CacheEntry(
+                    value=None,
+                    time=datetime.now(),
+                    stale=False,
+                    being_calculated=True,
+                )
             self._save_cache(cache)
 
     def mark_entry_not_calculated(self, key: str) -> None:

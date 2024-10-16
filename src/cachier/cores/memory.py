@@ -2,11 +2,11 @@
 
 import threading
 from datetime import datetime
-from typing import Tuple, Optional, Any
+from typing import Any, Optional, Tuple
 
 from .._types import HashFunc
-from .base import _BaseCore, _get_func_str
 from ..config import CacheEntry
+from .base import _BaseCore, _get_func_str
 
 
 class _MemoryCore(_BaseCore):
@@ -19,11 +19,13 @@ class _MemoryCore(_BaseCore):
     def _hash_func_key(self, key: str) -> str:
         return f"{_get_func_str(self.func)}:{key}"
 
-    def get_entry_by_key(self, key: str, reload=False) -> Tuple[str, Optional[CacheEntry]]:
+    def get_entry_by_key(
+        self, key: str, reload=False
+    ) -> Tuple[str, Optional[CacheEntry]]:
         with self.lock:
             return key, self.cache.get(self._hash_func_key(key), None)
 
-    def set_entry(self, key:str, func_res: Any) -> None:
+    def set_entry(self, key: str, func_res: Any) -> None:
         with self.lock:
             try:
                 # we need to retain the existing condition so that
@@ -32,7 +34,13 @@ class _MemoryCore(_BaseCore):
                 cond = self.cache[self._hash_func_key(key)].condition
             except KeyError:  # pragma: no cover
                 cond = None
-            self.cache[self._hash_func_key(key)] = CacheEntry(value=func_res, time=datetime.now(), stale=False, being_calculated=False, condition=cond)
+            self.cache[self._hash_func_key(key)] = CacheEntry(
+                value=func_res,
+                time=datetime.now(),
+                stale=False,
+                being_calculated=False,
+                condition=cond,
+            )
 
     def mark_entry_being_calculated(self, key: str) -> None:
         with self.lock:
@@ -42,7 +50,13 @@ class _MemoryCore(_BaseCore):
                 self.cache[self._hash_func_key(key)].being_calculated = True
                 self.cache[self._hash_func_key(key)].condition = condition
             except KeyError:
-                self.cache[self._hash_func_key(key)] = CacheEntry(value=None, time=datetime.now(), stale=False, being_calculated=True, condition=condition)
+                self.cache[self._hash_func_key(key)] = CacheEntry(
+                    value=None,
+                    time=datetime.now(),
+                    stale=False,
+                    being_calculated=True,
+                    condition=condition,
+                )
 
     def mark_entry_not_calculated(self, key: str) -> None:
         with self.lock:

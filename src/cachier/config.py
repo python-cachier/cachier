@@ -4,7 +4,7 @@ import os
 import pickle
 import threading
 from dataclasses import dataclass
-from typing import Optional, TypedDict, Union, Any
+from typing import Any, Optional, TypedDict, Union
 
 from ._types import Backend, HashFunc, Mongetter
 
@@ -51,6 +51,8 @@ _default_params: Params = {
 
 @dataclass
 class CacheEntry:
+    """Data class for cache entries."""
+
     value: Any
     time: datetime
     stale: bool

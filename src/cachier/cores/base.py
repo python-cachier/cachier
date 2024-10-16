@@ -9,10 +9,10 @@
 import abc  # for the _BaseCore abstract base class
 import inspect
 import threading
-from typing import Callable
+from typing import Callable, Optional, Tuple
 
 from .._types import HashFunc
-from ..config import _update_with_defaults, CacheEntry
+from ..config import CacheEntry, _update_with_defaults
 
 
 class RecalculationNeeded(Exception):
@@ -76,7 +76,7 @@ class _BaseCore:
             raise RecalculationNeeded()
 
     @abc.abstractmethod
-    def get_entry_by_key(self, key):
+    def get_entry_by_key(self, key: str) -> Tuple[str, Optional[CacheEntry]]:
         """Get entry based on given key.
 
         Return the result mapped to the given key in this core's cache, if such
@@ -85,25 +85,25 @@ class _BaseCore:
         """
 
     @abc.abstractmethod
-    def set_entry(self, key, func_res):
+    def set_entry(self, key: str, func_res):
         """Map the given result to the given key in this core's cache."""
 
     @abc.abstractmethod
-    def mark_entry_being_calculated(self, key):
+    def mark_entry_being_calculated(self, key: str) -> None:
         """Mark the entry mapped by the given key as being calculated."""
 
     @abc.abstractmethod
-    def mark_entry_not_calculated(self, key):
+    def mark_entry_not_calculated(self, key: str) -> None:
         """Mark the entry mapped by the given key as not being calculated."""
 
     @abc.abstractmethod
-    def wait_on_entry_calc(self, key):
+    def wait_on_entry_calc(self, key: str) -> None:
         """Wait on the entry with keys being calculated and returns result."""
 
     @abc.abstractmethod
-    def clear_cache(self):
+    def clear_cache(self) -> None:
         """Clear the cache of this core."""
 
     @abc.abstractmethod
-    def clear_being_calculated(self):
+    def clear_being_calculated(self) -> None:
         """Mark all entries in this cache as not being calculated."""
