@@ -8,10 +8,10 @@
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 import os
 import pickle  # for local caching
-from collections.abc import Mapping
+
 from contextlib import suppress
 from datetime import datetime
-from typing import Any, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import portalocker  # to lock on pickle cache IO
 from watchdog.events import PatternMatchingEventHandler
@@ -111,7 +111,7 @@ class _PickleCore(_BaseCore):
             except (FileNotFoundError, EOFError):
                 self.cache = {}
 
-    def _get_cache(self) -> Mapping[str, CacheEntry]:
+    def _get_cache(self) -> Dict[str, CacheEntry]:
         with self.lock:
             if not self.cache:
                 self._reload_cache()
@@ -119,7 +119,7 @@ class _PickleCore(_BaseCore):
 
     def _get_cache_by_key(
         self, key=None, hash_str=None
-    ) -> Optional[Mapping[str, CacheEntry]]:
+    ) -> Optional[Dict[str, CacheEntry]]:
         fpath = self.cache_fpath
         fpath += f"_{hash_str or key}"
         try:
