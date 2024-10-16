@@ -229,15 +229,17 @@ def test_separate_processes():
 
 def test_global_disable():
     @cachier.cachier()
-    def get_random():
+    def get_random() -> float:
         return random()
 
     get_random.clear_cache()
     result_1 = get_random()
     result_2 = get_random()
     cachier.disable_caching()
+    assert cachier.config._default_params.caching_enabled is False
     result_3 = get_random()
     cachier.enable_caching()
+    assert cachier.config._default_params.caching_enabled is True
     result_4 = get_random()
     assert result_1 == result_2 == result_4
     assert result_1 != result_3
