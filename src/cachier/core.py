@@ -244,7 +244,7 @@ def cachier(
             _print = lambda x: None  # noqa: E731
             if verbose:
                 _print = print
-            if ignore_cache or not _default_params["caching_enabled"]:
+            if ignore_cache or not _default_params.caching_enabled:
                 return (
                     func(args[0], **kwargs)
                     if core.func_is_method

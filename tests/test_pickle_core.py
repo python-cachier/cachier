@@ -329,7 +329,7 @@ _BAD_CACHE_FNAME_SEPARATE_FILES = (
     ".tests.test_pickle_core._bad_cache_"
     f"{hashlib.sha256(pickle.dumps((0.13, 0.02))).hexdigest()}"
 )
-EXPANDED_CACHIER_DIR = os.path.expanduser(_default_params["cache_dir"])
+EXPANDED_CACHIER_DIR = os.path.expanduser(_default_params.cache_dir)
 _BAD_CACHE_FPATH = os.path.join(EXPANDED_CACHIER_DIR, _BAD_CACHE_FNAME)
 _BAD_CACHE_FPATH_SEPARATE_FILES = os.path.join(
     EXPANDED_CACHIER_DIR, _BAD_CACHE_FNAME_SEPARATE_FILES
