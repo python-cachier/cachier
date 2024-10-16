@@ -12,15 +12,15 @@ import cachier
 from tests.test_mongo_core import _test_mongetter
 
 MONGO_DELTA = datetime.timedelta(seconds=3)
-_default_params = replace(cachier.get_default_params())
+_fresh_defaults = replace(cachier.get_default_params())
 
 
 def setup_function():
-    cachier.set_default_params(**_default_params)
+    cachier.set_default_params(**vars(_fresh_defaults))
 
 
 def teardown_function():
-    cachier.set_default_params(**_default_params)
+    cachier.set_default_params(**vars(_fresh_defaults))
 
 
 def test_hash_func_default_param():

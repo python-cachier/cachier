@@ -2,6 +2,7 @@ import datetime
 import hashlib
 import os
 import pickle
+from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from typing import Optional, Union
 
@@ -63,7 +64,7 @@ def _update_with_defaults(
     return param
 
 
-def set_default_params(**params):
+def set_default_params(**params: Mapping) -> None:
     """Configure global parameters applicable to all memoized functions.
 
     This function takes the same keyword parameters as the ones defined in the
@@ -78,15 +79,17 @@ def set_default_params(**params):
     """
     import cachier
 
-    valid_params = (
-        p
-        for p in params.items()
-        if hasattr(cachier.config._default_params, p[0])
+    valid_params = {
+        k: v
+        for k, v in params.items()
+        if hasattr(cachier.config._default_params, k)
+    }
+    cachier.config._default_params = replace(
+        cachier.config._default_params, **valid_params
     )
-    replace(_default_params, **valid_params)
 
 
-def get_default_params():
+def get_default_params() -> Params:
     """Get current set of default parameters."""
     import cachier
 
