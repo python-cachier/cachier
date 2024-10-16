@@ -8,7 +8,6 @@
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 import os
 import pickle  # for local caching
-from contextlib import suppress
 from datetime import datetime
 from typing import Any, Dict, Optional, Tuple
 
@@ -102,11 +101,11 @@ class _PickleCore(_BaseCore):
 
     def _reload_cache(self) -> None:
         with self.lock:
-            self.cache = {}
-            with suppress(FileNotFoundError, EOFError), portalocker.Lock(
-                self.cache_fpath, mode="rb"
-            ) as cf:
-                self.cache = pickle.load(cf)  # noqa: S301
+            try:
+                with portalocker.Lock(self.cache_fpath, mode="rb") as cf:
+                    self.cache = pickle.load(cf)  # noqa: S301
+            except (FileNotFoundError, EOFError):
+                self.cache = {}
 
     def _get_cache(self) -> Dict[str, CacheEntry]:
         with self.lock:
@@ -221,7 +220,7 @@ class _PickleCore(_BaseCore):
         with self.lock:
             cache = self._get_cache()
             # that's ok, we don't need an entry in that case
-            if key not in cache:
+            if isinstance(cache, dict) and key in cache:
                 cache[key].being_calculated = False
                 self._save_cache(cache)
 
