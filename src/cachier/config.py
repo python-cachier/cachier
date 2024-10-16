@@ -79,7 +79,9 @@ def set_default_params(**params):
     import cachier
 
     valid_params = (
-        p for p in params.items() if hasattr(cachier.config._default_params, p[0])
+        p
+        for p in params.items()
+        if hasattr(cachier.config._default_params, p[0])
     )
     replace(_default_params, **valid_params)
 
