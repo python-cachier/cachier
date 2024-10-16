@@ -2,12 +2,12 @@
 
 import pytest
 
-from cachier import cachier, get_default_params
+from cachier import cachier, get_global_params
 from cachier.cores.mongo import MissingMongetter
 
 
 def test_get_default_params():
-    params = get_default_params()
+    params = get_global_params()
     assert sorted(vars(params).keys()) == [
         "allow_none",
         "backend",

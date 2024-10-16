@@ -12,15 +12,15 @@ import cachier
 from tests.test_mongo_core import _test_mongetter
 
 MONGO_DELTA = datetime.timedelta(seconds=3)
-_fresh_defaults = replace(cachier.get_default_params())
+_copied_defaults = replace(cachier.get_global_params())
 
 
 def setup_function():
-    cachier.set_default_params(**vars(_fresh_defaults))
+    cachier.set_global_params(**vars(_copied_defaults))
 
 
 def teardown_function():
-    cachier.set_default_params(**vars(_fresh_defaults))
+    cachier.set_global_params(**vars(_copied_defaults))
 
 
 def test_hash_func_default_param():
@@ -31,7 +31,7 @@ def test_hash_func_default_param():
     def fast_hash_func(args, kwds):
         return "hash"
 
-    cachier.set_default_params(hash_func=slow_hash_func)
+    cachier.set_global_params(hash_func=slow_hash_func)
 
     @cachier.cachier()
     def global_test_1():
@@ -52,7 +52,7 @@ def test_hash_func_default_param():
 
 
 def test_backend_default_param():
-    cachier.set_default_params(backend="memory")
+    cachier.set_global_params(backend="memory")
 
     @cachier.cachier()
     def global_test_1():
@@ -68,7 +68,7 @@ def test_backend_default_param():
 
 @pytest.mark.mongo
 def test_mongetter_default_param():
-    cachier.set_default_params(mongetter=_test_mongetter)
+    cachier.set_global_params(mongetter=_test_mongetter)
 
     @cachier.cachier()
     def global_test_1():
@@ -83,7 +83,7 @@ def test_mongetter_default_param():
 
 
 def test_cache_dir_default_param(tmpdir):
-    cachier.set_default_params(cache_dir=tmpdir / "1")
+    cachier.set_global_params(cache_dir=tmpdir / "1")
 
     @cachier.cachier()
     def global_test_1():
@@ -98,7 +98,7 @@ def test_cache_dir_default_param(tmpdir):
 
 
 def test_separate_files_default_param(tmpdir):
-    cachier.set_default_params(separate_files=True)
+    cachier.set_global_params(separate_files=True)
 
     @cachier.cachier(cache_dir=tmpdir / "1")
     def global_test_1(arg_1, arg_2):
@@ -118,7 +118,7 @@ def test_separate_files_default_param(tmpdir):
 
 
 def test_allow_none_default_param(tmpdir):
-    cachier.set_default_params(
+    cachier.set_global_params(
         allow_none=True,
         separate_files=True,
         verbose_cache=True,
@@ -168,7 +168,7 @@ def test_stale_after_applies_dynamically(backend, mongetter):
         """Some function."""
         return random.random() + arg_1 + arg_2
 
-    cachier.set_default_params(stale_after=MONGO_DELTA)
+    cachier.set_global_params(stale_after=MONGO_DELTA)
 
     _stale_after_test.clear_cache()
     val1 = _stale_after_test(1, 2)
@@ -188,7 +188,7 @@ def test_next_time_applies_dynamically(backend, mongetter):
         """Some function."""
         return random.random()
 
-    cachier.set_default_params(stale_after=NEXT_AFTER_DELTA, next_time=True)
+    cachier.set_global_params(stale_after=NEXT_AFTER_DELTA, next_time=True)
 
     _stale_after_next_time.clear_cache()
     val1 = _stale_after_next_time(1, 2)
@@ -218,7 +218,7 @@ def test_wait_for_calc_applies_dynamically(backend, mongetter):
         res = _wait_for_calc_timeout_slow(1, 2)
         res_queue.put(res)
 
-    cachier.set_default_params(wait_for_calc_timeout=2)
+    cachier.set_global_params(wait_for_calc_timeout=2)
     _wait_for_calc_timeout_slow.clear_cache()
     res_queue = queue.Queue()
     thread1 = threading.Thread(

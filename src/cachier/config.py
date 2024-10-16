@@ -52,7 +52,7 @@ def _update_with_defaults(
     return param
 
 
-def set_default_params(**params: Mapping) -> None:
+def set_global_params(**params: Mapping) -> None:
     """Configure global parameters applicable to all memoized functions.
 
     This function takes the same keyword parameters as the ones defined in the
@@ -77,7 +77,7 @@ def set_default_params(**params: Mapping) -> None:
     )
 
 
-def get_default_params() -> Params:
+def get_global_params() -> Params:
     """Get current set of default parameters."""
     import cachier
 
