@@ -8,7 +8,7 @@ from cachier.cores.mongo import MissingMongetter
 
 def test_get_default_params():
     params = get_default_params()
-    assert tuple(sorted(params)) == (
+    assert sorted(vars(params).keys()) == [
         "allow_none",
         "backend",
         "cache_dir",
@@ -20,7 +20,7 @@ def test_get_default_params():
         "separate_files",
         "stale_after",
         "wait_for_calc_timeout",
-    )
+    ]
 
 
 def test_bad_name(name="nope"):
