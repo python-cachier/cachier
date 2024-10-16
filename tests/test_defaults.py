@@ -4,6 +4,7 @@ import queue
 import random
 import threading
 import time
+from dataclasses import replace
 
 import pytest
 
@@ -11,7 +12,7 @@ import cachier
 from tests.test_mongo_core import _test_mongetter
 
 MONGO_DELTA = datetime.timedelta(seconds=3)
-_default_params = cachier.get_default_params().copy()
+_default_params = replace(cachier.get_default_params())
 
 
 def setup_function():
