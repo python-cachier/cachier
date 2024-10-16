@@ -221,7 +221,7 @@ class _PickleCore(_BaseCore):
         with self.lock:
             cache = self._get_cache()
             # that's ok, we don't need an entry in that case
-            with suppress(KeyError):
+            if key not in cache:
                 cache[key].being_calculated = False
                 self._save_cache(cache)
 
