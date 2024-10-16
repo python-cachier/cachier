@@ -299,6 +299,7 @@ def test_stalled_mong_db_core(monkeypatch):
             value=1,
             time=datetime.datetime.now() - datetime.timedelta(seconds=10),
             being_calculated=True,
+            stale=None,
         )
 
     monkeypatch.setattr(
