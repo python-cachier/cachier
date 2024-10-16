@@ -6,8 +6,6 @@ from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from typing import Optional, Union
 
-from docutils.nodes import warning
-
 from ._types import Backend, HashFunc, Mongetter
 
 
