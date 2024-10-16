@@ -19,6 +19,7 @@ from pymongo.mongo_client import MongoClient
 from pymongo_inmemory import MongoClient as InMemoryMongoClient
 
 from cachier import cachier
+from cachier.config import CacheEntry
 from cachier.cores.base import RecalculationNeeded
 from cachier.cores.mongo import _MongoCore
 
@@ -294,12 +295,11 @@ def test_stalled_mong_db_core(monkeypatch):
     assert res == 1
 
     def mock_get_entry_2(self, args, kwargs):
-        entry = {
-            "being_calculated": True,
-            "value": 1,
-            "time": datetime.datetime.now() - datetime.timedelta(seconds=10),
-        }
-        return "key", entry
+        return "key", CacheEntry(
+            value=1,
+            time=datetime.datetime.now() - datetime.timedelta(seconds=10),
+            being_calculated=True,
+        )
 
     monkeypatch.setattr(
         "cachier.cores.mongo._MongoCore.get_entry", mock_get_entry_2
