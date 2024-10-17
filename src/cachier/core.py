@@ -14,7 +14,7 @@ import warnings
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
-from typing import Optional, Union, Any
+from typing import Any, Optional, Union
 from warnings import warn
 
 from .config import (
