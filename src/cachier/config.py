@@ -2,9 +2,10 @@ import datetime
 import hashlib
 import os
 import pickle
+import threading
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from ._types import Backend, HashFunc, Mongetter
 
@@ -36,6 +37,17 @@ class Params:
 
 
 _global_params = Params()
+
+
+@dataclass
+class CacheEntry:
+    """Data class for cache entries."""
+
+    value: Any
+    time: datetime
+    stale: bool
+    being_calculated: bool
+    condition: Optional[threading.Condition] = None
 
 
 def _update_with_defaults(

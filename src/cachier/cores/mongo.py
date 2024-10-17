@@ -13,8 +13,10 @@ import time  # to sleep when waiting on Mongo cache\
 import warnings  # to warn if pymongo is missing
 from contextlib import suppress
 from datetime import datetime
+from typing import Any, Optional, Tuple
 
 from .._types import HashFunc, Mongetter
+from ..config import CacheEntry
 
 with suppress(ImportError):
     from bson.binary import Binary  # to save binary data to mongodb
@@ -65,29 +67,29 @@ class _MongoCore(_BaseCore):
     def _func_str(self) -> str:
         return _get_func_str(self.func)
 
-    def get_entry_by_key(self, key):
+    def get_entry_by_key(self, key: str) -> Tuple[str, Optional[CacheEntry]]:
         res = self.mongo_collection.find_one(
             {"func": self._func_str, "key": key}
         )
         if not res:
             return key, None
         try:
-            entry = {
-                "value": pickle.loads(res["value"]),  # noqa: S301
-                "time": res.get("time", None),
-                "stale": res.get("stale", False),
-                "being_calculated": res.get("being_calculated", False),
-            }
+            entry = CacheEntry(
+                value=pickle.loads(res["value"]),  # noqa: S301
+                time=res.get("time", None),
+                stale=res.get("stale", False),
+                being_calculated=res.get("being_calculated", False),
+            )
         except KeyError:
-            entry = {
-                "value": None,
-                "time": res.get("time", None),
-                "stale": res.get("stale", False),
-                "being_calculated": res.get("being_calculated", False),
-            }
+            entry = CacheEntry(
+                value=None,
+                time=res.get("time", None),
+                stale=res.get("stale", False),
+                being_calculated=res.get("being_calculated", False),
+            )
         return key, entry
 
-    def set_entry(self, key, func_res):
+    def set_entry(self, key: str, func_res: Any) -> None:
         thebytes = pickle.dumps(func_res)
         self.mongo_collection.update_one(
             filter={"func": self._func_str, "key": key},
@@ -104,14 +106,14 @@ class _MongoCore(_BaseCore):
             upsert=True,
         )
 
-    def mark_entry_being_calculated(self, key):
+    def mark_entry_being_calculated(self, key: str) -> None:
         self.mongo_collection.update_one(
             filter={"func": self._func_str, "key": key},
             update={"$set": {"being_calculated": True}},
             upsert=True,
         )
 
-    def mark_entry_not_calculated(self, key):
+    def mark_entry_not_calculated(self, key: str) -> None:
         with suppress(OperationFailure):  # don't care in this case
             self.mongo_collection.update_one(
                 filter={
@@ -122,7 +124,7 @@ class _MongoCore(_BaseCore):
                 upsert=False,  # should not insert in this case
             )
 
-    def wait_on_entry_calc(self, key):
+    def wait_on_entry_calc(self, key: str) -> Any:
         time_spent = 0
         while True:
             time.sleep(MONGO_SLEEP_DURATION_IN_SEC)
@@ -130,14 +132,14 @@ class _MongoCore(_BaseCore):
             key, entry = self.get_entry_by_key(key)
             if entry is None:
                 raise RecalculationNeeded()
-            if not entry["being_calculated"]:
-                return entry["value"]
+            if not entry.being_calculated:
+                return entry.value
             self.check_calc_timeout(time_spent)
 
-    def clear_cache(self):
+    def clear_cache(self) -> None:
         self.mongo_collection.delete_many(filter={"func": self._func_str})
 
-    def clear_being_calculated(self):
+    def clear_being_calculated(self) -> None:
         self.mongo_collection.update_many(
             filter={
                 "func": self._func_str,

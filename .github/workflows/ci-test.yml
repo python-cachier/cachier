@@ -50,7 +50,7 @@ jobs:
 
       - name: Unit tests (local)
         if: matrix.backend == 'local'
-        run: pytest -m "not mongo"
+        run: pytest -m "not mongo" --cov=cachier --cov-report=term --cov-report=xml:cov.xml
 
       - name: Setup docker (missing on MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'db'
@@ -77,7 +77,7 @@ jobs:
           docker ps -a
       - name: Unit tests (DB)
         if: matrix.backend == 'db'
-        run: pytest -m "mongo"
+        run: pytest -m "mongo" --cov=cachier --cov-report=term --cov-report=xml:cov.xml
       - name: Speed eval
         run: python tests/speed_eval.py
 
