@@ -251,7 +251,9 @@ def cachier(
             key, entry = core.get_entry((), kwargs)
             if overwrite_cache:
                 return _calc_entry(core, key, func, args, kwds)
-            if entry is None or (not entry._completed and not entry._processing):
+            if entry is None or (
+                not entry._completed and not entry._processing
+            ):
                 _print("No entry found. No current calc. Calling like a boss.")
                 return _calc_entry(core, key, func, args, kwds)
             _print("Entry found.")
