@@ -242,9 +242,8 @@ def cachier(
                 func, _is_method=core.func_is_method, args=args, kwds=kwds
             )
 
-            _print = lambda x: None  # noqa: E731
-            if verbose:
-                _print = print
+            _print = print if verbose else lambda x: None
+
             if ignore_cache or not _global_params.caching_enabled:
                 return (
                     func(args[0], **kwargs)
