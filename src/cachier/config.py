@@ -5,7 +5,7 @@ import pickle
 import threading
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
-from typing import Any, Optional, TypedDict, Union
+from typing import Any, Optional, Union
 
 from ._types import Backend, HashFunc, Mongetter
 
