@@ -274,7 +274,9 @@ def test_stalled_mongo_db_cache():
 @pytest.mark.mongo
 def test_stalled_mong_db_core(monkeypatch):
     def mock_get_entry(self, args, kwargs):
-        return "key", CacheEntry(being_calculated=True, value=None, time=None, stale=None)
+        return "key", CacheEntry(
+            being_calculated=True, value=None, time=None, stale=None
+        )
 
     def mock_get_entry_by_key(self, key):
         return "key", None
