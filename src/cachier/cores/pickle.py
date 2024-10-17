@@ -48,7 +48,7 @@ class _PickleCore(_BaseCore):
         def _check_calculation(self) -> None:
             entry = self.core.get_entry_by_key(self.key, True)[1]
             try:
-                if not entry.being_calculated:
+                if not entry._processing:
                     # print('stopping observer!')
                     self.value = entry.value
                     self.observer.stop()
@@ -166,7 +166,8 @@ class _PickleCore(_BaseCore):
             value=func_res,
             time=datetime.now(),
             stale=False,
-            being_calculated=False,
+            _processing=False,
+            _completed=True,
         )
         if self.separate_files:
             self._save_cache(key_data, key)
@@ -183,14 +184,14 @@ class _PickleCore(_BaseCore):
                 value=None,
                 time=datetime.now(),
                 stale=False,
-                being_calculated=True,
+                _processing=True,
             ),
             key=key,
         )
 
     def mark_entry_not_calculated_separate_files(self, key: str) -> None:
         _, entry = self.get_entry_by_key(key)
-        entry.being_calculated = False
+        entry._processing = False
         self._save_cache(entry, key=key)
 
     def mark_entry_being_calculated(self, key: str) -> None:
@@ -201,13 +202,13 @@ class _PickleCore(_BaseCore):
         with self.lock:
             cache = self._get_cache()
             if key in cache:
-                cache[key].being_calculated = True
+                cache[key]._processing = True
             else:
                 cache[key] = CacheEntry(
                     value=None,
                     time=datetime.now(),
                     stale=False,
-                    being_calculated=True,
+                    _processing=True,
                 )
             self._save_cache(cache)
 
@@ -218,7 +219,7 @@ class _PickleCore(_BaseCore):
             cache = self._get_cache()
             # that's ok, we don't need an entry in that case
             if isinstance(cache, dict) and key in cache:
-                cache[key].being_calculated = False
+                cache[key]._processing = False
                 self._save_cache(cache)
 
     def wait_on_entry_calc(self, key: str) -> Any:
@@ -230,7 +231,7 @@ class _PickleCore(_BaseCore):
                 self._reload_cache()
                 entry = self._get_cache()[key]
             filename = self.cache_fname
-        if not entry.being_calculated:
+        if not entry._processing:
             return entry.value
         event_handler = _PickleCore.CacheChangeHandler(
             filename=filename, core=self, key=key
@@ -260,5 +261,5 @@ class _PickleCore(_BaseCore):
         with self.lock:
             cache = self._get_cache()
             for key in cache:
-                cache[key].being_calculated = False
+                cache[key]._processing = False
             self._save_cache(cache)

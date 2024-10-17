@@ -275,7 +275,7 @@ def test_stalled_mongo_db_cache():
 def test_stalled_mong_db_core(monkeypatch):
     def mock_get_entry(self, args, kwargs):
         return "key", CacheEntry(
-            being_calculated=True, value=None, time=None, stale=None
+            _processing=True, value=None, time=None, stale=None
         )
 
     def mock_get_entry_by_key(self, key):
@@ -300,7 +300,7 @@ def test_stalled_mong_db_core(monkeypatch):
         return "key", CacheEntry(
             value=1,
             time=datetime.datetime.now() - datetime.timedelta(seconds=10),
-            being_calculated=True,
+            _processing=True,
             stale=None,
         )
 

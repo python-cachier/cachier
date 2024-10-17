@@ -251,7 +251,7 @@ def cachier(
             key, entry = core.get_entry((), kwargs)
             if overwrite_cache:
                 return _calc_entry(core, key, func, args, kwds)
-            if entry is None:
+            if entry is None or (not entry._completed and not entry._processing):
                 _print("No entry found. No current calc. Calling like a boss.")
                 return _calc_entry(core, key, func, args, kwds)
             _print("Entry found.")
@@ -262,7 +262,7 @@ def cachier(
                     _print("And it is fresh!")
                     return entry.value
                 _print("But it is stale... :(")
-                if entry.being_calculated:
+                if entry._processing:
                     if _next_time:
                         _print("Returning stale.")
                         return entry.value  # return stale val
@@ -273,8 +273,8 @@ def cachier(
                         return _calc_entry(core, key, func, args, kwds)
                 if _next_time:
                     _print("Async calc and return stale")
+                    core.mark_entry_being_calculated(key)
                     try:
-                        core.mark_entry_being_calculated(key)
                         _get_executor().submit(
                             _function_thread, core, key, func, args, kwds
                         )
@@ -283,7 +283,7 @@ def cachier(
                     return entry.value
                 _print("Calling decorated function and waiting")
                 return _calc_entry(core, key, func, args, kwds)
-            if entry.being_calculated:
+            if entry._processing:
                 _print("No value but being calculated. Waiting.")
                 try:
                     return core.wait_on_entry_calc(key)
