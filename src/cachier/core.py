@@ -14,7 +14,7 @@ import warnings
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
-from typing import Optional, Union
+from typing import Optional, Union, Any
 from warnings import warn
 
 from .config import (
@@ -55,13 +55,11 @@ def _function_thread(core, key, func, args, kwds):
         print(f"Function call failed with the following exception:\n{exc}")
 
 
-def _calc_entry(core, key, func, args, kwds):
+def _calc_entry(core, key, func, args, kwds) -> Optional[Any]:
+    core.mark_entry_being_calculated(key)
     try:
-        core.mark_entry_being_calculated(key)
-        # _get_executor().submit(core.mark_entry_being_calculated, key)
         func_res = func(*args, **kwds)
         core.set_entry(key, func_res)
-        # _get_executor().submit(core.set_entry, key, func_res)
         return func_res
     finally:
         core.mark_entry_not_calculated(key)

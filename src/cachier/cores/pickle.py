@@ -46,17 +46,14 @@ class _PickleCore(_BaseCore):
             self.observer = observer
 
         def _check_calculation(self) -> None:
-            # print('checking calc')
             entry = self.core.get_entry_by_key(self.key, True)[1]
-            # print(self.key)
-            # print(entry)
             try:
                 if not entry.being_calculated:
                     # print('stopping observer!')
                     self.value = entry.value
                     self.observer.stop()
                 # else:
-                # print('NOT stopping observer... :(')
+                #     print('NOT stopping observer... :(')
             except TypeError:
                 self.value = None
                 self.observer.stop()
@@ -203,9 +200,9 @@ class _PickleCore(_BaseCore):
 
         with self.lock:
             cache = self._get_cache()
-            try:
+            if key in cache:
                 cache[key].being_calculated = True
-            except KeyError:
+            else:
                 cache[key] = CacheEntry(
                     value=None,
                     time=datetime.now(),

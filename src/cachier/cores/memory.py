@@ -45,12 +45,13 @@ class _MemoryCore(_BaseCore):
     def mark_entry_being_calculated(self, key: str) -> None:
         with self.lock:
             condition = threading.Condition()
+            hash_key = self._hash_func_key(key)
+            if hash_key in self.cache:
+                self.cache[hash_key].being_calculated = True
+                self.cache[hash_key].condition = condition
             # condition.acquire()
-            try:
-                self.cache[self._hash_func_key(key)].being_calculated = True
-                self.cache[self._hash_func_key(key)].condition = condition
-            except KeyError:
-                self.cache[self._hash_func_key(key)] = CacheEntry(
+            else:
+                self.cache[hash_key] = CacheEntry(
                     value=None,
                     time=datetime.now(),
                     stale=False,
@@ -59,11 +60,11 @@ class _MemoryCore(_BaseCore):
                 )
 
     def mark_entry_not_calculated(self, key: str) -> None:
+        hash_key = self._hash_func_key(key)
         with self.lock:
-            try:
-                entry = self.cache[self._hash_func_key(key)]
-            except KeyError:  # pragma: no cover
+            if hash_key not in self.cache:
                 return  # that's ok, we don't need an entry in that case
+            entry = self.cache[hash_key]
             entry.being_calculated = False
             cond = entry.condition
             if cond:
@@ -73,14 +74,15 @@ class _MemoryCore(_BaseCore):
                 entry.condition = None
 
     def wait_on_entry_calc(self, key: str) -> Any:
+        hash_key = self._hash_func_key(key)
         with self.lock:  # pragma: no cover
-            entry = self.cache[self._hash_func_key(key)]
+            entry = self.cache[hash_key]
             if not entry.being_calculated:
                 return entry.value
         entry.condition.acquire()
         entry.condition.wait()
         entry.condition.release()
-        return self.cache[self._hash_func_key(key)].value
+        return self.cache[hash_key].value
 
     def clear_cache(self) -> None:
         with self.lock:

@@ -73,20 +73,13 @@ class _MongoCore(_BaseCore):
         )
         if not res:
             return key, None
-        try:
-            entry = CacheEntry(
-                value=pickle.loads(res["value"]),  # noqa: S301
-                time=res.get("time", None),
-                stale=res.get("stale", False),
-                being_calculated=res.get("being_calculated", False),
-            )
-        except KeyError:
-            entry = CacheEntry(
-                value=None,
-                time=res.get("time", None),
-                stale=res.get("stale", False),
-                being_calculated=res.get("being_calculated", False),
-            )
+        val = pickle.loads(res["value"]) if "value" in res else None  # noqa: S301
+        entry = CacheEntry(
+            value=val,
+            time=res.get("time", None),
+            stale=res.get("stale", False),
+            being_calculated=res.get("being_calculated", False),
+        )
         return key, entry
 
     def set_entry(self, key: str, func_res: Any) -> None:
