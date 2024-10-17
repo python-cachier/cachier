@@ -46,8 +46,9 @@ class CacheEntry:
     value: Any
     time: datetime
     stale: bool
-    being_calculated: bool
-    condition: Optional[threading.Condition] = None
+    _processing: bool
+    _condition: Optional[threading.Condition] = None
+    _completed: bool = False
 
 
 def _update_with_defaults(

@@ -492,3 +492,15 @@ def test_partial_handling(tmpdir):
 
     assert count_p == 1
     assert count_m == 1
+
+
+@pytest.mark.parametrize("backend", ["memory", "pickle"])
+def test_raise_exception(tmpdir, backend: str):
+    @cachier.cachier(cache_dir=tmpdir, backend=backend, allow_none=True)
+    def tmp_test(_):
+        raise RuntimeError("always raise")
+
+    with pytest.raises(RuntimeError):
+        tmp_test(123)
+    with pytest.raises(RuntimeError):
+        tmp_test(123)

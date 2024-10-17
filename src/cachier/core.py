@@ -14,7 +14,7 @@ import warnings
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
-from typing import Optional, Union
+from typing import Any, Optional, Union
 from warnings import warn
 
 from .config import (
@@ -55,13 +55,11 @@ def _function_thread(core, key, func, args, kwds):
         print(f"Function call failed with the following exception:\n{exc}")
 
 
-def _calc_entry(core, key, func, args, kwds):
+def _calc_entry(core, key, func, args, kwds) -> Optional[Any]:
+    core.mark_entry_being_calculated(key)
     try:
-        core.mark_entry_being_calculated(key)
-        # _get_executor().submit(core.mark_entry_being_calculated, key)
         func_res = func(*args, **kwds)
         core.set_entry(key, func_res)
-        # _get_executor().submit(core.set_entry, key, func_res)
         return func_res
     finally:
         core.mark_entry_not_calculated(key)
@@ -242,9 +240,8 @@ def cachier(
                 func, _is_method=core.func_is_method, args=args, kwds=kwds
             )
 
-            _print = lambda x: None  # noqa: E731
-            if verbose:
-                _print = print
+            _print = print if verbose else lambda x: None
+
             if ignore_cache or not _global_params.caching_enabled:
                 return (
                     func(args[0], **kwargs)
@@ -254,7 +251,9 @@ def cachier(
             key, entry = core.get_entry((), kwargs)
             if overwrite_cache:
                 return _calc_entry(core, key, func, args, kwds)
-            if entry is None:
+            if entry is None or (
+                not entry._completed and not entry._processing
+            ):
                 _print("No entry found. No current calc. Calling like a boss.")
                 return _calc_entry(core, key, func, args, kwds)
             _print("Entry found.")
@@ -265,7 +264,7 @@ def cachier(
                     _print("And it is fresh!")
                     return entry.value
                 _print("But it is stale... :(")
-                if entry.being_calculated:
+                if entry._processing:
                     if _next_time:
                         _print("Returning stale.")
                         return entry.value  # return stale val
@@ -276,8 +275,8 @@ def cachier(
                         return _calc_entry(core, key, func, args, kwds)
                 if _next_time:
                     _print("Async calc and return stale")
+                    core.mark_entry_being_calculated(key)
                     try:
-                        core.mark_entry_being_calculated(key)
                         _get_executor().submit(
                             _function_thread, core, key, func, args, kwds
                         )
@@ -286,7 +285,7 @@ def cachier(
                     return entry.value
                 _print("Calling decorated function and waiting")
                 return _calc_entry(core, key, func, args, kwds)
-            if entry.being_calculated:
+            if entry._processing:
                 _print("No value but being calculated. Waiting.")
                 try:
                     return core.wait_on_entry_calc(key)
