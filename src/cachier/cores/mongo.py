@@ -73,20 +73,14 @@ class _MongoCore(_BaseCore):
         )
         if not res:
             return key, None
-        try:
-            entry = CacheEntry(
-                value=pickle.loads(res["value"]),  # noqa: S301
-                time=res.get("time", None),
-                stale=res.get("stale", False),
-                being_calculated=res.get("being_calculated", False),
-            )
-        except KeyError:
-            entry = CacheEntry(
-                value=None,
-                time=res.get("time", None),
-                stale=res.get("stale", False),
-                being_calculated=res.get("being_calculated", False),
-            )
+        val = pickle.loads(res["value"]) if "value" in res else None  # noqa: S301
+        entry = CacheEntry(
+            value=val,
+            time=res.get("time", None),
+            stale=res.get("stale", False),
+            _processing=res.get("processing", False),
+            _completed=res.get("completed", False),
+        )
         return key, entry
 
     def set_entry(self, key: str, func_res: Any) -> None:
@@ -100,7 +94,8 @@ class _MongoCore(_BaseCore):
                     "value": Binary(thebytes),
                     "time": datetime.now(),
                     "stale": False,
-                    "being_calculated": False,
+                    "processing": False,
+                    "completed": True,
                 }
             },
             upsert=True,
@@ -109,7 +104,7 @@ class _MongoCore(_BaseCore):
     def mark_entry_being_calculated(self, key: str) -> None:
         self.mongo_collection.update_one(
             filter={"func": self._func_str, "key": key},
-            update={"$set": {"being_calculated": True}},
+            update={"$set": {"processing": True}},
             upsert=True,
         )
 
@@ -120,7 +115,7 @@ class _MongoCore(_BaseCore):
                     "func": self._func_str,
                     "key": key,
                 },
-                update={"$set": {"being_calculated": False}},
+                update={"$set": {"processing": False}},
                 upsert=False,  # should not insert in this case
             )
 
@@ -132,7 +127,7 @@ class _MongoCore(_BaseCore):
             key, entry = self.get_entry_by_key(key)
             if entry is None:
                 raise RecalculationNeeded()
-            if not entry.being_calculated:
+            if not entry._processing:
                 return entry.value
             self.check_calc_timeout(time_spent)
 
@@ -143,7 +138,7 @@ class _MongoCore(_BaseCore):
         self.mongo_collection.update_many(
             filter={
                 "func": self._func_str,
-                "being_calculated": True,
+                "processing": True,
             },
-            update={"$set": {"being_calculated": False}},
+            update={"$set": {"processing": False}},
         )
