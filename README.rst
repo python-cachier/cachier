@@ -269,7 +269,7 @@ Cachier Cores
 Pickle Core
 -----------
 
-The default core for Cachier is pickle based, meaning each function will store its cache is a separate pickle file in the ``~/.cachier`` directory. Naturally, this kind of cache is both machine-specific and user-specific.
+The default core for Cachier is pickle based, meaning each function will store its cache in a separate pickle file in the ``~/.cachier`` directory. Naturally, this kind of cache is both machine-specific and user-specific.
 
 You can configure ``cachier`` to use another directory by providing the ``cache_dir`` parameter with the path to that directory:
 
