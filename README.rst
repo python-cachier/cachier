@@ -346,7 +346,7 @@ Note, however, that ``cachier``'s in-memory core is simple, and has no monitorin
 Contributing
 ============
 
-Current maintainers are Shay Palachy Affek (`shay.palachy@gmail.com <mailto:shay.palachy@gmail.com>`_, `@shaypal5 <https://github.com/shaypal5>`_) and Judson Neer (`@lordjabez <https://github.com/lordjabez>`_); You are more than welcome to approach them for help. Contributions are very welcomed! :)
+Current maintainers are Shay Palachy Affek (`shay.palachy@gmail.com <mailto:shay.palachy@gmail.com>`_, `@shaypal5 <https://github.com/shaypal5>`_) and `Jirka Borovec <https://github.com/Borda>`_ (`@Borda <https://github.com/Borda>`_ on GitHub); You are more than welcome to approach them for help. Contributions are very welcomed! :)
 
 Installing for development
 --------------------------
