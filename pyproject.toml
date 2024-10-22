@@ -148,6 +148,7 @@ addopts = [
   "-r a",
   "-v",
   "-s",
+  "-W error",
 ]
 markers = [
   "mongo: test the MongoDB core",

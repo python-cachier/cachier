@@ -54,7 +54,7 @@ class _PickleCore(_BaseCore):
                     self.observer.stop()
                 # else:
                 #     print('NOT stopping observer... :(')
-            except TypeError:
+            except AttributeError:  # catching entry being None
                 self.value = None
                 self.observer.stop()
 
