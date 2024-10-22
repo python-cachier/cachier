@@ -395,16 +395,17 @@ def _helper_bad_cache_file(sleeptime, separate_files):
 
 # we want this to succeed at least once
 @pytest.mark.pickle
-@pytest.mark.xfail
 @pytest.mark.parametrize("separate_files", [True, False])
 def test_bad_cache_file(separate_files):
     """Test pickle core handling of bad cache files."""
     sleeptimes = [0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8, 1, 1.5, 2]
     sleeptimes = sleeptimes + sleeptimes
+    bad_file = False
     for sleeptime in sleeptimes:
         if _helper_bad_cache_file(sleeptime, separate_files):
-            return
-    raise AssertionError()
+            bad_file = True
+            break
+    assert not bad_file
 
 
 def _delete_cache(arg_1, arg_2):
@@ -486,16 +487,17 @@ def _helper_delete_cache_file(sleeptime, separate_files):
 
 
 @pytest.mark.pickle
-@pytest.mark.xfail
 @pytest.mark.parametrize("separate_files", [False, True])
 def test_delete_cache_file(separate_files):
     """Test pickle core handling of missing cache files."""
     sleeptimes = [0.1, 0.2, 0.3, 0.5, 0.7, 1]
     sleeptimes = sleeptimes * 4
+    deleted = False
     for sleeptime in sleeptimes:
         if _helper_delete_cache_file(sleeptime, separate_files):
-            return
-    raise AssertionError()
+            deleted = True
+            break
+    assert not deleted
 
 
 @pytest.mark.pickle
