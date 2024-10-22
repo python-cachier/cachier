@@ -48,7 +48,7 @@ class _PickleCore(_BaseCore):
         def _check_calculation(self) -> None:
             entry = self.core.get_entry_by_key(self.key, True)[1]
             try:
-                if not entry._processing:
+                if entry and not entry._processing:
                     # print('stopping observer!')
                     self.value = entry.value
                     self.observer.stop()
