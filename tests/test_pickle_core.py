@@ -430,7 +430,9 @@ _DEL_CACHE_FPATHS = {
 }
 
 
-def _calls_delete_cache(del_cache_func, res_queue, del_cache: bool, separate_files: bool):
+def _calls_delete_cache(
+    del_cache_func, res_queue, del_cache: bool, separate_files: bool
+):
     try:
         # print('in')
         res = del_cache_func(0.13, 0.02)
