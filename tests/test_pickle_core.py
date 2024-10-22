@@ -398,10 +398,10 @@ def _helper_bad_cache_file(sleep_time: float, separate_files: bool):
 @pytest.mark.parametrize("separate_files", [True, False])
 def test_bad_cache_file(separate_files):
     """Test pickle core handling of bad cache files."""
-    sleeptimes = [0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8, 1, 1.5, 2]
+    sleep_times = [0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8, 1, 1.5, 2]
     bad_file = False
-    for sleeptime in sleeptimes * 2:
-        if _helper_bad_cache_file(sleeptime, separate_files):
+    for sleep_time in sleep_times * 2:
+        if _helper_bad_cache_file(sleep_time, separate_files):
             bad_file = True
             break
     # it is expected that for separate_files=True files will not be bad
@@ -492,8 +492,8 @@ def test_delete_cache_file(separate_files):
     """Test pickle core handling of missing cache files."""
     sleep_times = [0.1, 0.2, 0.3, 0.5, 0.7, 1]
     deleted = False
-    for sleeptime in sleep_times * 4:
-        if _helper_delete_cache_file(sleeptime, separate_files):
+    for sleep_time in sleep_times * 4:
+        if _helper_delete_cache_file(sleep_time, separate_files):
             deleted = True
             break
     # it is expected that for separate_files=True files will not be deleted
