@@ -9,7 +9,7 @@
 import os
 import pickle  # for local caching
 from datetime import datetime
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
 import portalocker  # to lock on pickle cache IO
 from watchdog.events import PatternMatchingEventHandler
@@ -96,28 +96,49 @@ class _PickleCore(_BaseCore):
             os.path.join(os.path.realpath(self.cache_dir), self.cache_fname)
         )
 
+    @staticmethod
+    def _convert_legacy_cache_entry(
+        entry: Union[dict, CacheEntry],
+    ) -> CacheEntry:
+        if isinstance(entry, CacheEntry):
+            return entry
+        return CacheEntry(
+            value=entry["value"],
+            time=entry["time"],
+            stale=entry["stale"],
+            _processing=entry["being_calculated"],
+            _condition=entry.get("condition", None),
+        )
+
+    def _load_cache(self) -> Mapping[str, CacheEntry]:
+        try:
+            with portalocker.Lock(self.cache_fpath, mode="rb") as cf:
+                cache = pickle.load(cf)  # noqa: S301
+        except (FileNotFoundError, EOFError):
+            cache = {}
+        return {
+            k: _PickleCore._convert_legacy_cache_entry(v)
+            for k, v in cache.items()
+        }
+
     def _reload_cache(self) -> None:
         with self.lock:
-            try:
-                with portalocker.Lock(self.cache_fpath, mode="rb") as cf:
-                    self.cache = pickle.load(cf)  # noqa: S301
-            except (FileNotFoundError, EOFError):
-                self.cache = {}
+            self.cache = self._load_cache()
 
     def _get_cache(self) -> Dict[str, CacheEntry]:
-        with self.lock:
-            if not self.cache:
-                self._reload_cache()
-            return self.cache
+        if not self.cache:
+            self._reload_cache()
+        return self.cache
 
     def _get_cache_by_key(
         self, key=None, hash_str=None
-    ) -> Optional[Dict[str, CacheEntry]]:
+    ) -> Optional[CacheEntry]:
         fpath = self.cache_fpath
         fpath += f"_{hash_str or key}"
         try:
             with portalocker.Lock(fpath, mode="rb") as cache_file:
-                return pickle.load(cache_file)  # noqa: S301
+                entry = pickle.load(cache_file)  # noqa: S301
+            return _PickleCore._convert_legacy_cache_entry(entry)
         except (FileNotFoundError, EOFError):
             return None
 
