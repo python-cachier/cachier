@@ -112,7 +112,7 @@ class _PickleCore(_BaseCore):
 
     def _get_cache_by_key(
         self, key=None, hash_str=None
-    ) -> Optional[Dict[str, CacheEntry]]:
+    ) -> Optional[CacheEntry]:
         fpath = self.cache_fpath
         fpath += f"_{hash_str or key}"
         try:

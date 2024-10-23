@@ -1,10 +1,10 @@
-import datetime
 import hashlib
 import os
 import pickle
 import threading
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
+from datetime import datetime
 from typing import Any, Optional, Union
 
 from ._types import Backend, HashFunc, Mongetter
@@ -100,7 +100,8 @@ def set_global_params(**params: Mapping) -> None:
         if hasattr(cachier.config._global_params, k)
     }
     cachier.config._global_params = replace(
-        cachier.config._global_params, **valid_params
+        cachier.config._global_params,
+        **valid_params,  # type: ignore[arg-type]
     )
 
 
