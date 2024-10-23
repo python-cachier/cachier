@@ -8,9 +8,8 @@
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 import os
 import pickle  # for local caching
-from collections.abc import Mapping
 from datetime import datetime
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
 import portalocker  # to lock on pickle cache IO
 from watchdog.events import PatternMatchingEventHandler
