@@ -71,6 +71,12 @@ repos:
         name: Ruff check
         args: ["--fix"]
 
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        files: "src/*"
+
   - repo: https://github.com/tox-dev/pyproject-fmt
     rev: 2.2.4
     hooks:
