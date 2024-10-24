@@ -105,7 +105,7 @@ class _PickleCore(_BaseCore):
 
     def _get_cache(
         self, reload: bool = False
-    ) -> Union[CacheEntry, dict[str, CacheEntry]]:
+    ) -> Union[CacheEntry, Dict[str, CacheEntry]]:
         if self.cache and not (self.reload or reload):
             return self.cache
         with self.lock:
