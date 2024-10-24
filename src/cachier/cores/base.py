@@ -28,7 +28,11 @@ def _get_func_str(func: Callable) -> str:
 class _BaseCore:
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, hash_func: HashFunc, wait_for_calc_timeout: int):
+    def __init__(
+        self,
+        hash_func: Optional[HashFunc],
+        wait_for_calc_timeout: Optional[int],
+    ):
         self.hash_func = _update_with_defaults(hash_func, "hash_func")
         self.wait_for_calc_timeout = wait_for_calc_timeout
         self.lock = threading.RLock()

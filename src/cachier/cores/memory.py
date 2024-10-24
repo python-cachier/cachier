@@ -2,7 +2,7 @@
 
 import threading
 from datetime import datetime
-from typing import Any, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from .._types import HashFunc
 from ..config import CacheEntry
@@ -12,9 +12,13 @@ from .base import _BaseCore, _get_func_str
 class _MemoryCore(_BaseCore):
     """The memory core class for cachier."""
 
-    def __init__(self, hash_func: HashFunc, wait_for_calc_timeout: int):
+    def __init__(
+        self,
+        hash_func: Optional[HashFunc],
+        wait_for_calc_timeout: Optional[int],
+    ):
         super().__init__(hash_func, wait_for_calc_timeout)
-        self.cache = {}
+        self.cache: Dict[str, CacheEntry] = {}
 
     def _hash_func_key(self, key: str) -> str:
         return f"{_get_func_str(self.func)}:{key}"
@@ -79,8 +83,12 @@ class _MemoryCore(_BaseCore):
         hash_key = self._hash_func_key(key)
         with self.lock:  # pragma: no cover
             entry = self.cache[hash_key]
+            if entry is None:
+                return None
             if not entry._processing:
                 return entry.value
+        if entry._condition is None:
+            raise RuntimeError("No condition set for entry")
         entry._condition.acquire()
         entry._condition.wait()
         entry._condition.release()

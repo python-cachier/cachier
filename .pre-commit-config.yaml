@@ -54,11 +54,6 @@ repos:
         # https://prettier.io/docs/en/options.html#print-width
         args: ["--print-width=79"]
 
-  #  - repo: https://github.com/pre-commit/mirrors-mypy
-  #    rev: v1.8.0
-  #    hooks:
-  #      - id: mypy
-
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.6.9
     hooks:
@@ -69,6 +64,13 @@ repos:
       - id: ruff
         name: Ruff check
         args: ["--fix"]
+
+  # it needs to be after formatting hooks because the lines might be changed
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        files: "src/*"
 
   - repo: https://github.com/tox-dev/pyproject-fmt
     rev: 2.2.4

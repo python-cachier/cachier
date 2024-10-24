@@ -7,12 +7,12 @@
 # http://www.opensource.org/licenses/MIT-license
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 
-import datetime
 import inspect
 import os
 import warnings
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
 from functools import wraps
 from typing import Any, Optional, Union
 from warnings import warn
@@ -107,7 +107,7 @@ def cachier(
     hash_params: Optional[HashFunc] = None,
     backend: Optional[Backend] = None,
     mongetter: Optional[Mongetter] = None,
-    stale_after: Optional[datetime.timedelta] = None,
+    stale_after: Optional[timedelta] = None,
     next_time: Optional[bool] = None,
     cache_dir: Optional[Union[str, os.PathLike]] = None,
     pickle_reload: Optional[bool] = None,
@@ -259,7 +259,7 @@ def cachier(
             _print("Entry found.")
             if _allow_none or entry.value is not None:
                 _print("Cached result found.")
-                now = datetime.datetime.now()
+                now = datetime.now()
                 if now - entry.time <= _stale_after:
                     _print("And it is fresh!")
                     return entry.value
