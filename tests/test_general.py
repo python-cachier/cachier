@@ -443,14 +443,14 @@ def test_runtime_handling(tmpdir, backend):
     assert count_p == count_m == 0
 
     for fn, expected in [(fn_plus, 3), (fn_minus, -1)]:
-        assert cachier_(fn)(1, 2) == expected
-        assert cachier_(fn)(a=1, b=2) == expected
+        assert cachier_(fn)(1, 2) == expected, f"for {fn.__name__} inline"
+        assert cachier_(fn)(a=1, b=2) == expected, f"for {fn.__name__} inline"
     assert count_p == 1
     assert count_m == 1
 
     for fn, expected in [(fn_plus, 5), (fn_minus, 1)]:
-        assert cachier_(fn)(3, 2) == expected
-        assert cachier_(fn)(a=3, b=2) == expected
+        assert cachier_(fn)(3, 2) == expected, f"for {fn.__name__} inline"
+        assert cachier_(fn)(a=3, b=2) == expected, f"for {fn.__name__} inline"
     assert count_p == 2
     assert count_m == 2
 
@@ -473,22 +473,24 @@ def test_partial_handling(tmpdir):
 
     for fn, expected in [(fn_plus, 3), (fn_minus, -1)]:
         dummy_ = functools.partial(fn, 1)
-        assert cachier_(dummy_)() == expected
+        assert cachier_(dummy_)() == expected, f"for {fn.__name__} wrapped"
 
         dummy_ = functools.partial(fn, 1)
-        assert cachier_(dummy_)(2) == expected
+        assert cachier_(dummy_)(2) == expected, f"for {fn.__name__} wrapped"
 
         dummy_ = functools.partial(fn, a=1)
-        assert cachier_(dummy_)() == expected
+        assert cachier_(dummy_)() == expected, f"for {fn.__name__} wrapped"
 
         dummy_ = functools.partial(fn, b=2)
-        assert cachier_(dummy_)(1) == expected
+        assert cachier_(dummy_)(1) == expected, f"for {fn.__name__} wrapped"
 
         dummy_ = functools.partial(fn, b=2)
-        assert cachier_(dummy_)(1, b=2) == expected
+        assert (
+            cachier_(dummy_)(1, b=2) == expected
+        ), f"for {fn.__name__} wrapped"
 
-        assert cachier_(fn)(1, 2) == expected
-        assert cachier_(fn)(a=1, b=2) == expected
+        assert cachier_(fn)(1, 2) == expected, f"for {fn.__name__} inline"
+        assert cachier_(fn)(a=1, b=2) == expected, f"for {fn.__name__} inline"
 
     assert count_p == 1
     assert count_m == 1

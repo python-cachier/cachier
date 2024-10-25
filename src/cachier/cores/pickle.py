@@ -83,6 +83,7 @@ class _PickleCore(_BaseCore):
         self.separate_files = _update_with_defaults(
             separate_files, "separate_files"
         )
+        self._cache_loaded_fpath = ""
 
     @property
     def cache_fname(self) -> str:
@@ -114,6 +115,7 @@ class _PickleCore(_BaseCore):
         try:
             with portalocker.Lock(self.cache_fpath, mode="rb") as cf:
                 cache = pickle.load(cf)  # noqa: S301
+            self._cache_loaded_fpath = str(self.cache_fpath)
         except (FileNotFoundError, EOFError):
             cache = {}
         return {
@@ -122,11 +124,14 @@ class _PickleCore(_BaseCore):
         }
 
     def get_cache_dict(self, reload: bool = False) -> Dict[str, CacheEntry]:
+        if self._cache_loaded_fpath != self.cache_fpath:
+            # force reload if the cache file has changed
+            # this change is dies to using different wrapped function
+            reload = True
         if self._cache_dict and not (self.reload or reload):
             return self._cache_dict
         with self.lock:
-            if not self._cache_dict:
-                self._cache_dict = self._load_cache_dict()
+            self._cache_dict = self._load_cache_dict()
         return self._cache_dict
 
     def _load_cache_by_key(
