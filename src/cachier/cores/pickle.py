@@ -9,7 +9,7 @@
 import os
 import pickle  # for local caching
 from datetime import datetime
-from typing import Any, Dict, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import portalocker  # to lock on pickle cache IO
 from watchdog.events import PatternMatchingEventHandler
