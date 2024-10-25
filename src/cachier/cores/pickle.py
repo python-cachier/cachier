@@ -181,11 +181,10 @@ class _PickleCore(_BaseCore):
         with self.lock:
             with portalocker.Lock(fpath, mode="wb") as cf:
                 pickle.dump(cache, cf, protocol=4)
-            if not separate_file_key:
-                self._cache_used_fpath = str(self.cache_fpath)
             # the same as check for separate_file, but changed for typing
             if isinstance(cache, dict):
                 self._cache_dict = cache
+                self._cache_used_fpath = str(self.cache_fpath)
 
     def get_entry_by_key(
         self, key: str, reload: bool = False
