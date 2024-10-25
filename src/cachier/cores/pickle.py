@@ -83,7 +83,7 @@ class _PickleCore(_BaseCore):
         self.separate_files = _update_with_defaults(
             separate_files, "separate_files"
         )
-        self._cache_loaded_fpath = ""
+        self._cache_used_fpath = ""
 
     @property
     def cache_fname(self) -> str:
@@ -115,7 +115,7 @@ class _PickleCore(_BaseCore):
         try:
             with portalocker.Lock(self.cache_fpath, mode="rb") as cf:
                 cache = pickle.load(cf)  # noqa: S301
-            self._cache_loaded_fpath = str(self.cache_fpath)
+            self._cache_used_fpath = str(self.cache_fpath)
         except (FileNotFoundError, EOFError):
             cache = {}
         return {
@@ -124,7 +124,7 @@ class _PickleCore(_BaseCore):
         }
 
     def get_cache_dict(self, reload: bool = False) -> Dict[str, CacheEntry]:
-        if self._cache_loaded_fpath != self.cache_fpath:
+        if self._cache_used_fpath != self.cache_fpath:
             # force reload if the cache file has changed
             # this change is dies to using different wrapped function
             reload = True
@@ -181,6 +181,8 @@ class _PickleCore(_BaseCore):
         with self.lock:
             with portalocker.Lock(fpath, mode="wb") as cf:
                 pickle.dump(cache, cf, protocol=4)
+            if not separate_file_key:
+                self._cache_used_fpath = str(self.cache_fpath)
             # the same as check for separate_file, but changed for typing
             if isinstance(cache, dict):
                 self._cache_dict = cache
