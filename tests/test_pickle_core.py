@@ -352,7 +352,7 @@ def _calls_bad_cache(bad_cache_func, res_queue, trash_cache, separate_files):
         res_queue.put(exc)
 
 
-def _helper_bad_cache_file(sleeptime, separate_files):
+def _helper_bad_cache_file(sleep_time: float, separate_files: bool):
     """Test pickle core handling of bad cache files."""
     _bad_cache_decorated = _get_decorated_func(
         _bad_cache, separate_files=separate_files
@@ -380,7 +380,7 @@ def _helper_bad_cache_file(sleeptime, separate_files):
         daemon=True,
     )
     thread1.start()
-    sleep(sleeptime)
+    sleep(sleep_time)
     thread2.start()
     thread1.join(timeout=2)
     thread2.join(timeout=2)
@@ -395,16 +395,17 @@ def _helper_bad_cache_file(sleeptime, separate_files):
 
 # we want this to succeed at least once
 @pytest.mark.pickle
-@pytest.mark.xfail
 @pytest.mark.parametrize("separate_files", [True, False])
 def test_bad_cache_file(separate_files):
     """Test pickle core handling of bad cache files."""
-    sleeptimes = [0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8, 1, 1.5, 2]
-    sleeptimes = sleeptimes + sleeptimes
-    for sleeptime in sleeptimes:
-        if _helper_bad_cache_file(sleeptime, separate_files):
-            return
-    raise AssertionError()
+    sleep_times = [0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8, 1, 1.5, 2]
+    bad_file = False
+    for sleep_time in sleep_times * 2:
+        if _helper_bad_cache_file(sleep_time, separate_files):
+            bad_file = True
+            break
+    # it is expected that for separate_files=True files will not be bad
+    assert bad_file is not separate_files
 
 
 def _delete_cache(arg_1, arg_2):
@@ -429,7 +430,9 @@ _DEL_CACHE_FPATHS = {
 }
 
 
-def _calls_delete_cache(del_cache_func, res_queue, del_cache, separate_files):
+def _calls_delete_cache(
+    del_cache_func, res_queue, del_cache: bool, separate_files: bool
+):
     try:
         # print('in')
         res = del_cache_func(0.13, 0.02)
@@ -443,7 +446,7 @@ def _calls_delete_cache(del_cache_func, res_queue, del_cache, separate_files):
         res_queue.put(exc)
 
 
-def _helper_delete_cache_file(sleeptime, separate_files):
+def _helper_delete_cache_file(sleep_time: float, separate_files: bool):
     """Test pickle core handling of missing cache files."""
     _delete_cache_decorated = _get_decorated_func(
         _delete_cache, separate_files=separate_files
@@ -471,7 +474,7 @@ def _helper_delete_cache_file(sleeptime, separate_files):
         daemon=True,
     )
     thread1.start()
-    sleep(sleeptime)
+    sleep(sleep_time)
     thread2.start()
     thread1.join(timeout=2)
     thread2.join(timeout=2)
@@ -486,16 +489,17 @@ def _helper_delete_cache_file(sleeptime, separate_files):
 
 
 @pytest.mark.pickle
-@pytest.mark.xfail
 @pytest.mark.parametrize("separate_files", [False, True])
 def test_delete_cache_file(separate_files):
     """Test pickle core handling of missing cache files."""
-    sleeptimes = [0.1, 0.2, 0.3, 0.5, 0.7, 1]
-    sleeptimes = sleeptimes * 4
-    for sleeptime in sleeptimes:
-        if _helper_delete_cache_file(sleeptime, separate_files):
-            return
-    raise AssertionError()
+    sleep_times = [0.1, 0.2, 0.3, 0.5, 0.7, 1]
+    deleted = False
+    for sleep_time in sleep_times * 4:
+        if _helper_delete_cache_file(sleep_time, separate_files):
+            deleted = True
+            break
+    # it is expected that for separate_files=True files will not be deleted
+    assert deleted is not separate_files
 
 
 @pytest.mark.pickle
