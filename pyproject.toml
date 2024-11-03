@@ -158,7 +158,7 @@ markers = [
 
 [tool.coverage.run]
 branch = true
-dynamic_context = "test_function"
+# dynamic_context = "test_function"
 omit = [
   "tests/*",
   "cachier/_version.py",
