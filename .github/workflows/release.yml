@@ -82,7 +82,7 @@ jobs:
           name: cachier_dist
           path: dist
       - name: Publish distribution 📦 to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.10.2
+        uses: pypa/gh-action-pypi-publish@v1.11.0
         with:
           user: __token__
           password: ${{ secrets.pypi_password }}
