@@ -13,7 +13,7 @@ import warnings
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
-from functools import wraps, partial
+from functools import partial, wraps
 from typing import Any, Optional, Union
 from warnings import warn
 
@@ -321,15 +321,17 @@ def cachier(
                 func, _is_method=core.func_is_method, args=args, kwds=kwds
             )
             return core.precache_value((), kwargs, value_to_cache)
-        
+
         def _caller_with_freshness_threshold(max_age: timedelta):
             return wraps(func)(partial(_call, max_age))
-        
+
         func_wrapper.clear_cache = _clear_cache
         func_wrapper.clear_being_calculated = _clear_being_calculated
         func_wrapper.cache_dpath = _cache_dpath
         func_wrapper.precache_value = _precache_value
-        func_wrapper.caller_with_freshness_threshold = _caller_with_freshness_threshold
+        func_wrapper.caller_with_freshness_threshold = (
+            _caller_with_freshness_threshold
+        )
         return func_wrapper
 
     return _cachier_decorator
