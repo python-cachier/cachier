@@ -214,7 +214,7 @@ def cachier(
     def _cachier_decorator(func):
         core.set_func(func)
 
-        def _call(max_age: timedelta | None, *args, **kwds):
+        def _call(max_age: timedelta, *args, **kwds):
             nonlocal allow_none
             _allow_none = _update_with_defaults(allow_none, "allow_none", kwds)
             # print('Inside general wrapper for {}.'.format(func.__name__))
@@ -293,7 +293,7 @@ def cachier(
             _print("No entry found. No current calc. Calling like a boss.")
             return _calc_entry(core, key, func, args, kwds)
 
-        func_wrapper = wraps(func)(partial(_call, None))
+        func_wrapper = wraps(func)(partial(_call, timedelta.max))
 
         def _clear_cache():
             """Clear the cache."""
