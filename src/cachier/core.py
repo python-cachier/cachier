@@ -214,7 +214,7 @@ def cachier(
     def _cachier_decorator(func):
         core.set_func(func)
 
-        def _call(max_age: timedelta, *args, **kwds):
+        def _call(*args, max_age: Optional[timedelta] = None, **kwds):
             nonlocal allow_none
             _allow_none = _update_with_defaults(allow_none, "allow_none", kwds)
             # print('Inside general wrapper for {}.'.format(func.__name__))
@@ -259,7 +259,8 @@ def cachier(
             if _allow_none or entry.value is not None:
                 _print("Cached result found.")
                 now = datetime.now()
-                if now - entry.time <= min(_stale_after, max_age):
+                stale_delta = min(_stale_after, max_age) if max_age is not None else _stale_after
+                if now - entry.time <= stale_delta:
                     _print("And it is fresh!")
                     return entry.value
                 _print("But it is stale... :(")
