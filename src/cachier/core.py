@@ -259,7 +259,11 @@ def cachier(
             if _allow_none or entry.value is not None:
                 _print("Cached result found.")
                 now = datetime.now()
-                stale_delta = min(_stale_after, max_age) if max_age is not None else _stale_after
+                stale_delta = (
+                    min(_stale_after, max_age)
+                    if max_age is not None
+                    else _stale_after
+                )
                 if now - entry.time <= stale_delta:
                     _print("And it is fresh!")
                     return entry.value
