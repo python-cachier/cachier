@@ -23,21 +23,21 @@ repos:
       - id: detect-private-key
 
   - repo: https://github.com/crate-ci/typos
-    rev: dictgen-v0.3.1
+    rev: v1
     hooks:
       - id: typos
         # empty to do not write fixes
         args: []
 
   - repo: https://github.com/PyCQA/docformatter
-    rev: 06907d0267368b49b9180eed423fae5697c1e909 # todo: fix for docformatter after last 1.7.5
+    rev: v1.7.6
     hooks:
       - id: docformatter
         additional_dependencies: [tomli]
         args: ["--in-place"]
 
   - repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.21
+    rev: 0.7.22
     hooks:
       - id: mdformat
         additional_dependencies:
@@ -55,7 +55,7 @@ repos:
         args: ["--print-width=79"]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.6
+    rev: v0.11.4
     hooks:
       # use black formatting
       - id: ruff-format
@@ -67,17 +67,17 @@ repos:
 
   # it needs to be after formatting hooks because the lines might be changed
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.14.1
+    rev: v1.15.0
     hooks:
       - id: mypy
         files: "src/*"
 
   - repo: https://github.com/tox-dev/pyproject-fmt
-    rev: v2.5.0
+    rev: v2.5.1
     hooks:
       - id: pyproject-fmt
         additional_dependencies: [tox]
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.23
+    rev: v0.24.1
     hooks:
       - id: validate-pyproject

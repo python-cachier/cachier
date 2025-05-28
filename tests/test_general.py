@@ -485,9 +485,9 @@ def test_partial_handling(tmpdir):
         assert cachier_(dummy_)(1) == expected, f"for {fn.__name__} wrapped"
 
         dummy_ = functools.partial(fn, b=2)
-        assert (
-            cachier_(dummy_)(1, b=2) == expected
-        ), f"for {fn.__name__} wrapped"
+        assert cachier_(dummy_)(1, b=2) == expected, (
+            f"for {fn.__name__} wrapped"
+        )
 
         assert cachier_(fn)(1, 2) == expected, f"for {fn.__name__} inline"
         assert cachier_(fn)(a=1, b=2) == expected, f"for {fn.__name__} inline"
