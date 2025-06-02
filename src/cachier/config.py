@@ -2,7 +2,6 @@ import hashlib
 import os
 import pickle
 import threading
-from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from typing import Any, Optional, Union
@@ -65,7 +64,7 @@ def _update_with_defaults(
     return param
 
 
-def set_default_params(**params: Mapping) -> None:
+def set_default_params(**params: Any) -> None:
     """Configure default parameters applicable to all memoized functions."""
     # It is kept for backwards compatibility with desperation warning
     import warnings
@@ -79,7 +78,7 @@ def set_default_params(**params: Mapping) -> None:
     set_global_params(**params)
 
 
-def set_global_params(**params: Mapping) -> None:
+def set_global_params(**params: Any) -> None:
     """Configure global parameters applicable to all memoized functions.
 
     This function takes the same keyword parameters as the ones defined in the
