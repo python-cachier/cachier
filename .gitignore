@@ -104,3 +104,5 @@ Pipfile.lock
 
 # annoying mac stuff
 .DS_Store
+
+tags
