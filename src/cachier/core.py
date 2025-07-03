@@ -14,7 +14,7 @@ from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Any, Optional, Union, Callable
+from typing import Any, Callable, Optional, Union
 from warnings import warn
 
 from .config import (
