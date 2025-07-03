@@ -75,7 +75,9 @@ class _MongoCore(_BaseCore):
         )
         if not res:
             return key, None
-        val = pickle.loads(res["value"]) if "value" in res else None  # noqa: S301
+        val = None
+        if "value" in res:
+            val = pickle.loads(res["value"])  # noqa: S301
         entry = CacheEntry(
             value=val,
             time=res.get("time", None),

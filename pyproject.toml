@@ -140,8 +140,9 @@ lint.unfixable = [
 # Unlike Flake8, default to a complexity level of 10.
 lint.mccabe.max-complexity = 10
 
+# --- flake8 ---
 [tool.flake8]
-ignore = [ "C901", "E203", "W503" ]
+ignore = [ "C901", "E203", "W503", "F824" ]
 exclude = [
   ".git",
   ".github",
@@ -177,7 +178,6 @@ exclude-too-few-public-methods = [ ".+" ]
 [tool.pylint.'MESSAGES CONTROL']
 disable = [ "R0911", "R0913", "R0903" ]
 
-# --- flake8 ---
 
 [tool.docformatter]
 recursive = true
