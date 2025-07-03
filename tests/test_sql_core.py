@@ -2,7 +2,7 @@ import os
 import queue
 import sys
 import threading
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 from random import random
 from time import sleep
 
@@ -212,7 +212,9 @@ def test_sqlcore_importerror_without_sqlalchemy(monkeypatch):
 
 @pytest.mark.sql
 def test_sqlcore_invalid_sql_engine():
-    with pytest.raises(ValueError, match="sql_engine must be a SQLAlchemy Engine"):
+    with pytest.raises(
+        ValueError, match="sql_engine must be a SQLAlchemy Engine"
+    ):
         _SQLCore(hash_func=None, sql_engine=12345)
 
 
@@ -222,16 +224,18 @@ def test_sqlcore_get_entry_by_key_none_value():
     core.set_func(lambda x: x)
     # Insert a row with value=None
     with core._Session() as session:
-        session.add(core._SQLCore__class__.CacheTable(
-            id="testfunc:abc",
-            function_id=core._func_str,
-            key="abc",
-            value=None,
-            timestamp=datetime.now(),
-            stale=False,
-            processing=False,
-            completed=True,
-        ))
+        session.add(
+            core._SQLCore__class__.CacheTable(
+                id="testfunc:abc",
+                function_id=core._func_str,
+                key="abc",
+                value=None,
+                timestamp=datetime.now(),
+                stale=False,
+                processing=False,
+                completed=True,
+            )
+        )
         session.commit()
     key, entry = core.get_entry_by_key("abc")
     assert entry is not None
@@ -244,11 +248,14 @@ def test_sqlcore_set_entry_fallback(monkeypatch):
     core.set_func(lambda x: x)
     # Monkeypatch insert to not have on_conflict_do_update
     orig_insert = core._Session().execute
+
     def fake_insert(stmt):
         class FakeInsert:
             def __init__(self):
                 pass
+
         return FakeInsert()
+
     monkeypatch.setattr(core._Session(), "execute", fake_insert)
     # Should not raise
     core.set_entry("fallback", 123)
