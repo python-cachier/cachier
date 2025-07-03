@@ -9,8 +9,8 @@ from time import sleep
 import pytest
 
 from cachier import cachier
-from cachier.cores.sql import _SQLCore
 from cachier.cores.base import RecalculationNeeded
+from cachier.cores.sql import _SQLCore
 
 SQL_CONN_STR = os.environ.get("SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:")
 
@@ -224,8 +224,8 @@ def test_sqlcore_get_entry_by_key_none_value():
     import pytest
 
     pytest.importorskip("sqlalchemy")
-    from cachier.cores.sql import _SQLCore
     import cachier.cores.sql as sql_mod
+    from cachier.cores.sql import _SQLCore
 
     CacheTable = getattr(sql_mod, "CacheTable", None)
     if CacheTable is None:
