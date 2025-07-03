@@ -22,6 +22,7 @@ try:
     )
     from sqlalchemy.engine import Engine
     from sqlalchemy.orm import declarative_base, sessionmaker
+
     SQLALCHEMY_AVAILABLE = True
 except ImportError:
     SQLALCHEMY_AVAILABLE = False
