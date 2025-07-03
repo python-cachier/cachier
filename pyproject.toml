@@ -108,8 +108,8 @@ lint.extend-select = [
 lint.ignore = [
   "C901",
   "E203",
-  "W503",
   "F824",
+  "W503",
 ]
 lint.per-file-ignores."src/**/__init__.py" = [
   "D104",
