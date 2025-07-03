@@ -122,8 +122,7 @@ class _SQLCore(_BaseCore):
             now = datetime.now()
             base_insert = insert(CacheTable)
             stmt = (
-                base_insert
-                .values(
+                base_insert.values(
                     id=f"{self._func_str}:{key}",
                     function_id=self._func_str,
                     key=key,
@@ -132,8 +131,7 @@ class _SQLCore(_BaseCore):
                     stale=False,
                     processing=False,
                     completed=True,
-                )
-                .on_conflict_do_update(
+                ).on_conflict_do_update(
                     index_elements=[CacheTable.function_id, CacheTable.key],
                     set_={
                         "value": thebytes,

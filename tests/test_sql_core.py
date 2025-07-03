@@ -255,15 +255,19 @@ def test_sqlcore_get_entry_by_key_none_value():
 @pytest.mark.sql
 def test_sqlcore_set_entry_fallback(monkeypatch):
     from sqlalchemy.orm import Session
+
     core = _SQLCore(hash_func=None, sql_engine=SQL_CONN_STR)
     core.set_func(lambda x: x)
     # Monkeypatch Session.execute to simulate fallback path
     orig_execute = Session.execute
+
     def fake_execute(self, stmt, *args, **kwargs):
         class FakeInsert:
             def __init__(self):
                 pass
+
         return FakeInsert()
+
     monkeypatch.setattr(Session, "execute", fake_execute)
     # Should not raise
     core.set_entry("fallback", 123)
