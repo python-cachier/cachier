@@ -144,7 +144,8 @@ def cachier(
         object with writing permissions. If unset a local pickle cache is used
         instead.
     sql_engine : str, Engine, or callable, optional
-        SQLAlchemy connection string, Engine, or callable returning an Engine. Used for the SQL backend.
+        SQLAlchemy connection string, Engine, or callable returning an Engine.
+        Used for the SQL backend.
     stale_after : datetime.timedelta, optional
         The time delta after which a cached result is considered stale. Calls
         made after the result goes stale will trigger a recalculation of the

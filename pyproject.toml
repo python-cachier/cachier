@@ -1,3 +1,5 @@
+# === Metadata & Build System ===
+
 [build-system]
 requires = [
   "setuptools",
@@ -43,11 +45,12 @@ dynamic = [
 ]
 dependencies = [
   "portalocker>=2.3.2",
-  "sqlalchemy>=2",
   "watchdog>=2.3.1",
 ]
 urls.Source = "https://github.com/python-cachier/cachier"
 scripts.cachier = "cachier.__main__:cli"
+
+# --- setuptools ---
 
 [tool.setuptools]
 include-package-data = true
@@ -64,6 +67,13 @@ include = [
 ] # package names should match these glob patterns (["*"] by default)
 namespaces = false # to disable scanning PEP 420 namespaces (true by default)
 
+
+# === Linting & Formatting ===
+
+[tool.black]
+line-length = 79
+
+# --- ruff ---
 [tool.ruff]
 target-version = "py38"
 line-length = 79
@@ -128,6 +138,44 @@ lint.unfixable = [
 # Unlike Flake8, default to a complexity level of 10.
 lint.mccabe.max-complexity = 10
 
+# --- pylint ---
+[tool.pylint.'MAIN']
+ignore = ["CVS"]
+load-plugins = ["pylint.extensions.docparams"]
+
+[tool.pylint.'FORMAT']
+good-names = ["x", "y", "X", "inter_X", "inter_y", "post_X", "post_y"]
+
+[tool.pylint.'DESIGN']
+exclude-too-few-public-methods = [".+"]
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = ["R0911", "R0913", "R0903"]
+
+# --- flake8 ---
+[tool.flake8]
+ignore = ["C901", "E203", "W503"]
+exclude = [
+  ".git",
+  ".github",
+  ".pytest_cache",
+  ".venv",
+  ".vim",
+  ".eggs",
+  "__pycache__",
+  "docs",
+  "apidoc",
+  "notebooks",
+  "build",
+  "dist",
+  "versioneer.py",
+  "pdpipe/_version.py",
+  "*/_version.py",
+]
+max-complexity = 10
+max-line-length = 100
+
+# --- docformatter ---
 [tool.docformatter]
 recursive = true
 # some docstring start with r"""
@@ -135,6 +183,10 @@ wrap-summaries = 79
 wrap-descriptions = 79
 blank = true
 
+
+# === Testing ===
+
+# --- pytest ---
 [tool.pytest.ini_options]
 testpaths = [
   "cachier",
@@ -158,6 +210,7 @@ markers = [
   "sql: test the SQL core",
 ]
 
+# --- coverage ---
 [tool.coverage.run]
 branch = true
 # dynamic_context = "test_function"

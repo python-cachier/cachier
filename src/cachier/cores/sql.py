@@ -20,8 +20,7 @@ from sqlalchemy import (
     update,
 )
 from sqlalchemy.engine import Engine
-from sqlalchemy.exc import OperationalError
-from sqlalchemy.orm import Session, declarative_base, sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 from .._types import HashFunc
 from ..config import CacheEntry
@@ -71,7 +70,8 @@ class _SQLCore(_BaseCore):
         if callable(sql_engine):
             return sql_engine()
         raise ValueError(
-            "sql_engine must be a SQLAlchemy Engine, connection string, or callable returning an Engine."
+            "sql_engine must be a SQLAlchemy Engine, connection string, "
+            "or callable returning an Engine."
         )
 
     def set_func(self, func):
@@ -265,7 +265,7 @@ class _SQLCore(_BaseCore):
                 .where(
                     and_(
                         CacheTable.function_id == self._func_str,
-                        CacheTable.processing == True,
+                        CacheTable.processing,
                     )
                 )
                 .values(processing=False)
