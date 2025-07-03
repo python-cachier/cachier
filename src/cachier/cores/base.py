@@ -1,4 +1,5 @@
 """Defines the interface of a cachier caching core."""
+
 # This file is part of Cachier.
 # https://github.com/python-cachier/cachier
 

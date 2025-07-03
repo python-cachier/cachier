@@ -1,4 +1,4 @@
-from ._version import *  # noqa: F403
+from ._version import __version__
 from .config import (
     disable_caching,
     enable_caching,
@@ -17,4 +17,5 @@ __all__ = [
     "get_global_params",
     "enable_caching",
     "disable_caching",
+    "__version__",
 ]
