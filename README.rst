@@ -345,12 +345,11 @@ Note, however, that ``cachier``'s in-memory core is simple, and has no monitorin
 SQLAlchemy (SQL) Core
 ---------------------
 
-.. note::
-   The SQL core requires SQLAlchemy to be installed. It is not installed by default with cachier. To use the SQL backend, run::
+**Note:** The SQL core requires SQLAlchemy to be installed. It is not installed by default with cachier. To use the SQL backend, run::
 
-      pip install SQLAlchemy
+    pip install SQLAlchemy
 
-Cachier now supports a generic SQL backend via SQLAlchemy, allowing you to use SQLite, PostgreSQL, MySQL, and other databases.
+Cachier supports a generic SQL backend via SQLAlchemy, allowing you to use SQLite, PostgreSQL, MySQL, and other databases.
 
 **Usage Example (SQLite in-memory):**
 
