@@ -10,6 +10,7 @@ import pytest
 
 from cachier import cachier
 from cachier.cores.sql import _SQLCore
+from cachier.cores.base import RecalculationNeeded
 
 SQL_CONN_STR = os.environ.get("SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:")
 
