@@ -132,7 +132,6 @@ lint.unfixable = [
 ]
 
 # --- flake8 ---
-# --- pylint ---
 #[tool.ruff.pydocstyle]
 ## Use Google-style docstrings.
 #convention = "google"
@@ -162,8 +161,6 @@ exclude = [
 ]
 max-complexity = 10
 max-line-length = 100
-
-# --- docformatter ---
 
 [tool.pylint.'MAIN']
 ignore = [ "CVS" ]
