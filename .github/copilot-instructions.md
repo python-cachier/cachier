@@ -9,4 +9,4 @@
 - When reviewing code, ensure new features or bugfixes maintain compatibility with Python 3.9+, preserve thread safety, and follow the numpy docstring conventions for documentation.
 - Tests are located in the `tests/` directory and should be run with `pytest`. MongoDB-related tests require either a mocked or live MongoDB instance.
 - When discussing or generating code, prefer concise, readable, and well-documented Python code, and follow the established conventions in the codebase and README.
-- For documentation, follow numpy docstring conventions and validate changes to `README.rst` with `python setup.py checkdocs`. 
+- For documentation, follow numpy docstring conventions and validate changes to `README.rst` with `python setup.py checkdocs`.
