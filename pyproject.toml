@@ -115,6 +115,7 @@ lint.per-file-ignores."src/**/__init__.py" = [
 lint.per-file-ignores."src/cachier/config.py" = [
   "D100",
 ]
+lint.per-file-ignores."src/cachier/cores/sql.py" = [ "S301" ]
 lint.per-file-ignores."tests/**" = [
   "D100",
   "D101",
@@ -126,7 +127,6 @@ lint.per-file-ignores."tests/**" = [
   "S311",
   "S603",
 ]
-lint.per-file-ignores."src/cachier/cores/sql.py" = ["S301"]
 lint.unfixable = [
   "F401",
 ]
