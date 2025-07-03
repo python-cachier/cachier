@@ -44,6 +44,7 @@ dynamic = [
 dependencies = [
   "portalocker>=2.3.2",
   "watchdog>=2.3.1",
+  "SQLAlchemy>=2.0.0",
 ]
 urls.Source = "https://github.com/python-cachier/cachier"
 scripts.cachier = "cachier.__main__:cli"
@@ -154,6 +155,7 @@ markers = [
   "mongo: test the MongoDB core",
   "memory: test the memory core",
   "pickle: test the pickle core",
+  "sql: test the SQL core",
 ]
 
 [tool.coverage.run]

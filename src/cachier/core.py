@@ -14,7 +14,7 @@ from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, Callable
 from warnings import warn
 
 from .config import (
@@ -27,6 +27,7 @@ from .cores.base import RecalculationNeeded, _BaseCore
 from .cores.memory import _MemoryCore
 from .cores.mongo import _MongoCore
 from .cores.pickle import _PickleCore
+from .cores.sql import _SQLCore
 
 MAX_WORKERS_ENVAR_NAME = "CACHIER_MAX_WORKERS"
 DEFAULT_MAX_WORKERS = 8
@@ -107,6 +108,7 @@ def cachier(
     hash_params: Optional[HashFunc] = None,
     backend: Optional[Backend] = None,
     mongetter: Optional[Mongetter] = None,
+    sql_engine: Optional[Union[str, Any, Callable[[], Any]]] = None,
     stale_after: Optional[timedelta] = None,
     next_time: Optional[bool] = None,
     cache_dir: Optional[Union[str, os.PathLike]] = None,
@@ -134,13 +136,15 @@ def cachier(
     hash_params : callable, optional
     backend : str, optional
         The name of the backend to use. Valid options currently include
-        'pickle', 'mongo' and 'memory'. If not provided, defaults to
+        'pickle', 'mongo', 'memory', and 'sql'. If not provided, defaults to
         'pickle' unless the 'mongetter' argument is passed, in which
         case the mongo backend is automatically selected.
     mongetter : callable, optional
         A callable that takes no arguments and returns a pymongo.Collection
         object with writing permissions. If unset a local pickle cache is used
         instead.
+    sql_engine : str, Engine, or callable, optional
+        SQLAlchemy connection string, Engine, or callable returning an Engine. Used for the SQL backend.
     stale_after : datetime.timedelta, optional
         The time delta after which a cached result is considered stale. Calls
         made after the result goes stale will trigger a recalculation of the
@@ -207,6 +211,12 @@ def cachier(
     elif backend == "memory":
         core = _MemoryCore(
             hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout
+        )
+    elif backend == "sql":
+        core = _SQLCore(
+            hash_func=hash_func,
+            sql_engine=sql_engine,
+            wait_for_calc_timeout=wait_for_calc_timeout,
         )
     else:
         raise ValueError("specified an invalid core: %s" % backend)

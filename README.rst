@@ -342,6 +342,60 @@ You can set an in-memory cache by assigning the ``backend`` parameter with ``'me
 
 Note, however, that ``cachier``'s in-memory core is simple, and has no monitoring or cap on cache size, and can thus lead to memory errors on large return values - it is mainly intended to be used with future multi-core functionality. As a rule, Python's built-in ``lru_cache`` is a much better stand-alone solution.
 
+SQLAlchemy (SQL) Core
+---------------------
+
+Cachier now supports a generic SQL backend via SQLAlchemy, allowing you to use SQLite, PostgreSQL, MySQL, and other databases.
+
+**Usage Example (SQLite in-memory):**
+
+.. code-block:: python
+
+    from cachier import cachier
+
+    @cachier(backend="sql", sql_engine="sqlite:///:memory:")
+    def my_func(x):
+        return x * 2
+
+**Usage Example (PostgreSQL):**
+
+.. code-block:: python
+
+    @cachier(backend="sql", sql_engine="postgresql://user:pass@localhost/dbname")
+    def my_func(x):
+        return x * 2
+
+**Usage Example (MySQL):**
+
+.. code-block:: python
+
+    @cachier(backend="sql", sql_engine="mysql+pymysql://user:pass@localhost/dbname")
+    def my_func(x):
+        return x * 2
+
+**Configuration Options:**
+
+- ``sql_engine``: SQLAlchemy connection string, Engine, or callable returning an Engine.
+- All other standard cachier options are supported.
+
+**Table Schema:**
+
+- ``function_id``: Unique identifier for the cached function
+- ``key``: Cache key
+- ``value``: Pickled result
+- ``timestamp``: Datetime of cache entry
+- ``stale``: Boolean, is value stale
+- ``processing``: Boolean, is value being calculated
+- ``completed``: Boolean, is value calculation completed
+
+**Limitations & Notes:**
+
+- Requires SQLAlchemy (install with ``pip install SQLAlchemy``)
+- For production, use a persistent database (not ``:memory:``)
+- Thread/process safety is handled via transactions and row-level locks
+- Value serialization uses ``pickle``
+- For best performance, ensure your DB supports row-level locking
+
 
 Contributing
 ============
