@@ -1,10 +1,10 @@
+import os
 import queue
+import sys
 import threading
 from datetime import timedelta
 from random import random
 from time import sleep
-import sys
-import os
 
 import pytest
 
@@ -167,7 +167,9 @@ def test_sql_failed_write(monkeypatch):
 def test_import_cachier_without_sqlalchemy(monkeypatch):
     """Test that importing cachier works when SQLAlchemy is missing.
 
-    This should work unless SQL core is used."""
+    This should work unless SQL core is used.
+
+    """
     # Simulate SQLAlchemy not installed
     modules_backup = sys.modules.copy()
     sys.modules["sqlalchemy"] = None
@@ -175,6 +177,7 @@ def test_import_cachier_without_sqlalchemy(monkeypatch):
     sys.modules["sqlalchemy.engine"] = None
     try:
         import importlib  # noqa: F401
+
         import cachier  # noqa: F401
 
         # Should import fine

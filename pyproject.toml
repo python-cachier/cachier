@@ -48,9 +48,9 @@ dependencies = [
   "watchdog>=2.3.1",
 ]
 urls.Source = "https://github.com/python-cachier/cachier"
-scripts.cachier = "cachier.__main__:cli"
-
 # --- setuptools ---
+
+scripts.cachier = "cachier.__main__:cli"
 
 [tool.setuptools]
 include-package-data = true
@@ -67,13 +67,13 @@ include = [
 ] # package names should match these glob patterns (["*"] by default)
 namespaces = false # to disable scanning PEP 420 namespaces (true by default)
 
-
 # === Linting & Formatting ===
 
 [tool.black]
 line-length = 79
 
 # --- ruff ---
+
 [tool.ruff]
 target-version = "py38"
 line-length = 79
@@ -130,6 +130,7 @@ lint.unfixable = [
   "F401",
 ]
 
+# --- pylint ---
 #[tool.ruff.pydocstyle]
 ## Use Google-style docstrings.
 #convention = "google"
@@ -138,23 +139,8 @@ lint.unfixable = [
 # Unlike Flake8, default to a complexity level of 10.
 lint.mccabe.max-complexity = 10
 
-# --- pylint ---
-[tool.pylint.'MAIN']
-ignore = ["CVS"]
-load-plugins = ["pylint.extensions.docparams"]
-
-[tool.pylint.'FORMAT']
-good-names = ["x", "y", "X", "inter_X", "inter_y", "post_X", "post_y"]
-
-[tool.pylint.'DESIGN']
-exclude-too-few-public-methods = [".+"]
-
-[tool.pylint.'MESSAGES CONTROL']
-disable = ["R0911", "R0913", "R0903"]
-
-# --- flake8 ---
 [tool.flake8]
-ignore = ["C901", "E203", "W503"]
+ignore = [ "C901", "E203", "W503" ]
 exclude = [
   ".git",
   ".github",
@@ -176,6 +162,22 @@ max-complexity = 10
 max-line-length = 100
 
 # --- docformatter ---
+
+[tool.pylint.'MAIN']
+ignore = [ "CVS" ]
+load-plugins = [ "pylint.extensions.docparams" ]
+
+[tool.pylint.'FORMAT']
+good-names = [ "x", "y", "X", "inter_X", "inter_y", "post_X", "post_y" ]
+
+[tool.pylint.'DESIGN']
+exclude-too-few-public-methods = [ ".+" ]
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = [ "R0911", "R0913", "R0903" ]
+
+# --- flake8 ---
+
 [tool.docformatter]
 recursive = true
 # some docstring start with r"""
@@ -183,10 +185,10 @@ wrap-summaries = 79
 wrap-descriptions = 79
 blank = true
 
-
 # === Testing ===
 
 # --- pytest ---
+
 [tool.pytest.ini_options]
 testpaths = [
   "cachier",
@@ -211,6 +213,7 @@ markers = [
 ]
 
 # --- coverage ---
+
 [tool.coverage.run]
 branch = true
 # dynamic_context = "test_function"
