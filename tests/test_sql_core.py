@@ -2,7 +2,7 @@ import os
 import queue
 import sys
 import threading
-from datetime import timedelta
+from datetime import timedelta, datetime
 from random import random
 from time import sleep
 
@@ -208,3 +208,64 @@ def test_sqlcore_importerror_without_sqlalchemy(monkeypatch):
     finally:
         sys.modules.clear()
         sys.modules.update(modules_backup)
+
+
+@pytest.mark.sql
+def test_sqlcore_invalid_sql_engine():
+    with pytest.raises(ValueError, match="sql_engine must be a SQLAlchemy Engine"):
+        _SQLCore(hash_func=None, sql_engine=12345)
+
+
+@pytest.mark.sql
+def test_sqlcore_get_entry_by_key_none_value():
+    core = _SQLCore(hash_func=None, sql_engine=SQL_CONN_STR)
+    core.set_func(lambda x: x)
+    # Insert a row with value=None
+    with core._Session() as session:
+        session.add(core._SQLCore__class__.CacheTable(
+            id="testfunc:abc",
+            function_id=core._func_str,
+            key="abc",
+            value=None,
+            timestamp=datetime.now(),
+            stale=False,
+            processing=False,
+            completed=True,
+        ))
+        session.commit()
+    key, entry = core.get_entry_by_key("abc")
+    assert entry is not None
+    assert entry.value is None
+
+
+@pytest.mark.sql
+def test_sqlcore_set_entry_fallback(monkeypatch):
+    core = _SQLCore(hash_func=None, sql_engine=SQL_CONN_STR)
+    core.set_func(lambda x: x)
+    # Monkeypatch insert to not have on_conflict_do_update
+    orig_insert = core._Session().execute
+    def fake_insert(stmt):
+        class FakeInsert:
+            def __init__(self):
+                pass
+        return FakeInsert()
+    monkeypatch.setattr(core._Session(), "execute", fake_insert)
+    # Should not raise
+    core.set_entry("fallback", 123)
+    monkeypatch.setattr(core._Session(), "execute", orig_insert)
+
+
+@pytest.mark.sql
+def test_sqlcore_wait_on_entry_calc_recalculation():
+    core = _SQLCore(hash_func=None, sql_engine=SQL_CONN_STR)
+    core.set_func(lambda x: x)
+    with pytest.raises(RecalculationNeeded):
+        core.wait_on_entry_calc("missing_key")
+
+
+@pytest.mark.sql
+def test_sqlcore_clear_being_calculated_empty():
+    core = _SQLCore(hash_func=None, sql_engine=SQL_CONN_STR)
+    core.set_func(lambda x: x)
+    # Should not raise even if nothing is being calculated
+    core.clear_being_calculated()
