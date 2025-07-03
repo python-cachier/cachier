@@ -9,8 +9,8 @@ from time import sleep
 import pytest
 
 from cachier import cachier
-from cachier.cores.sql import _SQLCore
 from cachier.cores.base import RecalculationNeeded
+from cachier.cores.sql import _SQLCore
 
 SQL_CONN_STR = os.environ.get("SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:")
 
