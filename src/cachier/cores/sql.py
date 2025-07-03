@@ -5,41 +5,55 @@ import threading
 from datetime import datetime
 from typing import Any, Callable, Optional, Tuple, Union
 
-from sqlalchemy import (
-    Boolean,
-    Column,
-    DateTime,
-    Index,
-    LargeBinary,
-    String,
-    and_,
-    create_engine,
-    delete,
-    insert,
-    select,
-    update,
-)
-from sqlalchemy.engine import Engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+try:
+    from sqlalchemy import (
+        Boolean,
+        Column,
+        DateTime,
+        Index,
+        LargeBinary,
+        String,
+        and_,
+        create_engine,
+        delete,
+        insert,
+        select,
+        update,
+    )
+    from sqlalchemy.engine import Engine
+    from sqlalchemy.orm import declarative_base, sessionmaker
+
+    SQLALCHEMY_AVAILABLE = True
+except ImportError:
+    SQLALCHEMY_AVAILABLE = False
+    import warnings
+
+    warnings.warn(
+        "`SQLAlchemy` was not found. SQL cores will not function.",
+        ImportWarning,
+        stacklevel=2,
+    )
 
 from .._types import HashFunc
 from ..config import CacheEntry
 from .base import RecalculationNeeded, _BaseCore, _get_func_str
 
-Base = declarative_base()
+if SQLALCHEMY_AVAILABLE:
+    Base = declarative_base()
 
-
-class CacheTable(Base):
-    __tablename__ = "cachier_cache"
-    id = Column(String, primary_key=True)
-    function_id = Column(String, index=True, nullable=False)
-    key = Column(String, index=True, nullable=False)
-    value = Column(LargeBinary, nullable=True)
-    timestamp = Column(DateTime, nullable=False)
-    stale = Column(Boolean, default=False)
-    processing = Column(Boolean, default=False)
-    completed = Column(Boolean, default=False)
-    __table_args__ = (Index("ix_func_key", "function_id", "key", unique=True),)
+    class CacheTable(Base):
+        __tablename__ = "cachier_cache"
+        id = Column(String, primary_key=True)
+        function_id = Column(String, index=True, nullable=False)
+        key = Column(String, index=True, nullable=False)
+        value = Column(LargeBinary, nullable=True)
+        timestamp = Column(DateTime, nullable=False)
+        stale = Column(Boolean, default=False)
+        processing = Column(Boolean, default=False)
+        completed = Column(Boolean, default=False)
+        __table_args__ = (
+            Index("ix_func_key", "function_id", "key", unique=True),
+        )
 
 
 class _SQLCore(_BaseCore):
@@ -50,9 +64,14 @@ class _SQLCore(_BaseCore):
     def __init__(
         self,
         hash_func: Optional[HashFunc],
-        sql_engine: Optional[Union[str, Engine, Callable[[], Engine]]],
+        sql_engine: Optional[Union[str, "Engine", Callable[[], "Engine"]]],
         wait_for_calc_timeout: Optional[int] = None,
     ):
+        if not SQLALCHEMY_AVAILABLE:
+            raise ImportError(
+                "SQLAlchemy is required for the SQL core. "
+                "Install with `pip install SQLAlchemy`."
+            )
         super().__init__(
             hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout
         )

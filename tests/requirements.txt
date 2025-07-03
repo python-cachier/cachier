@@ -14,3 +14,4 @@ pandas
 collective.checkdocs
 pygments
 SQLAlchemy
+psycopg2-binary

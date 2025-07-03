@@ -22,7 +22,7 @@ jobs:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
         os: ["ubuntu-latest", "macOS-latest", "windows-latest"]
-        backend: ["local", "mongodb"]
+        backend: ["local", "mongodb", "postgres"]
         exclude:
           # ToDo: take if back when the connection become stable
           #  or resolve using `InMemoryMongoClient`
@@ -80,6 +80,25 @@ jobs:
         run: pytest -m "mongo" --cov=cachier --cov-report=term --cov-report=xml:cov.xml
       - name: Speed eval
         run: python tests/speed_eval.py
+
+      - name: Start PostgreSQL in docker
+        if: matrix.backend == 'postgres'
+        run: |
+          docker run -d \
+            -e POSTGRES_USER=testuser \
+            -e POSTGRES_PASSWORD=testpass \
+            -e POSTGRES_DB=testdb \
+            -p 5432:5432 \
+            --name postgres postgres:15
+          # wait for PostgreSQL to start
+          sleep 10
+          docker ps -a
+
+      - name: Unit tests (SQL/Postgres)
+        if: matrix.backend == 'postgres'
+        env:
+          SQLALCHEMY_DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
+        run: pytest -m sql --cov=cachier --cov-report=term --cov-report=xml:cov.xml
 
       - name: Upload coverage to Codecov
         continue-on-error: true

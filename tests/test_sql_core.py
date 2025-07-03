@@ -3,18 +3,20 @@ import threading
 from datetime import timedelta
 from random import random
 from time import sleep
+import sys
+import os
 
 import pytest
 
 from cachier import cachier
 from cachier.cores.sql import _SQLCore
 
-SQLITE_MEMORY = "sqlite:///:memory:"
+SQL_CONN_STR = os.environ.get("SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:")
 
 
 @pytest.mark.sql
 def test_sql_core_basic():
-    @cachier(backend="sql", sql_engine=SQLITE_MEMORY)
+    @cachier(backend="sql", sql_engine=SQL_CONN_STR)
     def f(x, y):
         return random() + x + y
 
@@ -34,7 +36,7 @@ def test_sql_core_basic():
 
 @pytest.mark.sql
 def test_sql_core_keywords():
-    @cachier(backend="sql", sql_engine=SQLITE_MEMORY)
+    @cachier(backend="sql", sql_engine=SQL_CONN_STR)
     def f(x, y):
         return random() + x + y
 
@@ -56,7 +58,7 @@ def test_sql_core_keywords():
 def test_sql_stale_after():
     @cachier(
         backend="sql",
-        sql_engine=SQLITE_MEMORY,
+        sql_engine=SQL_CONN_STR,
         stale_after=timedelta(seconds=2),
         next_time=False,
     )
@@ -74,7 +76,7 @@ def test_sql_stale_after():
 
 @pytest.mark.sql
 def test_sql_overwrite_and_skip_cache():
-    @cachier(backend="sql", sql_engine=SQLITE_MEMORY)
+    @cachier(backend="sql", sql_engine=SQL_CONN_STR)
     def f(x):
         return random() + x
 
@@ -92,7 +94,7 @@ def test_sql_overwrite_and_skip_cache():
 
 @pytest.mark.sql
 def test_sql_concurrency():
-    @cachier(backend="sql", sql_engine=SQLITE_MEMORY)
+    @cachier(backend="sql", sql_engine=SQL_CONN_STR)
     def slow_func(x):
         sleep(1)
         return random() + x
@@ -119,7 +121,7 @@ def test_sql_concurrency():
 
 @pytest.mark.sql
 def test_sql_clear_being_calculated():
-    @cachier(backend="sql", sql_engine=SQLITE_MEMORY)
+    @cachier(backend="sql", sql_engine=SQL_CONN_STR)
     def slow_func(x):
         sleep(1)
         return random() + x
@@ -133,7 +135,7 @@ def test_sql_clear_being_calculated():
 
 @pytest.mark.sql
 def test_sql_missing_entry():
-    @cachier(backend="sql", sql_engine=SQLITE_MEMORY)
+    @cachier(backend="sql", sql_engine=SQL_CONN_STR)
     def f(x):
         return x
 
@@ -144,7 +146,7 @@ def test_sql_missing_entry():
 
 @pytest.mark.sql
 def test_sql_failed_write(monkeypatch):
-    @cachier(backend="sql", sql_engine=SQLITE_MEMORY)
+    @cachier(backend="sql", sql_engine=SQL_CONN_STR)
     def f(x):
         return x
 
@@ -159,3 +161,43 @@ def test_sql_failed_write(monkeypatch):
     with pytest.raises(Exception):
         f(1)
     monkeypatch.setattr(_SQLCore, "set_entry", orig)
+
+
+@pytest.mark.sql
+def test_import_cachier_without_sqlalchemy(monkeypatch):
+    """Test that importing cachier works when SQLAlchemy is missing.
+
+    This should work unless SQL core is used."""
+    # Simulate SQLAlchemy not installed
+    modules_backup = sys.modules.copy()
+    sys.modules["sqlalchemy"] = None
+    sys.modules["sqlalchemy.orm"] = None
+    sys.modules["sqlalchemy.engine"] = None
+    try:
+        import importlib  # noqa: F401
+        import cachier  # noqa: F401
+
+        # Should import fine
+    finally:
+        sys.modules.clear()
+        sys.modules.update(modules_backup)
+
+
+@pytest.mark.sql
+def test_sqlcore_importerror_without_sqlalchemy(monkeypatch):
+    """Test that using SQL core without SQLAlchemy raises an ImportError."""
+    # Simulate SQLAlchemy not installed
+    modules_backup = sys.modules.copy()
+    sys.modules["sqlalchemy"] = None
+    sys.modules["sqlalchemy.orm"] = None
+    sys.modules["sqlalchemy.engine"] = None
+    try:
+        import importlib
+
+        sql_mod = importlib.import_module("cachier.cores.sql")
+        with pytest.raises(ImportError) as excinfo:
+            sql_mod._SQLCore(hash_func=None, sql_engine="sqlite:///:memory:")
+        assert "SQLAlchemy is required" in str(excinfo.value)
+    finally:
+        sys.modules.clear()
+        sys.modules.update(modules_backup)
