@@ -22,17 +22,9 @@ try:
     )
     from sqlalchemy.engine import Engine
     from sqlalchemy.orm import declarative_base, sessionmaker
-
     SQLALCHEMY_AVAILABLE = True
 except ImportError:
     SQLALCHEMY_AVAILABLE = False
-    import warnings
-
-    warnings.warn(
-        "`SQLAlchemy` was not found. SQL cores will not function.",
-        ImportWarning,
-        stacklevel=2,
-    )
 
 from .._types import HashFunc
 from ..config import CacheEntry
