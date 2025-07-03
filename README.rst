@@ -397,7 +397,7 @@ Cachier supports a generic SQL backend via SQLAlchemy, allowing you to use SQLit
 - Requires SQLAlchemy (install with ``pip install SQLAlchemy``)
 - For production, use a persistent database (not ``:memory:``)
 - Thread/process safety is handled via transactions and row-level locks
-- Value serialization uses ``pickle``
+- Value serialization uses ``pickle``. **Warning:** `pickle` can execute arbitrary code during deserialization if the cache database is compromised. Ensure the cache is stored securely and consider using safer serialization methods like `json` if security is a concern.
 - For best performance, ensure your DB supports row-level locking
 
 
