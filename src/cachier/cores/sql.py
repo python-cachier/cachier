@@ -120,8 +120,9 @@ class _SQLCore(_BaseCore):
         with self._lock, self._Session() as session:
             thebytes = pickle.dumps(func_res)
             now = datetime.now()
+            base_insert = insert(CacheTable)
             stmt = (
-                insert(CacheTable)
+                base_insert
                 .values(
                     id=f"{self._func_str}:{key}",
                     function_id=self._func_str,
@@ -142,7 +143,7 @@ class _SQLCore(_BaseCore):
                         "completed": True,
                     },
                 )
-                if hasattr(insert(CacheTable), "on_conflict_do_update")
+                if hasattr(base_insert, "on_conflict_do_update")
                 else None
             )
             # Fallback for non-SQLite/Postgres: try update, else insert
