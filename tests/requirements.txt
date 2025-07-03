@@ -13,5 +13,3 @@ pandas
 # to be able to run `python setup.py checkdocs`
 collective.checkdocs
 pygments
-SQLAlchemy
-psycopg2-binary
