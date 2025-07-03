@@ -9,8 +9,8 @@ from time import sleep
 import pytest
 
 from cachier import cachier
+from cachier.cores.sql import _SQLCore, CacheTable
 from cachier.cores.base import RecalculationNeeded
-from cachier.cores.sql import _SQLCore
 
 SQL_CONN_STR = os.environ.get("SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:")
 
@@ -226,7 +226,7 @@ def test_sqlcore_get_entry_by_key_none_value():
     # Insert a row with value=None
     with core._Session() as session:
         session.add(
-            core._SQLCore__class__.CacheTable(
+            CacheTable(
                 id="testfunc:abc",
                 function_id=core._func_str,
                 key="abc",
