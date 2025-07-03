@@ -27,6 +27,8 @@ jobs:
           # ToDo: take if back when the connection become stable
           #  or resolve using `InMemoryMongoClient`
           - { os: "macOS-latest", backend: "mongodb" }
+          - { os: "macOS-latest", backend: "postgres" }
+          - { os: "windows-latest", backend: "postgres" }
     env:
       CACHIER_TEST_HOST: "localhost"
       CACHIER_TEST_PORT: "27017"

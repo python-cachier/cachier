@@ -186,7 +186,7 @@ def test_import_cachier_without_sqlalchemy(monkeypatch):
         sys.modules.update(modules_backup)
 
 
-@pytest.mark.sql
+@pytest.mark.local
 def test_sqlcore_importerror_without_sqlalchemy(monkeypatch):
     """Test that using SQL core without SQLAlchemy raises an ImportError."""
     # Simulate SQLAlchemy not installed
@@ -196,7 +196,6 @@ def test_sqlcore_importerror_without_sqlalchemy(monkeypatch):
     sys.modules["sqlalchemy.engine"] = None
     try:
         import importlib
-
         sql_mod = importlib.import_module("cachier.cores.sql")
         with pytest.raises(ImportError) as excinfo:
             sql_mod._SQLCore(hash_func=None, sql_engine="sqlite:///:memory:")
