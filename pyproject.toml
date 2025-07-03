@@ -126,6 +126,7 @@ lint.per-file-ignores."tests/**" = [
   "S311",
   "S603",
 ]
+lint.per-file-ignores."src/cachier/cores/sql.py" = ["S301"]
 lint.unfixable = [
   "F401",
 ]

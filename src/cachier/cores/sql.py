@@ -42,6 +42,8 @@ if SQLALCHEMY_AVAILABLE:
     Base = declarative_base()
 
     class CacheTable(Base):
+        """SQLAlchemy model for cachier cache entries."""
+
         __tablename__ = "cachier_cache"
         id = Column(String, primary_key=True)
         function_id = Column(String, index=True, nullable=False)
@@ -57,8 +59,10 @@ if SQLALCHEMY_AVAILABLE:
 
 
 class _SQLCore(_BaseCore):
-    """SQLAlchemy-based core for Cachier, supporting SQLite, PostgreSQL, MySQL,
-    etc.
+    """SQLAlchemy-based core for Cachier, supporting SQL-based backends.
+
+    This should work with SQLite, PostgreSQL and so on.
+
     """
 
     def __init__(

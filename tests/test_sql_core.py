@@ -144,6 +144,10 @@ def test_sql_missing_entry():
     assert f(123) == 123
 
 
+class DummyWriteError(Exception):
+    pass
+
+
 @pytest.mark.sql
 def test_sql_failed_write(monkeypatch):
     @cachier(backend="sql", sql_engine=SQL_CONN_STR)
@@ -155,10 +159,10 @@ def test_sql_failed_write(monkeypatch):
     orig = _SQLCore.set_entry
 
     def fail_set_entry(self, key, func_res):
-        raise Exception("fail")
+        raise DummyWriteError("fail")
 
     monkeypatch.setattr(_SQLCore, "set_entry", fail_set_entry)
-    with pytest.raises(Exception):
+    with pytest.raises(DummyWriteError, match="fail"):
         f(1)
     monkeypatch.setattr(_SQLCore, "set_entry", orig)
 
