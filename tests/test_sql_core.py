@@ -196,6 +196,7 @@ def test_sqlcore_importerror_without_sqlalchemy(monkeypatch):
     sys.modules["sqlalchemy.engine"] = None
     try:
         import importlib
+
         sql_mod = importlib.import_module("cachier.cores.sql")
         with pytest.raises(ImportError) as excinfo:
             sql_mod._SQLCore(hash_func=None, sql_engine="sqlite:///:memory:")
