@@ -52,7 +52,7 @@ jobs:
 
       - name: Unit tests (local)
         if: matrix.backend == 'local'
-        run: pytest -m "not mongo" --cov=cachier --cov-report=term --cov-report=xml:cov.xml
+        run: pytest -m "not mongo" -m "not sql" --cov=cachier --cov-report=term --cov-report=xml:cov.xml
 
       - name: Setup docker (missing on MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'mongodb'

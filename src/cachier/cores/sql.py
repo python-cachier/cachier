@@ -41,7 +41,7 @@ from .base import RecalculationNeeded, _BaseCore, _get_func_str
 if SQLALCHEMY_AVAILABLE:
     Base = declarative_base()
 
-    class CacheTable(Base):
+    class CacheTable(Base):  # type: ignore[misc, valid-type]
         """SQLAlchemy model for cachier cache entries."""
 
         __tablename__ = "cachier_cache"

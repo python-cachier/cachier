@@ -190,7 +190,7 @@ def test_import_cachier_without_sqlalchemy(monkeypatch):
         sys.modules.update(modules_backup)
 
 
-@pytest.mark.local
+@pytest.mark.pickle
 def test_sqlcore_importerror_without_sqlalchemy(monkeypatch):
     """Test that using SQL core without SQLAlchemy raises an ImportError."""
     # Simulate SQLAlchemy not installed
