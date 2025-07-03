@@ -286,3 +286,29 @@ def test_sqlcore_clear_being_calculated_empty():
     core.set_func(lambda x: x)
     # Should not raise even if nothing is being calculated
     core.clear_being_calculated()
+
+
+@pytest.mark.sql
+def test_sqlcore_accepts_engine_instance():
+    from sqlalchemy import create_engine
+
+    engine = create_engine(SQL_CONN_STR)
+    core = _SQLCore(hash_func=None, sql_engine=engine)
+    core.set_func(lambda x: x)
+    core.set_entry("engine_test", 456)
+    key, entry = core.get_entry_by_key("engine_test")
+    assert entry.value == 456
+
+
+@pytest.mark.sql
+def test_sqlcore_accepts_engine_callable():
+    from sqlalchemy import create_engine
+
+    def engine_factory():
+        return create_engine(SQL_CONN_STR)
+
+    core = _SQLCore(hash_func=None, sql_engine=engine_factory)
+    core.set_func(lambda x: x)
+    core.set_entry("callable_test", 789)
+    key, entry = core.get_entry_by_key("callable_test")
+    assert entry.value == 789
