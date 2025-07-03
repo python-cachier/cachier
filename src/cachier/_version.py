@@ -19,7 +19,7 @@ def _get_git_sha() -> str:
     from subprocess import DEVNULL, check_output
 
     args = ["git", "rev-parse", "--short", "HEAD"]
-    out = check_output(args, stderr=DEVNULL)  # noqa: S603, S607
+    out = check_output(args, stderr=DEVNULL)  # noqa: S603
     return out.decode("utf-8").strip()
 
 

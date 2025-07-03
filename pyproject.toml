@@ -131,6 +131,7 @@ lint.unfixable = [
   "F401",
 ]
 
+# --- flake8 ---
 # --- pylint ---
 #[tool.ruff.pydocstyle]
 ## Use Google-style docstrings.
@@ -140,7 +141,6 @@ lint.unfixable = [
 # Unlike Flake8, default to a complexity level of 10.
 lint.mccabe.max-complexity = 10
 
-# --- flake8 ---
 [tool.flake8]
 ignore = [ "C901", "E203", "W503", "F824" ]
 exclude = [
@@ -177,7 +177,6 @@ exclude-too-few-public-methods = [ ".+" ]
 
 [tool.pylint.'MESSAGES CONTROL']
 disable = [ "R0911", "R0913", "R0903" ]
-
 
 [tool.docformatter]
 recursive = true
