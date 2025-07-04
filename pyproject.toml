@@ -1,3 +1,5 @@
+# === Metadata & Build System ===
+
 [build-system]
 requires = [
   "setuptools",
@@ -46,6 +48,8 @@ dependencies = [
   "watchdog>=2.3.1",
 ]
 urls.Source = "https://github.com/python-cachier/cachier"
+# --- setuptools ---
+
 scripts.cachier = "cachier.__main__:cli"
 
 [tool.setuptools]
@@ -62,6 +66,13 @@ include = [
   "cachier*",
 ] # package names should match these glob patterns (["*"] by default)
 namespaces = false # to disable scanning PEP 420 namespaces (true by default)
+
+# === Linting & Formatting ===
+
+[tool.black]
+line-length = 79
+
+# --- ruff ---
 
 [tool.ruff]
 target-version = "py38"
@@ -104,6 +115,7 @@ lint.per-file-ignores."src/**/__init__.py" = [
 lint.per-file-ignores."src/cachier/config.py" = [
   "D100",
 ]
+lint.per-file-ignores."src/cachier/cores/sql.py" = [ "S301" ]
 lint.per-file-ignores."tests/**" = [
   "D100",
   "D101",
@@ -119,6 +131,7 @@ lint.unfixable = [
   "F401",
 ]
 
+# --- flake8 ---
 #[tool.ruff.pydocstyle]
 ## Use Google-style docstrings.
 #convention = "google"
@@ -133,6 +146,10 @@ recursive = true
 wrap-summaries = 79
 wrap-descriptions = 79
 blank = true
+
+# === Testing ===
+
+# --- pytest ---
 
 [tool.pytest.ini_options]
 testpaths = [
@@ -154,7 +171,10 @@ markers = [
   "mongo: test the MongoDB core",
   "memory: test the memory core",
   "pickle: test the pickle core",
+  "sql: test the SQL core",
 ]
+
+# --- coverage ---
 
 [tool.coverage.run]
 branch = true
