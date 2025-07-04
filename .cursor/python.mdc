@@ -15,7 +15,7 @@ This document outlines comprehensive best practices and coding standards for Pyt
 *   **src layout:** Consider using a `src` directory to separate application code from project-level files (setup.py, requirements.txt, etc.). This helps avoid import conflicts and clarifies the project's boundaries.
 *   **Typical Project Structure:**
 
-    
+
     project_name/
     ├── src/
     │   ├── package_name/
@@ -34,7 +34,7 @@ This document outlines comprehensive best practices and coding standards for Pyt
     ├── pyproject.toml or setup.py
     ├── README.md
     ├── requirements.txt or requirements-dev.txt
-    
+
 
 ### 1.2. File Naming Conventions
 
