@@ -13,7 +13,7 @@ import warnings
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
-from functools import wraps
+from functools import partial, wraps
 from typing import Any, Callable, Optional, Union
 from warnings import warn
 
@@ -225,8 +225,7 @@ def cachier(
     def _cachier_decorator(func):
         core.set_func(func)
 
-        @wraps(func)
-        def func_wrapper(*args, **kwds):
+        def _call(*args, max_age: Optional[timedelta] = None, **kwds):
             nonlocal allow_none
             _allow_none = _update_with_defaults(allow_none, "allow_none", kwds)
             # print('Inside general wrapper for {}.'.format(func.__name__))
@@ -271,7 +270,12 @@ def cachier(
             if _allow_none or entry.value is not None:
                 _print("Cached result found.")
                 now = datetime.now()
-                if now - entry.time <= _stale_after:
+                stale_delta = (
+                    min(_stale_after, max_age)
+                    if max_age is not None
+                    else _stale_after
+                )
+                if now - entry.time <= stale_delta:
                     _print("And it is fresh!")
                     return entry.value
                 _print("But it is stale... :(")
@@ -305,6 +309,8 @@ def cachier(
             _print("No entry found. No current calc. Calling like a boss.")
             return _calc_entry(core, key, func, args, kwds)
 
+        func_wrapper = wraps(func)(partial(_call, timedelta.max))
+
         def _clear_cache():
             """Clear the cache."""
             core.clear_cache()
@@ -332,10 +338,16 @@ def cachier(
             )
             return core.precache_value((), kwargs, value_to_cache)
 
+        def _caller_with_freshness_threshold(max_age: timedelta):
+            return wraps(func)(partial(_call, max_age))
+
         func_wrapper.clear_cache = _clear_cache
         func_wrapper.clear_being_calculated = _clear_being_calculated
         func_wrapper.cache_dpath = _cache_dpath
         func_wrapper.precache_value = _precache_value
+        func_wrapper.caller_with_freshness_threshold = (
+            _caller_with_freshness_threshold
+        )
         return func_wrapper
 
     return _cachier_decorator
