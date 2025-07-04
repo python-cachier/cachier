@@ -13,7 +13,7 @@ import warnings
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
-from functools import partial, wraps
+from functools import wraps
 from typing import Any, Callable, Optional, Union
 from warnings import warn
 
@@ -238,10 +238,9 @@ def cachier(
         # and 'max_age' (if provided).
         # This ensures that the strictest freshness requirement is enforced.
         #
-        # The main function wrapper is created using
-        # partial(_call, timedelta.max), so that by default, max_age is
-        # effectively infinite (i.e., only 'stale_after' is considered
-        # unless overridden).
+        # The main function wrapper is a standard function that passes
+        # *args and **kwargs to _call. By default, max_age is None,
+        # so only 'stale_after' is considered unless overridden.
         #
         # The user-facing API exposes:
         #   - Per-call: myfunc(..., max_age=timedelta(...))

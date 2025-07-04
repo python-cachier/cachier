@@ -5,8 +5,6 @@ import cachier
 
 
 def test_call_with_freshness_threshold():
-    from datetime import datetime
-
     @cachier.cachier()
     def test_func(a, b):
         return a + b
@@ -20,7 +18,7 @@ def test_call_with_freshness_threshold():
     # Wait for cache to become stale
     time.sleep(1.0)
     # Should trigger recalculation (stale)
-    val3 = test_func(1, 2, max_age=0.5)
+    val3 = test_func(1, 2, max_age=timedelta(seconds=0.5))
     assert val3 == 3
 
 
@@ -57,7 +55,7 @@ def test_max_age_looser_than_stale_after():
     assert v1 == v2
     time.sleep(1.1)
     v3 = f(1, max_age=timedelta(seconds=5))
-    assert v3 == v1  # max_age looser, cache still valid
+    assert v3 != v1  # max_age looser, but stale_after still applies (stricter)
 
 
 def test_max_age_none_defaults_to_stale_after():
@@ -119,5 +117,6 @@ def test_max_age_with_next_time():
     v1 = f(1)
     time.sleep(1.1)
     v2 = f(1, max_age=timedelta(seconds=0.5))
-    # With next_time=True, should return stale value (v1), not recalc immediately
+    # With next_time=True, should return stale value (v1) while
+    # triggering a recalculation in the background
     assert v2 == v1
