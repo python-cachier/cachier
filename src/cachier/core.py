@@ -225,6 +225,25 @@ def cachier(
     def _cachier_decorator(func):
         core.set_func(func)
 
+        # ---
+        # MAINTAINER NOTE: max_age parameter
+        #
+        # The _call function below supports a per-call 'max_age' parameter, allowing users to specify
+        # a maximum allowed age for a cached value. If the cached value is older than 'max_age',
+        # a recalculation is triggered. This is in addition to the per-decorator 'stale_after' parameter.
+        #
+        # The effective staleness threshold is the minimum of 'stale_after' and 'max_age' (if provided).
+        # This ensures that the strictest freshness requirement is enforced.
+        #
+        # The main function wrapper is created using partial(_call, timedelta.max), so that by default,
+        # max_age is effectively infinite (i.e., only 'stale_after' is considered unless overridden).
+        #
+        # The user-facing API exposes:
+        #   - Per-call: myfunc(..., max_age=timedelta(...))
+        #
+        # This design allows both one-off (per-call) and default (per-decorator) freshness constraints.
+        # ---
+
         def _call(*args, max_age: Optional[timedelta] = None, **kwds):
             nonlocal allow_none
             _allow_none = _update_with_defaults(allow_none, "allow_none", kwds)
@@ -309,6 +328,9 @@ def cachier(
             _print("No entry found. No current calc. Calling like a boss.")
             return _calc_entry(core, key, func, args, kwds)
 
+        # MAINTAINER NOTE: The main function wrapper is created with partial(_call, timedelta.max),
+        # so that the default 'max_age' is effectively infinite. This means only 'stale_after' is
+        # considered unless the user overrides 'max_age' per call or via caller_with_freshness_threshold.
         func_wrapper = wraps(func)(partial(_call, timedelta.max))
 
         def _clear_cache():
@@ -338,16 +360,10 @@ def cachier(
             )
             return core.precache_value((), kwargs, value_to_cache)
 
-        def _caller_with_freshness_threshold(max_age: timedelta):
-            return wraps(func)(partial(_call, max_age))
-
         func_wrapper.clear_cache = _clear_cache
         func_wrapper.clear_being_calculated = _clear_being_calculated
         func_wrapper.cache_dpath = _cache_dpath
         func_wrapper.precache_value = _precache_value
-        func_wrapper.caller_with_freshness_threshold = (
-            _caller_with_freshness_threshold
-        )
         return func_wrapper
 
     return _cachier_decorator
