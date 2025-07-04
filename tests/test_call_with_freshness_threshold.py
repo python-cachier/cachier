@@ -6,6 +6,7 @@ import cachier
 
 def test_call_with_freshness_threshold():
     from datetime import datetime
+
     @cachier.cachier()
     def test_func(a, b):
         return a + b
@@ -22,13 +23,16 @@ def test_call_with_freshness_threshold():
     val3 = test_func(1, 2, max_age=0.5)
     assert val3 == 3
 
+
 def test_max_age_stricter_than_stale_after():
-    from datetime import timedelta
-    import cachier
     import time
+
+    import cachier
+
     @cachier.cachier(stale_after=timedelta(seconds=2))
     def f(x):
         return time.time()
+
     f.clear_cache()
     v1 = f(1)
     v2 = f(1)
@@ -37,13 +41,16 @@ def test_max_age_stricter_than_stale_after():
     v3 = f(1, max_age=timedelta(seconds=0.5))
     assert v3 != v1  # max_age stricter, triggers recalc
 
+
 def test_max_age_looser_than_stale_after():
-    from datetime import timedelta
-    import cachier
     import time
+
+    import cachier
+
     @cachier.cachier(stale_after=timedelta(seconds=1))
     def f(x):
         return time.time()
+
     f.clear_cache()
     v1 = f(1)
     v2 = f(1)
@@ -52,50 +59,62 @@ def test_max_age_looser_than_stale_after():
     v3 = f(1, max_age=timedelta(seconds=5))
     assert v3 == v1  # max_age looser, cache still valid
 
+
 def test_max_age_none_defaults_to_stale_after():
-    from datetime import timedelta
-    import cachier
     import time
+
+    import cachier
+
     @cachier.cachier(stale_after=timedelta(seconds=1))
     def f(x):
         return time.time()
+
     f.clear_cache()
     v1 = f(1)
     time.sleep(1.1)
     v2 = f(1, max_age=None)
     assert v2 != v1  # Should trigger recalc (stale_after applies)
 
+
 def test_negative_max_age_triggers_recalc():
-    from datetime import timedelta
-    import cachier
     import time
+
+    import cachier
+
     @cachier.cachier(stale_after=timedelta(seconds=100))
     def f(x):
         return time.time()
+
     f.clear_cache()
     v1 = f(1)
     v2 = f(1, max_age=timedelta(seconds=-1))
     assert v2 != v1  # Negative max_age always triggers recalc
 
+
 def test_max_age_zero():
-    from datetime import timedelta
-    import cachier
     import time
+
+    import cachier
+
     @cachier.cachier(stale_after=timedelta(seconds=100))
     def f(x):
         return time.time()
+
     f.clear_cache()
     v1 = f(1)
     v2 = f(1, max_age=timedelta(seconds=0))
     assert v2 != v1  # Zero max_age always triggers recalc
 
+
 def test_max_age_with_next_time():
-    from datetime import timedelta
-    import cachier
     import time
+
+    import cachier
+
     @cachier.cachier(stale_after=timedelta(seconds=1), next_time=True)
     def f(x):
         return time.time()
+
     f.clear_cache()
     v1 = f(1)
     time.sleep(1.1)
