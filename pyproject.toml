@@ -172,6 +172,7 @@ markers = [
   "memory: test the memory core",
   "pickle: test the pickle core",
   "sql: test the SQL core",
+  "maxage: test the max_age functionality",
 ]
 
 # --- coverage ---

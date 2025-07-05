@@ -51,7 +51,7 @@ Features
 * Local caching using pickle files.
 * Cross-machine caching using MongoDB.
 * Thread-safety.
-* **Per-call freshness threshold:** Specify a maximum age for cached values per call.
+* **Per-call max age:** Specify a maximum age for cached values per call.
 
 Cachier is **NOT**:
 
@@ -234,7 +234,7 @@ Per-function call arguments
 
 Cachier also accepts several keyword arguments in the calls of the function it wraps rather than in the decorator call, allowing you to modify its behaviour for a specific function call.
 
-**Freshness Threshold (max_age)**
+**Max Age (max_age)**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 You can specify a maximum allowed age for a cached value on a per-call basis using the `max_age` keyword argument. If the cached value is older than this threshold, a recalculation is triggered. This is in addition to the `stale_after` parameter set at the decorator level; the strictest (smallest) threshold is enforced.
 
@@ -247,11 +247,11 @@ You can specify a maximum allowed age for a cached value on a per-call basis usi
   def add(a, b):
       return a + b
 
-  # Use a per-call freshness threshold:
+  # Use a per-call max age:
   result = add(1, 2, max_age=timedelta(seconds=10))  # Only use cache if value is <10s old
 
 **How it works:**
-- The effective freshness threshold is the minimum of `stale_after` (from the decorator) and `max_age` (from the call).
+- The effective max age threshold is the minimum of `stale_after` (from the decorator) and `max_age` (from the call).
 - If the cached value is older than this threshold, a new calculation is triggered and the cache is updated.
 - If not, the cached value is returned as usual.
 

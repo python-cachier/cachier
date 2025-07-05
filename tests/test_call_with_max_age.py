@@ -1,10 +1,12 @@
 import time
 from datetime import timedelta
 
+import pytest
 import cachier
 
 
-def test_call_with_freshness_threshold():
+@pytest.mark.maxage
+def test_call_with_max_age():
     @cachier.cachier()
     def test_func(a, b):
         return a + b
@@ -22,6 +24,7 @@ def test_call_with_freshness_threshold():
     assert val3 == 3
 
 
+@pytest.mark.maxage
 def test_max_age_stricter_than_stale_after():
     import time
 
@@ -40,6 +43,7 @@ def test_max_age_stricter_than_stale_after():
     assert v3 != v1  # max_age stricter, triggers recalc
 
 
+@pytest.mark.maxage
 def test_max_age_looser_than_stale_after():
     import time
 
@@ -58,6 +62,7 @@ def test_max_age_looser_than_stale_after():
     assert v3 != v1  # max_age looser, but stale_after still applies (stricter)
 
 
+@pytest.mark.maxage
 def test_max_age_none_defaults_to_stale_after():
     import time
 
@@ -74,6 +79,7 @@ def test_max_age_none_defaults_to_stale_after():
     assert v2 != v1  # Should trigger recalc (stale_after applies)
 
 
+@pytest.mark.maxage
 def test_negative_max_age_triggers_recalc():
     import time
 
@@ -89,6 +95,7 @@ def test_negative_max_age_triggers_recalc():
     assert v2 != v1  # Negative max_age always triggers recalc
 
 
+@pytest.mark.maxage
 def test_max_age_zero():
     import time
 
@@ -106,6 +113,7 @@ def test_max_age_zero():
     assert v2 != v1  # Zero max_age always triggers recalc
 
 
+@pytest.mark.maxage
 def test_max_age_with_next_time():
     import time
 
@@ -121,4 +129,4 @@ def test_max_age_with_next_time():
     v2 = f(1, max_age=timedelta(seconds=0.5))
     # With next_time=True, should return stale value (v1) while
     # triggering a recalculation in the background
-    assert v2 == v1
+    assert v2 == v1 

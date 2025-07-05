@@ -106,3 +106,5 @@ Pipfile.lock
 .DS_Store
 
 tags
+
+.cursor

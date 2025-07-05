@@ -237,7 +237,7 @@ def cachier(
         #
         # The effective staleness threshold is the minimum of 'stale_after'
         # and 'max_age' (if provided).
-        # This ensures that the strictest freshness requirement is enforced.
+        # This ensures that the strictest max age requirement is enforced.
         #
         # The main function wrapper is a standard function that passes
         # *args and **kwargs to _call. By default, max_age is None,
@@ -247,7 +247,7 @@ def cachier(
         #   - Per-call: myfunc(..., max_age=timedelta(...))
         #
         # This design allows both one-off (per-call) and default
-        # (per-decorator) freshness constraints.
+        # (per-decorator) max age constraints.
         # ---
 
         def _call(*args, max_age: Optional[timedelta] = None, **kwds):
