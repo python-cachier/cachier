@@ -100,6 +100,8 @@ def test_max_age_zero():
 
     f.clear_cache()
     v1 = f(1)
+    # Add a small sleep to ensure measurable time difference on all platforms
+    time.sleep(0.01)
     v2 = f(1, max_age=timedelta(seconds=0))
     assert v2 != v1  # Zero max_age always triggers recalc
 
