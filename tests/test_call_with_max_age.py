@@ -92,6 +92,7 @@ def test_negative_max_age_triggers_recalc():
 
     f.clear_cache()
     v1 = f(1)
+    time.sleep(0.5)  # Ensure some time has passed
     v2 = f(1, max_age=timedelta(seconds=-1), cachier__verbose=True)
     assert v2 != v1  # Negative max_age always triggers recalc
 
