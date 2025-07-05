@@ -110,6 +110,9 @@ lint.ignore = [
   "E203",
   "S301",
 ]
+lint.per-file-ignores."examples/**" = [
+  "S101",
+]
 lint.per-file-ignores."src/**/__init__.py" = [
   "D104",
 ]
@@ -127,9 +130,6 @@ lint.per-file-ignores."tests/**" = [
   "S105",
   "S311",
   "S603",
-]
-lint.per-file-ignores."examples/**" = [
-  "S101",
 ]
 lint.unfixable = [
   "F401",
