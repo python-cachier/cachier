@@ -141,9 +141,8 @@ def cachier(
     backend : str, optional
         The name of the backend to use. Valid options currently include
         'pickle', 'mongo', 'memory', 'sql', and 'redis'. If not provided,
-        defaults to 'pickle', unless an argument is provided for one of the
-        other parameters that requires a different backend, in which case the
-        backend is set to the one required by that parameter.
+        defaults to 'pickle' unless the 'mongetter' argument is passed,
+        in which case the mongo backend is automatically selected.
     mongetter : callable, optional
         A callable that takes no arguments and returns a pymongo.Collection
         object with writing permissions. If unset a local pickle cache is used

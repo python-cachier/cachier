@@ -6,7 +6,6 @@ high-performance caching.
 
 Requirements:
     pip install redis cachier
-
 """
 
 import time
@@ -112,7 +111,7 @@ def demo_callable_client():
     print("\n=== Callable Client Demo ===")
 
     def get_redis_client():
-        """Factory function for Redis client."""
+        """Get a Redis client."""
         return redis.Redis(
             host="localhost", port=6379, db=0, decode_responses=False
         )

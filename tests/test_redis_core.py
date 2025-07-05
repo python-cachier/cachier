@@ -68,49 +68,101 @@ def _test_redis_getter():
     client = _get_test_redis_client()
     if client is None:
         # Create a mock Redis client for testing
-        class MockRedis:
-            def __init__(self):
-                self.data = {}
+        # Use a singleton pattern to ensure the same instance is returned
+        if not hasattr(_test_redis_getter, "_mock_client"):
 
-            def hgetall(self, key):
-                return self.data.get(key, {})
+            class MockRedis:
+                def __init__(self):
+                    self.data = {}
+                    print("DEBUG: MockRedis initialized")
 
-            def hset(self, key, mapping=None, **kwargs):
-                if key not in self.data:
-                    self.data[key] = {}
-                if mapping:
-                    self.data[key].update(mapping)
-                if kwargs:
-                    self.data[key].update(kwargs)
+                def hgetall(self, key):
+                    result = self.data.get(key, {})
+                    # Convert string values to bytes to match Redis behavior
+                    bytes_result = {}
+                    for k, v in result.items():
+                        if isinstance(v, str):
+                            bytes_result[k.encode("utf-8")] = v.encode("utf-8")
+                        else:
+                            bytes_result[k.encode("utf-8")] = v
+                    print(
+                        f"DEBUG: hgetall({key}) = {result} -> {bytes_result}"
+                    )
+                    return bytes_result
 
-            def keys(self, pattern):
-                import re
+                def hset(
+                    self, key, field=None, value=None, mapping=None, **kwargs
+                ):
+                    if key not in self.data:
+                        self.data[key] = {}
 
-                pattern = pattern.replace("*", ".*")
-                return [k for k in self.data if re.match(pattern, k.decode())]
+                    # Handle different calling patterns
+                    if mapping is not None:
+                        # Called with mapping dict
+                        self.data[key].update(mapping)
+                    elif field is not None and value is not None:
+                        # Called with field, value arguments
+                        self.data[key][field] = value
+                    elif kwargs:
+                        # Called with keyword arguments
+                        self.data[key].update(kwargs)
 
-            def delete(self, *keys):
-                for key in keys:
-                    self.data.pop(key, None)
+                    print(
+                        f"DEBUG: hset({key}, field={field}, value={value}, "
+                        "mapping={mapping}, kwargs={kwargs}) -> "
+                        "{self.data[key]}"
+                    )
 
-            def pipeline(self):
-                return MockPipeline(self)
+                def keys(self, pattern):
+                    import re
 
-        class MockPipeline:
-            def __init__(self, redis_client):
-                self.redis_client = redis_client
-                self.commands = []
+                    pattern = pattern.replace("*", ".*")
+                    # Fix: keys are strings, not bytes, so no need to decode
+                    result = [k for k in self.data if re.match(pattern, k)]
+                    print(f"DEBUG: keys({pattern}) = {result}")
+                    return result
 
-            def hset(self, key, field, value):
-                self.commands.append(("hset", key, field, value))
-                return self
+                def delete(self, *keys):
+                    for key in keys:
+                        self.data.pop(key, None)
+                    print(f"DEBUG: delete({keys})")
 
-            def execute(self):
-                for cmd, key, field, value in self.commands:
-                    if cmd == "hset":
-                        self.redis_client.hset(key, field, value)
+                def pipeline(self):
+                    return MockPipeline(self)
 
-        return MockRedis()
+                def ping(self):
+                    return True
+
+                def set(self, key, value):
+                    self.data[key] = value
+                    print(f"DEBUG: set({key}, {value})")
+
+                def get(self, key):
+                    result = self.data.get(key)
+                    if isinstance(result, str):
+                        result = result.encode("utf-8")
+                    print(f"DEBUG: get({key}) = {result}")
+                    return result
+
+            class MockPipeline:
+                def __init__(self, redis_client):
+                    self.redis_client = redis_client
+                    self.commands = []
+
+                def hset(self, key, field, value):
+                    self.commands.append(("hset", key, field, value))
+                    return self
+
+                def execute(self):
+                    for cmd, key, field, value in self.commands:
+                        if cmd == "hset":
+                            self.redis_client.hset(
+                                key, field=field, value=value
+                            )
+
+            _test_redis_getter._mock_client = MockRedis()
+
+        return _test_redis_getter._mock_client
     return client
 
 
@@ -213,46 +265,75 @@ def test_redis_stale_after():
 
 
 def _calls_takes_time_redis(res_queue):
+    print("DEBUG: _calls_takes_time_redis started")
+
     @cachier(backend="redis", redis_client=_test_redis_getter)
     def _takes_time(arg_1, arg_2):
         """Some function."""
+        print(
+            f"DEBUG: _calls_takes_time_redis._takes_time({arg_1}, {arg_2})"
+            " called"
+        )
         sleep(3)
-        return random() + arg_1 + arg_2
+        result = random() + arg_1 + arg_2
+        print(
+            f"DEBUG: _calls_takes_time_redis._takes_time({arg_1}, {arg_2}) "
+            f"returning {result}"
+        )
+        return result
 
+    print("DEBUG: _calls_takes_time_redis calling _takes_time(34, 82.3)")
     res = _takes_time(34, 82.3)
+    print(f"DEBUG: _calls_takes_time_redis got result {res}, putting in queue")
     res_queue.put(res)
+    print("DEBUG: _calls_takes_time_redis completed")
 
 
 @pytest.mark.redis
 def test_redis_being_calculated():
     """Testing Redis core handling of being calculated scenarios."""
+    print("DEBUG: test_redis_being_calculated started")
 
     @cachier(backend="redis", redis_client=_test_redis_getter)
     def _takes_time(arg_1, arg_2):
         """Some function."""
+        print(f"DEBUG: _takes_time({arg_1}, {arg_2}) called")
         sleep(3)
-        return random() + arg_1 + arg_2
+        result = random() + arg_1 + arg_2
+        print(f"DEBUG: _takes_time({arg_1}, {arg_2}) returning {result}")
+        return result
 
+    print("DEBUG: Clearing cache")
     _takes_time.clear_cache()
     res_queue = queue.Queue()
+    print("DEBUG: Starting thread1")
     thread1 = threading.Thread(
         target=_calls_takes_time_redis,
         kwargs={"res_queue": res_queue},
         daemon=True,
     )
+    print("DEBUG: Starting thread2")
     thread2 = threading.Thread(
         target=_calls_takes_time_redis,
         kwargs={"res_queue": res_queue},
         daemon=True,
     )
+    print("DEBUG: Starting thread1")
     thread1.start()
+    print("DEBUG: Sleeping 1 second")
     sleep(1)
+    print("DEBUG: Starting thread2")
     thread2.start()
+    print("DEBUG: Waiting for thread1 to join")
     thread1.join()
+    print("DEBUG: Waiting for thread2 to join")
     thread2.join()
+    print("DEBUG: Getting results from queue")
     res1 = res_queue.get()
     res2 = res_queue.get()
+    print(f"DEBUG: Results: res1={res1}, res2={res2}")
     assert res1 == res2
+    print("DEBUG: test_redis_being_calculated completed successfully")
 
 
 @pytest.mark.redis
