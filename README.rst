@@ -50,6 +50,7 @@ Features
 * Defining "shelf life" for cached values.
 * Local caching using pickle files.
 * Cross-machine caching using MongoDB.
+* Redis-based caching for high-performance scenarios.
 * Thread-safety.
 * **Per-call max age:** Specify a maximum age for cached values per call.
 
@@ -396,6 +397,56 @@ Cachier supports a generic SQL backend via SQLAlchemy, allowing you to use SQLit
 .. code-block:: python
 
     @cachier(backend="sql", sql_engine="mysql+pymysql://user:pass@localhost/dbname")
+    def my_func(x):
+        return x * 2
+
+Redis Core
+---------
+
+**Note:** The Redis core requires the redis package to be installed. It is not installed by default with cachier. To use the Redis backend, run::
+
+    pip install redis
+
+Cachier supports Redis-based caching for high-performance scenarios. Redis provides fast in-memory storage with optional persistence.
+
+**Usage Example (Local Redis):**
+
+.. code-block:: python
+
+    import redis
+    from cachier import cachier
+
+    # Create Redis client
+    redis_client = redis.Redis(host='localhost', port=6379, db=0)
+
+    @cachier(backend="redis", redis_client=redis_client)
+    def my_func(x):
+        return x * 2
+
+**Usage Example (Redis with custom key prefix):**
+
+.. code-block:: python
+
+    import redis
+    from cachier import cachier
+
+    redis_client = redis.Redis(host='localhost', port=6379, db=0)
+
+    @cachier(backend="redis", redis_client=redis_client, key_prefix="myapp")
+    def my_func(x):
+        return x * 2
+
+**Usage Example (Redis with callable client):**
+
+.. code-block:: python
+
+    import redis
+    from cachier import cachier
+
+    def get_redis_client():
+        return redis.Redis(host='localhost', port=6379, db=0)
+
+    @cachier(backend="redis", redis_client=get_redis_client)
     def my_func(x):
         return x * 2
 
