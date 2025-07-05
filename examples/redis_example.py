@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""
-Example demonstrating the Redis core for cachier.
+"""Example demonstrating the Redis core for cachier.
 
 This example shows how to use cachier with Redis as the backend for
 high-performance caching.
 
 Requirements:
     pip install redis cachier
+
 """
 
 import time
@@ -14,6 +14,7 @@ from datetime import timedelta
 
 try:
     import redis
+
     from cachier import cachier
 except ImportError as e:
     print(f"Missing required package: {e}")
