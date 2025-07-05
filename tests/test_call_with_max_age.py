@@ -2,6 +2,7 @@ import time
 from datetime import timedelta
 
 import pytest
+
 import cachier
 
 
@@ -129,4 +130,4 @@ def test_max_age_with_next_time():
     v2 = f(1, max_age=timedelta(seconds=0.5))
     # With next_time=True, should return stale value (v1) while
     # triggering a recalculation in the background
-    assert v2 == v1 
+    assert v2 == v1
