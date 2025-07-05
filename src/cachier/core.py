@@ -31,6 +31,7 @@ from .cores.sql import _SQLCore
 
 MAX_WORKERS_ENVAR_NAME = "CACHIER_MAX_WORKERS"
 DEFAULT_MAX_WORKERS = 8
+ZERO_TIMEDELTA = timedelta(seconds=0)
 
 
 def _max_workers():
@@ -294,12 +295,23 @@ def cachier(
             if _allow_none or entry.value is not None:
                 _print("Cached result found.")
                 now = datetime.now()
-                max_allowed_age = (
-                    min(_stale_after, max_age)
-                    if max_age is not None
-                    else _stale_after
-                )
-                if now - entry.time < max_allowed_age:
+                max_allowed_age = _stale_after
+                nonneg_max_age = True
+                if max_age is not None:
+                    if max_age < ZERO_TIMEDELTA:
+                        _print(
+                            "max_age is negative. "
+                            "Cached result considered stale."
+                        )
+                        nonneg_max_age = False
+                    else:
+                        max_allowed_age = (
+                            min(_stale_after, max_age)
+                            if max_age is not None
+                            else _stale_after
+                        )
+                # note: if max_age < 0, we always consider a value stale
+                if nonneg_max_age and (now - entry.time < max_allowed_age):
                     _print("And it is fresh!")
                     return entry.value
                 _print("But it is stale... :(")
