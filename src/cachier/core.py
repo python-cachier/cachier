@@ -17,6 +17,7 @@ from functools import wraps
 from typing import Any, Callable, Optional, Union
 from warnings import warn
 
+from ._types import RedisClient
 from .config import (
     Backend,
     HashFunc,
@@ -27,6 +28,7 @@ from .cores.base import RecalculationNeeded, _BaseCore
 from .cores.memory import _MemoryCore
 from .cores.mongo import _MongoCore
 from .cores.pickle import _PickleCore
+from .cores.redis import _RedisCore
 from .cores.sql import _SQLCore
 
 MAX_WORKERS_ENVAR_NAME = "CACHIER_MAX_WORKERS"
@@ -110,6 +112,7 @@ def cachier(
     backend: Optional[Backend] = None,
     mongetter: Optional[Mongetter] = None,
     sql_engine: Optional[Union[str, Any, Callable[[], Any]]] = None,
+    redis_client: Optional["RedisClient"] = None,
     stale_after: Optional[timedelta] = None,
     next_time: Optional[bool] = None,
     cache_dir: Optional[Union[str, os.PathLike]] = None,
@@ -137,9 +140,10 @@ def cachier(
     hash_params : callable, optional
     backend : str, optional
         The name of the backend to use. Valid options currently include
-        'pickle', 'mongo', 'memory', and 'sql'. If not provided, defaults to
-        'pickle' unless the 'mongetter' argument is passed, in which
-        case the mongo backend is automatically selected.
+        'pickle', 'mongo', 'memory', 'sql', and 'redis'. If not provided,
+        defaults to 'pickle', unless an argument is provided for one of the
+        other parameters that requires a different backend, in which case the
+        backend is set to the one required by that parameter.
     mongetter : callable, optional
         A callable that takes no arguments and returns a pymongo.Collection
         object with writing permissions. If unset a local pickle cache is used
@@ -147,6 +151,9 @@ def cachier(
     sql_engine : str, Engine, or callable, optional
         SQLAlchemy connection string, Engine, or callable returning an Engine.
         Used for the SQL backend.
+    redis_client : redis.Redis or callable, optional
+        Redis client instance or callable returning a Redis client.
+        Used for the Redis backend.
     stale_after : datetime.timedelta, optional
         The time delta after which a cached result is considered stale. Calls
         made after the result goes stale will trigger a recalculation of the
@@ -218,6 +225,12 @@ def cachier(
         core = _SQLCore(
             hash_func=hash_func,
             sql_engine=sql_engine,
+            wait_for_calc_timeout=wait_for_calc_timeout,
+        )
+    elif backend == "redis":
+        core = _RedisCore(
+            hash_func=hash_func,
+            redis_client=redis_client,
             wait_for_calc_timeout=wait_for_calc_timeout,
         )
     else:

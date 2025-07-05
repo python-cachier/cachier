@@ -1,9 +1,11 @@
-from typing import TYPE_CHECKING, Callable, Literal
+from typing import TYPE_CHECKING, Callable, Literal, Union
 
 if TYPE_CHECKING:
     import pymongo.collection
+    import redis
 
 
 HashFunc = Callable[..., str]
 Mongetter = Callable[[], "pymongo.collection.Collection"]
-Backend = Literal["pickle", "mongo", "memory"]
+RedisClient = Union["redis.Redis", Callable[[], "redis.Redis"]]
+Backend = Literal["pickle", "mongo", "memory", "redis"]

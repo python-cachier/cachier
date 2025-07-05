@@ -22,13 +22,15 @@ jobs:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
         os: ["ubuntu-latest", "macOS-latest", "windows-latest"]
-        backend: ["local", "mongodb", "postgres"]
+        backend: ["local", "mongodb", "postgres", "redis"]
         exclude:
           # ToDo: take if back when the connection become stable
           #  or resolve using `InMemoryMongoClient`
           - { os: "macOS-latest", backend: "mongodb" }
           - { os: "macOS-latest", backend: "postgres" }
+          - { os: "macOS-latest", backend: "redis" }
           - { os: "windows-latest", backend: "postgres" }
+          - { os: "windows-latest", backend: "redis" }
     env:
       CACHIER_TEST_HOST: "localhost"
       CACHIER_TEST_PORT: "27017"
@@ -36,6 +38,10 @@ jobs:
       #CACHIER_TEST_USERNAME: "myuser"
       #CACHIER_TEST_PASSWORD: "yourpassword"
       CACHIER_TEST_VS_DOCKERIZED_MONGO: "true"
+      CACHIER_TEST_REDIS_HOST: "localhost"
+      CACHIER_TEST_REDIS_PORT: "6379"
+      CACHIER_TEST_REDIS_DB: "0"
+      CACHIER_TEST_VS_DOCKERIZED_REDIS: "true"
 
     steps:
       - uses: actions/checkout@v4
@@ -52,7 +58,7 @@ jobs:
 
       - name: Unit tests (local)
         if: matrix.backend == 'local'
-        run: pytest -m "not mongo and not sql" --cov=cachier --cov-report=term --cov-report=xml:cov.xml
+        run: pytest -m "not mongo and not sql and not redis" --cov=cachier --cov-report=term --cov-report=xml:cov.xml
 
       - name: Setup docker (missing on MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'mongodb'
@@ -108,6 +114,25 @@ jobs:
         env:
           SQLALCHEMY_DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
         run: pytest -m sql --cov=cachier --cov-report=term --cov-report=xml:cov.xml
+
+      - name: Start Redis in docker
+        if: matrix.backend == 'redis'
+        run: |
+          docker run -d \
+            -p ${{ env.CACHIER_TEST_REDIS_PORT }}:6379 \
+            --name redis redis:7-alpine
+          # wait for Redis to start
+          sleep 5
+          docker ps -a
+
+      - name: Install Redis core test dependencies
+        if: matrix.backend == 'redis'
+        run: |
+          python -m pip install -e . -r tests/redis_requirements.txt
+
+      - name: Unit tests (Redis)
+        if: matrix.backend == 'redis'
+        run: pytest -m redis --cov=cachier --cov-report=term --cov-report=xml:cov.xml
 
       - name: Upload coverage to Codecov
         continue-on-error: true
