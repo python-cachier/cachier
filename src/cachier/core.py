@@ -31,6 +31,7 @@ from .cores.sql import _SQLCore
 
 MAX_WORKERS_ENVAR_NAME = "CACHIER_MAX_WORKERS"
 DEFAULT_MAX_WORKERS = 8
+ZERO_TIMEDELTA = timedelta(seconds=0)
 
 
 def _max_workers():
@@ -225,8 +226,31 @@ def cachier(
     def _cachier_decorator(func):
         core.set_func(func)
 
-        @wraps(func)
-        def func_wrapper(*args, **kwds):
+        # ---
+        # MAINTAINER NOTE: max_age parameter
+        #
+        # The _call function below supports a per-call 'max_age' parameter,
+        # allowing users to specify a maximum allowed age for a cached value.
+        # If the cached value is older than 'max_age',
+        # a recalculation is triggered. This is in addition to the
+        # per-decorator 'stale_after' parameter.
+        #
+        # The effective staleness threshold is the minimum of 'stale_after'
+        # and 'max_age' (if provided).
+        # This ensures that the strictest max age requirement is enforced.
+        #
+        # The main function wrapper is a standard function that passes
+        # *args and **kwargs to _call. By default, max_age is None,
+        # so only 'stale_after' is considered unless overridden.
+        #
+        # The user-facing API exposes:
+        #   - Per-call: myfunc(..., max_age=timedelta(...))
+        #
+        # This design allows both one-off (per-call) and default
+        # (per-decorator) max age constraints.
+        # ---
+
+        def _call(*args, max_age: Optional[timedelta] = None, **kwds):
             nonlocal allow_none
             _allow_none = _update_with_defaults(allow_none, "allow_none", kwds)
             # print('Inside general wrapper for {}.'.format(func.__name__))
@@ -271,7 +295,23 @@ def cachier(
             if _allow_none or entry.value is not None:
                 _print("Cached result found.")
                 now = datetime.now()
-                if now - entry.time <= _stale_after:
+                max_allowed_age = _stale_after
+                nonneg_max_age = True
+                if max_age is not None:
+                    if max_age < ZERO_TIMEDELTA:
+                        _print(
+                            "max_age is negative. "
+                            "Cached result considered stale."
+                        )
+                        nonneg_max_age = False
+                    else:
+                        max_allowed_age = (
+                            min(_stale_after, max_age)
+                            if max_age is not None
+                            else _stale_after
+                        )
+                # note: if max_age < 0, we always consider a value stale
+                if nonneg_max_age and (now - entry.time <= max_allowed_age):
                     _print("And it is fresh!")
                     return entry.value
                 _print("But it is stale... :(")
@@ -304,6 +344,14 @@ def cachier(
                     return _calc_entry(core, key, func, args, kwds)
             _print("No entry found. No current calc. Calling like a boss.")
             return _calc_entry(core, key, func, args, kwds)
+
+        # MAINTAINER NOTE: The main function wrapper is now a standard function
+        # that passes *args and **kwargs to _call. This ensures that user
+        # arguments are not shifted, and max_age is only settable via keyword
+        # argument.
+        @wraps(func)
+        def func_wrapper(*args, **kwargs):
+            return _call(*args, **kwargs)
 
         def _clear_cache():
             """Clear the cache."""
