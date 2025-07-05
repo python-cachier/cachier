@@ -401,7 +401,7 @@ Cachier supports a generic SQL backend via SQLAlchemy, allowing you to use SQLit
         return x * 2
 
 Redis Core
----------
+----------
 
 **Note:** The Redis core requires the redis package to be installed. It is not installed by default with cachier. To use the Redis backend, run::
 
