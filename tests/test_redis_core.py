@@ -109,8 +109,8 @@ def _test_redis_getter():
 
                     print(
                         f"DEBUG: hset({key}, field={field}, value={value}, "
-                        "mapping={mapping}, kwargs={kwargs}) -> "
-                        "{self.data[key]}"
+                        f"mapping={mapping}, kwargs={kwargs}) -> "
+                        f"{self.data[key]}"
                     )
 
                 def keys(self, pattern):
