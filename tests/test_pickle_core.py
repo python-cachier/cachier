@@ -650,14 +650,15 @@ def test_inotify_instance_limit_reached():
     for t in threads:
         t.join()
 
-    # If any OSError with "inotify instance limit reached" is raised, the test passes
+    # If any OSError with "inotify instance limit reached" is raised,
+    # the test passes
     if any("inotify instance limit reached" in str(e) for e in errors):
         return  # Test passes
     # If no error, print a warning (system limit may be high in CI)
     if not errors:
         pytest.skip(
-            "Did not hit inotify instance limit; consider lowering the system limit "
-            "for CI. Test is informative and may not always fail."
+            "Did not hit inotify instance limit; consider lowering the "
+            "system limit for CI. Test is informative and may not always fail."
         )
     else:
         # If other OSErrors, fail
