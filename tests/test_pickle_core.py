@@ -616,7 +616,10 @@ def test_callable_hash_param(separate_files):
     reason="inotify instance limit is only relevant on Linux",
 )
 @pytest.mark.xfail(
-    reason="inotify instance limit issue not yet fixed - test will pass when issue is resolved"
+    reason=(
+        "inotify instance limit issue not yet fixed - test will pass "
+        "when issue is resolved"
+    )
 )
 def test_inotify_instance_limit_reached():
     """Reproduces the inotify instance exhaustion issue (see Issue #24).
@@ -632,14 +635,16 @@ def test_inotify_instance_limit_reached():
     # Try to get the current inotify limit
     try:
         result = subprocess.run(
-            ["cat", "/proc/sys/fs/inotify/max_user_instances"],
+            ["/bin/cat", "/proc/sys/fs/inotify/max_user_instances"],
             capture_output=True,
             text=True,
             timeout=5,
         )
         if result.returncode == 0:
             current_limit = int(result.stdout.strip())
-            print(f"Current inotify max_user_instances limit: {current_limit}")
+            print(
+                f"Current inotify max_user_instances limit: {current_limit}"
+            )
         else:
             current_limit = None
             print("Could not determine inotify limit")
@@ -658,13 +663,9 @@ def test_inotify_instance_limit_reached():
     results = queue.Queue()
 
     # Be more aggressive - try to exhaust the limit
-    if current_limit is not None:
-        N = min(
-            current_limit * 4, 4096
-        )  # Try to exceed the limit more aggressively
-    else:
-        N = 4096  # Default aggressive value
-
+    N = (
+        min(current_limit * 4, 4096) if current_limit is not None else 4096
+    )  # Try to exceed the limit more aggressively
     print(f"Starting {N} threads to test inotify exhaustion")
 
     def call():
@@ -695,10 +696,11 @@ def test_inotify_instance_limit_reached():
     # the test FAILS (expected failure due to the bug)
     if any("inotify instance limit reached" in str(e) for e in errors):
         print(
-            "FAILURE: Hit inotify instance limit - this indicates the bug still exists"
+            "FAILURE: Hit inotify instance limit - this indicates the bug "
+            "still exists"
         )
         raise AssertionError(
-            f"inotify instance limit reached error occurred. "
+            "inotify instance limit reached error occurred. "
             f"Got {len(errors)} errors with inotify limit issues."
         )
 
@@ -709,6 +711,7 @@ def test_inotify_instance_limit_reached():
 
     # If no errors at all, the test PASSES (issue is fixed!)
     print(
-        "SUCCESS: No inotify instance limit errors occurred - the issue appears to be fixed!"
+        "SUCCESS: No inotify instance limit errors occurred - the issue "
+        "appears to be fixed!"
     )
     # No need to return - test passes naturally
