@@ -694,17 +694,21 @@ def test_inotify_instance_limit_reached():
     # If any OSError with "inotify instance limit reached" is raised,
     # the test FAILS (expected failure due to the bug)
     if any("inotify instance limit reached" in str(e) for e in errors):
-        print("FAILURE: Hit inotify instance limit - this indicates the bug still exists")
+        print(
+            "FAILURE: Hit inotify instance limit - this indicates the bug still exists"
+        )
         raise AssertionError(
             f"inotify instance limit reached error occurred. "
             f"Got {len(errors)} errors with inotify limit issues."
         )
-    
+
     # If no inotify errors but other errors, fail
     if errors:
         print(f"Unexpected errors occurred: {errors}")
         raise AssertionError(f"Unexpected OSErrors: {errors}")
-    
+
     # If no errors at all, the test PASSES (issue is fixed!)
-    print("SUCCESS: No inotify instance limit errors occurred - the issue appears to be fixed!")
+    print(
+        "SUCCESS: No inotify instance limit errors occurred - the issue appears to be fixed!"
+    )
     # No need to return - test passes naturally
