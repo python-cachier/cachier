@@ -32,7 +32,9 @@ class _PickleCore(_BaseCore):
 
         def __init__(self, filename, core, key):
             super().__init__(
-                patterns=[f"*{filename}*"], ignore_patterns=[], ignore_directories=False
+                patterns=[f"*{filename}*"],
+                ignore_patterns=[],
+                ignore_directories=False,
             )
             self.filename = filename
             self.core = core
@@ -271,7 +273,7 @@ class _PickleCore(_BaseCore):
                 else:
                     # Clean up dead observer
                     del self._observer_cache[key]
-            
+
             # Create new observer
             observer = Observer()
             self._observer_cache[key] = observer
@@ -299,7 +301,7 @@ class _PickleCore(_BaseCore):
             with self.lock:
                 entry = self.get_cache_dict().get(key)
             filename = self.cache_fname
-        
+
         if entry and not entry._processing:
             return entry.value
 
@@ -321,25 +323,27 @@ class _PickleCore(_BaseCore):
         event_handler = _PickleCore.CacheChangeHandler(
             filename=filename, core=self, key=key
         )
-        
+
         observer = self._get_or_create_observer(key)
         event_handler.inject_observer(observer)
-        
+
         try:
-            observer.schedule(event_handler, path=self.cache_dir, recursive=True)
+            observer.schedule(
+                event_handler, path=self.cache_dir, recursive=True
+            )
             if not observer.is_alive():
                 observer.start()
-            
+
             time_spent = 0
             while observer.is_alive():
                 observer.join(timeout=1.0)
                 time_spent += 1
                 self.check_calc_timeout(time_spent)
-                
+
                 # Check if calculation is complete
                 if event_handler.value is not None:
                     break
-            
+
             return event_handler.value
         finally:
             # Always cleanup the observer
@@ -351,17 +355,17 @@ class _PickleCore(_BaseCore):
         while True:
             time.sleep(1)  # Poll every 1 second (matching other cores)
             time_spent += 1
-            
+
             try:
                 if self.separate_files:
                     entry = self._load_cache_by_key(key)
                 else:
                     with self.lock:
                         entry = self.get_cache_dict().get(key)
-                
+
                 if entry and not entry._processing:
                     return entry.value
-                    
+
                 self.check_calc_timeout(time_spent)
             except Exception:
                 # Continue polling even if there are errors
