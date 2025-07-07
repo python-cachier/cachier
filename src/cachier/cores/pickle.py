@@ -28,45 +28,44 @@ class _PickleCore(_BaseCore):
     """The pickle core class for cachier."""
 
     class CacheChangeHandler(PatternMatchingEventHandler):
-        """Handler for cache file changes."""
+        """Handles cache-file modification events."""
 
         def __init__(self, filename, core, key):
-            super().__init__(
-                patterns=[f"*{filename}*"],
-                ignore_patterns=[],
-                ignore_directories=False,
+            PatternMatchingEventHandler.__init__(
+                self,
+                patterns=["*" + filename],
+                ignore_patterns=None,
+                ignore_directories=True,
+                case_sensitive=False,
             )
-            self.filename = filename
             self.core = core
             self.key = key
-            self.value = None
             self.observer = None
+            self.value = None
 
         def inject_observer(self, observer) -> None:
-            """Inject the observer instance."""
+            """Inject the observer running this handler."""
             self.observer = observer
 
         def _check_calculation(self) -> None:
-            """Check if calculation is complete."""
+            entry = self.core.get_entry_by_key(self.key, True)[1]
             try:
-                if self.core.separate_files:
-                    entry = self.core._load_cache_by_key(self.key)
-                else:
-                    with self.core.lock:
-                        entry = self.core.get_cache_dict().get(self.key)
-                if entry and not entry._processing:
+                if not entry._processing:
+                    # print('stopping observer!')
                     self.value = entry.value
-                    if self.observer:
-                        self.observer.stop()
-            except Exception:
-                pass
+                    self.observer.stop()
+                # else:
+                #     print('NOT stopping observer... :(')
+            except AttributeError:  # catching entry being None
+                self.value = None
+                self.observer.stop()
 
         def on_created(self, event) -> None:
-            """Handle file creation events."""
-            self._check_calculation()
+            """A Watchdog Event Handler method."""  # noqa: D401
+            self._check_calculation()  # pragma: no cover
 
         def on_modified(self, event) -> None:
-            """Handle file modification events."""
+            """A Watchdog Event Handler method."""  # noqa: D401
             self._check_calculation()
 
     def __init__(
@@ -77,16 +76,15 @@ class _PickleCore(_BaseCore):
         separate_files: Optional[bool],
         wait_for_calc_timeout: Optional[int],
     ):
-        super().__init__(
-            hash_func=hash_func,
-            wait_for_calc_timeout=wait_for_calc_timeout,
+        super().__init__(hash_func, wait_for_calc_timeout)
+        self._cache_dict: Dict[str, CacheEntry] = {}
+        self.reload = _update_with_defaults(pickle_reload, "pickle_reload")
+        self.cache_dir = os.path.expanduser(
+            _update_with_defaults(cache_dir, "cache_dir")
         )
-        self.cache_dir = str(cache_dir) if cache_dir else "~/.cachier"
-        self.cache_dir = os.path.expanduser(self.cache_dir)
-        os.makedirs(self.cache_dir, exist_ok=True)
-        self.separate_files = separate_files
-        self.reload = pickle_reload
-        self._cache_dict: Optional[Dict[str, CacheEntry]] = None
+        self.separate_files = _update_with_defaults(
+            separate_files, "separate_files"
+        )
         self._cache_used_fpath = ""
         # Observer cache to prevent inotify instance exhaustion
         self._observer_cache: Dict[str, Observer] = {}
@@ -314,9 +312,6 @@ class _PickleCore(_BaseCore):
                 return self._wait_with_polling(key)
             else:
                 raise
-        except Exception:
-            # For any other exception, fall back to polling
-            return self._wait_with_polling(key)
 
     def _wait_with_inotify(self, key: str, filename: str) -> Any:
         """Wait for calculation using inotify (original method with fixes)."""
@@ -367,8 +362,8 @@ class _PickleCore(_BaseCore):
                     return entry.value
 
                 self.check_calc_timeout(time_spent)
-            except Exception:
-                # Continue polling even if there are errors
+            except (FileNotFoundError, EOFError):
+                # Continue polling even if there are file errors
                 pass
 
     def clear_cache(self) -> None:
