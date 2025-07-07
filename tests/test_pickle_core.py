@@ -624,42 +624,82 @@ def test_inotify_instance_limit_reached():
     """
     import queue
     import time
+    import subprocess
 
-    @cachier(backend="pickle", wait_for_calc_timeout=0.01)
+    # Try to get the current inotify limit
+    try:
+        result = subprocess.run(
+            ["cat", "/proc/sys/fs/inotify/max_user_instances"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            current_limit = int(result.stdout.strip())
+            print(f"Current inotify max_user_instances limit: {current_limit}")
+        else:
+            current_limit = None
+            print("Could not determine inotify limit")
+    except Exception as e:
+        current_limit = None
+        print(f"Error getting inotify limit: {e}")
+
+    @cachier(backend="pickle", wait_for_calc_timeout=0.1)
     def slow_func(x):
-        time.sleep(0.1)
+        time.sleep(0.5)  # Make it slower to increase chance of hitting limit
         return x
 
     # Start many threads to trigger wait_on_entry_calc
     threads = []
     errors = []
     results = queue.Queue()
-    N = 512  # Lowered for CI stability; increase if needed
+    
+    # Be more aggressive - try to exhaust the limit
+    if current_limit is not None:
+        N = min(current_limit * 4, 4096)  # Try to exceed the limit more aggressively
+    else:
+        N = 4096  # Default aggressive value
+    
+    print(f"Starting {N} threads to test inotify exhaustion")
 
     def call():
         try:
             results.put(slow_func(1))
         except OSError as e:
             errors.append(e)
+        except Exception as e:
+            # Capture any other exceptions for debugging
+            errors.append(e)
 
-    for _ in range(N):
+    for i in range(N):
         t = threading.Thread(target=call)
         threads.append(t)
         t.start()
+        if i % 100 == 0:
+            print(f"Started {i} threads...")
 
+    print("Waiting for all threads to complete...")
     for t in threads:
         t.join()
+
+    print(f"Test completed. Got {len(errors)} errors, {results.qsize()} results")
 
     # If any OSError with "inotify instance limit reached" is raised,
     # the test passes
     if any("inotify instance limit reached" in str(e) for e in errors):
+        print("SUCCESS: Hit inotify instance limit as expected")
         return  # Test passes
+    
     # If no error, print a warning (system limit may be high in CI)
     if not errors:
-        pytest.skip(
-            "Did not hit inotify instance limit; consider lowering the "
-            "system limit for CI. Test is informative and may not always fail."
+        print("WARNING: No inotify errors occurred. System limit may be too high.")
+        print("Forcing test to fail to debug the issue...")
+        # Force the test to fail instead of skipping to see what's happening
+        raise AssertionError(
+            "Did not hit inotify instance limit. This test should fail to "
+            "reproduce the issue. Check if the limit is set correctly in CI."
         )
     else:
         # If other OSErrors, fail
+        print(f"Unexpected errors occurred: {errors}")
         raise AssertionError(f"Unexpected OSErrors: {errors}")
