@@ -689,23 +689,20 @@ def test_inotify_instance_limit_reached():
     )
 
     # If any OSError with "inotify instance limit reached" is raised,
-    # the test passes
+    # the test FAILS (because we want it to pass when the issue is fixed)
     if any("inotify instance limit reached" in str(e) for e in errors):
-        print("SUCCESS: Hit inotify instance limit as expected")
-        return  # Test passes
-
-    # If no error, print a warning (system limit may be high in CI)
-    if not errors:
-        print(
-            "WARNING: No inotify errors occurred. System limit may be too high."
-        )
-        print("Forcing test to fail to debug the issue...")
-        # Force the test to fail instead of skipping to see what's happening
+        print("FAILURE: Hit inotify instance limit - this indicates the bug still exists")
         raise AssertionError(
-            "Did not hit inotify instance limit. This test should fail to "
-            "reproduce the issue. Check if the limit is set correctly in CI."
+            f"inotify instance limit reached error occurred. "
+            f"This test should pass when the issue is fixed. "
+            f"Got {len(errors)} errors with inotify limit issues."
         )
-    else:
-        # If other OSErrors, fail
+    
+    # If no inotify errors but other errors, fail
+    if errors:
         print(f"Unexpected errors occurred: {errors}")
         raise AssertionError(f"Unexpected OSErrors: {errors}")
+    
+    # If no errors at all, the test PASSES (issue is fixed!)
+    print("SUCCESS: No inotify instance limit errors occurred - the issue appears to be fixed!")
+    return  # Test passes
