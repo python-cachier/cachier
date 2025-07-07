@@ -23,12 +23,14 @@ def test_get_default_params():
     ]
 
 
-def test_bad_name(name="nope"):
+def test_bad_name():
     # Test that the appropriate exception is thrown
     # when an invalid backend is given.
-    with pytest.raises(ValueError, match=f"specified an invalid core: {name}"):
+    invalid_core = "bad_core"
+    expctd = f"specified an invalid core: {invalid_core}"
+    with pytest.raises(ValueError, match=expctd):
 
-        @cachier(backend=name)
+        @cachier(backend=invalid_core)
         def dummy_func():
             pass
 
