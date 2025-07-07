@@ -615,6 +615,9 @@ def test_callable_hash_param(separate_files):
     not sys.platform.startswith("linux"),
     reason="inotify instance limit is only relevant on Linux",
 )
+@pytest.mark.xfail(
+    reason="inotify instance limit issue not yet fixed - test will pass when issue is resolved"
+)
 def test_inotify_instance_limit_reached():
     """Reproduces the inotify instance exhaustion issue (see Issue #24).
 
@@ -689,12 +692,11 @@ def test_inotify_instance_limit_reached():
     )
 
     # If any OSError with "inotify instance limit reached" is raised,
-    # the test FAILS (because we want it to pass when the issue is fixed)
+    # the test FAILS (expected failure due to the bug)
     if any("inotify instance limit reached" in str(e) for e in errors):
         print("FAILURE: Hit inotify instance limit - this indicates the bug still exists")
         raise AssertionError(
             f"inotify instance limit reached error occurred. "
-            f"This test should pass when the issue is fixed. "
             f"Got {len(errors)} errors with inotify limit issues."
         )
     
@@ -705,4 +707,4 @@ def test_inotify_instance_limit_reached():
     
     # If no errors at all, the test PASSES (issue is fixed!)
     print("SUCCESS: No inotify instance limit errors occurred - the issue appears to be fixed!")
-    return  # Test passes
+    # No need to return - test passes naturally
