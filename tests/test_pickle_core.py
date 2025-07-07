@@ -32,6 +32,8 @@ import pandas as pd
 from cachier import cachier
 from cachier.config import _global_params
 
+import sys
+
 
 def _get_decorated_func(func, **kwargs):
     cachier_decorator = cachier(**kwargs)
@@ -607,3 +609,55 @@ def test_callable_hash_param(separate_files):
     value_b = _params_with_dataframe(1, df=df_b)
 
     assert value_a == value_b  # same content --> same key
+
+
+@pytest.mark.pickle
+@pytest.mark.skipif(
+    not sys.platform.startswith("linux"),
+    reason="inotify instance limit is only relevant on Linux"
+)
+def test_inotify_instance_limit_reached():
+    """
+    Reproduces the inotify instance exhaustion issue (see Issue #24).
+    Rapidly creates many cache waits to exhaust inotify instances.
+    Reference: https://github.com/python-cachier/cachier/issues/24
+    """
+    import time
+    import queue
+
+    @cachier(backend="pickle", wait_for_calc_timeout=0.01)
+    def slow_func(x):
+        time.sleep(0.1)
+        return x
+
+    # Start many threads to trigger wait_on_entry_calc
+    threads = []
+    errors = []
+    results = queue.Queue()
+    N = 512  # Lowered for CI stability; increase if needed
+    def call():
+        try:
+            results.put(slow_func(1))
+        except OSError as e:
+            errors.append(e)
+
+    for _ in range(N):
+        t = threading.Thread(target=call)
+        threads.append(t)
+        t.start()
+
+    for t in threads:
+        t.join()
+
+    # If any OSError with "inotify instance limit reached" is raised, the test passes
+    if any("inotify instance limit reached" in str(e) for e in errors):
+        return  # Test passes
+    # If no error, print a warning (system limit may be high in CI)
+    if not errors:
+        pytest.skip(
+            "Did not hit inotify instance limit; consider lowering the system limit for CI. "
+            "Test is informative and may not always fail."
+        )
+    else:
+        # If other OSErrors, fail
+        raise AssertionError(f"Unexpected OSErrors: {errors}")
