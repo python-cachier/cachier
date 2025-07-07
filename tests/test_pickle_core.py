@@ -26,13 +26,12 @@ except ImportError:  # python 2
     import Queue as queue  # type: ignore
 
 import hashlib
+import sys
 
 import pandas as pd
 
 from cachier import cachier
 from cachier.config import _global_params
-
-import sys
 
 
 def _get_decorated_func(func, **kwargs):
@@ -614,16 +613,17 @@ def test_callable_hash_param(separate_files):
 @pytest.mark.pickle
 @pytest.mark.skipif(
     not sys.platform.startswith("linux"),
-    reason="inotify instance limit is only relevant on Linux"
+    reason="inotify instance limit is only relevant on Linux",
 )
 def test_inotify_instance_limit_reached():
-    """
-    Reproduces the inotify instance exhaustion issue (see Issue #24).
+    """Reproduces the inotify instance exhaustion issue (see Issue #24).
+
     Rapidly creates many cache waits to exhaust inotify instances.
     Reference: https://github.com/python-cachier/cachier/issues/24
+
     """
-    import time
     import queue
+    import time
 
     @cachier(backend="pickle", wait_for_calc_timeout=0.01)
     def slow_func(x):
@@ -635,6 +635,7 @@ def test_inotify_instance_limit_reached():
     errors = []
     results = queue.Queue()
     N = 512  # Lowered for CI stability; increase if needed
+
     def call():
         try:
             results.put(slow_func(1))
