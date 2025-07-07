@@ -642,9 +642,7 @@ def test_inotify_instance_limit_reached():
         )
         if result.returncode == 0:
             current_limit = int(result.stdout.strip())
-            print(
-                f"Current inotify max_user_instances limit: {current_limit}"
-            )
+            print(f"Current inotify max_user_instances limit: {current_limit}")
         else:
             current_limit = None
             print("Could not determine inotify limit")
