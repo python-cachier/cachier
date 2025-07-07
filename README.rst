@@ -54,6 +54,15 @@ Features
 * Thread-safety.
 * **Per-call max age:** Specify a maximum age for cached values per call.
 
+Bug Fixes
+=========
+
+**2024: Fix for inotify instance exhaustion in pickle backend**
+
+- The pickle backend previously created a new inotify instance (via watchdog) for each cache wait, which could exhaust the system's inotify instance limit under heavy concurrency (see [Issue #24](https://github.com/python-cachier/cachier/issues/24)).
+- This is now fixed: observers are reused and properly cleaned up, and the backend falls back to polling if the inotify limit is reached.
+- A regression test is included: it will fail if the bug is present, and pass when the fix is in place.
+
 Cachier is **NOT**:
 
 * Meant as a transient cache. Python's @lru_cache is better.

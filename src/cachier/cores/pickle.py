@@ -8,6 +8,8 @@
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 import os
 import pickle  # for local caching
+import threading
+import time
 from datetime import datetime
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -26,44 +28,43 @@ class _PickleCore(_BaseCore):
     """The pickle core class for cachier."""
 
     class CacheChangeHandler(PatternMatchingEventHandler):
-        """Handles cache-file modification events."""
+        """Handler for cache file changes."""
 
         def __init__(self, filename, core, key):
-            PatternMatchingEventHandler.__init__(
-                self,
-                patterns=["*" + filename],
-                ignore_patterns=None,
-                ignore_directories=True,
-                case_sensitive=False,
+            super().__init__(
+                patterns=[f"*{filename}*"], ignore_patterns=[], ignore_directories=False
             )
+            self.filename = filename
             self.core = core
             self.key = key
-            self.observer = None
             self.value = None
+            self.observer = None
 
         def inject_observer(self, observer) -> None:
-            """Inject the observer running this handler."""
+            """Inject the observer instance."""
             self.observer = observer
 
         def _check_calculation(self) -> None:
-            entry = self.core.get_entry_by_key(self.key, True)[1]
+            """Check if calculation is complete."""
             try:
-                if not entry._processing:
-                    # print('stopping observer!')
+                if self.core.separate_files:
+                    entry = self.core._load_cache_by_key(self.key)
+                else:
+                    with self.core.lock:
+                        entry = self.core.get_cache_dict().get(self.key)
+                if entry and not entry._processing:
                     self.value = entry.value
-                    self.observer.stop()
-                # else:
-                #     print('NOT stopping observer... :(')
-            except AttributeError:  # catching entry being None
-                self.value = None
-                self.observer.stop()
+                    if self.observer:
+                        self.observer.stop()
+            except Exception:
+                pass
 
         def on_created(self, event) -> None:
-            """A Watchdog Event Handler method."""  # noqa: D401
-            self._check_calculation()  # pragma: no cover
+            """Handle file creation events."""
+            self._check_calculation()
 
         def on_modified(self, event) -> None:
-            """A Watchdog Event Handler method."""  # noqa: D401
+            """Handle file modification events."""
             self._check_calculation()
 
     def __init__(
@@ -74,16 +75,20 @@ class _PickleCore(_BaseCore):
         separate_files: Optional[bool],
         wait_for_calc_timeout: Optional[int],
     ):
-        super().__init__(hash_func, wait_for_calc_timeout)
-        self._cache_dict: Dict[str, CacheEntry] = {}
-        self.reload = _update_with_defaults(pickle_reload, "pickle_reload")
-        self.cache_dir = os.path.expanduser(
-            _update_with_defaults(cache_dir, "cache_dir")
+        super().__init__(
+            hash_func=hash_func,
+            wait_for_calc_timeout=wait_for_calc_timeout,
         )
-        self.separate_files = _update_with_defaults(
-            separate_files, "separate_files"
-        )
+        self.cache_dir = str(cache_dir) if cache_dir else "~/.cachier"
+        self.cache_dir = os.path.expanduser(self.cache_dir)
+        os.makedirs(self.cache_dir, exist_ok=True)
+        self.separate_files = separate_files
+        self.reload = pickle_reload
+        self._cache_dict: Optional[Dict[str, CacheEntry]] = None
         self._cache_used_fpath = ""
+        # Observer cache to prevent inotify instance exhaustion
+        self._observer_cache: Dict[str, Observer] = {}
+        self._observer_lock = threading.Lock()
 
     @property
     def cache_fname(self) -> str:
@@ -256,29 +261,111 @@ class _PickleCore(_BaseCore):
                 cache[key]._processing = False
                 self._save_cache(cache)
 
+    def _get_or_create_observer(self, key: str) -> Observer:
+        """Get an existing observer for the key or create a new one."""
+        with self._observer_lock:
+            if key in self._observer_cache:
+                observer = self._observer_cache[key]
+                if observer.is_alive():
+                    return observer
+                else:
+                    # Clean up dead observer
+                    del self._observer_cache[key]
+            
+            # Create new observer
+            observer = Observer()
+            self._observer_cache[key] = observer
+            return observer
+
+    def _cleanup_observer(self, key: str) -> None:
+        """Clean up observer for the given key."""
+        with self._observer_lock:
+            if key in self._observer_cache:
+                observer = self._observer_cache[key]
+                try:
+                    if observer.is_alive():
+                        observer.stop()
+                        observer.join(timeout=1.0)
+                except Exception:
+                    pass  # Ignore cleanup errors
+                del self._observer_cache[key]
+
     def wait_on_entry_calc(self, key: str) -> Any:
+        """Wait for entry calculation to complete with inotify protection."""
         if self.separate_files:
             entry = self._load_cache_by_key(key)
             filename = f"{self.cache_fname}_{key}"
         else:
             with self.lock:
-                entry = self.get_cache_dict()[key]
+                entry = self.get_cache_dict().get(key)
             filename = self.cache_fname
+        
         if entry and not entry._processing:
             return entry.value
+
+        # Try to use inotify-based waiting
+        try:
+            return self._wait_with_inotify(key, filename)
+        except OSError as e:
+            if "inotify instance limit reached" in str(e):
+                # Fall back to polling if inotify limit is reached
+                return self._wait_with_polling(key)
+            else:
+                raise
+        except Exception:
+            # For any other exception, fall back to polling
+            return self._wait_with_polling(key)
+
+    def _wait_with_inotify(self, key: str, filename: str) -> Any:
+        """Wait for calculation using inotify (original method with fixes)."""
         event_handler = _PickleCore.CacheChangeHandler(
             filename=filename, core=self, key=key
         )
-        observer = Observer()
+        
+        observer = self._get_or_create_observer(key)
         event_handler.inject_observer(observer)
-        observer.schedule(event_handler, path=self.cache_dir, recursive=True)
-        observer.start()
+        
+        try:
+            observer.schedule(event_handler, path=self.cache_dir, recursive=True)
+            if not observer.is_alive():
+                observer.start()
+            
+            time_spent = 0
+            while observer.is_alive():
+                observer.join(timeout=1.0)
+                time_spent += 1
+                self.check_calc_timeout(time_spent)
+                
+                # Check if calculation is complete
+                if event_handler.value is not None:
+                    break
+            
+            return event_handler.value
+        finally:
+            # Always cleanup the observer
+            self._cleanup_observer(key)
+
+    def _wait_with_polling(self, key: str) -> Any:
+        """Fallback method using polling instead of inotify."""
         time_spent = 0
-        while observer.is_alive():
-            observer.join(timeout=1.0)
+        while True:
+            time.sleep(1)  # Poll every 1 second (matching other cores)
             time_spent += 1
-            self.check_calc_timeout(time_spent)
-        return event_handler.value
+            
+            try:
+                if self.separate_files:
+                    entry = self._load_cache_by_key(key)
+                else:
+                    with self.lock:
+                        entry = self.get_cache_dict().get(key)
+                
+                if entry and not entry._processing:
+                    return entry.value
+                    
+                self.check_calc_timeout(time_spent)
+            except Exception:
+                # Continue polling even if there are errors
+                pass
 
     def clear_cache(self) -> None:
         if self.separate_files:
