@@ -56,6 +56,11 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e . -r tests/requirements.txt
 
+      - name: Lower inotify instance limit (Linux only, for Issue #24 test)
+        if: runner.os == 'Linux' && matrix.backend == 'local'
+        run: sudo sysctl -w fs.inotify.max_user_instances=128
+        # This helps the test_inotify_instance_limit_reached hit the limit in CI
+
       - name: Unit tests (local)
         if: matrix.backend == 'local'
         run: pytest -m "not mongo and not sql and not redis" --cov=cachier --cov-report=term --cov-report=xml:cov.xml

@@ -26,6 +26,7 @@ except ImportError:  # python 2
     import Queue as queue  # type: ignore
 
 import hashlib
+import sys
 
 import pandas as pd
 
@@ -607,3 +608,108 @@ def test_callable_hash_param(separate_files):
     value_b = _params_with_dataframe(1, df=df_b)
 
     assert value_a == value_b  # same content --> same key
+
+
+@pytest.mark.pickle
+@pytest.mark.skipif(
+    not sys.platform.startswith("linux"),
+    reason="inotify instance limit is only relevant on Linux",
+)
+@pytest.mark.xfail(
+    reason=(
+        "inotify instance limit issue not yet fixed - test will pass "
+        "when issue is resolved"
+    )
+)
+def test_inotify_instance_limit_reached():
+    """Reproduces the inotify instance exhaustion issue (see Issue #24).
+
+    Rapidly creates many cache waits to exhaust inotify instances.
+    Reference: https://github.com/python-cachier/cachier/issues/24
+
+    """
+    import queue
+    import subprocess
+    import time
+
+    # Try to get the current inotify limit
+    try:
+        result = subprocess.run(
+            ["/bin/cat", "/proc/sys/fs/inotify/max_user_instances"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if result.returncode == 0:
+            current_limit = int(result.stdout.strip())
+            print(f"Current inotify max_user_instances limit: {current_limit}")
+        else:
+            current_limit = None
+            print("Could not determine inotify limit")
+    except Exception as e:
+        current_limit = None
+        print(f"Error getting inotify limit: {e}")
+
+    @cachier(backend="pickle", wait_for_calc_timeout=0.1)
+    def slow_func(x):
+        time.sleep(0.5)  # Make it slower to increase chance of hitting limit
+        return x
+
+    # Start many threads to trigger wait_on_entry_calc
+    threads = []
+    errors = []
+    results = queue.Queue()
+
+    # Be more aggressive - try to exhaust the limit
+    N = (
+        min(current_limit * 4, 4096) if current_limit is not None else 4096
+    )  # Try to exceed the limit more aggressively
+    print(f"Starting {N} threads to test inotify exhaustion")
+
+    def call():
+        try:
+            results.put(slow_func(1))
+        except OSError as e:
+            errors.append(e)
+        except Exception as e:
+            # Capture any other exceptions for debugging
+            errors.append(e)
+
+    for i in range(N):
+        t = threading.Thread(target=call)
+        threads.append(t)
+        t.start()
+        if i % 100 == 0:
+            print(f"Started {i} threads...")
+
+    print("Waiting for all threads to complete...")
+    for t in threads:
+        t.join()
+
+    print(
+        f"Test completed. Got {len(errors)} errors, {results.qsize()} results"
+    )
+
+    # If any OSError with "inotify instance limit reached" is raised,
+    # the test FAILS (expected failure due to the bug)
+    if any("inotify instance limit reached" in str(e) for e in errors):
+        print(
+            "FAILURE: Hit inotify instance limit - this indicates the bug "
+            "still exists"
+        )
+        raise AssertionError(
+            "inotify instance limit reached error occurred. "
+            f"Got {len(errors)} errors with inotify limit issues."
+        )
+
+    # If no inotify errors but other errors, fail
+    if errors:
+        print(f"Unexpected errors occurred: {errors}")
+        raise AssertionError(f"Unexpected OSErrors: {errors}")
+
+    # If no errors at all, the test PASSES (issue is fixed!)
+    print(
+        "SUCCESS: No inotify instance limit errors occurred - the issue "
+        "appears to be fixed!"
+    )
+    # No need to return - test passes naturally
