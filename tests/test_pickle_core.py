@@ -623,8 +623,8 @@ def test_inotify_instance_limit_reached():
 
     """
     import queue
-    import time
     import subprocess
+    import time
 
     # Try to get the current inotify limit
     try:
@@ -632,7 +632,7 @@ def test_inotify_instance_limit_reached():
             ["cat", "/proc/sys/fs/inotify/max_user_instances"],
             capture_output=True,
             text=True,
-            timeout=5
+            timeout=5,
         )
         if result.returncode == 0:
             current_limit = int(result.stdout.strip())
@@ -653,13 +653,15 @@ def test_inotify_instance_limit_reached():
     threads = []
     errors = []
     results = queue.Queue()
-    
+
     # Be more aggressive - try to exhaust the limit
     if current_limit is not None:
-        N = min(current_limit * 4, 4096)  # Try to exceed the limit more aggressively
+        N = min(
+            current_limit * 4, 4096
+        )  # Try to exceed the limit more aggressively
     else:
         N = 4096  # Default aggressive value
-    
+
     print(f"Starting {N} threads to test inotify exhaustion")
 
     def call():
@@ -682,17 +684,21 @@ def test_inotify_instance_limit_reached():
     for t in threads:
         t.join()
 
-    print(f"Test completed. Got {len(errors)} errors, {results.qsize()} results")
+    print(
+        f"Test completed. Got {len(errors)} errors, {results.qsize()} results"
+    )
 
     # If any OSError with "inotify instance limit reached" is raised,
     # the test passes
     if any("inotify instance limit reached" in str(e) for e in errors):
         print("SUCCESS: Hit inotify instance limit as expected")
         return  # Test passes
-    
+
     # If no error, print a warning (system limit may be high in CI)
     if not errors:
-        print("WARNING: No inotify errors occurred. System limit may be too high.")
+        print(
+            "WARNING: No inotify errors occurred. System limit may be too high."
+        )
         print("Forcing test to fail to debug the issue...")
         # Force the test to fail instead of skipping to see what's happening
         raise AssertionError(
