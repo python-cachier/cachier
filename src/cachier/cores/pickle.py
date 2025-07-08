@@ -6,9 +6,9 @@
 # Licensed under the MIT license:
 # http://www.opensource.org/licenses/MIT-license
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
+import logging
 import os
 import pickle  # for local caching
-import threading
 import time
 from datetime import datetime
 from typing import Any, Dict, Optional, Tuple, Union
@@ -270,8 +270,8 @@ class _PickleCore(_BaseCore):
             if observer.is_alive():
                 observer.stop()
                 observer.join(timeout=1.0)
-        except Exception:
-            pass  # Ignore cleanup errors
+        except Exception as e:
+            logging.debug("Observer cleanup failed: %s", e)
 
     def wait_on_entry_calc(self, key: str) -> Any:
         """Wait for entry calculation to complete with inotify protection."""
