@@ -53,12 +53,14 @@ class _PickleCore(_BaseCore):
                 if not entry._processing:
                     # print('stopping observer!')
                     self.value = entry.value
-                    self.observer.stop()
+                    if self.observer is not None:
+                        self.observer.stop()
                 # else:
                 #     print('NOT stopping observer... :(')
             except AttributeError:  # catching entry being None
                 self.value = None
-                self.observer.stop()
+                if self.observer is not None:
+                    self.observer.stop()
 
         def on_created(self, event) -> None:
             """A Watchdog Event Handler method."""  # noqa: D401
@@ -86,9 +88,6 @@ class _PickleCore(_BaseCore):
             separate_files, "separate_files"
         )
         self._cache_used_fpath = ""
-        # Observer cache to prevent inotify instance exhaustion
-        self._observer_cache: Dict[str, Observer] = {}
-        self._observer_lock = threading.Lock()
 
     @property
     def cache_fname(self) -> str:
@@ -261,34 +260,18 @@ class _PickleCore(_BaseCore):
                 cache[key]._processing = False
                 self._save_cache(cache)
 
-    def _get_or_create_observer(self, key: str) -> Observer:
-        """Get an existing observer for the key or create a new one."""
-        with self._observer_lock:
-            if key in self._observer_cache:
-                observer = self._observer_cache[key]
-                if observer.is_alive():
-                    return observer
-                else:
-                    # Clean up dead observer
-                    del self._observer_cache[key]
+    def _create_observer(self) -> Observer:
+        """Create a new observer instance."""
+        return Observer()
 
-            # Create new observer
-            observer = Observer()
-            self._observer_cache[key] = observer
-            return observer
-
-    def _cleanup_observer(self, key: str) -> None:
-        """Clean up observer for the given key."""
-        with self._observer_lock:
-            if key in self._observer_cache:
-                observer = self._observer_cache[key]
-                try:
-                    if observer.is_alive():
-                        observer.stop()
-                        observer.join(timeout=1.0)
-                except Exception:
-                    pass  # Ignore cleanup errors
-                del self._observer_cache[key]
+    def _cleanup_observer(self, observer: Observer) -> None:
+        """Clean up observer properly."""
+        try:
+            if observer.is_alive():
+                observer.stop()
+                observer.join(timeout=1.0)
+        except Exception:
+            pass  # Ignore cleanup errors
 
     def wait_on_entry_calc(self, key: str) -> Any:
         """Wait for entry calculation to complete with inotify protection."""
@@ -314,20 +297,19 @@ class _PickleCore(_BaseCore):
                 raise
 
     def _wait_with_inotify(self, key: str, filename: str) -> Any:
-        """Wait for calculation using inotify (original method with fixes)."""
+        """Wait for calculation using inotify with proper cleanup."""
         event_handler = _PickleCore.CacheChangeHandler(
             filename=filename, core=self, key=key
         )
 
-        observer = self._get_or_create_observer(key)
+        observer = self._create_observer()
         event_handler.inject_observer(observer)
 
         try:
             observer.schedule(
                 event_handler, path=self.cache_dir, recursive=True
             )
-            if not observer.is_alive():
-                observer.start()
+            observer.start()
 
             time_spent = 0
             while observer.is_alive():
@@ -342,7 +324,7 @@ class _PickleCore(_BaseCore):
             return event_handler.value
         finally:
             # Always cleanup the observer
-            self._cleanup_observer(key)
+            self._cleanup_observer(observer)
 
     def _wait_with_polling(self, key: str) -> Any:
         """Fallback method using polling instead of inotify."""
