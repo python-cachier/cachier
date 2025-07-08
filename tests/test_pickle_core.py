@@ -615,12 +615,6 @@ def test_callable_hash_param(separate_files):
     not sys.platform.startswith("linux"),
     reason="inotify instance limit is only relevant on Linux",
 )
-@pytest.mark.xfail(
-    reason=(
-        "inotify instance limit issue not yet fixed - test will pass "
-        "when issue is resolved"
-    )
-)
 def test_inotify_instance_limit_reached():
     """Reproduces the inotify instance exhaustion issue (see Issue #24).
 
