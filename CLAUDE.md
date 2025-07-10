@@ -75,6 +75,7 @@ ______________________________________________________________________
 4. **Try an example:**
 
    ```bash
+   # Quick test
    python -c "
    from cachier import cachier
    import datetime
@@ -86,6 +87,9 @@ ______________________________________________________________________
    print(test_func(5))  # Calculates and caches
    print(test_func(5))  # Returns from cache
    "
+   
+   # Or run the Redis example (requires Redis server)
+   python examples/redis_example.py
    ```
 
 ______________________________________________________________________
@@ -284,6 +288,7 @@ ______________________________________________________________________
 - **All code must be Python 3.9+ compatible.**
 - **All new code must have full type annotations and numpy-style docstrings.**
 - **Backend consistency:** Ensure all backends (pickle, memory, mongo, sql, redis) are supported.**
+- **Validation:** Test examples in this file work: `python -c "from cachier import cachier; ..."` should succeed.
 - **If you are unsure about a pattern, check the README, this file, and .github/copilot-instructions.md first.**
 - **If you are stuck, suggest opening a new chat with the latest context.**
 
