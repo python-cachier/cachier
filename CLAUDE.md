@@ -79,15 +79,15 @@ ______________________________________________________________________
    python -c "
    from cachier import cachier
    import datetime
-   
+
    @cachier(stale_after=datetime.timedelta(days=1))
    def test_func(x):
        return x * 2
-   
+
    print(test_func(5))  # Calculates and caches
    print(test_func(5))  # Returns from cache
    "
-   
+
    # Or run the Redis example (requires Redis server)
    python examples/redis_example.py
    ```
@@ -255,24 +255,24 @@ ______________________________________________________________________
 
 ## 🧭 Quick Reference
 
-| Task                       | Command/Location                    |
-| -------------------------- | ----------------------------------- |
-| Run all tests              | `pytest`                            |
-| Run backend-specific tests | `pytest -m <backend>`               |
+| Task                       | Command/Location                   |
+| -------------------------- | ---------------------------------- |
+| Run all tests              | `pytest`                           |
+| Run backend-specific tests | `pytest -m <backend>`              |
 | Test multiple backends     | `pytest -m "redis or sql"`         |
 | Exclude backends           | `pytest -m "not mongo"`            |
-| Lint                       | `ruff check .`                      |
-| Type check                 | `mypy src/cachier/`                 |
-| Format code                | `ruff format .`                     |
-| Build package              | `python -m build`                   |
+| Lint                       | `ruff check .`                     |
+| Type check                 | `mypy src/cachier/`                |
+| Format code                | `ruff format .`                    |
+| Build package              | `python -m build`                  |
 | Check docs                 | `python setup.py checkdocs`        |
 | Backend requirements       | `tests/sql_requirements.txt`, etc. |
-| Main decorator             | `src/cachier/core.py`               |
-| Backends                   | `src/cachier/cores/`                |
-| Global config              | `src/cachier/config.py`             |
-| Tests                      | `tests/`                            |
-| Examples                   | `examples/`                         |
-| Documentation              | `README.rst`                        |
+| Main decorator             | `src/cachier/core.py`              |
+| Backends                   | `src/cachier/cores/`               |
+| Global config              | `src/cachier/config.py`            |
+| Tests                      | `tests/`                           |
+| Examples                   | `examples/`                        |
+| Documentation              | `README.rst`                       |
 | Contributor guidelines     | `.github/copilot-instructions.md`  |
 
 ______________________________________________________________________
@@ -287,7 +287,7 @@ ______________________________________________________________________
 - **Never emit warnings/errors for missing optional deps at import time.**
 - **All code must be Python 3.9+ compatible.**
 - **All new code must have full type annotations and numpy-style docstrings.**
-- **Backend consistency:** Ensure all backends (pickle, memory, mongo, sql, redis) are supported.**
+- **Backend consistency:** Ensure all backends (pickle, memory, mongo, sql, redis) are supported.\*\*
 - **Validation:** Test examples in this file work: `python -c "from cachier import cachier; ..."` should succeed.
 - **If you are unsure about a pattern, check the README, this file, and .github/copilot-instructions.md first.**
 - **If you are stuck, suggest opening a new chat with the latest context.**
