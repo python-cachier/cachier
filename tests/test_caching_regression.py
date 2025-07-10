@@ -1,8 +1,10 @@
 """Test for caching enable/disable regression issue.
 
-This test ensures that decorators defined when caching is disabled
-can still be enabled later via enable_caching().
+This test ensures that decorators defined when caching is disabled can still be
+enabled later via enable_caching().
+
 """
+
 import datetime
 
 import cachier
@@ -16,7 +18,7 @@ def test_enable_caching_after_decorator_definition():
     call_count = 0
 
     # Use memory backend to avoid file cache persistence issues
-    @cachier.cachier(backend='memory')
+    @cachier.cachier(backend="memory")
     def test_func(param):
         nonlocal call_count
         call_count += 1
@@ -62,7 +64,7 @@ def test_disable_caching_after_decorator_definition():
     call_count = 0
 
     # Use memory backend to avoid file cache persistence issues
-    @cachier.cachier(backend='memory')
+    @cachier.cachier(backend="memory")
     def test_func(param):
         nonlocal call_count
         call_count += 1
@@ -104,7 +106,7 @@ def test_original_issue_scenario():
                 cachier.enable_caching()
 
         # Use memory backend to avoid file cache persistence issues
-        @cachier.cachier(backend='memory')
+        @cachier.cachier(backend="memory")
         def test(self, param):
             self.counter += 1
             return param

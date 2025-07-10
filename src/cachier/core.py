@@ -289,6 +289,7 @@ def cachier(
 
             # Check current global caching state dynamically
             from .config import _global_params
+
             if ignore_cache or not _global_params.caching_enabled:
                 return (
                     func(args[0], **kwargs)
