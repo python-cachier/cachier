@@ -185,8 +185,6 @@ def cachier(
         None will not be cached and are recalculated every call.
 
     """
-    from .config import _global_params
-
     # Check for deprecated parameters
     if hash_params is not None:
         message = (
@@ -288,6 +286,9 @@ def cachier(
             )
 
             _print = print if verbose else lambda x: None
+
+            # Check current global caching state dynamically
+            from .config import _global_params
 
             if ignore_cache or not _global_params.caching_enabled:
                 return (
