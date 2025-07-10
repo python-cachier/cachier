@@ -13,7 +13,7 @@
 - **CI:** GitHub Actions (matrix for backends/OS)
 - **Issue Tracking:** GitHub Issues
 
----
+______________________________________________________________________
 
 ## 🗂️ Repository Structure
 
@@ -44,33 +44,38 @@ cachier/
 └── ... (see full tree above)
 ```
 
----
+______________________________________________________________________
 
 ## 🚦 Quick Start
 
 1. **Install core dependencies:**
+
    ```bash
    pip install .[all]
    ```
+
    - For backend-specific dev: see `tests/*_requirements.txt`.
 
 2. **Run tests:**
+
    ```bash
    pytest
    ```
 
 3. **Lint and type-check:**
+
    ```bash
    ruff check .
    mypy src/cachier/
    ```
 
 4. **Try an example:**
+
    ```bash
    python examples/redis_example.py
    ```
 
----
+______________________________________________________________________
 
 ## 🧑‍💻 Development Guidelines
 
@@ -125,7 +130,7 @@ cachier/
 
 - Use `set_default_params`, `set_global_params`, `enable_caching`, `disable_caching` for global config.
 
----
+______________________________________________________________________
 
 ## 🛠️ Common Bash & MCP Commands
 
@@ -145,7 +150,7 @@ cachier/
 - **Run example:** `python examples/redis_example.py`
 - **Update requirements:** Edit `tests/*_requirements.txt` as needed.
 
----
+______________________________________________________________________
 
 ## 🧩 Claude Code Integration
 
@@ -180,7 +185,7 @@ cachier/
 - **Use per-file or per-line ignores for mypy/ruff only when justified.**
 - **All new code must have full type annotations and numpy-style docstrings.**
 
----
+______________________________________________________________________
 
 ## 🧪 Testing Matrix & Markers
 
@@ -189,7 +194,7 @@ cachier/
 - **Tests must not break if optional backend deps are missing.**
 - **CI matrix:** See `.github/workflows/` for details.
 
----
+______________________________________________________________________
 
 ## 📝 Documentation & Examples
 
@@ -197,7 +202,7 @@ cachier/
 - **Examples:** Add usage examples for new features/backends in `examples/`.
 - **Docstrings:** Numpy style, multi-line, no single-line docstrings.
 
----
+______________________________________________________________________
 
 ## 🛡️ Security & Performance
 
@@ -206,7 +211,7 @@ cachier/
 - **Thread safety:** All backends must be thread-safe.
 - **Performance:** Avoid unnecessary serialization/deserialization.
 
----
+______________________________________________________________________
 
 ## 🏷️ Branching & Workflow
 
@@ -215,28 +220,28 @@ cachier/
 - **PRs:** Reference relevant issue, link to tests/docs as needed.
 - **Commits:** Use MCP tools, not direct git CLI.
 
----
+______________________________________________________________________
 
 ## 🧭 Quick Reference
 
-| Task                        | Command/Location                        |
-|-----------------------------|-----------------------------------------|
-| Run all tests               | `pytest`                                |
-| Run backend-specific tests  | `pytest -m <backend>`                   |
-| Lint                        | `ruff check .`                          |
-| Type check                  | `mypy src/cachier/`                     |
-| Format code                 | `ruff format .`                         |
-| Build package               | `python -m build`                       |
-| Check docs                  | `python setup.py checkdocs`             |
-| Update requirements         | `tests/*_requirements.txt`              |
-| Main decorator              | `src/cachier/core.py`                   |
-| Backends                    | `src/cachier/cores/`                    |
-| Global config               | `src/cachier/config.py`                 |
-| Tests                       | `tests/`                                |
-| Examples                    | `examples/`                             |
-| Documentation               | `README.rst`                            |
+| Task                       | Command/Location            |
+| -------------------------- | --------------------------- |
+| Run all tests              | `pytest`                    |
+| Run backend-specific tests | `pytest -m <backend>`       |
+| Lint                       | `ruff check .`              |
+| Type check                 | `mypy src/cachier/`         |
+| Format code                | `ruff format .`             |
+| Build package              | `python -m build`           |
+| Check docs                 | `python setup.py checkdocs` |
+| Update requirements        | `tests/*_requirements.txt`  |
+| Main decorator             | `src/cachier/core.py`       |
+| Backends                   | `src/cachier/cores/`        |
+| Global config              | `src/cachier/config.py`     |
+| Tests                      | `tests/`                    |
+| Examples                   | `examples/`                 |
+| Documentation              | `README.rst`                |
 
----
+______________________________________________________________________
 
 ## 🧠 Claude Code: Special Instructions
 
@@ -250,7 +255,7 @@ cachier/
 - **If you are unsure about a pattern, check the README and this file first.**
 - **If you are stuck, suggest opening a new chat with the latest context.**
 
----
+______________________________________________________________________
 
 ## 🏁 Final Notes
 
