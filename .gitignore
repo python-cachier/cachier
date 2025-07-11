@@ -107,4 +107,9 @@ Pipfile.lock
 
 tags
 
+# cursor rules, etc.
 .cursor
+
+# created by backlog.md
+# https://github.com/MrLesk/Backlog.md
+backlog

@@ -535,9 +535,45 @@ To run all tests EXCEPT memory core AND MongoDB core related tests, use:
 Running MongoDB tests against a live MongoDB instance
 -----------------------------------------------------
 
-**Note to developers:** By default, all MongoDB tests are run against a mocked MongoDB instance, provided by the ``pymongo_inmemory`` package. To run them against a live MongoDB instance, the ``CACHIER_TEST_VS_DOCKERIZED_MONGO`` environment variable is set to ``True`` in the ``test`` environment of this repository (and additional environment variables are populated with the appropriate credentials), used by the GitHub Action running tests on every commit and pull request.
+**Note to developers:** By default, all MongoDB tests are run against a mocked MongoDB instance, provided by the ``pymongo_inmemory`` package. To run them against a live MongoDB instance, you now have several options:
 
-Contributors are not expected to run these tests against a live MongoDB instance when developing, as credentials for the testing instance used will NOT be shared, but rather use the testing against the in-memory MongoDB instance as a good proxy.
+**Option 1: Using the test script (recommended)**
+
+.. code-block:: bash
+
+  ./scripts/test-mongo-local.sh                    # MongoDB tests only (default)
+  ./scripts/test-mongo-local.sh --mode also-local # MongoDB + memory, pickle, maxage tests
+
+This script automatically handles Docker container lifecycle, environment variables, and cleanup. Additional options:
+
+- ``--mode also-local``: Include memory, pickle, and maxage tests alongside MongoDB tests
+- ``--keep-running``: Keep MongoDB container running after tests
+- ``--verbose``: Show verbose output
+- ``--coverage-html``: Generate HTML coverage report
+
+**Option 2: Using Make**
+
+.. code-block:: bash
+
+  make test-mongo-local  # Run tests with Docker MongoDB
+  make test-mongo-inmemory  # Run tests with in-memory MongoDB (default)
+
+**Option 3: Manual setup**
+
+.. code-block:: bash
+
+  # Start MongoDB with Docker
+  docker run -d -p 27017:27017 --name cachier-test-mongo mongo:latest
+
+  # Run tests
+  CACHIER_TEST_HOST=localhost CACHIER_TEST_PORT=27017 CACHIER_TEST_VS_DOCKERIZED_MONGO=true pytest -m mongo
+
+  # Clean up
+  docker stop cachier-test-mongo && docker rm cachier-test-mongo
+
+**CI Environment:** The ``CACHIER_TEST_VS_DOCKERIZED_MONGO`` environment variable is set to ``True`` in the GitHub Actions CI environment, which runs tests against a real MongoDB instance on every commit and pull request.
+
+Contributors are encouraged to test against a real MongoDB instance before submitting PRs to ensure compatibility, though the in-memory MongoDB instance serves as a good proxy for most development.
 
 **HOWEVER, the tests run against a live MongoDB instance when you submit a PR are the determining tests for deciding whether your code functions correctly against MongoDB.**
 
