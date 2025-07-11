@@ -196,6 +196,7 @@ docker-compose -f scripts/docker-compose.mongodb.yml down
 ```
 
 **Available Options:**
+
 - `./scripts/test-mongo-local.sh` - Run MongoDB tests only (default)
 - `./scripts/test-mongo-local.sh --mode also-local` - Include memory, pickle, and maxage tests
 - `./scripts/test-mongo-local.sh --keep-running` - Keep MongoDB running after tests
@@ -203,6 +204,7 @@ docker-compose -f scripts/docker-compose.mongodb.yml down
 - `./scripts/test-mongo-local.sh --coverage-html` - Generate HTML coverage report
 
 **Make Targets:**
+
 - `make test-mongo-local` - Run MongoDB tests with Docker
 - `make test-mongo-inmemory` - Run with in-memory MongoDB (default)
 - `make mongo-start` - Start MongoDB container

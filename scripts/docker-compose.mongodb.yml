@@ -1,7 +1,7 @@
 # Docker Compose configuration for local MongoDB testing
 # This file provides an alternative to the shell script approach
 
-version: '3.8'
+version: "3.8"
 
 services:
   mongodb:
@@ -28,7 +28,6 @@ services:
 networks:
   cachier-test:
     driver: bridge
-
 # Optional: volume for data persistence
 # volumes:
 #   cachier-mongo-data:
