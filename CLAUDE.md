@@ -177,6 +177,40 @@ ______________________________________________________________________
 - **Run example:** `python examples/redis_example.py`
 - **Update requirements:** Edit `tests/*_requirements.txt` as needed (sql_requirements.txt, redis_requirements.txt).
 
+### MongoDB Local Testing
+
+**Quick Start for MongoDB Testing:**
+
+```bash
+# Option 1: Using the shell script (recommended)
+./scripts/test-mongo-local.sh                    # MongoDB tests only
+./scripts/test-mongo-local.sh --mode also-local # MongoDB + memory, pickle, maxage tests
+
+# Option 2: Using make
+make test-mongo-local
+
+# Option 3: Using docker-compose
+docker-compose -f scripts/docker-compose.mongodb.yml up -d
+CACHIER_TEST_HOST=localhost CACHIER_TEST_PORT=27017 CACHIER_TEST_VS_DOCKERIZED_MONGO=true pytest -m mongo
+docker-compose -f scripts/docker-compose.mongodb.yml down
+```
+
+**Available Options:**
+- `./scripts/test-mongo-local.sh` - Run MongoDB tests only (default)
+- `./scripts/test-mongo-local.sh --mode also-local` - Include memory, pickle, and maxage tests
+- `./scripts/test-mongo-local.sh --keep-running` - Keep MongoDB running after tests
+- `./scripts/test-mongo-local.sh --verbose` - Show verbose output
+- `./scripts/test-mongo-local.sh --coverage-html` - Generate HTML coverage report
+
+**Make Targets:**
+- `make test-mongo-local` - Run MongoDB tests with Docker
+- `make test-mongo-inmemory` - Run with in-memory MongoDB (default)
+- `make mongo-start` - Start MongoDB container
+- `make mongo-stop` - Stop MongoDB container
+- `make mongo-logs` - View MongoDB logs
+
+**Note:** By default, MongoDB tests use `pymongo_inmemory` which doesn't require Docker. The above commands let you test against a real MongoDB instance matching the CI environment.
+
 ______________________________________________________________________
 
 ## 🧩 Claude Code Integration
