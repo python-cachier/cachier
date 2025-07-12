@@ -307,17 +307,17 @@ def test_deprecated_func_kwargs():
     dummy_func.clear_cache()
     assert count == 0
     with pytest.deprecated_call(
-            match="`verbose_cache` is deprecated and will be removed"
+        match="`verbose_cache` is deprecated and will be removed"
     ):
         assert dummy_func(1, verbose_cache=True) == 3
     assert count == 1
     with pytest.deprecated_call(
-            match="`ignore_cache` is deprecated and will be removed"
+        match="`ignore_cache` is deprecated and will be removed"
     ):
         assert dummy_func(1, ignore_cache=True) == 3
     assert count == 2
     with pytest.deprecated_call(
-            match="`overwrite_cache` is deprecated and will be removed"
+        match="`overwrite_cache` is deprecated and will be removed"
     ):
         assert dummy_func(1, overwrite_cache=True) == 3
     assert count == 3
