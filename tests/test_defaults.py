@@ -97,6 +97,36 @@ def test_cache_dir_default_param(tmpdir):
     assert global_test_2.cache_dpath() == str(tmpdir / "2")
 
 
+def test_cache_dir_respects_xdg(monkeypatch, tmpdir):
+    xdg_path = str(tmpdir / "xdg_home")
+    monkeypatch.setenv("XDG_CACHE_HOME", xdg_path)
+
+    expected_path = os.path.join(xdg_path, "cachier")
+
+    @cachier.cachier(backend="pickle")
+    def my_func():
+        return 123
+
+    actual_path = my_func.cache_dpath()
+    assert str(actual_path) == expected_path
+
+    my_func()  # Create cache file
+    assert os.path.exists(expected_path)
+    files = os.listdir(expected_path) if os.path.exists(expected_path) else []
+    assert any(os.path.isfile(os.path.join(expected_path, f)) for f in files)
+
+
+def test_cache_dir_default_fallback(monkeypatch):
+    monkeypatch.delenv("XDG_CACHE_HOME", raising=False)
+
+    @cachier.cachier()
+    def my_func():
+        return 123
+
+    expected_path = os.path.expanduser("~/.cachier/")
+    assert my_func.cache_dpath().startswith(expected_path)
+
+
 def test_separate_files_default_param(tmpdir):
     cachier.set_global_params(separate_files=True)
 
@@ -277,17 +307,17 @@ def test_deprecated_func_kwargs():
     dummy_func.clear_cache()
     assert count == 0
     with pytest.deprecated_call(
-        match="`verbose_cache` is deprecated and will be removed"
+            match="`verbose_cache` is deprecated and will be removed"
     ):
         assert dummy_func(1, verbose_cache=True) == 3
     assert count == 1
     with pytest.deprecated_call(
-        match="`ignore_cache` is deprecated and will be removed"
+            match="`ignore_cache` is deprecated and will be removed"
     ):
         assert dummy_func(1, ignore_cache=True) == 3
     assert count == 2
     with pytest.deprecated_call(
-        match="`overwrite_cache` is deprecated and will be removed"
+            match="`overwrite_cache` is deprecated and will be removed"
     ):
         assert dummy_func(1, overwrite_cache=True) == 3
     assert count == 3
