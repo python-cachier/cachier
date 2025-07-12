@@ -22,6 +22,7 @@ def _default_cache_dir():
     """Return default cache directory based on XDG specification.
 
     Uses $XDG_CACHE_HOME if defined, otherwise falls back to ~/.cachier/
+
     """
     xdg_cache_home = os.environ.get("XDG_CACHE_HOME")
     if xdg_cache_home:
@@ -41,7 +42,9 @@ class Params:
     mongetter: Optional[Mongetter] = None
     stale_after: timedelta = timedelta.max
     next_time: bool = False
-    _cache_dir: Union[str, os.PathLike] = field(default_factory=_default_cache_dir)
+    _cache_dir: Union[str, os.PathLike] = field(
+        default_factory=_default_cache_dir
+    )
     pickle_reload: bool = True
     separate_files: bool = False
     wait_for_calc_timeout: int = 0
@@ -51,7 +54,10 @@ class Params:
     def cache_dir(self) -> Union[str, os.PathLike]:
         """Dynamically get the cache directory, respecting XDG_CACHE_HOME."""
         default_cache = os.path.expanduser("~/.cachier/")
-        if self._cache_dir == _default_cache_dir or self._cache_dir == default_cache:
+        if (
+            self._cache_dir == _default_cache_dir
+            or self._cache_dir == default_cache
+        ):
             return _default_cache_dir()
         return self._cache_dir
 
@@ -116,7 +122,9 @@ def set_global_params(**params: Any) -> None:
     only have an effect on decorators applied after this function is run.
 
     """
-    valid_params = {k: v for k, v in params.items() if hasattr(_global_params, k)}
+    valid_params = {
+        k: v for k, v in params.items() if hasattr(_global_params, k)
+    }
     for k, v in valid_params.items():
         setattr(_global_params, k, v)
 
