@@ -127,6 +127,12 @@ def test_cache_dir_default_fallback(monkeypatch):
     assert my_func.cache_dpath().startswith(expected_path)
 
 
+def test_lazy_cache_dir_eq_triggered():
+    default_dir = cachier.get_global_params().cache_dir
+
+    assert default_dir == str(default_dir)
+    assert default_dir != "/some/random/path"
+
 def test_separate_files_default_param(tmpdir):
     cachier.set_global_params(separate_files=True)
 
