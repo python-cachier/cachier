@@ -23,5 +23,6 @@ def cleanup_mongo_clients():
             # Remove the client attribute so future test runs start fresh
             delattr(_test_mongetter, "client")
     except (ImportError, AttributeError):
-        # If the module wasn't imported or client wasn't created, nothing to clean up
+        # If the module wasn't imported or client wasn't created,
+        # then there's nothing to clean up
         pass
