@@ -211,7 +211,7 @@ def test_sqlcore_importerror_without_sqlalchemy(monkeypatch):
     monkeypatch.setattr(builtins, "__import__", mock_import)
 
     try:
-        # Now import the sql module - it should set SQLALCHEMY_AVAILABLE = False
+        # Now import sql - it should set SQLALCHEMY_AVAILABLE = False
         import importlib
 
         sql_mod = importlib.import_module("cachier.cores.sql")
