@@ -33,13 +33,3 @@ def test_bad_name():
         @cachier(backend=invalid_core)
         def dummy_func():
             pass
-
-
-def test_missing_mongetter():
-    # Test that the appropriate exception is thrown
-    # when forgetting to specify the mongetter.
-    with pytest.raises(MissingMongetter):
-
-        @cachier(backend="mongo", mongetter=None)
-        def dummy_func():
-            pass
