@@ -161,8 +161,9 @@ ______________________________________________________________________
   pip install -e .
   pip install -r tests/requirements.txt
   # For specific backends:
-  pip install -r tests/sql_requirements.txt
+  pip install -r tests/mongodb_requirements.txt
   pip install -r tests/redis_requirements.txt
+  pip install -r tests/sql_requirements.txt
   ```
 - **Run all tests:** `pytest`
 - **Run backend-specific tests:** `pytest -m <backend>` (mongo, redis, sql, memory, pickle, maxage)
@@ -177,41 +178,60 @@ ______________________________________________________________________
 - **Run example:** `python examples/redis_example.py`
 - **Update requirements:** Edit `tests/*_requirements.txt` as needed (sql_requirements.txt, redis_requirements.txt).
 
-### MongoDB Local Testing
+### Local Testing with Docker
 
-**Quick Start for MongoDB Testing:**
+**Quick Start - Test Any Backend Locally:**
 
 ```bash
-# Option 1: Using the shell script (recommended)
-./scripts/test-mongo-local.sh                    # MongoDB tests only
-./scripts/test-mongo-local.sh --mode also-local # MongoDB + memory, pickle, maxage tests
+# Test single backend
+./scripts/test-local.sh mongo
+./scripts/test-local.sh redis
+./scripts/test-local.sh sql
 
-# Option 2: Using make
-make test-mongo-local
+# Test multiple backends
+./scripts/test-local.sh mongo redis
+./scripts/test-local.sh external  # All external (mongo, redis, sql)
+./scripts/test-local.sh all       # All backends
 
-# Option 3: Using docker-compose
-docker-compose -f scripts/docker-compose.mongodb.yml up -d
-CACHIER_TEST_HOST=localhost CACHIER_TEST_PORT=27017 CACHIER_TEST_VS_DOCKERIZED_MONGO=true pytest -m mongo
-docker-compose -f scripts/docker-compose.mongodb.yml down
+# Test with options
+./scripts/test-local.sh mongo redis -v -k  # Verbose, keep containers running
 ```
-
-**Available Options:**
-
-- `./scripts/test-mongo-local.sh` - Run MongoDB tests only (default)
-- `./scripts/test-mongo-local.sh --mode also-local` - Include memory, pickle, and maxage tests
-- `./scripts/test-mongo-local.sh --keep-running` - Keep MongoDB running after tests
-- `./scripts/test-mongo-local.sh --verbose` - Show verbose output
-- `./scripts/test-mongo-local.sh --coverage-html` - Generate HTML coverage report
 
 **Make Targets:**
 
-- `make test-mongo-local` - Run MongoDB tests with Docker
-- `make test-mongo-inmemory` - Run with in-memory MongoDB (default)
-- `make mongo-start` - Start MongoDB container
-- `make mongo-stop` - Stop MongoDB container
-- `make mongo-logs` - View MongoDB logs
+- `make test-local CORES="mongo redis"` - Test specified cores
+- `make test-all-local` - Test all backends with Docker
+- `make test-external` - Test all external backends
+- `make test-mongo-local` - Test MongoDB only
+- `make test-redis-local` - Test Redis only
+- `make test-sql-local` - Test SQL only
+- `make services-start` - Start all Docker containers
+- `make services-stop` - Stop all Docker containers
 
-**Note:** By default, MongoDB tests use `pymongo_inmemory` which doesn't require Docker. The above commands let you test against a real MongoDB instance matching the CI environment.
+**MongoDB-Specific Testing (Legacy):**
+
+The MongoDB-specific script still works:
+```bash
+./scripts/test-mongo-local.sh                    # MongoDB only
+./scripts/test-mongo-local.sh --mode also-local # MongoDB + memory, pickle, maxage
+```
+
+**Available Cores:**
+- `mongo` - MongoDB backend
+- `redis` - Redis backend
+- `sql` - PostgreSQL backend
+- `memory` - Memory backend (no Docker)
+- `pickle` - Pickle backend (no Docker)
+- `all` - All backends
+- `external` - All external backends (mongo, redis, sql)
+- `local` - All local backends (memory, pickle)
+
+**Options:**
+- `-v, --verbose` - Verbose pytest output
+- `-k, --keep-running` - Keep containers running after tests
+- `-h, --html-coverage` - Generate HTML coverage report
+
+**Note:** External backends (MongoDB, Redis, SQL) require Docker. Memory and pickle backends work without Docker.
 
 ______________________________________________________________________
 

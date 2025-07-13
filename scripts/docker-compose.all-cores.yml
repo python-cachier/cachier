@@ -1,0 +1,82 @@
+# Docker Compose configuration for local testing of all cachier cores
+# This file provides all external services needed for comprehensive testing
+
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: cachier-test-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: cachier_test
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - cachier-test
+
+  redis:
+    image: redis:7-alpine
+    container_name: cachier-test-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    networks:
+      - cachier-test
+
+  postgres:
+    image: postgres:15
+    container_name: cachier-test-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+      POSTGRES_DB: testdb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U testuser"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - cachier-test
+
+networks:
+  cachier-test:
+    driver: bridge
+
+# Usage examples:
+# 
+# Start all services:
+#   docker-compose -f scripts/docker-compose.all-cores.yml up -d
+#
+# Start specific services:
+#   docker-compose -f scripts/docker-compose.all-cores.yml up -d mongodb redis
+#
+# Check service health:
+#   docker-compose -f scripts/docker-compose.all-cores.yml ps
+#
+# View logs:
+#   docker-compose -f scripts/docker-compose.all-cores.yml logs -f
+#
+# Stop all services:
+#   docker-compose -f scripts/docker-compose.all-cores.yml down
+#
+# Run tests with all services:
+#   docker-compose -f scripts/docker-compose.all-cores.yml up -d
+#   CACHIER_TEST_HOST=localhost CACHIER_TEST_PORT=27017 CACHIER_TEST_VS_DOCKERIZED_MONGO=true \
+#   CACHIER_TEST_REDIS_HOST=localhost CACHIER_TEST_REDIS_PORT=6379 CACHIER_TEST_VS_DOCKERIZED_REDIS=true \
+#   SQLALCHEMY_DATABASE_URL="postgresql://testuser:testpass@localhost:5432/testdb" \
+#   pytest -m "mongo or redis or sql"
+#   docker-compose -f scripts/docker-compose.all-cores.yml down
