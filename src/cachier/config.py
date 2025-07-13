@@ -33,26 +33,18 @@ def _default_cache_dir():
 
 
 class LazyCacheDir:
-    """
-    Lazily resolves the default cache directory using $XDG_CACHE_HOME.
-    """
+    """Lazily resolves the default cache directory using $XDG_CACHE_HOME."""
 
     def __str__(self):
-        """
-        Returns the resolved cache directory path as a string.
-        """
+        """Returns the resolved cache directory path as a string."""
         return _default_cache_dir()
 
     def __fspath__(self):
-        """
-        Returns the path for filesystem operations.
-        """
+        """Returns the path for filesystem operations."""
         return self.__str__()
 
     def __eq__(self, other):
-        """
-        Compares the resolved path to another path.
-        """
+        """Compares the resolved path to another path."""
         return str(self) == str(other)
 
 
