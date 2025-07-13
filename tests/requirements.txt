@@ -7,3 +7,5 @@ birch
 # to be able to run `python setup.py checkdocs`
 collective.checkdocs
 pygments
+# the memory core tests dataframe caching
+import pandas
