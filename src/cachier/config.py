@@ -2,7 +2,7 @@ import hashlib
 import os
 import pickle
 import threading
-from dataclasses import dataclass, replace, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta
 from typing import Any, Optional, Union
 
@@ -53,9 +53,7 @@ class Params:
     mongetter: Optional[Mongetter] = None
     stale_after: timedelta = timedelta.max
     next_time: bool = False
-    cache_dir: Union[str, os.PathLike] = field(
-        default_factory=LazyCacheDir
-    )
+    cache_dir: Union[str, os.PathLike] = field(default_factory=LazyCacheDir)
     pickle_reload: bool = True
     separate_files: bool = False
     wait_for_calc_timeout: int = 0
