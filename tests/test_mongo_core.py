@@ -5,18 +5,34 @@ import hashlib
 import platform
 import queue
 import sys
+import warnings
 import threading
 from random import random
 from time import sleep
 from urllib.parse import quote_plus
 
-import pandas as pd
-import pymongo
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+    warnings.warn(
+        "pandas is not installed; tests requiring pandas will fail!")
+
+try:
+    import pymongo
+    from pymongo.errors import OperationFailure
+    from pymongo.mongo_client import MongoClient
+    from pymongo_inmemory import MongoClient as InMemoryMongoClient
+except ImportError:
+    pymongo = None
+    MongoClient = None
+    InMemoryMongoClient = None
+    OperationFailure = None
+    warnings.warn(
+        "pymongo is not installed; tests requiring pymongo will fail!"
+    )
 import pytest
 from birch import Birch  # type: ignore[import-not-found]
-from pymongo.errors import OperationFailure
-from pymongo.mongo_client import MongoClient
-from pymongo_inmemory import MongoClient as InMemoryMongoClient
 
 from cachier import cachier
 from cachier.config import CacheEntry
