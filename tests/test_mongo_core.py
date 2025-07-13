@@ -13,7 +13,7 @@ from urllib.parse import quote_plus
 
 try:
     import pandas as pd
-except ImportError:
+except (ImportError, ModuleNotFoundError):
     pd = None
     warnings.warn("pandas is not installed; tests requiring pandas will fail!")
 
@@ -22,7 +22,7 @@ try:
     from pymongo.errors import OperationFailure
     from pymongo.mongo_client import MongoClient
     from pymongo_inmemory import MongoClient as InMemoryMongoClient
-except ImportError:
+except (ImportError, ModuleNotFoundError):
     pymongo = None
     MongoClient = None
     InMemoryMongoClient = None
