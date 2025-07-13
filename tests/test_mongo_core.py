@@ -14,6 +14,7 @@ from urllib.parse import quote_plus
 # third-party imports
 import pytest
 from birch import Birch  # type: ignore[import-not-found]
+
 try:
     import pandas as pd
 except (ImportError, ModuleNotFoundError):
@@ -28,26 +29,31 @@ except (ImportError, ModuleNotFoundError):
     print("pymongo is not installed; tests requiring pymongo will fail!")
     pymongo = None
     OperationFailure = None
+
     # define a mock MongoClient class that will raise an exception
     # on init, warning that pymongo is not installed
     class MongoClient:
         def __init__(self, *args, **kwargs):
             raise ImportError("pymongo is not installed!")
+
+
 try:
     from pymongo_inmemory import MongoClient as InMemoryMongoClient
 except (ImportError, ModuleNotFoundError):
+
     class InMemoryMongoClient:
         def __init__(self, *args, **kwargs):
             raise ImportError("pymongo_inmemory is not installed!")
-    print("pymongo_inmemory is not installed; "
-          "in-memory MongoDB tests will fail!")
+
+    print(
+        "pymongo_inmemory is not installed; in-memory MongoDB tests will fail!"
+    )
 
 # local imports
 from cachier import cachier
 from cachier.config import CacheEntry
 from cachier.cores.base import RecalculationNeeded
 from cachier.cores.mongo import _MongoCore
-
 
 # === Enables testing vs a real MongoDB instance ===
 
