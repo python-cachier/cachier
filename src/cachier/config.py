@@ -2,7 +2,7 @@ import hashlib
 import os
 import pickle
 import threading
-from dataclasses import dataclass, field
+from dataclasses import dataclass, replace, field
 from datetime import datetime, timedelta
 from typing import Any, Optional, Union
 
@@ -32,6 +32,17 @@ def _default_cache_dir():
     return os.path.expanduser("~/.cachier/")
 
 
+class LazyCacheDir:
+    def __str__(self):
+        return _default_cache_dir()
+
+    def __fspath__(self):
+        return self.__str__()
+
+    def __eq__(self, other):
+        return str(self) == str(other)
+
+
 @dataclass
 class Params:
     """Default definition for cachier parameters."""
@@ -42,28 +53,13 @@ class Params:
     mongetter: Optional[Mongetter] = None
     stale_after: timedelta = timedelta.max
     next_time: bool = False
-    _cache_dir: Union[str, os.PathLike] = field(
-        default_factory=_default_cache_dir
+    cache_dir: Union[str, os.PathLike] = field(
+        default_factory=LazyCacheDir
     )
     pickle_reload: bool = True
     separate_files: bool = False
     wait_for_calc_timeout: int = 0
     allow_none: bool = False
-
-    @property
-    def cache_dir(self) -> Union[str, os.PathLike]:
-        """Dynamically get the cache directory, respecting XDG_CACHE_HOME."""
-        default_cache = os.path.expanduser("~/.cachier/")
-        if (
-            self._cache_dir == _default_cache_dir
-            or self._cache_dir == default_cache
-        ):
-            return _default_cache_dir()
-        return self._cache_dir
-
-    @cache_dir.setter
-    def cache_dir(self, value: Union[str, os.PathLike]):
-        self._cache_dir = value
 
 
 _global_params = Params()
@@ -122,11 +118,17 @@ def set_global_params(**params: Any) -> None:
     only have an effect on decorators applied after this function is run.
 
     """
+    import cachier
+
     valid_params = {
-        k: v for k, v in params.items() if hasattr(_global_params, k)
+        k: v
+        for k, v in params.items()
+        if hasattr(cachier.config._global_params, k)
     }
-    for k, v in valid_params.items():
-        setattr(_global_params, k, v)
+    cachier.config._global_params = replace(
+        cachier.config._global_params,
+        **valid_params,  # type: ignore[arg-type]
+    )
 
 
 def get_default_params() -> Params:
