@@ -133,6 +133,7 @@ def test_lazy_cache_dir_eq_triggered():
     assert default_dir == str(default_dir)
     assert default_dir != "/some/random/path"
 
+
 def test_separate_files_default_param(tmpdir):
     cachier.set_global_params(separate_files=True)
 
