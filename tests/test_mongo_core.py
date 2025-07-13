@@ -38,6 +38,8 @@ except (ImportError, ModuleNotFoundError):
         def __init__(self, *args, **kwargs):
             """Initialize the mock MongoClient."""
             raise ImportError("pymongo is not installed!")
+
+
 try:
     from pymongo_inmemory import MongoClient as InMemoryMongoClient
 except (ImportError, ModuleNotFoundError):
