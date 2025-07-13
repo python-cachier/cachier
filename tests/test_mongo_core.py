@@ -5,8 +5,8 @@ import hashlib
 import platform
 import queue
 import sys
-import warnings
 import threading
+import warnings
 from random import random
 from time import sleep
 from urllib.parse import quote_plus
@@ -15,8 +15,7 @@ try:
     import pandas as pd
 except ImportError:
     pd = None
-    warnings.warn(
-        "pandas is not installed; tests requiring pandas will fail!")
+    warnings.warn("pandas is not installed; tests requiring pandas will fail!")
 
 try:
     import pymongo
