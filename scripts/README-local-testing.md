@@ -24,7 +24,7 @@ This guide explains how to run cachier tests locally with Docker containers for 
 ## Available Cores
 
 - **mongo** - MongoDB backend tests
-- **redis** - Redis backend tests  
+- **redis** - Redis backend tests
 - **sql** - SQL (PostgreSQL) backend tests
 - **memory** - Memory backend tests (no Docker needed)
 - **pickle** - Pickle backend tests (no Docker needed)
@@ -111,28 +111,31 @@ make services-logs
 
 The script manages the following containers:
 
-| Backend | Container Name | Port | Image |
-|---------|---------------|------|-------|
-| MongoDB | cachier-test-mongo | 27017 | mongo:latest |
-| Redis | cachier-test-redis | 6379 | redis:7-alpine |
-| PostgreSQL | cachier-test-postgres | 5432 | postgres:15 |
+| Backend    | Container Name        | Port  | Image          |
+| ---------- | --------------------- | ----- | -------------- |
+| MongoDB    | cachier-test-mongo    | 27017 | mongo:latest   |
+| Redis      | cachier-test-redis    | 6379  | redis:7-alpine |
+| PostgreSQL | cachier-test-postgres | 5432  | postgres:15    |
 
 ## Environment Variables
 
 The script automatically sets the required environment variables:
 
 ### MongoDB
+
 - `CACHIER_TEST_HOST=localhost`
 - `CACHIER_TEST_PORT=27017`
 - `CACHIER_TEST_VS_DOCKERIZED_MONGO=true`
 
 ### Redis
+
 - `CACHIER_TEST_REDIS_HOST=localhost`
 - `CACHIER_TEST_REDIS_PORT=6379`
 - `CACHIER_TEST_REDIS_DB=0`
 - `CACHIER_TEST_VS_DOCKERIZED_REDIS=true`
 
 ### SQL/PostgreSQL
+
 - `SQLALCHEMY_DATABASE_URL=postgresql://testuser:testpass@localhost:5432/testdb`
 
 ## Prerequisites
@@ -149,19 +152,23 @@ The script automatically sets the required environment variables:
 ## Troubleshooting
 
 ### Docker not found
+
 - Install Docker Desktop from https://www.docker.com/products/docker-desktop
 - Ensure Docker daemon is running
 
 ### Port conflicts
+
 - The script will fail if required ports are already in use
 - Stop conflicting services or use `docker ps` to check running containers
 
 ### Tests failing
+
 - Check container logs: `docker logs cachier-test-<backend>`
 - Ensure all dependencies are installed
 - Try running with `-v` for verbose output
 
 ### Cleanup issues
+
 - If containers aren't cleaned up properly:
   ```bash
   make services-stop

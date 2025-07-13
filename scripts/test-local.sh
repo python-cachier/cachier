@@ -453,7 +453,7 @@ main() {
     all_cores="memory mongo pickle redis sql"
     selected_sorted=$(echo "$SELECTED_CORES" | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)
     all_sorted=$(echo "$all_cores" | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)
-    
+
     if [ "$selected_sorted" = "$all_sorted" ]; then
         print_message $BLUE "Running: pytest (all tests, including unmarked)"
         if [ "$VERBOSE" = true ]; then

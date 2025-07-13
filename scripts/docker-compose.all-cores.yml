@@ -55,9 +55,8 @@ services:
 networks:
   cachier-test:
     driver: bridge
-
 # Usage examples:
-# 
+#
 # Start all services:
 #   docker-compose -f scripts/docker-compose.all-cores.yml up -d
 #

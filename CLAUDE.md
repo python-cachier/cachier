@@ -211,12 +211,14 @@ ______________________________________________________________________
 **MongoDB-Specific Testing (Legacy):**
 
 The MongoDB-specific script still works:
+
 ```bash
 ./scripts/test-mongo-local.sh                    # MongoDB only
 ./scripts/test-mongo-local.sh --mode also-local # MongoDB + memory, pickle, maxage
 ```
 
 **Available Cores:**
+
 - `mongo` - MongoDB backend
 - `redis` - Redis backend
 - `sql` - PostgreSQL backend
@@ -227,6 +229,7 @@ The MongoDB-specific script still works:
 - `local` - All local backends (memory, pickle)
 
 **Options:**
+
 - `-v, --verbose` - Verbose pytest output
 - `-k, --keep-running` - Keep containers running after tests
 - `-h, --html-coverage` - Generate HTML coverage report
