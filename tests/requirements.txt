@@ -8,4 +8,4 @@ birch
 collective.checkdocs
 pygments
 # the memory core tests dataframe caching
-import pandas
+pandas
