@@ -177,19 +177,6 @@ The script automatically sets the required environment variables:
   docker rm cachier-test-mongo cachier-test-redis cachier-test-postgres
   ```
 
-## Integration with test-mongo-local.sh
-
-The previous `test-mongo-local.sh` script still works and is now a specialized version of the general `test-local.sh`:
-
-```bash
-# These are equivalent:
-./scripts/test-mongo-local.sh
-./scripts/test-local.sh mongo
-
-# These are equivalent:
-./scripts/test-mongo-local.sh --mode also-local
-./scripts/test-local.sh mongo memory pickle
-```
 
 ## Best Practices
 

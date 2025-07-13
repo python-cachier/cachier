@@ -208,15 +208,6 @@ ______________________________________________________________________
 - `make services-start` - Start all Docker containers
 - `make services-stop` - Stop all Docker containers
 
-**MongoDB-Specific Testing (Legacy):**
-
-The MongoDB-specific script still works:
-
-```bash
-./scripts/test-mongo-local.sh                    # MongoDB only
-./scripts/test-mongo-local.sh --mode also-local # MongoDB + memory, pickle, maxage
-```
-
 **Available Cores:**
 
 - `mongo` - MongoDB backend

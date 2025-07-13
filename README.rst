@@ -541,22 +541,25 @@ Running MongoDB tests against a live MongoDB instance
 
 .. code-block:: bash
 
-  ./scripts/test-mongo-local.sh                    # MongoDB tests only (default)
-  ./scripts/test-mongo-local.sh --mode also-local # MongoDB + memory, pickle, maxage tests
+  # Test MongoDB only
+  ./scripts/test-local.sh mongo
+  
+  # Test MongoDB with local backends
+  ./scripts/test-local.sh mongo memory pickle
 
 This script automatically handles Docker container lifecycle, environment variables, and cleanup. Additional options:
 
-- ``--mode also-local``: Include memory, pickle, and maxage tests alongside MongoDB tests
-- ``--keep-running``: Keep MongoDB container running after tests
-- ``--verbose``: Show verbose output
-- ``--coverage-html``: Generate HTML coverage report
+- ``-v, --verbose``: Show verbose output
+- ``-k, --keep-running``: Keep containers running after tests
+- ``-h, --html-coverage``: Generate HTML coverage report
 
 **Option 2: Using Make**
 
 .. code-block:: bash
 
-  make test-mongo-local  # Run tests with Docker MongoDB
-  make test-mongo-inmemory  # Run tests with in-memory MongoDB (default)
+  make test-mongo-local     # Run MongoDB tests with Docker
+  make test-all-local       # Run all backends with Docker
+  make test-mongo-inmemory  # Run with in-memory MongoDB (default)
 
 **Option 3: Manual setup**
 
@@ -576,6 +579,28 @@ This script automatically handles Docker container lifecycle, environment variab
 Contributors are encouraged to test against a real MongoDB instance before submitting PRs to ensure compatibility, though the in-memory MongoDB instance serves as a good proxy for most development.
 
 **HOWEVER, the tests run against a live MongoDB instance when you submit a PR are the determining tests for deciding whether your code functions correctly against MongoDB.**
+
+
+Testing all backends locally
+-----------------------------
+
+To test all cachier backends (MongoDB, Redis, SQL, Memory, Pickle) locally with Docker:
+
+.. code-block:: bash
+
+  # Test all backends at once
+  ./scripts/test-local.sh all
+
+  # Test only external backends (MongoDB, Redis, SQL)
+  ./scripts/test-local.sh external
+
+  # Test specific combinations
+  ./scripts/test-local.sh mongo redis
+
+  # Keep containers running for debugging
+  ./scripts/test-local.sh all -k
+
+The unified test script automatically manages Docker containers, installs required dependencies, and runs the appropriate test suites. See ``scripts/README-local-testing.md`` for detailed documentation.
 
 
 Adding documentation

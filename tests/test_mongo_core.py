@@ -25,10 +25,12 @@ try:
     import pymongo
     from pymongo.errors import OperationFailure
     from pymongo.mongo_client import MongoClient
+    from cachier.cores.mongo import MissingMongetter
 except (ImportError, ModuleNotFoundError):
     print("pymongo is not installed; tests requiring pymongo will fail!")
     pymongo = None
     OperationFailure = None
+    MissingMongetter = None
 
     # define a mock MongoClient class that will raise an exception
     # on init, warning that pymongo is not installed

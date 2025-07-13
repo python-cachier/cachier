@@ -3,7 +3,6 @@
 import pytest
 
 from cachier import cachier, get_global_params
-from cachier.cores.mongo import MissingMongetter
 
 
 def test_get_default_params():
