@@ -25,6 +25,7 @@ try:
     import pymongo
     from pymongo.errors import OperationFailure
     from pymongo.mongo_client import MongoClient
+
     from cachier.cores.mongo import MissingMongetter
 except (ImportError, ModuleNotFoundError):
     print("pymongo is not installed; tests requiring pymongo will fail!")

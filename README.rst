@@ -543,7 +543,7 @@ Running MongoDB tests against a live MongoDB instance
 
   # Test MongoDB only
   ./scripts/test-local.sh mongo
-  
+
   # Test MongoDB with local backends
   ./scripts/test-local.sh mongo memory pickle
 

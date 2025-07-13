@@ -177,7 +177,6 @@ The script automatically sets the required environment variables:
   docker rm cachier-test-mongo cachier-test-redis cachier-test-postgres
   ```
 
-
 ## Best Practices
 
 1. **Before committing**: Run `./scripts/test-local.sh external` to test all external backends
