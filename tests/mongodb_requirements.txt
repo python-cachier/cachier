@@ -1,0 +1,7 @@
+
+# to connect to the test mongodb server
+pymongo
+dnspython
+pymongo-inmemory
+# to test pandas dataframe as-param hashing with mongodb core
+pandas

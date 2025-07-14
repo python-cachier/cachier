@@ -1,5 +1,6 @@
 """Testing the MongoDB core of cachier."""
 
+# standard library imports
 import datetime
 import hashlib
 import platform
@@ -10,14 +11,58 @@ from random import random
 from time import sleep
 from urllib.parse import quote_plus
 
-import pandas as pd
-import pymongo
+# third-party imports
 import pytest
 from birch import Birch  # type: ignore[import-not-found]
-from pymongo.errors import OperationFailure
-from pymongo.mongo_client import MongoClient
-from pymongo_inmemory import MongoClient as InMemoryMongoClient
 
+try:
+    import pandas as pd
+except (ImportError, ModuleNotFoundError):
+    pd = None
+    print("pandas is not installed; tests requiring pandas will fail!")
+
+try:
+    import pymongo
+    from pymongo.errors import OperationFailure
+    from pymongo.mongo_client import MongoClient
+
+    from cachier.cores.mongo import MissingMongetter
+except (ImportError, ModuleNotFoundError):
+    print("pymongo is not installed; tests requiring pymongo will fail!")
+    pymongo = None
+    OperationFailure = None
+    MissingMongetter = None
+
+    # define a mock MongoClient class that will raise an exception
+    # on init, warning that pymongo is not installed
+    class MongoClient:
+        """Mock MongoClient class raising ImportError on missing pymongo."""
+
+        def __init__(self, *args, **kwargs):
+            """Initialize the mock MongoClient."""
+            raise ImportError("pymongo is not installed!")
+
+
+try:
+    from pymongo_inmemory import MongoClient as InMemoryMongoClient
+except (ImportError, ModuleNotFoundError):
+
+    class InMemoryMongoClient:
+        """Mock InMemoryMongoClient class.
+
+        Raises an ImportError on missing pymongo_inmemory.
+
+        """
+
+        def __init__(self, *args, **kwargs):
+            """Initialize the mock InMemoryMongoClient."""
+            raise ImportError("pymongo_inmemory is not installed!")
+
+    print(
+        "pymongo_inmemory is not installed; in-memory MongoDB tests will fail!"
+    )
+
+# local imports
 from cachier import cachier
 from cachier.config import CacheEntry
 from cachier.cores.base import RecalculationNeeded
@@ -76,6 +121,17 @@ def _test_mongetter():
 
 
 # === Mongo core tests ===
+
+
+@pytest.mark.mongo
+def test_missing_mongetter():
+    # Test that the appropriate exception is thrown
+    # when forgetting to specify the mongetter.
+    with pytest.raises(MissingMongetter):
+
+        @cachier(backend="mongo", mongetter=None)
+        def dummy_func():
+            pass
 
 
 @pytest.mark.mongo

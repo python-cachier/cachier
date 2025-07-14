@@ -4,12 +4,8 @@ pytest
 coverage
 pytest-cov
 birch
-# to connect to the test mongodb server
-pymongo
-dnspython
-pymongo-inmemory
-# to test pandas dataframe as-param hashing with mongodb core
-pandas
 # to be able to run `python setup.py checkdocs`
 collective.checkdocs
 pygments
+# the memory core tests dataframe caching
+pandas

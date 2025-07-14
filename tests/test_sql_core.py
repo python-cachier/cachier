@@ -191,24 +191,42 @@ def test_import_cachier_without_sqlalchemy(monkeypatch):
         sys.modules.update(modules_backup)
 
 
-@pytest.mark.pickle
+@pytest.mark.sql
 def test_sqlcore_importerror_without_sqlalchemy(monkeypatch):
     """Test that using SQL core without SQLAlchemy raises an ImportError."""
-    # Simulate SQLAlchemy not installed
-    modules_backup = sys.modules.copy()
-    sys.modules["sqlalchemy"] = None
-    sys.modules["sqlalchemy.orm"] = None
-    sys.modules["sqlalchemy.engine"] = None
+    # Remove sql module from sys.modules to force reimport
+    if "cachier.cores.sql" in sys.modules:
+        del sys.modules["cachier.cores.sql"]
+
+    # Mock the sqlalchemy import to raise ImportError
+    import builtins
+
+    original_import = builtins.__import__
+
+    def mock_import(name, *args, **kwargs):
+        if name.startswith("sqlalchemy"):
+            raise ImportError(f"No module named '{name}'")
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", mock_import)
+
     try:
+        # Now import sql - it should set SQLALCHEMY_AVAILABLE = False
         import importlib
 
         sql_mod = importlib.import_module("cachier.cores.sql")
+
+        # Verify that SQLALCHEMY_AVAILABLE is False
+        assert not sql_mod.SQLALCHEMY_AVAILABLE
+
+        # Now trying to create _SQLCore should raise ImportError
         with pytest.raises(ImportError) as excinfo:
             sql_mod._SQLCore(hash_func=None, sql_engine="sqlite:///:memory:")
         assert "SQLAlchemy is required" in str(excinfo.value)
     finally:
-        sys.modules.clear()
-        sys.modules.update(modules_backup)
+        # Clean up - remove the module so next tests reimport it fresh
+        if "cachier.cores.sql" in sys.modules:
+            del sys.modules["cachier.cores.sql"]
 
 
 @pytest.mark.sql

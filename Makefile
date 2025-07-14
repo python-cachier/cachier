@@ -1,8 +1,11 @@
 # Cachier Makefile
 # Development tasks and shortcuts
 
-.PHONY: help test test-all test-mongo-local test-mongo-docker test-mongo-inmemory \
-        test-mongo-also-local mongo-start mongo-stop mongo-logs lint type-check format clean \
+.PHONY: help test test-all test-local test-all-local test-external \
+        test-mongo-local test-mongo-docker test-mongo-inmemory test-mongo-also-local \
+        test-redis-local test-sql-local \
+        services-start services-stop services-logs \
+        mongo-start mongo-stop mongo-logs lint type-check format clean \
         install install-dev install-all
 
 # Default target
@@ -11,9 +14,16 @@ help:
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test               - Run all tests"
+	@echo "  make test-local CORES='...' - Run tests for specified cores with Docker"
+	@echo "  make test-all-local     - Run all backend tests with Docker"
+	@echo "  make test-external      - Run all external backend tests (mongo, redis, sql)"
 	@echo "  make test-mongo-local   - Run MongoDB tests with Docker"
+	@echo "  make test-redis-local   - Run Redis tests with Docker"
+	@echo "  make test-sql-local     - Run SQL tests with Docker"
 	@echo "  make test-mongo-also-local - Run MongoDB + memory, pickle, maxage tests with Docker"
 	@echo "  make test-mongo-inmemory - Run MongoDB tests with in-memory backend"
+	@echo "  make services-start     - Start all test containers"
+	@echo "  make services-stop      - Stop all test containers"
 	@echo "  make mongo-start        - Start MongoDB container"
 	@echo "  make mongo-stop         - Stop MongoDB container"
 	@echo "  make mongo-logs         - View MongoDB container logs"
@@ -42,8 +52,9 @@ install-dev:
 install-all:
 	pip install -e .[all]
 	pip install -r tests/requirements.txt
-	pip install -r tests/sql_requirements.txt
+	pip install -r tests/mongodb_requirements.txt
 	pip install -r tests/redis_requirements.txt
+	pip install -r tests/sql_requirements.txt
 
 # Testing targets
 test:
@@ -65,6 +76,39 @@ test-mongo-local: test-mongo-docker
 test-mongo-also-local:
 	@echo "Running MongoDB tests with local core tests..."
 	./scripts/test-mongo-local.sh --mode also-local
+
+# New unified testing targets
+test-local:
+	@echo "Running tests for cores: $(CORES)"
+	./scripts/test-local.sh $(CORES)
+
+test-all-local:
+	@echo "Running all backend tests with Docker..."
+	./scripts/test-local.sh all
+
+test-external:
+	@echo "Running all external backend tests..."
+	./scripts/test-local.sh external
+
+test-redis-local:
+	@echo "Running Redis tests with Docker..."
+	./scripts/test-local.sh redis
+
+test-sql-local:
+	@echo "Running SQL tests with Docker..."
+	./scripts/test-local.sh sql
+
+# Service management
+services-start:
+	@echo "Starting all test services..."
+	docker-compose -f scripts/docker-compose.all-cores.yml up -d
+
+services-stop:
+	@echo "Stopping all test services..."
+	docker-compose -f scripts/docker-compose.all-cores.yml down
+
+services-logs:
+	docker-compose -f scripts/docker-compose.all-cores.yml logs -f
 
 # MongoDB container management
 mongo-start:
