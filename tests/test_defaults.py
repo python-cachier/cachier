@@ -97,6 +97,43 @@ def test_cache_dir_default_param(tmpdir):
     assert global_test_2.cache_dpath() == str(tmpdir / "2")
 
 
+def test_cache_dir_respects_xdg(monkeypatch, tmpdir):
+    xdg_path = str(tmpdir / "xdg_home")
+    monkeypatch.setenv("XDG_CACHE_HOME", xdg_path)
+
+    expected_path = os.path.join(xdg_path, "cachier")
+
+    @cachier.cachier(backend="pickle")
+    def my_func():
+        return 123
+
+    actual_path = my_func.cache_dpath()
+    assert str(actual_path) == expected_path
+
+    my_func()  # Create cache file
+    assert os.path.exists(expected_path)
+    files = os.listdir(expected_path) if os.path.exists(expected_path) else []
+    assert any(os.path.isfile(os.path.join(expected_path, f)) for f in files)
+
+
+def test_cache_dir_default_fallback(monkeypatch):
+    monkeypatch.delenv("XDG_CACHE_HOME", raising=False)
+
+    @cachier.cachier()
+    def my_func():
+        return 123
+
+    expected_path = os.path.expanduser("~/.cachier/")
+    assert my_func.cache_dpath().startswith(expected_path)
+
+
+def test_lazy_cache_dir_eq_triggered():
+    default_dir = cachier.get_global_params().cache_dir
+
+    assert default_dir == str(default_dir)
+    assert default_dir != "/some/random/path"
+
+
 def test_separate_files_default_param(tmpdir):
     cachier.set_global_params(separate_files=True)
 

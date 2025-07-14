@@ -2,7 +2,7 @@ import hashlib
 import os
 import pickle
 import threading
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta
 from typing import Any, Optional, Union
 
@@ -18,6 +18,36 @@ def _default_hash_func(args, kwds):
     return hashlib.sha256(serialized).hexdigest()
 
 
+def _default_cache_dir():
+    """Return default cache directory based on XDG specification.
+
+    Uses $XDG_CACHE_HOME if defined, otherwise falls back to ~/.cachier/
+
+    """
+    xdg_cache_home = os.environ.get("XDG_CACHE_HOME")
+    if xdg_cache_home:
+        # Use XDG-compliant cache directory
+        return os.path.join(xdg_cache_home, "cachier")
+    # Default fallback if XDG is not set
+    return os.path.expanduser("~/.cachier/")
+
+
+class LazyCacheDir:
+    """Lazily resolve the default cache directory using $XDG_CACHE_HOME."""
+
+    def __str__(self):
+        """Return the resolved cache directory path as a string."""
+        return _default_cache_dir()
+
+    def __fspath__(self):
+        """Return the path for filesystem operations."""
+        return self.__str__()
+
+    def __eq__(self, other):
+        """Compare the resolved path to another path."""
+        return str(self) == str(other)
+
+
 @dataclass
 class Params:
     """Default definition for cachier parameters."""
@@ -28,7 +58,7 @@ class Params:
     mongetter: Optional[Mongetter] = None
     stale_after: timedelta = timedelta.max
     next_time: bool = False
-    cache_dir: Union[str, os.PathLike] = "~/.cachier/"
+    cache_dir: Union[str, os.PathLike] = field(default_factory=LazyCacheDir)
     pickle_reload: bool = True
     separate_files: bool = False
     wait_for_calc_timeout: int = 0
