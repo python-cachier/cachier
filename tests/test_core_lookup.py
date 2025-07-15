@@ -12,6 +12,8 @@ def test_get_default_params():
         "backend",
         "cache_dir",
         "caching_enabled",
+        "cleanup_interval",
+        "cleanup_stale",
         "hash_func",
         "mongetter",
         "next_time",

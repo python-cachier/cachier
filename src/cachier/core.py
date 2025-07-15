@@ -9,6 +9,7 @@
 
 import inspect
 import os
+import threading
 import warnings
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
@@ -120,6 +121,8 @@ def cachier(
     separate_files: Optional[bool] = None,
     wait_for_calc_timeout: Optional[int] = None,
     allow_none: Optional[bool] = None,
+    cleanup_stale: Optional[bool] = None,
+    cleanup_interval: Optional[timedelta] = None,
 ):
     """Wrap as a persistent, stale-free memoization decorator.
 
@@ -183,6 +186,11 @@ def cachier(
     allow_none: bool, optional
         Allows storing None values in the cache. If False, functions returning
         None will not be cached and are recalculated every call.
+    cleanup_stale: bool, optional
+        If True, stale cache entries are periodically deleted in a background
+        thread. Defaults to False.
+    cleanup_interval: datetime.timedelta, optional
+        Minimum time between automatic cleanup runs. Defaults to one day.
 
     """
     # Check for deprecated parameters
@@ -236,6 +244,9 @@ def cachier(
     def _cachier_decorator(func):
         core.set_func(func)
 
+        last_cleanup = datetime.min
+        cleanup_lock = threading.Lock()
+
         # ---
         # MAINTAINER NOTE: max_age parameter
         #
@@ -261,7 +272,7 @@ def cachier(
         # ---
 
         def _call(*args, max_age: Optional[timedelta] = None, **kwds):
-            nonlocal allow_none
+            nonlocal allow_none, last_cleanup
             _allow_none = _update_with_defaults(allow_none, "allow_none", kwds)
             # print('Inside general wrapper for {}.'.format(func.__name__))
             ignore_cache = _pop_kwds_with_deprecation(
@@ -280,10 +291,25 @@ def cachier(
                 stale_after, "stale_after", kwds
             )
             _next_time = _update_with_defaults(next_time, "next_time", kwds)
+            _cleanup_flag = _update_with_defaults(
+                cleanup_stale, "cleanup_stale", kwds
+            )
+            _cleanup_interval_val = _update_with_defaults(
+                cleanup_interval, "cleanup_interval", kwds
+            )
             # merge args expanded as kwargs and the original kwds
             kwargs = _convert_args_kwargs(
                 func, _is_method=core.func_is_method, args=args, kwds=kwds
             )
+
+            if _cleanup_flag:
+                now = datetime.now()
+                with cleanup_lock:
+                    if now - last_cleanup >= _cleanup_interval_val:
+                        last_cleanup = now
+                        _get_executor().submit(
+                            core.delete_stale_entries, _stale_after
+                        )
 
             _print = print if verbose else lambda x: None
 

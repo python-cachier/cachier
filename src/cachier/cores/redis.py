@@ -3,7 +3,7 @@
 import pickle
 import time
 import warnings
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Callable, Optional, Tuple, Union
 
 try:
@@ -222,4 +222,29 @@ class _RedisCore(_BaseCore):
         except Exception as e:
             warnings.warn(
                 f"Redis clear_being_calculated failed: {e}", stacklevel=2
+            )
+
+    def delete_stale_entries(self, stale_after: timedelta) -> None:
+        """Remove stale entries from the Redis cache."""
+        redis_client = self._resolve_redis_client()
+        pattern = f"{self.key_prefix}:{self._func_str}:*"
+        try:
+            keys = redis_client.keys(pattern)
+            threshold = datetime.now() - stale_after
+            for key in keys:
+                ts = redis_client.hget(key, "timestamp")
+                if ts is None:
+                    continue
+                try:
+                    ts_val = datetime.fromisoformat(ts.decode("utf-8"))
+                except Exception as exc:
+                    warnings.warn(
+                        f"Redis timestamp parse failed: {exc}", stacklevel=2
+                    )
+                    continue
+                if ts_val < threshold:
+                    redis_client.delete(key)
+        except Exception as e:
+            warnings.warn(
+                f"Redis delete_stale_entries failed: {e}", stacklevel=2
             )

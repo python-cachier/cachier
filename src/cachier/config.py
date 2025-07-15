@@ -63,6 +63,8 @@ class Params:
     separate_files: bool = False
     wait_for_calc_timeout: int = 0
     allow_none: bool = False
+    cleanup_stale: bool = False
+    cleanup_interval: timedelta = timedelta(days=1)
 
 
 _global_params = Params()
@@ -130,7 +132,7 @@ def set_global_params(**params: Any) -> None:
     }
     cachier.config._global_params = replace(
         cachier.config._global_params,
-        **valid_params,  # type: ignore[arg-type]
+        **valid_params,
     )
 
 
