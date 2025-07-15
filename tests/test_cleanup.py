@@ -1,16 +1,28 @@
 import os
 import pickle
 import time
+from dataclasses import replace
 from datetime import timedelta
 
 import pytest
 
-from cachier import cachier
+import cachier
+from cachier import cachier as cachier_dec
+
+_copied_defaults = replace(cachier.get_global_params())
+
+
+def setup_function() -> None:
+    cachier.set_global_params(**vars(_copied_defaults))
+
+
+def teardown_function() -> None:
+    cachier.set_global_params(**vars(_copied_defaults))
 
 
 @pytest.mark.pickle
 def test_cleanup_stale_entries(tmp_path):
-    @cachier(
+    @cachier_dec(
         cache_dir=tmp_path,
         stale_after=timedelta(seconds=1),
         cleanup_stale=True,
