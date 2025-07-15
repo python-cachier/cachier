@@ -10,6 +10,7 @@
 import abc  # for the _BaseCore abstract base class
 import inspect
 import threading
+from datetime import timedelta
 from typing import Callable, Optional, Tuple
 
 from .._types import HashFunc
@@ -112,3 +113,7 @@ class _BaseCore:
     @abc.abstractmethod
     def clear_being_calculated(self) -> None:
         """Mark all entries in this cache as not being calculated."""
+
+    @abc.abstractmethod
+    def delete_stale_entries(self, stale_after: timedelta) -> None:
+        """Delete cache entries older than ``stale_after``."""

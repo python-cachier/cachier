@@ -63,6 +63,8 @@ class Params:
     separate_files: bool = False
     wait_for_calc_timeout: int = 0
     allow_none: bool = False
+    cleanup_stale: bool = False
+    cleanup_interval: timedelta = timedelta(days=1)
 
 
 _global_params = Params()

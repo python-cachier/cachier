@@ -146,6 +146,8 @@ These parameters can be changed at any time and they will apply to all decorator
 *  `stale_after`
 *  `next_time`
 *  `wait_for_calc_timeout`
+*  `cleanup_stale`
+*  `cleanup_interval`
 
 The current defaults can be fetched by calling `get_default_params`.
 
@@ -191,6 +193,17 @@ Sometimes you may want your function to trigger a calculation when it encounters
   @cachier(next_time=True)
 
 Further function calls made while the calculation is being performed will not trigger redundant calculations.
+
+Automatic Cleanup of Stale Values
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Setting ``cleanup_stale=True`` on a decorator will spawn a background thread that periodically removes stale cache entries. The interval between cleanup runs is controlled by ``cleanup_interval`` and defaults to one day.
+
+.. code-block:: python
+
+  @cachier(stale_after=timedelta(seconds=30), cleanup_stale=True)
+  def compute():
+      ...
+
 
 
 Working with unhashable arguments

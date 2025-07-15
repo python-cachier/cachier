@@ -1,7 +1,7 @@
 """A memory-based caching core for cachier."""
 
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, Optional, Tuple
 
 from .._types import HashFunc
@@ -103,3 +103,13 @@ class _MemoryCore(_BaseCore):
             for entry in self.cache.values():
                 entry._processing = False
                 entry._condition = None
+
+    def delete_stale_entries(self, stale_after: timedelta) -> None:
+        """Remove stale entries from the in-memory cache."""
+        now = datetime.now()
+        with self.lock:
+            keys_to_delete = [
+                k for k, v in self.cache.items() if now - v.time > stale_after
+            ]
+            for key in keys_to_delete:
+                del self.cache[key]

@@ -10,7 +10,7 @@ import logging
 import os
 import pickle  # for local caching
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, Optional, Tuple, Union
 
 import portalocker  # to lock on pickle cache IO
@@ -117,8 +117,8 @@ class _PickleCore(_BaseCore):
 
     def _load_cache_dict(self) -> Dict[str, CacheEntry]:
         try:
-            with portalocker.Lock(self.cache_fpath, mode="rb") as cf:
-                cache = pickle.load(cf)
+            with portalocker.Lock(self.cache_fpath, mode="rb") as cf:  # type: ignore[arg-type]
+                cache = pickle.load(cf)  # type: ignore[arg-type]
             self._cache_used_fpath = str(self.cache_fpath)
         except (FileNotFoundError, EOFError):
             cache = {}
@@ -144,8 +144,8 @@ class _PickleCore(_BaseCore):
         fpath = self.cache_fpath
         fpath += f"_{hash_str or key}"
         try:
-            with portalocker.Lock(fpath, mode="rb") as cache_file:
-                entry = pickle.load(cache_file)
+            with portalocker.Lock(fpath, mode="rb") as cache_file:  # type: ignore[arg-type]
+                entry = pickle.load(cache_file)  # type: ignore[arg-type]
             return _PickleCore._convert_legacy_cache_entry(entry)
         except (FileNotFoundError, EOFError):
             return None
@@ -183,8 +183,8 @@ class _PickleCore(_BaseCore):
         elif hash_str is not None:
             fpath += f"_{hash_str}"
         with self.lock:
-            with portalocker.Lock(fpath, mode="wb") as cf:
-                pickle.dump(cache, cf, protocol=4)
+            with portalocker.Lock(fpath, mode="wb") as cf:  # type: ignore[arg-type]
+                pickle.dump(cache, cf, protocol=4)  # type: ignore[arg-type]
             # the same as check for separate_file, but changed for typing
             if isinstance(cache, dict):
                 self._cache_dict = cache
@@ -260,16 +260,16 @@ class _PickleCore(_BaseCore):
                 cache[key]._processing = False
                 self._save_cache(cache)
 
-    def _create_observer(self) -> Observer:
+    def _create_observer(self) -> Observer:  # type: ignore[valid-type]
         """Create a new observer instance."""
         return Observer()
 
-    def _cleanup_observer(self, observer: Observer) -> None:
+    def _cleanup_observer(self, observer: Observer) -> None:  # type: ignore[valid-type]
         """Clean up observer properly."""
         try:
-            if observer.is_alive():
-                observer.stop()
-                observer.join(timeout=1.0)
+            if observer.is_alive():  # type: ignore[attr-defined]
+                observer.stop()  # type: ignore[attr-defined]
+                observer.join(timeout=1.0)  # type: ignore[attr-defined]
         except Exception as e:
             logging.debug("Observer cleanup failed: %s", e)
 
@@ -296,7 +296,7 @@ class _PickleCore(_BaseCore):
             else:
                 raise
 
-    def _wait_with_inotify(self, key: str, filename: str) -> Any:
+    def _wait_with_inotify(self, key: str, filename: str) -> Any:  # type: ignore[valid-type]
         """Wait for calculation using inotify with proper cleanup."""
         event_handler = _PickleCore.CacheChangeHandler(
             filename=filename, core=self, key=key
@@ -306,14 +306,14 @@ class _PickleCore(_BaseCore):
         event_handler.inject_observer(observer)
 
         try:
-            observer.schedule(
+            observer.schedule(  # type: ignore[attr-defined]
                 event_handler, path=self.cache_dir, recursive=True
             )
-            observer.start()
+            observer.start()  # type: ignore[attr-defined]
 
             time_spent = 0
-            while observer.is_alive():
-                observer.join(timeout=1.0)
+            while observer.is_alive():  # type: ignore[attr-defined]
+                observer.join(timeout=1.0)  # type: ignore[attr-defined]
                 time_spent += 1
                 self.check_calc_timeout(time_spent)
 
@@ -324,7 +324,7 @@ class _PickleCore(_BaseCore):
             return event_handler.value
         finally:
             # Always cleanup the observer
-            self._cleanup_observer(observer)
+            self._cleanup_observer(observer)  # type: ignore[attr-defined]
 
     def _wait_with_polling(self, key: str) -> Any:
         """Fallback method using polling instead of inotify."""
@@ -363,4 +363,28 @@ class _PickleCore(_BaseCore):
             cache = self.get_cache_dict()
             for key in cache:
                 cache[key]._processing = False
+            self._save_cache(cache)
+
+    def delete_stale_entries(self, stale_after: timedelta) -> None:
+        """Delete stale cache entries from the pickle cache."""
+        now = datetime.now()
+        if self.separate_files:
+            path, name = os.path.split(self.cache_fpath)
+            for subpath in os.listdir(path):
+                if not subpath.startswith(f"{name}_"):
+                    continue
+                entry = self._load_cache_by_key(
+                    hash_str=subpath.split("_")[-1]
+                )
+                if entry is not None and (now - entry.time > stale_after):
+                    os.remove(os.path.join(path, subpath))
+            return
+
+        with self.lock:
+            cache = self.get_cache_dict(reload=True)
+            keys_to_delete = [
+                k for k, v in cache.items() if now - v.time > stale_after
+            ]
+            for key in keys_to_delete:
+                del cache[key]
             self._save_cache(cache)

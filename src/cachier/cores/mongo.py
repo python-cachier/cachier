@@ -12,7 +12,7 @@ import sys  # to make sure that pymongo was imported
 import time  # to sleep when waiting on Mongo cache\
 import warnings  # to warn if pymongo is missing
 from contextlib import suppress
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Optional, Tuple
 
 from .._types import HashFunc, Mongetter
@@ -145,4 +145,11 @@ class _MongoCore(_BaseCore):
                 "processing": True,
             },
             update={"$set": {"processing": False}},
+        )
+
+    def delete_stale_entries(self, stale_after: timedelta) -> None:
+        """Delete stale entries from the MongoDB cache."""
+        threshold = datetime.now() - stale_after
+        self.mongo_collection.delete_many(
+            filter={"func": self._func_str, "time": {"$lt": threshold}}
         )

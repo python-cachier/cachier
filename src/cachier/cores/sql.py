@@ -2,7 +2,7 @@
 
 import pickle
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Callable, Optional, Tuple, Union
 
 try:
@@ -109,10 +109,10 @@ class _SQLCore(_BaseCore):
             value = pickle.loads(row.value) if row.value is not None else None
             entry = CacheEntry(
                 value=value,
-                time=row.timestamp,
-                stale=row.stale,
-                _processing=row.processing,
-                _completed=row.completed,
+                time=row.timestamp,  # type: ignore[arg-type]
+                stale=row.stale,  # type: ignore[arg-type]
+                _processing=row.processing,  # type: ignore[arg-type]
+                _completed=row.completed,  # type: ignore[arg-type]
             )
             return key, entry
 
@@ -284,5 +284,19 @@ class _SQLCore(_BaseCore):
                     )
                 )
                 .values(processing=False)
+            )
+            session.commit()
+
+    def delete_stale_entries(self, stale_after: timedelta) -> None:
+        """Delete stale entries from the SQL cache."""
+        threshold = datetime.now() - stale_after
+        with self._lock, self._Session() as session:
+            session.execute(
+                delete(CacheTable).where(
+                    and_(
+                        CacheTable.function_id == self._func_str,
+                        CacheTable.timestamp < threshold,
+                    )
+                )
             )
             session.commit()
