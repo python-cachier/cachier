@@ -10,6 +10,7 @@ import logging
 import os
 import pickle  # for local caching
 import time
+from contextlib import suppress
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -377,7 +378,8 @@ class _PickleCore(_BaseCore):
                     hash_str=subpath.split("_")[-1]
                 )
                 if entry is not None and (now - entry.time > stale_after):
-                    os.remove(os.path.join(path, subpath))
+                    with suppress(FileNotFoundError):
+                        os.remove(os.path.join(path, subpath))
             return
 
         with self.lock:
