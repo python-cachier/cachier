@@ -118,8 +118,8 @@ class _PickleCore(_BaseCore):
 
     def _load_cache_dict(self) -> Dict[str, CacheEntry]:
         try:
-            with portalocker.Lock(self.cache_fpath, mode="rb") as cf:  # type: ignore[arg-type]
-                cache = pickle.load(cf)  # type: ignore[arg-type]
+            with portalocker.Lock(self.cache_fpath, mode="rb") as cf:
+                cache = pickle.load(cf)
             self._cache_used_fpath = str(self.cache_fpath)
         except (FileNotFoundError, EOFError):
             cache = {}
@@ -145,8 +145,8 @@ class _PickleCore(_BaseCore):
         fpath = self.cache_fpath
         fpath += f"_{hash_str or key}"
         try:
-            with portalocker.Lock(fpath, mode="rb") as cache_file:  # type: ignore[arg-type]
-                entry = pickle.load(cache_file)  # type: ignore[arg-type]
+            with portalocker.Lock(fpath, mode="rb") as cache_file:
+                entry = pickle.load(cache_file)
             return _PickleCore._convert_legacy_cache_entry(entry)
         except (FileNotFoundError, EOFError):
             return None
@@ -184,8 +184,8 @@ class _PickleCore(_BaseCore):
         elif hash_str is not None:
             fpath += f"_{hash_str}"
         with self.lock:
-            with portalocker.Lock(fpath, mode="wb") as cf:  # type: ignore[arg-type]
-                pickle.dump(cache, cf, protocol=4)  # type: ignore[arg-type]
+            with portalocker.Lock(fpath, mode="wb") as cf:
+                pickle.dump(cache, cf, protocol=4)
             # the same as check for separate_file, but changed for typing
             if isinstance(cache, dict):
                 self._cache_dict = cache

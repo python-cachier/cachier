@@ -132,7 +132,7 @@ def set_global_params(**params: Any) -> None:
     }
     cachier.config._global_params = replace(
         cachier.config._global_params,
-        **valid_params,  # type: ignore[arg-type]
+        **valid_params,
     )
 
 
