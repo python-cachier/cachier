@@ -1,4 +1,4 @@
-# CLAUDE.md
+# AGENTS.md
 
 ## 📦 Project Overview
 
@@ -475,7 +475,7 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-## 🧩 Claude Code Integration
+## 🧩 Agent Code Integration
 
 ### a. **File Navigation & Context**
 
@@ -487,7 +487,7 @@ ______________________________________________________________________
 - **Examples:** `examples/`
 - **Docs:** `README.rst`
 
-### b. **Best Practices for Claude**
+### b. **Best Practices for Coding Assistance Agents**
 
 - **Always check for backend-specific requirements** before running backend tests or code (see `tests/*_requirements.txt`).
 - **When adding a backend:** Update all relevant places (core, tests, docs, CI matrix, requirements files).
@@ -497,7 +497,7 @@ ______________________________________________________________________
 - **When changing global config:** Ensure backward compatibility and update docs.
 - **Cross-reference:** Always check `.github/copilot-instructions.md` for additional contributor guidelines.
 
-### c. **Claude-Specific Tips**
+### c. **More Specific Tips**
 
 - **Use MCP for git operations** (commits, pushes, PRs) instead of CLI.
 - **When in doubt, prefer explicit, readable code over cleverness.**
@@ -573,11 +573,10 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-## 🧠 Claude Code: Special Instructions
+## 🧠 Additional Instructions
 
 - **This file is committed to the repository and so should never include any secrets.**
 - **Always read this file and the README.rst before making changes.**
-- **Cross-reference:** Also read `.github/copilot-instructions.md` for detailed contributor guidelines.
 - **When adding new features/backends, update all relevant docs, tests, CI, and requirements files.**
 - **If a test fails due to missing optional dependency, skip gracefully.**
 - **Never emit warnings/errors for missing optional deps at import time.**
@@ -585,14 +584,14 @@ ______________________________________________________________________
 - **All new code must have full type annotations and numpy-style docstrings.**
 - **Backend consistency:** Ensure all backends (pickle, memory, mongo, sql, redis) are supported.\*\*
 - **Validation:** Test examples in this file work: `python -c "from cachier import cachier; ..."` should succeed.
-- **If you are unsure about a pattern, check the README, this file, and .github/copilot-instructions.md first.**
+- **If you are unsure about a pattern, check the README and this file first.**
 - **If you are stuck, suggest opening a new chat with the latest context.**
 
 ______________________________________________________________________
 
 ## 🏁 Final Notes
 
-- **This file is the canonical quick reference for Claude Code and human contributors.**
+- **This file is the canonical quick reference for coding agents and human contributors.**
 - **Works alongside `.github/copilot-instructions.md` for comprehensive guidance.**
 - **Update this file whenever project conventions, workflows, or best practices change.**
 - **Keep this file concise, actionable, and up-to-date.**
