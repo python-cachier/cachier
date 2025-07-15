@@ -61,30 +61,30 @@ Welcome to the Cachier codebase! Please follow these guidelines to ensure code s
 The repository contains a Python package called Cachier that provides persistent function caching with several backends:
 
 cachier/
-├── src/cachier/           # Main library code
-│   ├── __init__.py
-│   ├── core.py            # Decorator logic, backend selection
-│   ├── cores/             # Backend implementations
-│   │   ├── pickle.py
-│   │   ├── memory.py
-│   │   ├── mongo.py
-│   │   ├── sql.py
-│   │   ├── redis.py
-│   │   └── base.py
-│   ├── config.py          # Global/default config
-│   ├── _types.py          # Type definitions
-│   ├── _version.py
-│   └── __main__.py
-├── tests/                 # Pytest-based tests, backend-marked
-│   ├── test_*.py
-│   └── *_requirements.txt # Backend-specific test requirements
-├── examples/              # Usage examples
-├── README.rst             # Main documentation
+├── src/cachier/ # Main library code
+│ ├── __init__.py
+│ ├── core.py # Decorator logic, backend selection
+│ ├── cores/ # Backend implementations
+│ │ ├── pickle.py
+│ │ ├── memory.py
+│ │ ├── mongo.py
+│ │ ├── sql.py
+│ │ ├── redis.py
+│ │ └── base.py
+│ ├── config.py # Global/default config
+│ ├── \_types.py # Type definitions
+│ ├── _version.py
+│ └── __main__.py
+├── tests/ # Pytest-based tests, backend-marked
+│ ├── test_\*.py
+│ └── \*\_requirements.txt # Backend-specific test requirements
+├── examples/ # Usage examples
+├── README.rst # Main documentation
 └── ...
 
 ### Key functionality
 
-* core.py exposes the cachier decorator. It chooses a backend (pickle, mongo, memory, SQL, or Redis) and wraps the target function:
+- core.py exposes the cachier decorator. It chooses a backend (pickle, mongo, memory, SQL, or Redis) and wraps the target function:
 
 ```python
 backend = _update_with_defaults(backend, "backend")
@@ -102,7 +102,7 @@ else:
     raise ValueError("specified an invalid core: %s" % backend)
 ```
 
-* Global defaults and cache-entry structures are defined in config.py:
+- Global defaults and cache-entry structures are defined in config.py:
 
 ```python
 @dataclass
@@ -120,7 +120,7 @@ class Params:
     allow_none: bool = False
 ```
 
-* The project supports multiple backends; each resides under src/cachier/cores/ (e.g., redis.py, mongo.py, etc.). The Redis example demonstrates how to use one backend:
+- The project supports multiple backends; each resides under src/cachier/cores/ (e.g., redis.py, mongo.py, etc.). The Redis example demonstrates how to use one backend:
 
 ```python
 import time
@@ -227,9 +227,7 @@ def demo_callable_client():
 
     def get_redis_client():
         """Get a Redis client."""
-        return redis.Redis(
-            host="localhost", port=6379, db=0, decode_responses=False
-        )
+        return redis.Redis(host="localhost", port=6379, db=0, decode_responses=False)
 
     @cachier(backend="redis", redis_client=get_redis_client)
     def cached_with_callable(n):
@@ -300,6 +298,7 @@ def main():
 if __name__ == "__main__":
     main()
 ```
+
 ______________________________________________________________________
 
 Thank you for contributing to Cachier! These guidelines help ensure a robust, maintainable, and user-friendly package for everyone.
