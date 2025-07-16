@@ -1,7 +1,7 @@
 name: Test
 
 on:
-  pull_request:
+  pull_request_target:
     branches: [master]
   push:
     branches: [master]
@@ -144,25 +144,14 @@ jobs:
         if: matrix.backend == 'redis'
         run: pytest -m redis --cov=cachier --cov-report=term --cov-report=xml:cov.xml
 
-      - name: Upload coverage to Codecov (non-PRs)
-        if: github.event_name != 'pull_request' # pushes, scheduled, etc.
+      - name: Upload coverage to Codecov
         continue-on-error: true
         uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }} # required
           flags: ${{ matrix.backend }}
-
-      # We need a separate step for PRs because PRs do not have access to
-      # secrets; hence, provide the token will give it an empty value,
-      # resulting in an authentication error.
-      - name: Upload coverage to Codecov (PRs)
-        if: github.event_name == 'pull_request' # PRs only
-        continue-on-error: true
-        uses: codecov/codecov-action@v5
-        with:
-          fail_ci_if_error: true
-          flags: ${{ matrix.backend }}
+          override_pr: ${{ github.event.pull_request.number }}
 
   testing-guardian:
     runs-on: ubuntu-latest
