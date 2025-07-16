@@ -38,11 +38,13 @@ class _BaseCore:
         hash_func: Optional[HashFunc],
         wait_for_calc_timeout: Optional[int],
         entry_size_limit: Optional[int] = None,
+        return_stale_on_timeout: Optional[bool] = None,
     ):
         self.hash_func = _update_with_defaults(hash_func, "hash_func")
         self.wait_for_calc_timeout = wait_for_calc_timeout
         self.lock = threading.RLock()
         self.entry_size_limit = entry_size_limit
+        self.return_stale_on_timeout = return_stale_on_timeout
 
     def set_func(self, func):
         """Set the function this core will use.

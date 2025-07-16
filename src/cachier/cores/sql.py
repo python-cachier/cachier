@@ -64,6 +64,7 @@ class _SQLCore(_BaseCore):
         sql_engine: Optional[Union[str, "Engine", Callable[[], "Engine"]]],
         wait_for_calc_timeout: Optional[int] = None,
         entry_size_limit: Optional[int] = None,
+        return_stale_on_timeout: Optional[bool] = None,
     ):
         if not SQLALCHEMY_AVAILABLE:
             raise ImportError(
@@ -74,6 +75,7 @@ class _SQLCore(_BaseCore):
             hash_func=hash_func,
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=entry_size_limit,
+            return_stale_on_timeout=return_stale_on_timeout
         )
         self._engine = self._resolve_engine(sql_engine)
         self._Session = sessionmaker(bind=self._engine)

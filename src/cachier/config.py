@@ -62,6 +62,7 @@ class Params:
     pickle_reload: bool = True
     separate_files: bool = False
     wait_for_calc_timeout: int = 0
+    return_stale_on_timeout: bool = False
     allow_none: bool = False
     cleanup_stale: bool = False
     cleanup_interval: timedelta = timedelta(days=1)
@@ -119,9 +120,10 @@ def set_global_params(**params: Any) -> None:
     Parameters given directly to a decorator take precedence over any values
     set by this function.
 
-    Only 'stale_after', 'next_time', and 'wait_for_calc_timeout' can be changed
-    after the memoization decorator has been applied. Other parameters will
-    only have an effect on decorators applied after this function is run.
+    Only 'stale_after', 'next_time', 'wait_for_calc_timeout', and 
+    'return_stale_on_timeout' can be changed after the memoization decorator 
+    has been applied. Other parameters will only have an effect on decorators 
+    applied after this function is run.
 
     """
     import cachier

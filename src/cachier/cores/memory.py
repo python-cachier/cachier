@@ -1,6 +1,7 @@
 """A memory-based caching core for cachier."""
 
 import threading
+import time
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional, Tuple
 
@@ -17,8 +18,9 @@ class _MemoryCore(_BaseCore):
         hash_func: Optional[HashFunc],
         wait_for_calc_timeout: Optional[int],
         entry_size_limit: Optional[int] = None,
+        return_stale_on_timeout: Optional[bool] = None,
     ):
-        super().__init__(hash_func, wait_for_calc_timeout, entry_size_limit)
+        super().__init__(hash_func, wait_for_calc_timeout, entry_size_limit, return_stale_on_timeout)
         self.cache: Dict[str, CacheEntry] = {}
 
     def _hash_func_key(self, key: str) -> str:
@@ -93,10 +95,24 @@ class _MemoryCore(_BaseCore):
                 return entry.value
         if entry._condition is None:
             raise RuntimeError("No condition set for entry")
-        entry._condition.acquire()
-        entry._condition.wait()
-        entry._condition.release()
-        return self.cache[hash_key].value
+
+        # Wait with timeout checking similar to other cores
+        time_spent = 0
+        while True:
+            entry._condition.acquire()
+            # Wait for 1 second at a time to allow timeout checking
+            signaled = entry._condition.wait(timeout=1.0)
+            entry._condition.release()
+
+            # Check if the calculation completed
+            with self.lock:
+                if hash_key in self.cache and not self.cache[hash_key]._processing:
+                    return self.cache[hash_key].value
+
+            # If we weren't signaled and the entry is still processing, check timeout
+            if not signaled:
+                time_spent += 1
+                self.check_calc_timeout(time_spent)
 
     def clear_cache(self) -> None:
         with self.lock:
