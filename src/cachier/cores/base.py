@@ -14,7 +14,7 @@ import threading
 from datetime import timedelta
 from typing import Any, Callable, Optional, Tuple
 
-from pympler import asizeof
+from pympler import asizeof  # type: ignore
 
 from .._types import HashFunc
 from ..config import CacheEntry, _update_with_defaults

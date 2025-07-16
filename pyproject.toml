@@ -198,5 +198,5 @@ show_missing = true
 exclude_lines = [
   "pragma: no cover",          # Have to re-enable the standard pragma
   "raise NotImplementedError", # Don't complain if tests don't hit defensive assertion code:
-  "if TYPE_CHECKING:",
+  "if TYPE_CHECKING:",         # Is only true when running mypy, not tests
 ]

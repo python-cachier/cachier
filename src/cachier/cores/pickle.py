@@ -12,7 +12,7 @@ import pickle  # for local caching
 import time
 from contextlib import suppress
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union, IO, cast
 
 import portalocker  # to lock on pickle cache IO
 from watchdog.events import PatternMatchingEventHandler
@@ -120,7 +120,7 @@ class _PickleCore(_BaseCore):
     def _load_cache_dict(self) -> Dict[str, CacheEntry]:
         try:
             with portalocker.Lock(self.cache_fpath, mode="rb") as cf:
-                cache = pickle.load(cf)
+                cache = pickle.load(cast(IO[bytes], cf))
             self._cache_used_fpath = str(self.cache_fpath)
         except (FileNotFoundError, EOFError):
             cache = {}
@@ -147,7 +147,7 @@ class _PickleCore(_BaseCore):
         fpath += f"_{hash_str or key}"
         try:
             with portalocker.Lock(fpath, mode="rb") as cache_file:
-                entry = pickle.load(cache_file)
+                entry = pickle.load(cast(IO[bytes], cache_file))
             return _PickleCore._convert_legacy_cache_entry(entry)
         except (FileNotFoundError, EOFError):
             return None
@@ -186,7 +186,7 @@ class _PickleCore(_BaseCore):
             fpath += f"_{hash_str}"
         with self.lock:
             with portalocker.Lock(fpath, mode="wb") as cf:
-                pickle.dump(cache, cf, protocol=4)
+                pickle.dump(cache, cast(IO[bytes], cf), protocol=4)
             # the same as check for separate_file, but changed for typing
             if isinstance(cache, dict):
                 self._cache_dict = cache

@@ -26,7 +26,7 @@ Welcome to the Cachier codebase! Please follow these guidelines to ensure code s
 
 ## 4. Coverage, Linting, and Typing
 
-- Code must pass `ruff` and `pytest`.
+- Code must pass `mypy`, `ruff`, and `pytest`.
 - Use per-file or per-line ignores for known, justified issues (e.g., SQLAlchemy model base class typing, intentional use of `pickle`).
 - All new code must include full type annotations and docstrings matching the style of the existing codebase.
 - All docstrings should follow numpy docstring conventions.

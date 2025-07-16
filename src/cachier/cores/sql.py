@@ -3,7 +3,7 @@
 import pickle
 import threading
 from datetime import datetime, timedelta
-from typing import Any, Callable, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Tuple, Union, cast
 
 try:
     from sqlalchemy import (
@@ -112,10 +112,10 @@ class _SQLCore(_BaseCore):
             value = pickle.loads(row.value) if row.value is not None else None
             entry = CacheEntry(
                 value=value,
-                time=row.timestamp,
-                stale=row.stale,
-                _processing=row.processing,
-                _completed=row.completed,
+                time=cast(datetime, row.timestamp),
+                stale=cast(bool, row.stale),
+                _processing=cast(bool, row.processing),
+                _completed=cast(bool, row.completed),
             )
             return key, entry
 
