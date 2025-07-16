@@ -12,7 +12,7 @@ import pickle  # for local caching
 import time
 from contextlib import suppress
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional, Tuple, Union, IO, cast
+from typing import IO, Any, Dict, Optional, Tuple, Union, cast
 
 import portalocker  # to lock on pickle cache IO
 from watchdog.events import PatternMatchingEventHandler

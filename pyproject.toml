@@ -45,8 +45,8 @@ dynamic = [
 ]
 dependencies = [
   "portalocker>=2.3.2",
+  "pympler>=1",
   "watchdog>=2.3.1",
-  "pympler>=1.0",
 ]
 urls.Source = "https://github.com/python-cachier/cachier"
 # --- setuptools ---
