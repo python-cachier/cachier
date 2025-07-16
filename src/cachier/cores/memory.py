@@ -16,8 +16,9 @@ class _MemoryCore(_BaseCore):
         self,
         hash_func: Optional[HashFunc],
         wait_for_calc_timeout: Optional[int],
+        entry_size_limit: Optional[int] = None,
     ):
-        super().__init__(hash_func, wait_for_calc_timeout)
+        super().__init__(hash_func, wait_for_calc_timeout, entry_size_limit)
         self.cache: Dict[str, CacheEntry] = {}
 
     def _hash_func_key(self, key: str) -> str:
@@ -29,7 +30,9 @@ class _MemoryCore(_BaseCore):
         with self.lock:
             return key, self.cache.get(self._hash_func_key(key), None)
 
-    def set_entry(self, key: str, func_res: Any) -> None:
+    def set_entry(self, key: str, func_res: Any) -> bool:
+        if not self._should_store(func_res):
+            return False
         hash_key = self._hash_func_key(key)
         with self.lock:
             try:
@@ -47,6 +50,7 @@ class _MemoryCore(_BaseCore):
                 _condition=cond,
                 _completed=True,
             )
+        return True
 
     def mark_entry_being_calculated(self, key: str) -> None:
         with self.lock:
