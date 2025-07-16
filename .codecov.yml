@@ -8,10 +8,13 @@ coverage:
   range: "70...100"
   ignore: Tests
   status:
+    project:
+      default:
+        target: auto
+        threshold: 0%
     patch:
       default:
-        target: "80"
-    project: false
+        target: 97%
 
 comment:
   layout: "header, changes, diff"
