@@ -148,16 +148,25 @@ jobs:
         if: matrix.backend == 'redis'
         run: pytest -m redis --cov=cachier --cov-report=term --cov-report=xml:cov.xml
 
-      - name: Upload coverage to Codecov
-        # only on pull_request_target (so secrets are available)
-        if: github.event_name == 'pull_request_target'
+      # Variany A: tokenless, for patch on normal PRs
+      - name: Upload coverage to Codecov (on PRs)
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: codecov/codecov-action@v5
+        with:
+          fail_ci_if_error: true
+          flags: ${{ matrix.backend }}
+          override_pr: ${{ github.event.pull_request.number }}
+
+        # Variant B: authenticated, for full project on merges / schedules
+      - name: Upload coverage to Codecov (non PRs)
+        if: github.event_name != 'pull_request'
         continue-on-error: true
         uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }} # required
           flags: ${{ matrix.backend }}
-          override_pr: ${{ github.event.pull_request.number }}
 
   testing-guardian:
     runs-on: ubuntu-latest
