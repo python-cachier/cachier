@@ -112,10 +112,10 @@ class _SQLCore(_BaseCore):
             value = pickle.loads(row.value) if row.value is not None else None
             entry = CacheEntry(
                 value=value,
-                time=row.timestamp,  # type: ignore[arg-type]
-                stale=row.stale,  # type: ignore[arg-type]
-                _processing=row.processing,  # type: ignore[arg-type]
-                _completed=row.completed,  # type: ignore[arg-type]
+                time=row.timestamp,
+                stale=row.stale,
+                _processing=row.processing,
+                _completed=row.completed,
             )
             return key, entry
 

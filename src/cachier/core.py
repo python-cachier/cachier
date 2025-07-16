@@ -19,19 +19,14 @@ from typing import Any, Callable, Optional, Union
 from warnings import warn
 
 from ._types import RedisClient
-from .config import (
-    Backend,
-    HashFunc,
-    Mongetter,
-    _update_with_defaults,
-    parse_bytes,
-)
+from .config import Backend, HashFunc, Mongetter, _update_with_defaults
 from .cores.base import RecalculationNeeded, _BaseCore
 from .cores.memory import _MemoryCore
 from .cores.mongo import _MongoCore
 from .cores.pickle import _PickleCore
 from .cores.redis import _RedisCore
 from .cores.sql import _SQLCore
+from .util import parse_bytes
 
 MAX_WORKERS_ENVAR_NAME = "CACHIER_MAX_WORKERS"
 DEFAULT_MAX_WORKERS = 8

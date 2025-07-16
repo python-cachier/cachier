@@ -9,11 +9,12 @@
 
 import abc  # for the _BaseCore abstract base class
 import inspect
-import pickle
 import sys
 import threading
 from datetime import timedelta
 from typing import Any, Callable, Optional, Tuple
+
+from pympler import asizeof
 
 from .._types import HashFunc
 from ..config import CacheEntry, _update_with_defaults
@@ -96,7 +97,7 @@ class _BaseCore:
 
     def _estimate_size(self, value: Any) -> int:
         try:
-            return len(pickle.dumps(value))
+            return asizeof.asizeof(value)
         except Exception:
             return sys.getsizeof(value)
 

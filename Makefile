@@ -5,7 +5,7 @@
         test-mongo-local test-mongo-docker test-mongo-inmemory test-mongo-also-local \
         test-redis-local test-sql-local \
         services-start services-stop services-logs \
-        mongo-start mongo-stop mongo-logs lint type-check format clean \
+mongo-start mongo-stop mongo-logs lint format clean \
         install install-dev install-all
 
 # Default target
@@ -30,7 +30,6 @@ help:
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  make lint               - Run ruff linter"
-	@echo "  make type-check         - Run mypy type checker"
 	@echo "  make format             - Format code with ruff"
 	@echo ""
 	@echo "Installation:"
@@ -131,8 +130,6 @@ mongo-logs:
 lint:
 	ruff check .
 
-type-check:
-	mypy src/cachier/
 
 format:
 	ruff format .
@@ -145,7 +142,6 @@ clean:
 	rm -rf .coverage
 	rm -rf htmlcov/
 	rm -rf .pytest_cache/
-	rm -rf .mypy_cache/
 	rm -rf .ruff_cache/
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete

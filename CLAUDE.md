@@ -9,7 +9,6 @@
 - **Key Dependencies:** `portalocker`, `watchdog` (optional: `pymongo`, `sqlalchemy`, `redis`)
 - **Test Framework:** `pytest` with backend-specific markers
 - **Linting:** `ruff` (replaces black/flake8)
-- **Type Checking:** `mypy`
 - **CI:** GitHub Actions (matrix for backends/OS with Dockerized services)
 - **Issue Tracking:** GitHub Issues
 - **Additional Docs:** `.github/copilot-instructions.md` for contributor guidelines
@@ -69,7 +68,6 @@ ______________________________________________________________________
 
    ```bash
    ruff check .
-   mypy src/cachier/
    ```
 
 4. **Try an example:**
@@ -102,7 +100,6 @@ ______________________________________________________________________
 - **Type annotations** required for all new code.
 - **Docstrings:** Use numpy style, multi-line, no single-line docstrings.
 - **Lint:** Run `ruff` before PRs. Use per-line/file ignores only for justified cases.
-- **Type check:** Run `mypy` before PRs.
 - **Testing:** All public methods must have at least one test. Use `pytest.mark.<backend>` for backend-specific tests.
 - **No warnings/errors for missing optional dependencies at import time.** Only raise when backend is used.
 
@@ -415,7 +412,6 @@ ______________________________________________________________________
 - **Run multiple backends:** `pytest -m "redis or sql"`
 - **Exclude backends:** `pytest -m "not mongo"`
 - **Lint:** `ruff check .`
-- **Type check:** `mypy src/cachier/`
 - **Format:** `ruff format .`
 - **Pre-commit:** `pre-commit run --all-files`
 - **Build package:** `python -m build`
@@ -505,7 +501,6 @@ ______________________________________________________________________
 - **If adding new dependencies, use context7 MCP to get latest versions.**
 - **Always check GitHub Issues before starting new features/PRs.**
 - **Create a relevant issue for every new PR.**
-- **Use per-file or per-line ignores for mypy/ruff only when justified.**
 - **All new code must have full type annotations and numpy-style docstrings.**
 
 ______________________________________________________________________
@@ -557,7 +552,6 @@ ______________________________________________________________________
 | Test multiple backends     | `pytest -m "redis or sql"`         |
 | Exclude backends           | `pytest -m "not mongo"`            |
 | Lint                       | `ruff check .`                     |
-| Type check                 | `mypy src/cachier/`                |
 | Format code                | `ruff format .`                    |
 | Build package              | `python -m build`                  |
 | Check docs                 | `python setup.py checkdocs`        |
