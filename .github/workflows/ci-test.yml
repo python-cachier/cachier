@@ -145,7 +145,7 @@ jobs:
         run: pytest -m redis --cov=cachier --cov-report=term --cov-report=xml:cov.xml
 
       - name: Upload coverage to Codecov (non-PRs)
-        if: github.event_name != 'pull_request'   # pushes, scheduled, etc.
+        if: github.event_name != 'pull_request' # pushes, scheduled, etc.
         continue-on-error: true
         uses: codecov/codecov-action@v5
         with:
