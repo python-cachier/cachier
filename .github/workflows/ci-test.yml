@@ -1,6 +1,8 @@
 name: Test
 
 on:
+  pull_request:
+    branches: [master]
   pull_request_target:
     branches: [master]
   push:
@@ -16,6 +18,8 @@ concurrency:
 
 jobs:
   pytester:
+    # run on both push & normal PR
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -145,6 +149,8 @@ jobs:
         run: pytest -m redis --cov=cachier --cov-report=term --cov-report=xml:cov.xml
 
       - name: Upload coverage to Codecov
+        # only on pull_request_target (so secrets are available)
+        if: github.event_name == 'pull_request_target'
         continue-on-error: true
         uses: codecov/codecov-action@v5
         with:
