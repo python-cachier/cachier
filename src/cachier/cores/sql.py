@@ -63,6 +63,7 @@ class _SQLCore(_BaseCore):
         hash_func: Optional[HashFunc],
         sql_engine: Optional[Union[str, "Engine", Callable[[], "Engine"]]],
         wait_for_calc_timeout: Optional[int] = None,
+        return_stale_on_timeout: Optional[bool] = None,
     ):
         if not SQLALCHEMY_AVAILABLE:
             raise ImportError(
@@ -70,7 +71,7 @@ class _SQLCore(_BaseCore):
                 "Install with `pip install SQLAlchemy`."
             )
         super().__init__(
-            hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout
+            hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout, return_stale_on_timeout=return_stale_on_timeout
         )
         self._engine = self._resolve_engine(sql_engine)
         self._Session = sessionmaker(bind=self._engine)
