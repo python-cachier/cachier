@@ -12,11 +12,11 @@ coverage:
     - "**/__init__.py"
 
 status:
-  project:               # overall coverage
+  project: # overall coverage
     default:
-      target: auto       # fail on any drop
-      threshold: 0%      # or 0.5 % if you want slack
-  patch:                 # changed lines
+      target: auto # fail on any drop
+      threshold: 0% # or 0.5 % if you want slack
+  patch: # changed lines
     default:
       target: 97%
 
