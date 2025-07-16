@@ -415,6 +415,7 @@ ______________________________________________________________________
 - **Run multiple backends:** `pytest -m "redis or sql"`
 - **Exclude backends:** `pytest -m "not mongo"`
 - **Lint:** `ruff check .`
+- **Type check:** `mypy src/cachier/`
 - **Format:** `ruff format .`
 - **Pre-commit:** `pre-commit run --all-files`
 - **Build package:** `python -m build`
