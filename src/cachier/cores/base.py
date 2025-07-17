@@ -9,9 +9,12 @@
 
 import abc  # for the _BaseCore abstract base class
 import inspect
+import sys
 import threading
 from datetime import timedelta
-from typing import Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple
+
+from pympler import asizeof  # type: ignore
 
 from .._types import HashFunc
 from ..config import CacheEntry, _update_with_defaults
@@ -34,10 +37,12 @@ class _BaseCore:
         self,
         hash_func: Optional[HashFunc],
         wait_for_calc_timeout: Optional[int],
+        entry_size_limit: Optional[int] = None,
     ):
         self.hash_func = _update_with_defaults(hash_func, "hash_func")
         self.wait_for_calc_timeout = wait_for_calc_timeout
         self.lock = threading.RLock()
+        self.entry_size_limit = entry_size_limit
 
     def set_func(self, func):
         """Set the function this core will use.
@@ -90,8 +95,22 @@ class _BaseCore:
 
         """
 
+    def _estimate_size(self, value: Any) -> int:
+        try:
+            return asizeof.asizeof(value)
+        except Exception:
+            return sys.getsizeof(value)
+
+    def _should_store(self, value: Any) -> bool:
+        if self.entry_size_limit is None:
+            return True
+        try:
+            return self._estimate_size(value) <= self.entry_size_limit
+        except Exception:
+            return True
+
     @abc.abstractmethod
-    def set_entry(self, key: str, func_res):
+    def set_entry(self, key: str, func_res: Any) -> bool:
         """Map the given result to the given key in this core's cache."""
 
     @abc.abstractmethod

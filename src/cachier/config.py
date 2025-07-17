@@ -65,6 +65,7 @@ class Params:
     allow_none: bool = False
     cleanup_stale: bool = False
     cleanup_interval: timedelta = timedelta(days=1)
+    entry_size_limit: Optional[int] = None
 
 
 _global_params = Params()

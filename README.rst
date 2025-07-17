@@ -138,6 +138,7 @@ The following parameters will only be applied to decorators defined after `set_d
 *  `cache_dir`
 *  `pickle_reload`
 *  `separate_files`
+*  `entry_size_limit`
 
 These parameters can be changed at any time and they will apply to all decorators:
 
@@ -268,6 +269,22 @@ You can specify a maximum allowed age for a cached value on a per-call basis usi
 - The effective max age threshold is the minimum of `stale_after` (from the decorator) and `max_age` (from the call).
 - If the cached value is older than this threshold, a new calculation is triggered and the cache is updated.
 - If not, the cached value is returned as usual.
+
+Entry Size Limit
+~~~~~~~~~~~~~~~~
+You can prevent very large return values from being cached by specifying
+``entry_size_limit`` on the decorator. Values larger than this limit are
+returned but not stored. The limit accepts an integer number of bytes or a
+human readable string like ``"200MB"``.
+
+.. code-block:: python
+
+  @cachier(entry_size_limit="10KB")
+  def load_data():
+      ...
+
+When ``cachier__verbose=True`` is passed to a call that returns a value
+exceeding the limit, an informative message is printed.
 
 Ignore Cache
 ~~~~~~~~~~~~

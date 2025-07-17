@@ -14,6 +14,7 @@ def test_get_default_params():
         "caching_enabled",
         "cleanup_interval",
         "cleanup_stale",
+        "entry_size_limit",
         "hash_func",
         "mongetter",
         "next_time",

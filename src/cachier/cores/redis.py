@@ -35,6 +35,7 @@ class _RedisCore(_BaseCore):
         ],
         wait_for_calc_timeout: Optional[int] = None,
         key_prefix: str = "cachier",
+        entry_size_limit: Optional[int] = None,
     ):
         if not REDIS_AVAILABLE:
             warnings.warn(
@@ -45,7 +46,9 @@ class _RedisCore(_BaseCore):
             )
 
         super().__init__(
-            hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout
+            hash_func=hash_func,
+            wait_for_calc_timeout=wait_for_calc_timeout,
+            entry_size_limit=entry_size_limit,
         )
         if redis_client is None:
             raise MissingRedisClient(
@@ -122,7 +125,9 @@ class _RedisCore(_BaseCore):
             warnings.warn(f"Redis get_entry_by_key failed: {e}", stacklevel=2)
             return key, None
 
-    def set_entry(self, key: str, func_res: Any) -> None:
+    def set_entry(self, key: str, func_res: Any) -> bool:
+        if not self._should_store(func_res):
+            return False
         """Map the given result to the given key in Redis."""
         redis_client = self._resolve_redis_client()
         redis_key = self._get_redis_key(key)
@@ -143,8 +148,10 @@ class _RedisCore(_BaseCore):
                     "completed": "true",
                 },
             )
+            return True
         except Exception as e:
             warnings.warn(f"Redis set_entry failed: {e}", stacklevel=2)
+        return False
 
     def mark_entry_being_calculated(self, key: str) -> None:
         """Mark the entry mapped by the given key as being calculated."""

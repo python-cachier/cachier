@@ -40,6 +40,7 @@ class _MongoCore(_BaseCore):
         hash_func: Optional[HashFunc],
         mongetter: Optional[Mongetter],
         wait_for_calc_timeout: Optional[int],
+        entry_size_limit: Optional[int] = None,
     ):
         if "pymongo" not in sys.modules:
             warnings.warn(
@@ -49,7 +50,9 @@ class _MongoCore(_BaseCore):
             )  # pragma: no cover
 
         super().__init__(
-            hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout
+            hash_func=hash_func,
+            wait_for_calc_timeout=wait_for_calc_timeout,
+            entry_size_limit=entry_size_limit,
         )
         if mongetter is None:
             raise MissingMongetter(
@@ -87,7 +90,9 @@ class _MongoCore(_BaseCore):
         )
         return key, entry
 
-    def set_entry(self, key: str, func_res: Any) -> None:
+    def set_entry(self, key: str, func_res: Any) -> bool:
+        if not self._should_store(func_res):
+            return False
         thebytes = pickle.dumps(func_res)
         self.mongo_collection.update_one(
             filter={"func": self._func_str, "key": key},
@@ -104,6 +109,7 @@ class _MongoCore(_BaseCore):
             },
             upsert=True,
         )
+        return True
 
     def mark_entry_being_calculated(self, key: str) -> None:
         self.mongo_collection.update_one(

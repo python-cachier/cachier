@@ -3,7 +3,7 @@
 import pickle
 import threading
 from datetime import datetime, timedelta
-from typing import Any, Callable, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Tuple, Union, cast
 
 try:
     from sqlalchemy import (
@@ -63,6 +63,7 @@ class _SQLCore(_BaseCore):
         hash_func: Optional[HashFunc],
         sql_engine: Optional[Union[str, "Engine", Callable[[], "Engine"]]],
         wait_for_calc_timeout: Optional[int] = None,
+        entry_size_limit: Optional[int] = None,
     ):
         if not SQLALCHEMY_AVAILABLE:
             raise ImportError(
@@ -70,7 +71,9 @@ class _SQLCore(_BaseCore):
                 "Install with `pip install SQLAlchemy`."
             )
         super().__init__(
-            hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout
+            hash_func=hash_func,
+            wait_for_calc_timeout=wait_for_calc_timeout,
+            entry_size_limit=entry_size_limit,
         )
         self._engine = self._resolve_engine(sql_engine)
         self._Session = sessionmaker(bind=self._engine)
@@ -109,14 +112,16 @@ class _SQLCore(_BaseCore):
             value = pickle.loads(row.value) if row.value is not None else None
             entry = CacheEntry(
                 value=value,
-                time=row.timestamp,
-                stale=row.stale,
-                _processing=row.processing,
-                _completed=row.completed,
+                time=cast(datetime, row.timestamp),
+                stale=cast(bool, row.stale),
+                _processing=cast(bool, row.processing),
+                _completed=cast(bool, row.completed),
             )
             return key, entry
 
-    def set_entry(self, key: str, func_res: Any) -> None:
+    def set_entry(self, key: str, func_res: Any) -> bool:
+        if not self._should_store(func_res):
+            return False
         with self._lock, self._Session() as session:
             thebytes = pickle.dumps(func_res)
             now = datetime.now()
@@ -187,6 +192,7 @@ class _SQLCore(_BaseCore):
                         )
                     )
             session.commit()
+        return True
 
     def mark_entry_being_calculated(self, key: str) -> None:
         with self._lock, self._Session() as session:

@@ -8,6 +8,7 @@ from .config import (
     set_global_params,
 )
 from .core import cachier
+from .util import parse_bytes
 
 __all__ = [
     "cachier",
@@ -15,6 +16,7 @@ __all__ = [
     "get_default_params",
     "set_global_params",
     "get_global_params",
+    "parse_bytes",
     "enable_caching",
     "disable_caching",
     "__version__",

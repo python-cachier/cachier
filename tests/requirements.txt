@@ -9,3 +9,4 @@ collective.checkdocs
 pygments
 # the memory core tests dataframe caching
 pandas
+pympler

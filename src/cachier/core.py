@@ -19,18 +19,14 @@ from typing import Any, Callable, Optional, Union
 from warnings import warn
 
 from ._types import RedisClient
-from .config import (
-    Backend,
-    HashFunc,
-    Mongetter,
-    _update_with_defaults,
-)
+from .config import Backend, HashFunc, Mongetter, _update_with_defaults
 from .cores.base import RecalculationNeeded, _BaseCore
 from .cores.memory import _MemoryCore
 from .cores.mongo import _MongoCore
 from .cores.pickle import _PickleCore
 from .cores.redis import _RedisCore
 from .cores.sql import _SQLCore
+from .util import parse_bytes
 
 MAX_WORKERS_ENVAR_NAME = "CACHIER_MAX_WORKERS"
 DEFAULT_MAX_WORKERS = 8
@@ -60,11 +56,15 @@ def _function_thread(core, key, func, args, kwds):
         print(f"Function call failed with the following exception:\n{exc}")
 
 
-def _calc_entry(core, key, func, args, kwds) -> Optional[Any]:
+def _calc_entry(
+    core, key, func, args, kwds, printer=lambda *_: None
+) -> Optional[Any]:
     core.mark_entry_being_calculated(key)
     try:
         func_res = func(*args, **kwds)
-        core.set_entry(key, func_res)
+        stored = core.set_entry(key, func_res)
+        if not stored:
+            printer("Result exceeds entry_size_limit; not cached")
         return func_res
     finally:
         core.mark_entry_not_calculated(key)
@@ -123,6 +123,7 @@ def cachier(
     allow_none: Optional[bool] = None,
     cleanup_stale: Optional[bool] = None,
     cleanup_interval: Optional[timedelta] = None,
+    entry_size_limit: Optional[Union[int, str]] = None,
 ):
     """Wrap as a persistent, stale-free memoization decorator.
 
@@ -191,6 +192,10 @@ def cachier(
         thread. Defaults to False.
     cleanup_interval: datetime.timedelta, optional
         Minimum time between automatic cleanup runs. Defaults to one day.
+    entry_size_limit: int or str, optional
+        Maximum serialized size of a cached value. Values exceeding the limit
+        are returned but not cached. Human readable strings like ``"10MB"`` are
+        allowed.
 
     """
     # Check for deprecated parameters
@@ -204,6 +209,9 @@ def cachier(
     # Update parameters with defaults if input is None
     backend = _update_with_defaults(backend, "backend")
     mongetter = _update_with_defaults(mongetter, "mongetter")
+    size_limit_bytes = parse_bytes(
+        _update_with_defaults(entry_size_limit, "entry_size_limit")
+    )
     # Override the backend parameter if a mongetter is provided.
     if callable(mongetter):
         backend = "mongo"
@@ -215,28 +223,34 @@ def cachier(
             cache_dir=cache_dir,
             separate_files=separate_files,
             wait_for_calc_timeout=wait_for_calc_timeout,
+            entry_size_limit=size_limit_bytes,
         )
     elif backend == "mongo":
         core = _MongoCore(
             hash_func=hash_func,
             mongetter=mongetter,
             wait_for_calc_timeout=wait_for_calc_timeout,
+            entry_size_limit=size_limit_bytes,
         )
     elif backend == "memory":
         core = _MemoryCore(
-            hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout
+            hash_func=hash_func,
+            wait_for_calc_timeout=wait_for_calc_timeout,
+            entry_size_limit=size_limit_bytes,
         )
     elif backend == "sql":
         core = _SQLCore(
             hash_func=hash_func,
             sql_engine=sql_engine,
             wait_for_calc_timeout=wait_for_calc_timeout,
+            entry_size_limit=size_limit_bytes,
         )
     elif backend == "redis":
         core = _RedisCore(
             hash_func=hash_func,
             redis_client=redis_client,
             wait_for_calc_timeout=wait_for_calc_timeout,
+            entry_size_limit=size_limit_bytes,
         )
     else:
         raise ValueError("specified an invalid core: %s" % backend)
@@ -324,12 +338,12 @@ def cachier(
                 )
             key, entry = core.get_entry((), kwargs)
             if overwrite_cache:
-                return _calc_entry(core, key, func, args, kwds)
+                return _calc_entry(core, key, func, args, kwds, _print)
             if entry is None or (
                 not entry._completed and not entry._processing
             ):
                 _print("No entry found. No current calc. Calling like a boss.")
-                return _calc_entry(core, key, func, args, kwds)
+                return _calc_entry(core, key, func, args, kwds, _print)
             _print("Entry found.")
             if _allow_none or entry.value is not None:
                 _print("Cached result found.")
@@ -362,7 +376,7 @@ def cachier(
                     try:
                         return core.wait_on_entry_calc(key)
                     except RecalculationNeeded:
-                        return _calc_entry(core, key, func, args, kwds)
+                        return _calc_entry(core, key, func, args, kwds, _print)
                 if _next_time:
                     _print("Async calc and return stale")
                     core.mark_entry_being_calculated(key)
@@ -374,15 +388,15 @@ def cachier(
                         core.mark_entry_not_calculated(key)
                     return entry.value
                 _print("Calling decorated function and waiting")
-                return _calc_entry(core, key, func, args, kwds)
+                return _calc_entry(core, key, func, args, kwds, _print)
             if entry._processing:
                 _print("No value but being calculated. Waiting.")
                 try:
                     return core.wait_on_entry_calc(key)
                 except RecalculationNeeded:
-                    return _calc_entry(core, key, func, args, kwds)
+                    return _calc_entry(core, key, func, args, kwds, _print)
             _print("No entry found. No current calc. Calling like a boss.")
-            return _calc_entry(core, key, func, args, kwds)
+            return _calc_entry(core, key, func, args, kwds, _print)
 
         # MAINTAINER NOTE: The main function wrapper is now a standard function
         # that passes *args and **kwargs to _call. This ensures that user
