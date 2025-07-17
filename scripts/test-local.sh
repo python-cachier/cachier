@@ -193,14 +193,14 @@ check_docker() {
         echo ""
         echo "After starting Docker, wait a few seconds and try running this script again."
         echo ""
-        
+
         # Show the actual docker error for debugging
         echo "Technical details:"
         docker ps 2>&1 | sed 's/^/  /'
         echo ""
         exit 1
     fi
-    
+
     print_message $GREEN "✓ Docker is installed and running"
 }
 
