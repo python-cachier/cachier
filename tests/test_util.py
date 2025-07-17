@@ -18,9 +18,9 @@ def test_parse_bytes_invalid_format():
     # Test line 15: ValueError for invalid format
     with pytest.raises(ValueError, match="Invalid size value: invalid"):
         parse_bytes("invalid")
-    
+
     with pytest.raises(ValueError, match="Invalid size value: 123XB"):
         parse_bytes("123XB")
-    
+
     with pytest.raises(ValueError, match="Invalid size value: abc123"):
         parse_bytes("abc123")

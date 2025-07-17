@@ -11,15 +11,15 @@
 #     realpath,
 #     dirname
 # )
-import os
-import sys
-import time
-import pickle
 import hashlib
+import os
+import pickle
+import sys
 import tempfile
 import threading
-from pathlib import Path
+import time
 from datetime import datetime, timedelta
+from pathlib import Path
 from random import random
 from time import sleep, time
 from unittest.mock import MagicMock, Mock, patch
@@ -35,8 +35,7 @@ except ImportError:  # python 2
 import pandas as pd
 
 from cachier import cachier
-from cachier.config import _global_params
-from cachier.config import CacheEntry
+from cachier.config import CacheEntry, _global_params
 from cachier.cores.pickle import _PickleCore
 
 

@@ -3,10 +3,10 @@
 import hashlib
 import queue
 import threading
-from random import random
-from time import sleep
 import warnings
 from datetime import datetime, timedelta
+from random import random
+from time import sleep
 from unittest.mock import MagicMock, Mock, patch
 
 import pandas as pd

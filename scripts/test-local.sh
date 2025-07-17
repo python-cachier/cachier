@@ -206,14 +206,14 @@ check_docker() {
         echo ""
         echo "After starting Docker, wait a few seconds and try running this script again."
         echo ""
-        
+
         # Show the actual docker error for debugging
         echo "Technical details:"
         docker ps 2>&1 | sed 's/^/  /'
         echo ""
         exit 1
     fi
-    
+
     print_message $GREEN "✓ Docker is installed and running"
 }
 
@@ -488,13 +488,13 @@ main() {
     # Run pytest
     # Build pytest command
     PYTEST_CMD="pytest"
-    
+
     # Add test files if specified
     if [ -n "$TEST_FILES" ]; then
         PYTEST_CMD="$PYTEST_CMD $TEST_FILES"
         print_message $BLUE "Test files specified: $TEST_FILES"
     fi
-    
+
     # Add markers if needed (only if no specific test files were given)
     if [ -z "$TEST_FILES" ]; then
         # Check if we selected all cores - if so, run all tests without marker filtering
@@ -510,20 +510,20 @@ main() {
         all_cores="memory mongo pickle redis sql"
         selected_sorted=$(echo "$SELECTED_CORES" | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)
         all_sorted=$(echo "$all_cores" | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)
-        
+
         if [ "$selected_sorted" != "$all_sorted" ]; then
             PYTEST_CMD="$PYTEST_CMD -m \"$pytest_markers\""
         fi
     fi
-    
+
     # Add verbose flag if needed
     if [ "$VERBOSE" = true ]; then
         PYTEST_CMD="$PYTEST_CMD -v"
     fi
-    
+
     # Add coverage options
     PYTEST_CMD="$PYTEST_CMD --cov=cachier --cov-report=$COVERAGE_REPORT"
-    
+
     # Print and run the command
     print_message $BLUE "Running: $PYTEST_CMD"
     eval $PYTEST_CMD
