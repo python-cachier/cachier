@@ -40,6 +40,7 @@ class _MongoCore(_BaseCore):
         hash_func: Optional[HashFunc],
         mongetter: Optional[Mongetter],
         wait_for_calc_timeout: Optional[int],
+        return_stale_on_timeout: Optional[bool] = None,
     ):
         if "pymongo" not in sys.modules:
             warnings.warn(
@@ -49,7 +50,7 @@ class _MongoCore(_BaseCore):
             )  # pragma: no cover
 
         super().__init__(
-            hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout
+            hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout, return_stale_on_timeout=return_stale_on_timeout
         )
         if mongetter is None:
             raise MissingMongetter(

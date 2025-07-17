@@ -34,6 +34,7 @@ class _RedisCore(_BaseCore):
             Union["redis.Redis", Callable[[], "redis.Redis"]]
         ],
         wait_for_calc_timeout: Optional[int] = None,
+        return_stale_on_timeout: Optional[bool] = None,
         key_prefix: str = "cachier",
     ):
         if not REDIS_AVAILABLE:
@@ -45,7 +46,7 @@ class _RedisCore(_BaseCore):
             )
 
         super().__init__(
-            hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout
+            hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout, return_stale_on_timeout=return_stale_on_timeout
         )
         if redis_client is None:
             raise MissingRedisClient(
