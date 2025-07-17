@@ -10,3 +10,5 @@ pygments
 # the memory core tests dataframe caching
 pandas
 pympler
+# for cli tests
+click

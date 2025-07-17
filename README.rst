@@ -630,7 +630,13 @@ To test all cachier backends (MongoDB, Redis, SQL, Memory, Pickle) locally with 
   # Keep containers running for debugging
   ./scripts/test-local.sh all -k
 
-The unified test script automatically manages Docker containers, installs required dependencies, and runs the appropriate test suites. See ``scripts/README-local-testing.md`` for detailed documentation.
+  # Test specific test files with selected backends
+  ./scripts/test-local.sh mongo -f tests/test_mongo_core.py
+
+  # Test multiple files across all backends
+  ./scripts/test-local.sh all -f tests/test_main.py -f tests/test_redis_core_coverage.py
+
+The unified test script automatically manages Docker containers, installs required dependencies, and runs the appropriate test suites. The ``-f`` / ``--files`` option allows you to run specific test files instead of the entire test suite. See ``scripts/README-local-testing.md`` for detailed documentation.
 
 
 Adding documentation
