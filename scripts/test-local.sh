@@ -168,16 +168,40 @@ validate_cores "$SELECTED_CORES"
 # Function to check if Docker is available
 check_docker() {
     if ! command -v docker &> /dev/null; then
-        print_message $RED "Error: Docker is required but not installed."
+        print_message $RED "═══════════════════════════════════════════════════════════════"
+        print_message $RED "ERROR: Docker is not installed!"
+        print_message $RED "═══════════════════════════════════════════════════════════════"
+        echo ""
+        echo "This script requires Docker to run external backend tests (MongoDB, Redis, PostgreSQL)."
         echo "Please install Docker from: https://www.docker.com/products/docker-desktop"
+        echo ""
         exit 1
     fi
 
-    if ! docker ps &> /dev/null; then
-        print_message $RED "Error: Docker daemon is not running."
-        echo "Please start Docker and try again."
+    # Try to run docker ps and capture the actual error
+    if ! docker ps > /dev/null 2>&1; then
+        print_message $RED "═══════════════════════════════════════════════════════════════"
+        print_message $RED "ERROR: Docker daemon is not running!"
+        print_message $RED "═══════════════════════════════════════════════════════════════"
+        echo ""
+        echo "Docker is installed but the Docker daemon is not running."
+        echo ""
+        echo "To fix this:"
+        echo "  • On macOS: Start Docker Desktop from Applications"
+        echo "  • On Linux: Run 'sudo systemctl start docker' or 'sudo service docker start'"
+        echo "  • On Windows: Start Docker Desktop from the Start Menu"
+        echo ""
+        echo "After starting Docker, wait a few seconds and try running this script again."
+        echo ""
+        
+        # Show the actual docker error for debugging
+        echo "Technical details:"
+        docker ps 2>&1 | sed 's/^/  /'
+        echo ""
         exit 1
     fi
+    
+    print_message $GREEN "✓ Docker is installed and running"
 }
 
 # Function to check and install dependencies
