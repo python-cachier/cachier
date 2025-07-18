@@ -1,86 +1,98 @@
 """Pytest configuration and shared fixtures for cachier tests."""
 
+import logging
 import os
 from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse
 
 import pytest
 
+logger = logging.getLogger(__name__)
 
-@pytest.fixture(autouse=True, scope="function")
+
+@pytest.fixture(autouse=True)
 def inject_worker_schema_for_sql_tests(monkeypatch, request):
     """Automatically inject worker-specific schema into SQL connection string.
-    
-    This fixture enables parallel SQL test execution by giving each pytest-xdist
-    worker its own PostgreSQL schema, preventing table creation conflicts.
+
+    This fixture enables parallel SQL test execution by giving each pytest-
+    xdist worker its own PostgreSQL schema, preventing table creation
+    conflicts.
+
     """
     # Only apply to SQL tests
     if "sql" not in request.node.keywords:
         yield
         return
-        
-    worker_id = os.environ.get('PYTEST_XDIST_WORKER', 'master')
-    
-    if worker_id == 'master':
+
+    worker_id = os.environ.get("PYTEST_XDIST_WORKER", "master")
+
+    if worker_id == "master":
         # Not running in parallel, no schema isolation needed
         yield
         return
-    
+
     # Get the original SQL connection string
-    original_url = os.environ.get('SQLALCHEMY_DATABASE_URL', 'sqlite:///:memory:')
-    
-    if 'postgresql' in original_url:
+    original_url = os.environ.get(
+        "SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:"
+    )
+
+    if "postgresql" in original_url:
         # Create worker-specific schema name
         schema_name = f"test_worker_{worker_id.replace('gw', '')}"
-        
+
         # Parse the URL
         parsed = urlparse(original_url)
-        
+
         # Get existing query parameters
         query_params = parse_qs(parsed.query)
-        
+
         # Add or update the options parameter to set search_path
-        if 'options' in query_params:
+        if "options" in query_params:
             # Append to existing options
-            current_options = unquote(query_params['options'][0])
+            current_options = unquote(query_params["options"][0])
             new_options = f"{current_options} -csearch_path={schema_name}"
         else:
             # Create new options
             new_options = f"-csearch_path={schema_name}"
-        
-        query_params['options'] = [new_options]
-        
+
+        query_params["options"] = [new_options]
+
         # Rebuild the URL with updated query parameters
         new_query = urlencode(query_params, doseq=True)
-        new_url = urlunparse((
-            parsed.scheme,
-            parsed.netloc,
-            parsed.path,
-            parsed.params,
-            new_query,
-            parsed.fragment
-        ))
-        
+        new_url = urlunparse(
+            (
+                parsed.scheme,
+                parsed.netloc,
+                parsed.path,
+                parsed.params,
+                new_query,
+                parsed.fragment,
+            )
+        )
+
         # Override both the environment variable and the module constant
-        monkeypatch.setenv('SQLALCHEMY_DATABASE_URL', new_url)
-        
+        monkeypatch.setenv("SQLALCHEMY_DATABASE_URL", new_url)
+
         # Also patch the SQL_CONN_STR constant used in tests
         import tests.test_sql_core
-        monkeypatch.setattr(tests.test_sql_core, 'SQL_CONN_STR', new_url)
-        
+
+        monkeypatch.setattr(tests.test_sql_core, "SQL_CONN_STR", new_url)
+
         # Ensure schema creation by creating it before tests run
         try:
             from sqlalchemy import create_engine, text
-            
+
             # Use original URL to create schema (without search_path)
             engine = create_engine(original_url)
             with engine.connect() as conn:
-                conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}"))
+                conn.execute(
+                    text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}")
+                )
                 conn.commit()
             engine.dispose()
-        except Exception:
+        except Exception as e:
             # If we can't create the schema, the test will fail anyway
-            pass
-    
+            logger.debug(f"Failed to create schema {schema_name}: {e}")
+
     yield
 
 
@@ -142,52 +154,59 @@ def isolated_cache_directory(tmp_path, monkeypatch, request, worker_id):
 @pytest.fixture(scope="session", autouse=True)
 def cleanup_test_schemas(request):
     """Clean up test schemas after all tests complete.
-    
+
     This fixture ensures that worker-specific PostgreSQL schemas created during
     parallel test execution are properly cleaned up.
+
     """
     yield  # Let all tests run first
-    
+
     # Cleanup after all tests
-    worker_id = os.environ.get('PYTEST_XDIST_WORKER', 'master')
-    
-    if worker_id != 'master':
+    worker_id = os.environ.get("PYTEST_XDIST_WORKER", "master")
+
+    if worker_id != "master":
         # Clean up the worker-specific schema
-        original_url = os.environ.get('SQLALCHEMY_DATABASE_URL', '')
-        
-        if 'postgresql' in original_url:
+        original_url = os.environ.get("SQLALCHEMY_DATABASE_URL", "")
+
+        if "postgresql" in original_url:
             schema_name = f"test_worker_{worker_id.replace('gw', '')}"
-            
+
             try:
                 from sqlalchemy import create_engine, text
-                
+
                 # Parse URL to remove any schema options for cleanup
                 parsed = urlparse(original_url)
                 query_params = parse_qs(parsed.query)
-                
+
                 # Remove options parameter if it exists
-                query_params.pop('options', None)
-                
+                query_params.pop("options", None)
+
                 # Rebuild clean URL
-                clean_query = urlencode(query_params, doseq=True) if query_params else ''
-                clean_url = urlunparse((
-                    parsed.scheme,
-                    parsed.netloc,
-                    parsed.path,
-                    parsed.params,
-                    clean_query,
-                    parsed.fragment
-                ))
-                
+                clean_query = (
+                    urlencode(query_params, doseq=True) if query_params else ""
+                )
+                clean_url = urlunparse(
+                    (
+                        parsed.scheme,
+                        parsed.netloc,
+                        parsed.path,
+                        parsed.params,
+                        clean_query,
+                        parsed.fragment,
+                    )
+                )
+
                 engine = create_engine(clean_url)
                 with engine.connect() as conn:
                     # Drop the schema and all its contents
-                    conn.execute(text(f"DROP SCHEMA IF EXISTS {schema_name} CASCADE"))
+                    conn.execute(
+                        text(f"DROP SCHEMA IF EXISTS {schema_name} CASCADE")
+                    )
                     conn.commit()
                 engine.dispose()
-            except Exception:
+            except Exception as e:
                 # If cleanup fails, it's not critical
-                pass
+                logger.debug(f"Failed to cleanup schema {schema_name}: {e}")
 
 
 def pytest_addoption(parser):
