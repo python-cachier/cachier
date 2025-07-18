@@ -518,6 +518,22 @@ ______________________________________________________________________
 - **CI matrix:** See `.github/workflows/` for details on OS/backend combinations.
 - **Local testing:** Use specific requirement files for backends you want to test.
 
+### 🚨 CRITICAL: Test Execution Rules
+
+**ALWAYS run tests using `uv run ./scripts/test-local.sh`** - NEVER run pytest directly!
+
+Examples:
+- `uv run ./scripts/test-local.sh sql` - Run SQL tests
+- `uv run ./scripts/test-local.sh sql -p` - Run SQL tests in parallel
+- `uv run ./scripts/test-local.sh all -p` - Run all tests in parallel
+- `uv run ./scripts/test-local.sh mongo redis` - Run specific backends
+
+This ensures:
+- Correct virtual environment activation
+- Proper dependency installation
+- Docker container management for backend services
+- Correct test markers and filtering
+
 ______________________________________________________________________
 
 ## 📝 Documentation & Examples

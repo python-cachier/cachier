@@ -225,21 +225,21 @@ def test_redis_core_keywords():
     """Basic Redis core functionality with keyword arguments."""
 
     @cachier(backend="redis", redis_client=_test_redis_getter)
-    def _test_redis_caching(arg_1, arg_2):
+    def _tfunc_for_keywords(arg_1, arg_2):
         """Some function."""
         return random() + arg_1 + arg_2
 
-    _test_redis_caching.clear_cache()
-    val1 = _test_redis_caching(1, arg_2=2)
-    val2 = _test_redis_caching(1, arg_2=2)
+    _tfunc_for_keywords.clear_cache()
+    val1 = _tfunc_for_keywords(1, arg_2=2)
+    val2 = _tfunc_for_keywords(1, arg_2=2)
     assert val1 == val2
-    val3 = _test_redis_caching(1, arg_2=2, cachier__skip_cache=True)
+    val3 = _tfunc_for_keywords(1, arg_2=2, cachier__skip_cache=True)
     assert val3 != val1
-    val4 = _test_redis_caching(1, arg_2=2)
+    val4 = _tfunc_for_keywords(1, arg_2=2)
     assert val4 == val1
-    val5 = _test_redis_caching(1, arg_2=2, cachier__overwrite_cache=True)
+    val5 = _tfunc_for_keywords(1, arg_2=2, cachier__overwrite_cache=True)
     assert val5 != val1
-    val6 = _test_redis_caching(1, arg_2=2)
+    val6 = _tfunc_for_keywords(1, arg_2=2)
     assert val6 == val5
 
 
