@@ -1,8 +1,6 @@
 """Additional tests for base core to improve coverage."""
 
-from unittest.mock import Mock, patch
-
-import pytest
+from unittest.mock import patch
 
 from cachier.cores.base import _BaseCore
 
@@ -11,27 +9,35 @@ class ConcreteCachingCore(_BaseCore):
     """Concrete implementation of _BaseCore for testing."""
 
     def get_entry_by_key(self, key, reload=False):
+        """Retrieve an entry by its key."""
         return key, None
 
     def set_entry(self, key, func_res):
+        """Store an entry in the cache."""
         return True
 
     def mark_entry_being_calculated(self, key):
+        """Mark an entry as being calculated."""
         pass
 
     def mark_entry_not_calculated(self, key):
+        """Mark an entry as not being calculated."""
         pass
 
     def wait_on_entry_calc(self, key):
+        """Wait for an entry calculation to complete."""
         return None
 
     def clear_cache(self):
+        """Clear the cache."""
         pass
 
     def clear_being_calculated(self):
+        """Clear entries that are being calculated."""
         pass
 
     def delete_stale_entries(self, stale_after):
+        """Delete stale entries from the cache."""
         pass
 
 
@@ -60,10 +66,11 @@ def test_should_store_exception():
     )
 
     # Mock both size estimation methods to fail
-    with patch(
+    patch1 = patch(
         "cachier.cores.base.asizeof.asizeof",
         side_effect=Exception("asizeof failed"),
-    ):
-        with patch("sys.getsizeof", side_effect=Exception("getsizeof failed")):
-            # Should return True (allow storage) when size can't be determined
-            assert core._should_store("test_value") is True
+    )
+    patch2 = patch("sys.getsizeof", side_effect=Exception("getsizeof failed"))
+    with patch1, patch2:
+        # Should return True (allow storage) when size can't be determined
+        assert core._should_store("test_value") is True

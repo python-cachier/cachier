@@ -6,7 +6,6 @@ import threading
 from datetime import datetime, timedelta
 from random import random
 from time import sleep, time
-from unittest.mock import Mock
 
 import pandas as pd
 import pytest

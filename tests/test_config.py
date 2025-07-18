@@ -1,7 +1,5 @@
 """Additional tests for config module to improve coverage."""
 
-import warnings
-
 import pytest
 
 from cachier.config import get_default_params, set_default_params
@@ -24,5 +22,4 @@ def test_get_default_params_deprecated():
         DeprecationWarning,
         match="get_default_params.*deprecated.*get_global_params",
     ):
-        params = get_default_params()
-        assert params is not None
+        assert get_default_params() is not None

@@ -447,13 +447,13 @@ def test_redis_callable_client():
 
 def test_redis_import_warning():
     """Test that import warning is raised when redis is not available."""
-    with patch("cachier.cores.redis.REDIS_AVAILABLE", False):
-        with pytest.warns(ImportWarning, match="`redis` was not found"):
-            _RedisCore(
-                hash_func=None,
-                redis_client=Mock(),
-                wait_for_calc_timeout=None,
-            )
+    ptc = patch("cachier.cores.redis.REDIS_AVAILABLE", False)
+    with ptc, pytest.warns(ImportWarning, match="`redis` was not found"):
+        _RedisCore(
+            hash_func=None,
+            redis_client=Mock(),
+            wait_for_calc_timeout=None,
+        )
 
 
 @pytest.mark.redis
@@ -660,7 +660,7 @@ def test_redis_wait_on_entry_calc_no_entry():
 
     # Mock get_entry_by_key to always return None entry
     # This avoids the pickle.loads issue
-    original_get_entry = _RedisCore.get_entry_by_key
+    _ = _RedisCore.get_entry_by_key
 
     def mock_get_entry_by_key(self, key):
         return key, None

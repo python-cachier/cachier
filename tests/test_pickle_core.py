@@ -17,12 +17,10 @@ import pickle
 import sys
 import tempfile
 import threading
-import time
 from datetime import datetime, timedelta
-from pathlib import Path
 from random import random
 from time import sleep, time
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 

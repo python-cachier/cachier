@@ -1,6 +1,5 @@
 """Tests for the cachier __main__ module."""
 
-import pytest
 from click.testing import CliRunner
 
 from cachier.__main__ import cli, set_max_workers
