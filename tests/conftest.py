@@ -223,5 +223,3 @@ def pytest_addoption(parser):
         default="auto",
         help="Number of parallel workers (default: auto)",
     )
-
-
