@@ -286,6 +286,19 @@ human readable string like ``"200MB"``.
 When ``cachier__verbose=True`` is passed to a call that returns a value
 exceeding the limit, an informative message is printed.
 
+Cache Size Limit
+~~~~~~~~~~~~~~~~
+``cache_size_limit`` constrains the total size of the cache. When the
+limit is exceeded, entries are evicted according to the chosen
+``replacement_policy``. Currently only an ``"lru"`` policy is implemented
+for the in-memory backend.
+
+.. code-block:: python
+
+  @cachier(cache_size_limit="100KB")
+  def heavy(x):
+      return x * 2
+
 Ignore Cache
 ~~~~~~~~~~~~
 

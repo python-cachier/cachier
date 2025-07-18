@@ -41,6 +41,8 @@ class _MongoCore(_BaseCore):
         mongetter: Optional[Mongetter],
         wait_for_calc_timeout: Optional[int],
         entry_size_limit: Optional[int] = None,
+        cache_size_limit: Optional[int] = None,
+        replacement_policy: str = "lru",
     ):
         if "pymongo" not in sys.modules:
             warnings.warn(
@@ -53,6 +55,8 @@ class _MongoCore(_BaseCore):
             hash_func=hash_func,
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=entry_size_limit,
+            cache_size_limit=cache_size_limit,
+            replacement_policy=replacement_policy,
         )
         if mongetter is None:
             raise MissingMongetter(

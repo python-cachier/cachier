@@ -36,6 +36,8 @@ class _RedisCore(_BaseCore):
         wait_for_calc_timeout: Optional[int] = None,
         key_prefix: str = "cachier",
         entry_size_limit: Optional[int] = None,
+        cache_size_limit: Optional[int] = None,
+        replacement_policy: str = "lru",
     ):
         if not REDIS_AVAILABLE:
             warnings.warn(
@@ -49,6 +51,8 @@ class _RedisCore(_BaseCore):
             hash_func=hash_func,
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=entry_size_limit,
+            cache_size_limit=cache_size_limit,
+            replacement_policy=replacement_policy,
         )
         if redis_client is None:
             raise MissingRedisClient(
