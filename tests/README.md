@@ -40,7 +40,7 @@ The Cachier test suite is designed to comprehensively test all caching backends 
 ```
 tests/
 ├── conftest.py                    # Shared fixtures and configuration
-├── requirements.txt               # Base test dependencies
+├── requirements.txt               # Base test dependencies (includes pytest-rerunfailures)
 ├── mongodb_requirements.txt       # MongoDB-specific dependencies
 ├── redis_requirements.txt         # Redis-specific dependencies
 ├── sql_requirements.txt           # SQL-specific dependencies
@@ -66,6 +66,7 @@ Tests are marked with backend-specific markers:
 @pytest.mark.memory    # Memory backend tests
 @pytest.mark.pickle    # Pickle backend tests
 @pytest.mark.maxage    # Tests involving stale_after functionality
+@pytest.mark.flaky     # Flaky tests that should be retried (see Flaky Tests section)
 ```
 
 ## Running Tests
@@ -383,6 +384,26 @@ pytest -m sql
    - Don't share decorated functions
    - Clear cache after tests
    - Use unique function names
+
+### Handling Flaky Tests
+
+Some tests, particularly in the pickle core module, may occasionally fail due to race conditions in multi-threaded scenarios. To handle these, we use the `pytest-rerunfailures` plugin.
+
+#### Marking Flaky Tests
+
+```python
+@pytest.mark.flaky(reruns=5, reruns_delay=0.1)
+def test_that_may_fail_intermittently():
+    """This test will retry up to 5 times with 0.1s delay between attempts."""
+    # Test implementation
+```
+
+#### Current Flaky Tests
+
+- `test_bad_cache_file`: Tests handling of corrupted cache files with concurrent access
+- `test_delete_cache_file`: Tests handling of missing cache files during concurrent operations
+
+These tests involve race conditions between threads that are difficult to reproduce consistently, so they're configured to retry multiple times before being marked as failed.
 
 ### Debugging Tips
 

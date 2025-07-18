@@ -2,6 +2,7 @@
 # tests and coverages
 pytest
 pytest-xdist  # for parallel test execution
+pytest-rerunfailures  # for retrying flaky tests
 coverage
 pytest-cov
 birch

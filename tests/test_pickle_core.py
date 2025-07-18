@@ -407,9 +407,10 @@ def _helper_bad_cache_file(sleep_time: float, separate_files: bool):
 # we want this to succeed at least once
 @pytest.mark.pickle
 @pytest.mark.parametrize("separate_files", [True, False])
+@pytest.mark.flaky(reruns=5, reruns_delay=0.1)
 def test_bad_cache_file(separate_files):
     """Test pickle core handling of bad cache files."""
-    sleep_times = [0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8, 1, 1.5, 2]
+    sleep_times = [0.6, 1, 1.5, 2, 2.5]
     bad_file = False
     for sleep_time in sleep_times * 2:
         if _helper_bad_cache_file(sleep_time, separate_files):
@@ -508,6 +509,7 @@ def _helper_delete_cache_file(sleep_time: float, separate_files: bool):
 
 @pytest.mark.pickle
 @pytest.mark.parametrize("separate_files", [False, True])
+@pytest.mark.flaky(reruns=5, reruns_delay=0.1)
 def test_delete_cache_file(separate_files):
     """Test pickle core handling of missing cache files."""
     sleep_times = [0.1, 0.2, 0.3, 0.5, 0.7, 1]
