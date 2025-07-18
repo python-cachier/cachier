@@ -290,8 +290,8 @@ Cache Size Limit
 ~~~~~~~~~~~~~~~~
 ``cache_size_limit`` constrains the total size of the cache. When the
 limit is exceeded, entries are evicted according to the chosen
-``replacement_policy``. Currently only an ``"lru"`` policy is implemented
-for the in-memory backend.
+``replacement_policy``. Currently an ``"lru"`` policy is implemented for
+the memory and pickle backends.
 
 .. code-block:: python
 

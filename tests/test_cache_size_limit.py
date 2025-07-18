@@ -23,3 +23,29 @@ def test_cache_size_limit_lru_eviction():
     assert call_count == 3
     func(2)
     assert call_count == 4
+
+
+@pytest.mark.pickle
+def test_cache_size_limit_lru_eviction_pickle(tmp_path):
+    call_count = 0
+
+    @cachier.cachier(
+        backend="pickle",
+        cache_dir=tmp_path,
+        cache_size_limit="220B",
+    )
+    def func(x):
+        nonlocal call_count
+        call_count += 1
+        return "a" * 50
+
+    func.clear_cache()
+    func(1)
+    func(2)
+    assert call_count == 2
+    func(1)
+    assert call_count == 2
+    func(3)
+    assert call_count == 3
+    func(2)
+    assert call_count == 4

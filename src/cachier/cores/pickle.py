@@ -10,6 +10,7 @@ import logging
 import os
 import pickle  # for local caching
 import time
+from collections import OrderedDict
 from contextlib import suppress
 from datetime import datetime, timedelta
 from typing import IO, Any, Dict, Optional, Tuple, Union, cast
@@ -89,7 +90,8 @@ class _PickleCore(_BaseCore):
             cache_size_limit,
             replacement_policy,
         )
-        self._cache_dict: Dict[str, CacheEntry] = {}
+        self._cache_dict: "OrderedDict[str, CacheEntry]" = OrderedDict()
+        self._cache_size = 0
         self.reload = _update_with_defaults(pickle_reload, "pickle_reload")
         self.cache_dir = os.path.expanduser(
             _update_with_defaults(cache_dir, "cache_dir")
@@ -125,19 +127,28 @@ class _PickleCore(_BaseCore):
             _condition=entry.get("condition", None),
         )
 
-    def _load_cache_dict(self) -> Dict[str, CacheEntry]:
+    def _load_cache_dict(self) -> "OrderedDict[str, CacheEntry]":
         try:
             with portalocker.Lock(self.cache_fpath, mode="rb") as cf:
                 cache = pickle.load(cast(IO[bytes], cf))
             self._cache_used_fpath = str(self.cache_fpath)
         except (FileNotFoundError, EOFError):
             cache = {}
-        return {
-            k: _PickleCore._convert_legacy_cache_entry(v)
+        odict: "OrderedDict[str, CacheEntry]" = OrderedDict(
+            (
+                k,
+                _PickleCore._convert_legacy_cache_entry(v),
+            )
             for k, v in cache.items()
-        }
+        )
+        self._cache_size = sum(
+            self._estimate_size(entry.value) for entry in odict.values()
+        )
+        return odict
 
-    def get_cache_dict(self, reload: bool = False) -> Dict[str, CacheEntry]:
+    def get_cache_dict(
+        self, reload: bool = False
+    ) -> "OrderedDict[str, CacheEntry]":
         if self._cache_used_fpath != self.cache_fpath:
             # force reload if the cache file has changed
             # this change is dies to using different wrapped function
@@ -195,17 +206,25 @@ class _PickleCore(_BaseCore):
         with self.lock:
             with portalocker.Lock(fpath, mode="wb") as cf:
                 pickle.dump(cache, cast(IO[bytes], cf), protocol=4)
-            # the same as check for separate_file, but changed for typing
             if isinstance(cache, dict):
-                self._cache_dict = cache
+                self._cache_dict = OrderedDict(cache)
                 self._cache_used_fpath = str(self.cache_fpath)
+                self._cache_size = sum(
+                    self._estimate_size(entry.value)
+                    for entry in self._cache_dict.values()
+                )
 
     def get_entry_by_key(
         self, key: str, reload: bool = False
     ) -> Tuple[str, Optional[CacheEntry]]:
         if self.separate_files:
             return key, self._load_cache_by_key(key)
-        return key, self.get_cache_dict(reload).get(key)
+        cache = self.get_cache_dict(reload)
+        entry = cache.get(key)
+        if entry is not None:
+            cache.move_to_end(key)
+            self._save_cache(cache)
+        return key, entry
 
     def set_entry(self, key: str, func_res: Any) -> bool:
         if not self._should_store(func_res):
@@ -221,9 +240,29 @@ class _PickleCore(_BaseCore):
             self._save_cache(key_data, key)
             return True  # pragma: no cover
 
+        size = self._estimate_size(func_res)
         with self.lock:
             cache = self.get_cache_dict()
-            cache[key] = key_data
+            try:
+                cond = cache[key]._condition
+                old_size = self._estimate_size(cache[key].value)
+                self._cache_size -= old_size
+            except KeyError:  # pragma: no cover
+                cond = None
+            cache[key] = CacheEntry(
+                value=func_res,
+                time=datetime.now(),
+                stale=False,
+                _processing=False,
+                _condition=cond,
+                _completed=True,
+            )
+            cache.move_to_end(key)
+            self._cache_size += size
+            if self.cache_size_limit is not None:
+                while self._cache_size > self.cache_size_limit and cache:
+                    old_key, old_entry = cache.popitem(last=False)
+                    self._cache_size -= self._estimate_size(old_entry.value)
             self._save_cache(cache)
         return True
 
@@ -366,6 +405,7 @@ class _PickleCore(_BaseCore):
             self._clear_all_cache_files()
         else:
             self._save_cache({})
+        self._cache_size = 0
 
     def clear_being_calculated(self) -> None:
         if self.separate_files:
@@ -400,5 +440,6 @@ class _PickleCore(_BaseCore):
                 k for k, v in cache.items() if now - v.time > stale_after
             ]
             for key in keys_to_delete:
-                del cache[key]
+                entry = cache.pop(key)
+                self._cache_size -= self._estimate_size(entry.value)
             self._save_cache(cache)
