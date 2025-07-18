@@ -1,5 +1,7 @@
 """Additional tests for config module to improve coverage."""
 
+from datetime import timedelta
+
 import pytest
 
 from cachier.config import get_default_params, set_default_params
@@ -12,7 +14,7 @@ def test_set_default_params_deprecated():
         DeprecationWarning,
         match="set_default_params.*deprecated.*set_global_params",
     ):
-        set_default_params(stale_after=60)
+        set_default_params(stale_after=timedelta(seconds=60))
 
 
 def test_get_default_params_deprecated():

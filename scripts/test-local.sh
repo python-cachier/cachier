@@ -26,6 +26,8 @@ KEEP_RUNNING=false
 SELECTED_CORES=""
 INCLUDE_LOCAL_CORES=false
 TEST_FILES=""
+PARALLEL=false
+PARALLEL_WORKERS="auto"
 
 # Function to print colored messages
 print_message() {
@@ -56,6 +58,8 @@ OPTIONS:
     -k, --keep-running  Keep containers running after tests
     -h, --html-coverage Generate HTML coverage report
     -f, --files         Specify test files to run (can be used multiple times)
+    -p, --parallel      Run tests in parallel using pytest-xdist
+    -w, --workers       Number of parallel workers (default: auto)
     --help              Show this help message
 
 EXAMPLES:
@@ -65,6 +69,8 @@ EXAMPLES:
     $0 external -k              # Run external backends, keep containers
     $0 mongo memory -v          # Run MongoDB and memory tests verbosely
     $0 all -f tests/test_main.py -f tests/test_redis_core_coverage.py  # Run specific test files
+    $0 memory pickle -p         # Run local tests in parallel
+    $0 all -p -w 4             # Run all tests with 4 parallel workers
 
 ENVIRONMENT:
     You can also set cores via CACHIER_TEST_CORES environment variable:
@@ -101,6 +107,20 @@ while [[ $# -gt 0 ]]; do
         --help)
             usage
             exit 0
+            ;;
+        -p|--parallel)
+            PARALLEL=true
+            shift
+            ;;
+        -w|--workers)
+            shift
+            if [[ $# -eq 0 ]] || [[ "$1" == -* ]]; then
+                print_message $RED "Error: -w/--workers requires a number argument"
+                usage
+                exit 1
+            fi
+            PARALLEL_WORKERS="$1"
+            shift
             ;;
         -*)
             print_message $RED "Unknown option: $1"
@@ -230,6 +250,17 @@ check_dependencies() {
             print_message $RED "Failed to install base test requirements"
             exit 1
         }
+    fi
+
+    # Check for pytest-xdist if parallel testing is requested
+    if [ "$PARALLEL" = true ]; then
+        if ! python -c "import xdist" 2>/dev/null; then
+            print_message $YELLOW "Installing pytest-xdist for parallel testing..."
+            pip install pytest-xdist || {
+                print_message $RED "Failed to install pytest-xdist"
+                exit 1
+            }
+        fi
     fi
 
     # Check MongoDB dependencies if testing MongoDB
@@ -519,6 +550,23 @@ main() {
     # Add verbose flag if needed
     if [ "$VERBOSE" = true ]; then
         PYTEST_CMD="$PYTEST_CMD -v"
+    fi
+
+    # Add parallel testing options if requested
+    if [ "$PARALLEL" = true ]; then
+        PYTEST_CMD="$PYTEST_CMD -n $PARALLEL_WORKERS"
+
+        # Show parallel testing info
+        if [ "$PARALLEL_WORKERS" = "auto" ]; then
+            print_message $BLUE "Running tests in parallel with automatic worker detection"
+        else
+            print_message $BLUE "Running tests in parallel with $PARALLEL_WORKERS workers"
+        fi
+
+        # Special note for pickle tests
+        if echo "$SELECTED_CORES" | grep -qw "pickle"; then
+            print_message $YELLOW "Note: Pickle tests will use isolated cache directories for parallel safety"
+        fi
     fi
 
     # Add coverage options

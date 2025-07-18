@@ -596,12 +596,12 @@ def test_redis_delete_stale_entries():
     old_timestamp = (now - timedelta(hours=2)).isoformat()
     recent_timestamp = (now - timedelta(minutes=30)).isoformat()
 
-    # Set up hget responses
-    delete_mock_client.hget = MagicMock(
+    # Set up hmget responses
+    delete_mock_client.hmget = MagicMock(
         side_effect=[
-            old_timestamp.encode("utf-8"),  # key1 - stale
-            recent_timestamp.encode("utf-8"),  # key2 - not stale
-            None,  # key3 - no timestamp
+            [old_timestamp.encode("utf-8"), b"100"],  # key1 - stale
+            [recent_timestamp.encode("utf-8"), b"100"],  # key2 - not stale
+            [None, None],  # key3 - no timestamp
         ]
     )
 
@@ -628,7 +628,7 @@ def test_redis_delete_stale_entries():
     # Test exception during timestamp parsing
     mock_client.reset_mock()
     mock_client.keys.return_value = [b"key4"]
-    mock_client.hget.return_value = b"invalid-timestamp"
+    mock_client.hmget.return_value = [b"invalid-timestamp", None]
 
     # Need to mock _resolve_redis_client for the original core as well
     core._resolve_redis_client = lambda: mock_client

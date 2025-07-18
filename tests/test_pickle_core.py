@@ -348,7 +348,14 @@ def _calls_bad_cache(bad_cache_func, res_queue, trash_cache, separate_files):
     try:
         res = bad_cache_func(0.13, 0.02, cachier__verbose=True)
         if trash_cache:
-            with open(_BAD_CACHE_FPATHS[separate_files], "w") as cache_file:
+            # Dynamically compute the cache file path
+            expanded_dir = os.path.expanduser(_global_params.cache_dir)
+            if separate_files:
+                fname = _BAD_CACHE_FNAME_SEPARATE_FILES
+            else:
+                fname = _BAD_CACHE_FNAME
+            cache_fpath = os.path.join(expanded_dir, fname)
+            with open(cache_fpath, "w") as cache_file:
                 cache_file.seek(0)
                 cache_file.truncate()
         res_queue.put(res)
@@ -442,7 +449,14 @@ def _calls_delete_cache(
         res = del_cache_func(0.13, 0.02)
         # print('out with {}'.format(res))
         if del_cache:
-            os.remove(_DEL_CACHE_FPATHS[separate_files])
+            # Dynamically compute the cache file path
+            expanded_dir = os.path.expanduser(_global_params.cache_dir)
+            if separate_files:
+                fname = _DEL_CACHE_FNAME_SEPARATE_FILES
+            else:
+                fname = _DEL_CACHE_FNAME
+            cache_fpath = os.path.join(expanded_dir, fname)
+            os.remove(cache_fpath)
             # print(os.path.isfile(_DEL_CACHE_FPATH))
         res_queue.put(res)
     except Exception as exc:

@@ -66,7 +66,22 @@ jobs:
 
       - name: Unit tests (local)
         if: matrix.backend == 'local'
-        run: pytest -m "not mongo and not sql and not redis" --cov=cachier --cov-report=term --cov-report=xml:cov.xml
+        run: |
+          # Run memory tests in parallel (safe by default)
+          echo "Running memory tests in parallel..."
+          pytest -m "memory" -n auto --cov=cachier --cov-report=term --cov-report=xml:cov-memory.xml
+
+          # Run pickle tests in parallel (with isolation)
+          echo "Running pickle tests in parallel..."
+          pytest -m "pickle" -n auto --cov=cachier --cov-report=term --cov-report=xml:cov-pickle.xml --cov-append
+
+          # Run remaining local tests
+          echo "Running other local tests..."
+          pytest -m "not mongo and not sql and not redis and not memory and not pickle" --cov=cachier --cov-report=term --cov-report=xml:cov-other.xml --cov-append
+
+          # Combine coverage reports
+          coverage combine
+          coverage xml -o cov.xml
 
       - name: Setup docker (missing on MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'mongodb'
