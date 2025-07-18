@@ -456,6 +456,7 @@ def test_redis_import_warning():
             )
 
 
+@pytest.mark.redis
 def test_missing_redis_client():
     """Test MissingRedisClient exception when redis_client is None."""
     with pytest.raises(
