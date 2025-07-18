@@ -10,3 +10,7 @@ pygments
 # the memory core tests dataframe caching
 pandas
 pympler
+# for cli tests
+click
+# to run pre-commit hooks localy
+pre-commit

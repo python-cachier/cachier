@@ -25,6 +25,7 @@ COVERAGE_REPORT="term"
 KEEP_RUNNING=false
 SELECTED_CORES=""
 INCLUDE_LOCAL_CORES=false
+TEST_FILES=""
 
 # Function to print colored messages
 print_message() {
@@ -54,6 +55,7 @@ OPTIONS:
     -v, --verbose       Show verbose output
     -k, --keep-running  Keep containers running after tests
     -h, --html-coverage Generate HTML coverage report
+    -f, --files         Specify test files to run (can be used multiple times)
     --help              Show this help message
 
 EXAMPLES:
@@ -62,6 +64,7 @@ EXAMPLES:
     $0 all                      # Run all backend tests
     $0 external -k              # Run external backends, keep containers
     $0 mongo memory -v          # Run MongoDB and memory tests verbosely
+    $0 all -f tests/test_main.py -f tests/test_redis_core_coverage.py  # Run specific test files
 
 ENVIRONMENT:
     You can also set cores via CACHIER_TEST_CORES environment variable:
@@ -83,6 +86,16 @@ while [[ $# -gt 0 ]]; do
             ;;
         -h|--html-coverage)
             COVERAGE_REPORT="html"
+            shift
+            ;;
+        -f|--files)
+            shift
+            if [[ $# -eq 0 ]] || [[ "$1" == -* ]]; then
+                print_message $RED "Error: -f/--files requires a file argument"
+                usage
+                exit 1
+            fi
+            TEST_FILES="$TEST_FILES $1"
             shift
             ;;
         --help)
@@ -193,14 +206,14 @@ check_docker() {
         echo ""
         echo "After starting Docker, wait a few seconds and try running this script again."
         echo ""
-        
+
         # Show the actual docker error for debugging
         echo "Technical details:"
         docker ps 2>&1 | sed 's/^/  /'
         echo ""
         exit 1
     fi
-    
+
     print_message $GREEN "✓ Docker is installed and running"
 }
 
@@ -473,26 +486,47 @@ main() {
     done
 
     # Run pytest
-    # Check if we selected all cores - if so, run all tests without marker filtering
-    all_cores="memory mongo pickle redis sql"
-    selected_sorted=$(echo "$SELECTED_CORES" | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)
-    all_sorted=$(echo "$all_cores" | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)
+    # Build pytest command
+    PYTEST_CMD="pytest"
 
-    if [ "$selected_sorted" = "$all_sorted" ]; then
-        print_message $BLUE "Running: pytest (all tests, including unmarked)"
-        if [ "$VERBOSE" = true ]; then
-            pytest -v --cov=cachier --cov-report=$COVERAGE_REPORT
-        else
-            pytest --cov=cachier --cov-report=$COVERAGE_REPORT
+    # Add test files if specified
+    if [ -n "$TEST_FILES" ]; then
+        PYTEST_CMD="$PYTEST_CMD $TEST_FILES"
+        print_message $BLUE "Test files specified: $TEST_FILES"
+    fi
+
+    # Add markers if needed (only if no specific test files were given)
+    if [ -z "$TEST_FILES" ]; then
+        # Check if we selected all cores - if so, run all tests without marker filtering
+        all_cores="memory mongo pickle redis sql"
+        selected_sorted=$(echo "$SELECTED_CORES" | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)
+        all_sorted=$(echo "$all_cores" | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)
+
+        if [ "$selected_sorted" != "$all_sorted" ]; then
+            PYTEST_CMD="$PYTEST_CMD -m \"$pytest_markers\""
         fi
     else
-        print_message $BLUE "Running: pytest -m \"$pytest_markers\""
-        if [ "$VERBOSE" = true ]; then
-            pytest -v -m "$pytest_markers" --cov=cachier --cov-report=$COVERAGE_REPORT
-        else
-            pytest -m "$pytest_markers" --cov=cachier --cov-report=$COVERAGE_REPORT
+        # When test files are specified, still apply markers if not running all cores
+        all_cores="memory mongo pickle redis sql"
+        selected_sorted=$(echo "$SELECTED_CORES" | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)
+        all_sorted=$(echo "$all_cores" | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)
+
+        if [ "$selected_sorted" != "$all_sorted" ]; then
+            PYTEST_CMD="$PYTEST_CMD -m \"$pytest_markers\""
         fi
     fi
+
+    # Add verbose flag if needed
+    if [ "$VERBOSE" = true ]; then
+        PYTEST_CMD="$PYTEST_CMD -v"
+    fi
+
+    # Add coverage options
+    PYTEST_CMD="$PYTEST_CMD --cov=cachier --cov-report=$COVERAGE_REPORT"
+
+    # Print and run the command
+    print_message $BLUE "Running: $PYTEST_CMD"
+    eval $PYTEST_CMD
 
     TEST_EXIT_CODE=$?
 

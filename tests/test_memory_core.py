@@ -3,7 +3,7 @@
 import hashlib
 import queue
 import threading
-from datetime import timedelta
+from datetime import datetime, timedelta
 from random import random
 from time import sleep, time
 
@@ -11,6 +11,8 @@ import pandas as pd
 import pytest
 
 from cachier import cachier
+from cachier.config import CacheEntry
+from cachier.cores.memory import _MemoryCore
 
 
 @cachier(backend="memory", next_time=False)
@@ -325,6 +327,145 @@ def test_callable_hash_param():
     value_b = _params_with_dataframe(1, df=df_b)
 
     assert value_a == value_b  # same content --> same key
+
+
+@pytest.mark.memory
+def test_mark_entry_not_calculated_no_entry():
+    """Test mark_entry_not_calculated when entry doesn't exist."""
+    # Test line 76: early return when entry not in cache
+    core = _MemoryCore(hash_func=None, wait_for_calc_timeout=10)
+
+    # Set a mock function
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+
+    # Should return without error when key not in cache
+    core.mark_entry_not_calculated("non_existent_key")
+
+
+@pytest.mark.memory
+def test_wait_on_entry_calc_no_condition():
+    """Test wait_on_entry_calc raises error when no condition is set."""
+    # Test line 95: RuntimeError when condition is None
+    core = _MemoryCore(hash_func=None, wait_for_calc_timeout=10)
+
+    # Set a mock function
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+
+    # Create an entry that's being processed but has no condition
+    entry = CacheEntry(
+        value="test_value",
+        time=datetime.now(),
+        stale=False,
+        _processing=True,
+        _condition=None,  # No condition set
+    )
+
+    hash_key = core._hash_func_key("test_key")
+    core.cache[hash_key] = entry
+
+    with pytest.raises(RuntimeError, match="No condition set for entry"):
+        core.wait_on_entry_calc("test_key")
+
+
+@pytest.mark.memory
+def test_delete_stale_entries():
+    """Test delete_stale_entries removes old entries."""
+    # Test lines 113-119: stale entry deletion
+    core = _MemoryCore(hash_func=None, wait_for_calc_timeout=10)
+
+    # Set a mock function
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+
+    # Add some entries with different ages
+    now = datetime.now()
+
+    # Stale entry (2 hours old)
+    stale_entry = CacheEntry(
+        value="stale_value",
+        time=now - timedelta(hours=2),
+        stale=False,
+        _processing=False,
+    )
+    core.cache[core._hash_func_key("stale_key")] = stale_entry
+
+    # Fresh entry (30 minutes old)
+    fresh_entry = CacheEntry(
+        value="fresh_value",
+        time=now - timedelta(minutes=30),
+        stale=False,
+        _processing=False,
+    )
+    core.cache[core._hash_func_key("fresh_key")] = fresh_entry
+
+    # Very fresh entry (just created)
+    very_fresh_entry = CacheEntry(
+        value="very_fresh_value",
+        time=now,
+        stale=False,
+        _processing=False,
+    )
+    core.cache[core._hash_func_key("very_fresh_key")] = very_fresh_entry
+
+    # Delete entries older than 1 hour
+    core.delete_stale_entries(timedelta(hours=1))
+
+    # Check that only the stale entry was removed
+    assert core._hash_func_key("stale_key") not in core.cache
+    assert core._hash_func_key("fresh_key") in core.cache
+    assert core._hash_func_key("very_fresh_key") in core.cache
+    assert len(core.cache) == 2
+
+
+@pytest.mark.memory
+def test_delete_stale_entries_empty_cache():
+    """Test delete_stale_entries with empty cache."""
+    # Additional test for lines 113-119 with edge case
+    core = _MemoryCore(hash_func=None, wait_for_calc_timeout=10)
+
+    # Should not raise error on empty cache
+    core.delete_stale_entries(timedelta(hours=1))
+    assert len(core.cache) == 0
+
+
+@pytest.mark.memory
+def test_delete_stale_entries_all_stale():
+    """Test delete_stale_entries when all entries are stale."""
+    # Additional test for lines 113-119
+    core = _MemoryCore(hash_func=None, wait_for_calc_timeout=10)
+
+    # Set a mock function
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+
+    now = datetime.now()
+    old_time = now - timedelta(days=2)
+
+    # Add only stale entries
+    for i in range(5):
+        entry = CacheEntry(
+            value=f"value_{i}",
+            time=old_time,
+            stale=False,
+            _processing=False,
+        )
+        core.cache[core._hash_func_key(f"key_{i}")] = entry
+
+    # Delete entries older than 1 day
+    core.delete_stale_entries(timedelta(days=1))
+
+    # All entries should be deleted
+    assert len(core.cache) == 0
 
 
 if __name__ == "__main__":

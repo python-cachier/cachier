@@ -40,6 +40,7 @@ This guide explains how to run cachier tests locally with Docker containers for 
 - `-v, --verbose` - Show verbose pytest output
 - `-k, --keep-running` - Keep Docker containers running after tests
 - `-h, --html-coverage` - Generate HTML coverage report
+- `-f, --files` - Specify test files to run (can be used multiple times)
 - `--help` - Show help message
 
 ## Examples
@@ -86,6 +87,15 @@ make test-sql-local
 
 # Using environment variable
 CACHIER_TEST_CORES="mongo redis" ./scripts/test-local.sh
+
+# Test specific files with MongoDB backend
+./scripts/test-local.sh mongo -f tests/test_mongo_core.py
+
+# Test multiple files across all backends
+./scripts/test-local.sh all -f tests/test_main.py -f tests/test_redis_core_coverage.py
+
+# Combine file selection with other options
+./scripts/test-local.sh redis sql -f tests/test_sql_core.py -v -k
 ```
 
 ### Docker Compose

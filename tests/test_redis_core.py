@@ -1,11 +1,13 @@
 """Testing the Redis core of cachier."""
 
-import datetime
 import hashlib
 import queue
 import threading
+import warnings
+from datetime import datetime, timedelta
 from random import random
 from time import sleep
+from unittest.mock import MagicMock, Mock, patch
 
 import pandas as pd
 import pytest
@@ -248,7 +250,7 @@ def test_redis_stale_after():
     @cachier(
         backend="redis",
         redis_client=_test_redis_getter,
-        stale_after=datetime.timedelta(seconds=3),
+        stale_after=timedelta(seconds=3),
         next_time=False,
     )
     def _stale_after_redis(arg_1, arg_2):
@@ -441,3 +443,311 @@ def test_redis_callable_client():
     val1 = _test_callable_client(1, 2)
     val2 = _test_callable_client(1, 2)
     assert val1 == val2
+
+
+def test_redis_import_warning():
+    """Test that import warning is raised when redis is not available."""
+    ptc = patch("cachier.cores.redis.REDIS_AVAILABLE", False)
+    with ptc, pytest.warns(ImportWarning, match="`redis` was not found"):
+        _RedisCore(
+            hash_func=None,
+            redis_client=Mock(),
+            wait_for_calc_timeout=None,
+        )
+
+
+@pytest.mark.redis
+def test_missing_redis_client():
+    """Test MissingRedisClient exception when redis_client is None."""
+    with pytest.raises(
+        MissingRedisClient, match="must specify ``redis_client``"
+    ):
+        _RedisCore(
+            hash_func=None,
+            redis_client=None,
+            wait_for_calc_timeout=None,
+        )
+
+
+@pytest.mark.redis
+def test_redis_core_exceptions():
+    """Test exception handling in Redis core methods."""
+    # Create a mock Redis client that raises exceptions
+    mock_client = MagicMock()
+
+    # Configure all methods to raise exceptions
+    mock_client.hgetall = MagicMock(
+        side_effect=Exception("Redis connection error")
+    )
+    mock_client.hset = MagicMock(side_effect=Exception("Redis write error"))
+    mock_client.keys = MagicMock(side_effect=Exception("Redis keys error"))
+    mock_client.delete = MagicMock(side_effect=Exception("Redis delete error"))
+
+    core = _RedisCore(
+        hash_func=None,
+        redis_client=mock_client,
+        wait_for_calc_timeout=10,
+    )
+
+    # Set a mock function
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+
+    # Test get_entry_by_key exception handling
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        key, entry = core.get_entry_by_key("test_key")
+        assert key == "test_key"
+        assert entry is None
+        assert len(w) == 1
+        assert "Redis get_entry_by_key failed" in str(w[0].message)
+
+    # Test set_entry exception handling
+    # Mock the client to ensure it's not callable
+    test_mock_client = MagicMock()
+    test_mock_client.hset = MagicMock(
+        side_effect=Exception("Redis write error")
+    )
+
+    # Create a new core with this specific mock
+    test_core = _RedisCore(
+        hash_func=None,
+        redis_client=test_mock_client,
+        wait_for_calc_timeout=10,
+    )
+    test_core.set_func(mock_func)
+
+    # Override _should_store to return True
+    test_core._should_store = lambda x: True
+
+    # Also need to mock _resolve_redis_client and _get_redis_key
+    test_core._resolve_redis_client = lambda: test_mock_client
+    test_core._get_redis_key = lambda key: f"test:{key}"
+
+    with warnings.catch_warnings(record=True) as w2:
+        warnings.simplefilter("always")
+        result = test_core.set_entry("test_key", "test_value")
+        assert result is False
+        assert len(w2) == 1
+        assert "Redis set_entry failed" in str(w2[0].message)
+
+    # Mock _resolve_redis_client and _get_redis_key for the core
+    core._resolve_redis_client = lambda: mock_client
+    core._get_redis_key = lambda key: f"test:{key}"
+
+    # Test mark_entry_being_calculated exception handling
+    with warnings.catch_warnings(record=True) as w3:
+        warnings.simplefilter("always")
+        core.mark_entry_being_calculated("test_key")
+        assert len(w3) == 1
+        assert "Redis mark_entry_being_calculated failed" in str(w3[0].message)
+
+    # Test mark_entry_not_calculated exception handling
+    with warnings.catch_warnings(record=True) as w4:
+        warnings.simplefilter("always")
+        core.mark_entry_not_calculated("test_key")
+        assert len(w4) == 1
+        assert "Redis mark_entry_not_calculated failed" in str(w4[0].message)
+
+    # Test clear_cache exception handling
+    with warnings.catch_warnings(record=True) as w5:
+        warnings.simplefilter("always")
+        core.clear_cache()
+        assert len(w5) == 1
+        assert "Redis clear_cache failed" in str(w5[0].message)
+
+    # Test clear_being_calculated exception handling
+    with warnings.catch_warnings(record=True) as w6:
+        warnings.simplefilter("always")
+        core.clear_being_calculated()
+        assert len(w6) == 1
+        assert "Redis clear_being_calculated failed" in str(w6[0].message)
+
+
+@pytest.mark.redis
+def test_redis_delete_stale_entries():
+    """Test delete_stale_entries method with various scenarios."""
+    mock_client = MagicMock()
+
+    core = _RedisCore(
+        hash_func=None,
+        redis_client=mock_client,
+        wait_for_calc_timeout=10,
+    )
+
+    # Set a mock function
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+
+    # Test normal operation
+    # Create a new mock client for this test
+    delete_mock_client = MagicMock()
+
+    # Set up keys method
+    delete_mock_client.keys = MagicMock(
+        return_value=[b"key1", b"key2", b"key3"]
+    )
+
+    now = datetime.now()
+    old_timestamp = (now - timedelta(hours=2)).isoformat()
+    recent_timestamp = (now - timedelta(minutes=30)).isoformat()
+
+    # Set up hget responses
+    delete_mock_client.hget = MagicMock(
+        side_effect=[
+            old_timestamp.encode("utf-8"),  # key1 - stale
+            recent_timestamp.encode("utf-8"),  # key2 - not stale
+            None,  # key3 - no timestamp
+        ]
+    )
+
+    # Set up delete mock
+    delete_mock_client.delete = MagicMock()
+
+    # Create a new core for this test
+    delete_core = _RedisCore(
+        hash_func=None,
+        redis_client=delete_mock_client,
+        wait_for_calc_timeout=10,
+    )
+    delete_core.set_func(mock_func)
+
+    # Need to mock _resolve_redis_client to return our mock
+    delete_core._resolve_redis_client = lambda: delete_mock_client
+
+    delete_core.delete_stale_entries(timedelta(hours=1))
+
+    # Should only delete key1
+    assert delete_mock_client.delete.call_count == 1
+    delete_mock_client.delete.assert_called_with(b"key1")
+
+    # Test exception during timestamp parsing
+    mock_client.reset_mock()
+    mock_client.keys.return_value = [b"key4"]
+    mock_client.hget.return_value = b"invalid-timestamp"
+
+    # Need to mock _resolve_redis_client for the original core as well
+    core._resolve_redis_client = lambda: mock_client
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        core.delete_stale_entries(timedelta(hours=1))
+        assert len(w) == 1
+        assert "Redis timestamp parse failed" in str(w[0].message)
+
+    # Test exception during keys operation
+    mock_client.reset_mock()
+    mock_client.keys.side_effect = Exception("Redis keys error")
+
+    with warnings.catch_warnings(record=True) as w2:
+        warnings.simplefilter("always")
+        core.delete_stale_entries(timedelta(hours=1))
+        assert len(w2) == 1
+        assert "Redis delete_stale_entries failed" in str(w2[0].message)
+
+
+@pytest.mark.redis
+def test_redis_wait_on_entry_calc_no_entry():
+    """Test wait_on_entry_calc when entry is None."""
+    from cachier.cores.base import RecalculationNeeded
+
+    # Create a mock client
+    mock_client = MagicMock()
+
+    # Mock get_entry_by_key to always return None entry
+    # This avoids the pickle.loads issue
+    _ = _RedisCore.get_entry_by_key
+
+    def mock_get_entry_by_key(self, key):
+        return key, None
+
+    core = _RedisCore(
+        hash_func=None,
+        redis_client=mock_client,
+        wait_for_calc_timeout=10,
+    )
+
+    # Set a mock function
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+
+    # Patch the method
+    core.get_entry_by_key = lambda key: mock_get_entry_by_key(core, key)
+
+    # The test expects RecalculationNeeded to be raised when no entry exists
+    with pytest.raises(RecalculationNeeded):
+        core.wait_on_entry_calc("test_key")
+
+
+@pytest.mark.redis
+def test_redis_set_entry_should_not_store():
+    """Test set_entry when value should not be stored (None not allowed)."""
+    mock_client = MagicMock()
+
+    core = _RedisCore(
+        hash_func=None,
+        redis_client=mock_client,
+        wait_for_calc_timeout=10,
+    )
+
+    # Mock _should_store to return False
+    core._should_store = Mock(return_value=False)
+
+    # Set a mock function
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+
+    result = core.set_entry("test_key", None)
+    assert result is False
+    mock_client.hset.assert_not_called()
+
+
+@pytest.mark.redis
+def test_redis_clear_being_calculated_with_pipeline():
+    """Test clear_being_calculated with multiple keys."""
+    # Create fresh mocks for this test
+    pipeline_mock_client = MagicMock()
+    pipeline_mock = MagicMock()
+
+    # Set up keys to return 3 keys
+    pipeline_mock_client.keys = MagicMock(
+        return_value=[b"key1", b"key2", b"key3"]
+    )
+
+    # Set up pipeline
+    pipeline_mock_client.pipeline = MagicMock(return_value=pipeline_mock)
+    pipeline_mock.hset = MagicMock()
+    pipeline_mock.execute = MagicMock()
+
+    core = _RedisCore(
+        hash_func=None,
+        redis_client=pipeline_mock_client,
+        wait_for_calc_timeout=10,
+    )
+
+    # Set a mock function
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+
+    # Need to mock _resolve_redis_client to return our mock
+    core._resolve_redis_client = lambda: pipeline_mock_client
+
+    core.clear_being_calculated()
+
+    # Verify pipeline was used
+    assert pipeline_mock.hset.call_count == 3
+    # Verify hset was called with correct parameters for each key
+    pipeline_mock.hset.assert_any_call(b"key1", "processing", "false")
+    pipeline_mock.hset.assert_any_call(b"key2", "processing", "false")
+    pipeline_mock.hset.assert_any_call(b"key3", "processing", "false")
+    pipeline_mock.execute.assert_called_once()

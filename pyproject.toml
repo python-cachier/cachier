@@ -24,6 +24,7 @@ license = { file = "LICENSE" }
 authors = [
   { name = "Shay Palachy Affek", email = 'shay.palachy@gmail.com' },
 ]
+requires-python = ">=3.9"
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
@@ -188,8 +189,8 @@ branch = true
 # dynamic_context = "test_function"
 omit = [
   "tests/*",
-  "cachier/_version.py",
-  "cachier/__init__.py",
+  "src/cachier/_version.py",
+  "src/cachier/__init__.py",
   "**/scripts/**",
 ]
 [tool.coverage.report]

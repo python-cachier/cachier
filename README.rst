@@ -519,13 +519,20 @@ Clone:
   git clone git@github.com:python-cachier/cachier.git
 
 
-Install in development mode with test dependencies:
+Install in development mode with test dependencies for local cores (memory and pickle) only:
 
 .. code-block:: bash
 
   cd cachier
   pip install -e . -r tests/requirements.txt
 
+Each additional core (MongoDB, Redis, SQL) requires additional dependencies. To install all dependencies for all cores, run:
+
+.. code-block:: bash
+
+  pip install -r tests/mongodb_requirements.txt
+  pip install -r tests/redis_requirements.txt
+  pip install -r tests/sql_requirements.txt
 
 Running the tests
 -----------------
@@ -630,7 +637,23 @@ To test all cachier backends (MongoDB, Redis, SQL, Memory, Pickle) locally with 
   # Keep containers running for debugging
   ./scripts/test-local.sh all -k
 
-The unified test script automatically manages Docker containers, installs required dependencies, and runs the appropriate test suites. See ``scripts/README-local-testing.md`` for detailed documentation.
+  # Test specific test files with selected backends
+  ./scripts/test-local.sh mongo -f tests/test_mongo_core.py
+
+  # Test multiple files across all backends
+  ./scripts/test-local.sh all -f tests/test_main.py -f tests/test_redis_core_coverage.py
+
+The unified test script automatically manages Docker containers, installs required dependencies, and runs the appropriate test suites. The ``-f`` / ``--files`` option allows you to run specific test files instead of the entire test suite. See ``scripts/README-local-testing.md`` for detailed documentation.
+
+
+Running pre-commit hooks locally
+--------------------------------
+
+After you've installed test dependencies, you can run pre-commit hooks locally by using the following command:
+
+.. code-block:: bash
+
+  pre-commit run --all-files
 
 
 Adding documentation
