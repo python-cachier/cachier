@@ -136,21 +136,23 @@ pytest -n 4
 import pytest
 from cachier import cachier
 
+
 def test_basic_caching():
     """Test basic caching functionality."""
+
     # Define a cached function local to this test
     @cachier()
     def expensive_computation(x):
-        return x ** 2
-    
+        return x**2
+
     # First call - should compute
     result1 = expensive_computation(5)
     assert result1 == 25
-    
+
     # Second call - should return from cache
     result2 = expensive_computation(5)
     assert result2 == 25
-    
+
     # Clear cache for cleanup
     expensive_computation.clear_cache()
 ```
@@ -162,11 +164,11 @@ def test_basic_caching():
 def test_mongo_specific_feature():
     """Test MongoDB-specific functionality."""
     from tests.test_mongo_core import _test_mongetter
-    
+
     @cachier(mongetter=_test_mongetter)
     def mongo_cached_func(x):
         return x * 2
-    
+
     # Test implementation
     assert mongo_cached_func(5) == 10
 ```
@@ -180,6 +182,7 @@ def test_mongo_specific_feature():
 #### Why This Matters
 
 Cachier identifies cached functions by their full module path and function name. When tests share decorated functions:
+
 - Cache entries can conflict between tests
 - Parallel test execution may fail unpredictably
 - Test results become non-deterministic
@@ -191,14 +194,15 @@ def test_feature_one():
     @cachier()
     def compute_one(x):  # Unique to this test
         return x * 2
-    
+
     assert compute_one(5) == 10
+
 
 def test_feature_two():
     @cachier()
     def compute_two(x):  # Different function for different test
         return x * 2
-    
+
     assert compute_two(5) == 10
 ```
 
@@ -210,8 +214,10 @@ def test_feature_two():
 def shared_compute(x):  # Shared between tests
     return x * 2
 
+
 def test_feature_one():
     assert shared_compute(5) == 10  # May conflict with test_feature_two
+
 
 def test_feature_two():
     assert shared_compute(5) == 10  # May conflict with test_feature_one
@@ -239,10 +245,11 @@ def test_feature_two():
 @pytest.mark.mongo
 def test_mongo_feature():
     """Test with MongoDB backend."""
+
     @cachier(mongetter=_test_mongetter, wait_for_calc_timeout=2)
     def mongo_func(x):
         return x
-    
+
     # MongoDB-specific assertions
     assert mongo_func.get_cache_mongetter() is not None
 ```
@@ -253,10 +260,11 @@ def test_mongo_feature():
 @pytest.mark.redis
 def test_redis_feature():
     """Test with Redis backend."""
-    @cachier(backend='redis', redis_client=_test_redis_client)
+
+    @cachier(backend="redis", redis_client=_test_redis_client)
     def redis_func(x):
         return x
-    
+
     # Redis-specific testing
     assert redis_func(5) == 5
 ```
@@ -267,10 +275,11 @@ def test_redis_feature():
 @pytest.mark.sql
 def test_sql_feature():
     """Test with SQL backend."""
-    @cachier(backend='sql', sql_engine=test_engine)
+
+    @cachier(backend="sql", sql_engine=test_engine)
     def sql_func(x):
         return x
-    
+
     # SQL-specific testing
     assert sql_func(5) == 5
 ```
@@ -281,10 +290,11 @@ def test_sql_feature():
 @pytest.mark.memory
 def test_memory_feature():
     """Test with memory backend."""
-    @cachier(backend='memory')
+
+    @cachier(backend="memory")
     def memory_func(x):
         return x
-    
+
     # Memory-specific testing
     assert memory_func(5) == 5
 ```
@@ -345,50 +355,61 @@ pytest -m sql
 ### Common Issues
 
 1. **Import Errors**: Install backend-specific requirements
+
    ```bash
    pip install -r tests/redis_requirements.txt
    ```
 
 2. **Docker Not Running**: Start Docker Desktop or daemon
+
    ```bash
    docker ps  # Check if Docker is running
    ```
 
 3. **Port Conflicts**: Stop conflicting services
+
    ```bash
    docker stop cachier-test-mongo cachier-test-redis cachier-test-postgres
    ```
 
 4. **Flaky Tests**: Usually due to timing issues
+
    - Increase timeouts
    - Add proper waits
    - Check for race conditions
 
 5. **Cache Conflicts**: Ensure function isolation
+
    - Don't share decorated functions
    - Clear cache after tests
    - Use unique function names
 
 ### Debugging Tips
 
-1. **Run Single Test**: 
+1. **Run Single Test**:
+
    ```bash
    pytest -k test_name -v
    ```
 
-2. **Disable Parallel**: 
+2. **Disable Parallel**:
+
    ```bash
    pytest -n 1
    ```
 
 3. **Check Logs**:
+
    ```bash
    docker logs cachier-test-mongo
    ```
 
 4. **Interactive Debugging**:
+
    ```python
-   import pdb; pdb.set_trace()
+   import pdb
+
+   pdb.set_trace()
    ```
 
 ### Performance Considerations

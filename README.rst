@@ -688,7 +688,7 @@ When writing tests for cachier, follow these critical guidelines to ensure test 
 
   def test_feature_a():
       assert shared_func(5) == 10
-  
+
   def test_feature_b():
       assert shared_func(5) == 10  # This may conflict with test_feature_a
 
