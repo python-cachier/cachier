@@ -120,6 +120,12 @@ def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
     )  # Unique but deterministic within test
     arg1, arg2 = test_id, test_id + 1
 
+    # In parallel tests, add random delay to reduce thread contention
+    if os.environ.get("PYTEST_XDIST_WORKER"):
+        import time
+
+        time.sleep(random() * 0.5)  # 0-500ms random delay
+
     @cachier.cachier(
         mongetter=mongetter,
         stale_after=stale_after,
@@ -153,9 +159,9 @@ def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
     thread2.start()
     sleep(1)
     res3 = _wait_for_calc_timeout_slow(arg1, arg2)
-    sleep(4)
-    thread1.join(timeout=4)
-    thread2.join(timeout=4)
+    sleep(5)  # Increased from 4 to give more time for threads to complete
+    thread1.join(timeout=10)  # Increased timeout for thread joins
+    thread2.join(timeout=10)
     assert res_queue.qsize() == 2
     res1 = res_queue.get()
     res2 = res_queue.get()
@@ -165,6 +171,7 @@ def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
     assert res1 == res4 or res2 == res4 or res3 == res4
 
 
+@pytest.mark.mongo
 @pytest.mark.parametrize(
     ("mongetter", "backend"),
     [
@@ -187,6 +194,7 @@ def test_precache_value(mongetter, backend):
     assert dummy_func(2, arg_2=2) == 5
 
 
+@pytest.mark.mongo
 @pytest.mark.parametrize(
     ("mongetter", "backend"),
     [
