@@ -69,7 +69,25 @@ jobs:
         run: |
           # Run all local tests in parallel (pickle tests have isolation via conftest.py)
           pytest -m "not mongo and not sql and not redis" -n auto --cov=cachier --cov-report=
-
+          
+          # Debug: Show current directory and all files created
+          echo "=== Current directory: $(pwd) ==="
+          echo "=== All files in current directory ==="
+          ls -la
+          echo "=== Looking for coverage files ==="
+          find . -name ".coverage*" -type f -ls 2>/dev/null || echo "No .coverage* files found"
+          echo "=== Looking for any coverage-related files ==="
+          find . -name "*coverage*" -type f -ls 2>/dev/null || echo "No *coverage* files found"
+          echo "=== Check if .coverage exists ==="
+          if [ -f .coverage ]; then
+            echo ".coverage file exists"
+            ls -la .coverage
+          else
+            echo ".coverage file does not exist"
+          fi
+          echo "=== Environment variables related to coverage ==="
+          env | grep -i coverage || echo "No coverage-related env vars found"
+          
           # Combine parallel coverage data and generate final report
           coverage combine
           coverage report
