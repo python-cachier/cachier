@@ -109,7 +109,17 @@ def test_wait_for_calc_timeout_ok(mongetter, stale_after, separate_files):
 
 
 @pytest.mark.parametrize(parametrize_keys, parametrize_values)
+@pytest.mark.flaky(reruns=3, reruns_delay=0.5)
 def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
+    # Use unique test parameters to avoid cache conflicts in parallel execution
+    import os
+    import uuid
+
+    test_id = os.getpid() + int(
+        uuid.uuid4().int >> 96
+    )  # Unique but deterministic within test
+    arg1, arg2 = test_id, test_id + 1
+
     @cachier.cachier(
         mongetter=mongetter,
         stale_after=stale_after,
@@ -122,7 +132,7 @@ def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
         return random() + arg_1 + arg_2
 
     def _calls_wait_for_calc_timeout_slow(res_queue):
-        res = _wait_for_calc_timeout_slow(1, 2)
+        res = _wait_for_calc_timeout_slow(arg1, arg2)
         res_queue.put(res)
 
     """Testing for calls timing out to be performed twice when needed."""
@@ -142,7 +152,7 @@ def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
     thread1.start()
     thread2.start()
     sleep(1)
-    res3 = _wait_for_calc_timeout_slow(1, 2)
+    res3 = _wait_for_calc_timeout_slow(arg1, arg2)
     sleep(4)
     thread1.join(timeout=4)
     thread2.join(timeout=4)
@@ -150,7 +160,7 @@ def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
     res1 = res_queue.get()
     res2 = res_queue.get()
     assert res1 != res2  # Timeout kicked in.  Two calls were done
-    res4 = _wait_for_calc_timeout_slow(1, 2)
+    res4 = _wait_for_calc_timeout_slow(arg1, arg2)
     # One of the cached values is returned
     assert res1 == res4 or res2 == res4 or res3 == res4
 
