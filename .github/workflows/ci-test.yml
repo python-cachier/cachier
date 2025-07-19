@@ -69,7 +69,7 @@ jobs:
         run: |
           # Run all local tests in parallel (pickle tests have isolation via conftest.py)
           pytest -m "not mongo and not sql and not redis" -n auto --cov=cachier --cov-report=
-          
+
           # Generate coverage reports (pytest-cov already combined the data)
           coverage report
           coverage xml -o cov.xml
