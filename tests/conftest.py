@@ -121,6 +121,12 @@ def cleanup_mongo_clients():
         pass
 
 
+@pytest.fixture
+def worker_id(request):
+    """Get the pytest-xdist worker ID."""
+    return os.environ.get("PYTEST_XDIST_WORKER", "master")
+
+
 @pytest.fixture(autouse=True)
 def isolated_cache_directory(tmp_path, monkeypatch, request, worker_id):
     """Ensure each test gets an isolated cache directory.

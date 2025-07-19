@@ -17,6 +17,7 @@ import pickle
 import sys
 import tempfile
 import threading
+import uuid
 from datetime import datetime, timedelta
 from random import random
 from time import sleep, time
@@ -345,17 +346,18 @@ _BAD_CACHE_FPATHS = {
 }
 
 
-def _calls_bad_cache(bad_cache_func, res_queue, trash_cache, separate_files):
+def _calls_bad_cache(
+    bad_cache_func, res_queue, trash_cache, separate_files, cache_dir
+):
     try:
         res = bad_cache_func(0.13, 0.02, cachier__verbose=True)
         if trash_cache:
-            # Dynamically compute the cache file path
-            expanded_dir = os.path.expanduser(_global_params.cache_dir)
+            # Use the provided cache directory
             if separate_files:
                 fname = _BAD_CACHE_FNAME_SEPARATE_FILES
             else:
                 fname = _BAD_CACHE_FNAME
-            cache_fpath = os.path.join(expanded_dir, fname)
+            cache_fpath = os.path.join(cache_dir, fname)
             with open(cache_fpath, "w") as cache_file:
                 cache_file.seek(0)
                 cache_file.truncate()
@@ -366,8 +368,14 @@ def _calls_bad_cache(bad_cache_func, res_queue, trash_cache, separate_files):
 
 def _helper_bad_cache_file(sleep_time: float, separate_files: bool):
     """Test pickle core handling of bad cache files."""
+    # Use a unique cache directory for this test to avoid parallel conflicts
+    unique_cache_dir = os.path.join(
+        tempfile.gettempdir(), f"cachier_test_bad_{uuid.uuid4().hex[:8]}"
+    )
+    os.makedirs(unique_cache_dir, exist_ok=True)
+
     _bad_cache_decorated = _get_decorated_func(
-        _bad_cache, separate_files=separate_files
+        _bad_cache, separate_files=separate_files, cache_dir=unique_cache_dir
     )
     _bad_cache_decorated.clear_cache()
     res_queue = queue.Queue()
@@ -378,6 +386,7 @@ def _helper_bad_cache_file(sleep_time: float, separate_files: bool):
             "res_queue": res_queue,
             "trash_cache": True,
             "separate_files": separate_files,
+            "cache_dir": unique_cache_dir,
         },
         daemon=True,
     )
@@ -388,6 +397,7 @@ def _helper_bad_cache_file(sleep_time: float, separate_files: bool):
             "res_queue": res_queue,
             "trash_cache": False,
             "separate_files": separate_files,
+            "cache_dir": unique_cache_dir,
         },
         daemon=True,
     )
@@ -448,20 +458,23 @@ _DEL_CACHE_FPATHS = {
 
 
 def _calls_delete_cache(
-    del_cache_func, res_queue, del_cache: bool, separate_files: bool
+    del_cache_func,
+    res_queue,
+    del_cache: bool,
+    separate_files: bool,
+    cache_dir: str,
 ):
     try:
         # print('in')
         res = del_cache_func(0.13, 0.02)
         # print('out with {}'.format(res))
         if del_cache:
-            # Dynamically compute the cache file path
-            expanded_dir = os.path.expanduser(_global_params.cache_dir)
+            # Use the provided cache directory
             if separate_files:
                 fname = _DEL_CACHE_FNAME_SEPARATE_FILES
             else:
                 fname = _DEL_CACHE_FNAME
-            cache_fpath = os.path.join(expanded_dir, fname)
+            cache_fpath = os.path.join(cache_dir, fname)
             os.remove(cache_fpath)
             # print(os.path.isfile(_DEL_CACHE_FPATH))
         res_queue.put(res)
@@ -472,8 +485,16 @@ def _calls_delete_cache(
 
 def _helper_delete_cache_file(sleep_time: float, separate_files: bool):
     """Test pickle core handling of missing cache files."""
+    # Use a unique cache directory for this test to avoid parallel conflicts
+    unique_cache_dir = os.path.join(
+        tempfile.gettempdir(), f"cachier_test_del_{uuid.uuid4().hex[:8]}"
+    )
+    os.makedirs(unique_cache_dir, exist_ok=True)
+
     _delete_cache_decorated = _get_decorated_func(
-        _delete_cache, separate_files=separate_files
+        _delete_cache,
+        separate_files=separate_files,
+        cache_dir=unique_cache_dir,
     )
     _delete_cache_decorated.clear_cache()
     res_queue = queue.Queue()
@@ -484,6 +505,7 @@ def _helper_delete_cache_file(sleep_time: float, separate_files: bool):
             "res_queue": res_queue,
             "del_cache": True,
             "separate_files": separate_files,
+            "cache_dir": unique_cache_dir,
         },
         daemon=True,
     )
@@ -494,6 +516,7 @@ def _helper_delete_cache_file(sleep_time: float, separate_files: bool):
             "res_queue": res_queue,
             "del_cache": False,
             "separate_files": separate_files,
+            "cache_dir": unique_cache_dir,
         },
         daemon=True,
     )
