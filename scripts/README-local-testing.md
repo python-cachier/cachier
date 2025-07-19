@@ -41,6 +41,8 @@ This guide explains how to run cachier tests locally with Docker containers for 
 - `-k, --keep-running` - Keep Docker containers running after tests
 - `-h, --html-coverage` - Generate HTML coverage report
 - `-f, --files` - Specify test files to run (can be used multiple times)
+- `-p, --parallel` - Run tests in parallel using pytest-xdist
+- `-w, --workers` - Number of parallel workers (default: auto)
 - `--help` - Show help message
 
 ## Examples
@@ -96,6 +98,18 @@ CACHIER_TEST_CORES="mongo redis" ./scripts/test-local.sh
 
 # Combine file selection with other options
 ./scripts/test-local.sh redis sql -f tests/test_sql_core.py -v -k
+
+# Run tests in parallel with automatic worker detection
+./scripts/test-local.sh all -p
+
+# Run tests in parallel with 4 workers
+./scripts/test-local.sh external -p -w 4
+
+# Run local tests in parallel (memory and pickle)
+./scripts/test-local.sh memory pickle -p
+
+# Combine parallel testing with other options
+./scripts/test-local.sh mongo redis -p -v -k
 ```
 
 ### Docker Compose
@@ -193,10 +207,12 @@ The script automatically sets the required environment variables:
 2. **For quick iteration**: Use memory and pickle tests (no Docker required)
 3. **For debugging**: Use `-k` to keep containers running and inspect them
 4. **For CI parity**: Test with the same backends that CI uses
+5. **For faster test runs**: Use `-p` to run tests in parallel, especially when testing multiple backends
+6. **For parallel testing**: The script automatically installs pytest-xdist when needed
+7. **Worker count**: Use `-w auto` (default) to let pytest-xdist determine optimal workers, or specify a number based on your CPU cores
 
 ## Future Enhancements
 
 - Add MySQL/MariaDB support
 - Add Elasticsearch support
 - Add performance benchmarking mode
-- Add parallel test execution for multiple backends

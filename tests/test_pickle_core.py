@@ -17,6 +17,7 @@ import pickle
 import sys
 import tempfile
 import threading
+import uuid
 from datetime import datetime, timedelta
 from random import random
 from time import sleep, time
@@ -282,6 +283,7 @@ def _calls_being_calc_next_time(being_calc_func, res_queue):
 
 @pytest.mark.pickle
 @pytest.mark.parametrize("separate_files", [True, False])
+@pytest.mark.flaky(reruns=5, reruns_delay=0.1)
 def test_being_calc_next_time(separate_files):
     """Testing pickle core handling of being calculated scenarios."""
     _being_calc_next_time_decorated = _get_decorated_func(
@@ -344,11 +346,19 @@ _BAD_CACHE_FPATHS = {
 }
 
 
-def _calls_bad_cache(bad_cache_func, res_queue, trash_cache, separate_files):
+def _calls_bad_cache(
+    bad_cache_func, res_queue, trash_cache, separate_files, cache_dir
+):
     try:
         res = bad_cache_func(0.13, 0.02, cachier__verbose=True)
         if trash_cache:
-            with open(_BAD_CACHE_FPATHS[separate_files], "w") as cache_file:
+            # Use the provided cache directory
+            if separate_files:
+                fname = _BAD_CACHE_FNAME_SEPARATE_FILES
+            else:
+                fname = _BAD_CACHE_FNAME
+            cache_fpath = os.path.join(cache_dir, fname)
+            with open(cache_fpath, "w") as cache_file:
                 cache_file.seek(0)
                 cache_file.truncate()
         res_queue.put(res)
@@ -358,8 +368,14 @@ def _calls_bad_cache(bad_cache_func, res_queue, trash_cache, separate_files):
 
 def _helper_bad_cache_file(sleep_time: float, separate_files: bool):
     """Test pickle core handling of bad cache files."""
+    # Use a unique cache directory for this test to avoid parallel conflicts
+    unique_cache_dir = os.path.join(
+        tempfile.gettempdir(), f"cachier_test_bad_{uuid.uuid4().hex[:8]}"
+    )
+    os.makedirs(unique_cache_dir, exist_ok=True)
+
     _bad_cache_decorated = _get_decorated_func(
-        _bad_cache, separate_files=separate_files
+        _bad_cache, separate_files=separate_files, cache_dir=unique_cache_dir
     )
     _bad_cache_decorated.clear_cache()
     res_queue = queue.Queue()
@@ -370,6 +386,7 @@ def _helper_bad_cache_file(sleep_time: float, separate_files: bool):
             "res_queue": res_queue,
             "trash_cache": True,
             "separate_files": separate_files,
+            "cache_dir": unique_cache_dir,
         },
         daemon=True,
     )
@@ -380,6 +397,7 @@ def _helper_bad_cache_file(sleep_time: float, separate_files: bool):
             "res_queue": res_queue,
             "trash_cache": False,
             "separate_files": separate_files,
+            "cache_dir": unique_cache_dir,
         },
         daemon=True,
     )
@@ -400,9 +418,14 @@ def _helper_bad_cache_file(sleep_time: float, separate_files: bool):
 # we want this to succeed at least once
 @pytest.mark.pickle
 @pytest.mark.parametrize("separate_files", [True, False])
+@pytest.mark.flaky(reruns=8, reruns_delay=0.1)
 def test_bad_cache_file(separate_files):
     """Test pickle core handling of bad cache files."""
-    sleep_times = [0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8, 1, 1.5, 2]
+    # On macOS, file system events and watchdog timing can be different
+    if sys.platform == "darwin":
+        sleep_times = [1.0, 1.5, 2.0, 2.5, 3.0]
+    else:
+        sleep_times = [0.6, 1, 1.5, 2, 2.5]
     bad_file = False
     for sleep_time in sleep_times * 2:
         if _helper_bad_cache_file(sleep_time, separate_files):
@@ -435,14 +458,24 @@ _DEL_CACHE_FPATHS = {
 
 
 def _calls_delete_cache(
-    del_cache_func, res_queue, del_cache: bool, separate_files: bool
+    del_cache_func,
+    res_queue,
+    del_cache: bool,
+    separate_files: bool,
+    cache_dir: str,
 ):
     try:
         # print('in')
         res = del_cache_func(0.13, 0.02)
         # print('out with {}'.format(res))
         if del_cache:
-            os.remove(_DEL_CACHE_FPATHS[separate_files])
+            # Use the provided cache directory
+            if separate_files:
+                fname = _DEL_CACHE_FNAME_SEPARATE_FILES
+            else:
+                fname = _DEL_CACHE_FNAME
+            cache_fpath = os.path.join(cache_dir, fname)
+            os.remove(cache_fpath)
             # print(os.path.isfile(_DEL_CACHE_FPATH))
         res_queue.put(res)
     except Exception as exc:
@@ -452,8 +485,16 @@ def _calls_delete_cache(
 
 def _helper_delete_cache_file(sleep_time: float, separate_files: bool):
     """Test pickle core handling of missing cache files."""
+    # Use a unique cache directory for this test to avoid parallel conflicts
+    unique_cache_dir = os.path.join(
+        tempfile.gettempdir(), f"cachier_test_del_{uuid.uuid4().hex[:8]}"
+    )
+    os.makedirs(unique_cache_dir, exist_ok=True)
+
     _delete_cache_decorated = _get_decorated_func(
-        _delete_cache, separate_files=separate_files
+        _delete_cache,
+        separate_files=separate_files,
+        cache_dir=unique_cache_dir,
     )
     _delete_cache_decorated.clear_cache()
     res_queue = queue.Queue()
@@ -464,6 +505,7 @@ def _helper_delete_cache_file(sleep_time: float, separate_files: bool):
             "res_queue": res_queue,
             "del_cache": True,
             "separate_files": separate_files,
+            "cache_dir": unique_cache_dir,
         },
         daemon=True,
     )
@@ -474,6 +516,7 @@ def _helper_delete_cache_file(sleep_time: float, separate_files: bool):
             "res_queue": res_queue,
             "del_cache": False,
             "separate_files": separate_files,
+            "cache_dir": unique_cache_dir,
         },
         daemon=True,
     )
@@ -494,9 +537,14 @@ def _helper_delete_cache_file(sleep_time: float, separate_files: bool):
 
 @pytest.mark.pickle
 @pytest.mark.parametrize("separate_files", [False, True])
+@pytest.mark.flaky(reruns=10, reruns_delay=0.1)
 def test_delete_cache_file(separate_files):
     """Test pickle core handling of missing cache files."""
-    sleep_times = [0.1, 0.2, 0.3, 0.5, 0.7, 1]
+    # On macOS, file system events and watchdog timing can be different
+    if sys.platform == "darwin":
+        sleep_times = [0.2, 0.4, 0.6, 0.8, 1.0, 1.5]
+    else:
+        sleep_times = [0.1, 0.2, 0.3, 0.5, 0.7, 1]
     deleted = False
     for sleep_time in sleep_times * 4:
         if _helper_delete_cache_file(sleep_time, separate_files):

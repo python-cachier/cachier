@@ -145,38 +145,38 @@ def test_mongo_index_creation():
     """Basic Mongo core functionality."""
 
     @cachier(mongetter=_test_mongetter)
-    def _test_mongo_caching(arg_1, arg_2):
+    def _decorated(arg_1, arg_2):
         """Some function."""
         return random() + arg_1 + arg_2
 
     collection = _test_mongetter()
-    _test_mongo_caching.clear_cache()
-    val1 = _test_mongo_caching(1, 2)
-    val2 = _test_mongo_caching(1, 2)
+    _decorated.clear_cache()
+    val1 = _decorated(1, 2)
+    val2 = _decorated(1, 2)
     assert val1 == val2
     assert _MongoCore._INDEX_NAME in collection.index_information()
 
 
 @pytest.mark.mongo
-def test_mongo_core():
+def test_mongo_core_basic():
     """Basic Mongo core functionality."""
 
     @cachier(mongetter=_test_mongetter)
-    def _test_mongo_caching(arg_1, arg_2):
+    def _funci(arg_1, arg_2):
         """Some function."""
         return random() + arg_1 + arg_2
 
-    _test_mongo_caching.clear_cache()
-    val1 = _test_mongo_caching(1, 2)
-    val2 = _test_mongo_caching(1, 2)
+    _funci.clear_cache()
+    val1 = _funci(1, 2)
+    val2 = _funci(1, 2)
     assert val1 == val2
-    val3 = _test_mongo_caching(1, 2, cachier__skip_cache=True)
+    val3 = _funci(1, 2, cachier__skip_cache=True)
     assert val3 != val1
-    val4 = _test_mongo_caching(1, 2)
+    val4 = _funci(1, 2)
     assert val4 == val1
-    val5 = _test_mongo_caching(1, 2, cachier__overwrite_cache=True)
+    val5 = _funci(1, 2, cachier__overwrite_cache=True)
     assert val5 != val1
-    val6 = _test_mongo_caching(1, 2)
+    val6 = _funci(1, 2)
     assert val6 == val5
 
 
@@ -185,21 +185,21 @@ def test_mongo_core_keywords():
     """Basic Mongo core functionality with keyword arguments."""
 
     @cachier(mongetter=_test_mongetter)
-    def _test_mongo_caching(arg_1, arg_2):
+    def _func_keywords(arg_1, arg_2):
         """Some function."""
         return random() + arg_1 + arg_2
 
-    _test_mongo_caching.clear_cache()
-    val1 = _test_mongo_caching(1, arg_2=2)
-    val2 = _test_mongo_caching(1, arg_2=2)
+    _func_keywords.clear_cache()
+    val1 = _func_keywords(1, arg_2=2)
+    val2 = _func_keywords(1, arg_2=2)
     assert val1 == val2
-    val3 = _test_mongo_caching(1, arg_2=2, cachier__skip_cache=True)
+    val3 = _func_keywords(1, arg_2=2, cachier__skip_cache=True)
     assert val3 != val1
-    val4 = _test_mongo_caching(1, arg_2=2)
+    val4 = _func_keywords(1, arg_2=2)
     assert val4 == val1
-    val5 = _test_mongo_caching(1, arg_2=2, cachier__overwrite_cache=True)
+    val5 = _func_keywords(1, arg_2=2, cachier__overwrite_cache=True)
     assert val5 != val1
-    val6 = _test_mongo_caching(1, arg_2=2)
+    val6 = _func_keywords(1, arg_2=2)
     assert val6 == val5
 
 

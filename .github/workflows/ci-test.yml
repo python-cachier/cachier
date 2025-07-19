@@ -66,7 +66,13 @@ jobs:
 
       - name: Unit tests (local)
         if: matrix.backend == 'local'
-        run: pytest -m "not mongo and not sql and not redis" --cov=cachier --cov-report=term --cov-report=xml:cov.xml
+        run: |
+          # Run all local tests in parallel (pickle tests have isolation via conftest.py)
+          pytest -m "not mongo and not sql and not redis" -n auto --cov=cachier --cov-report=
+
+          # Generate coverage reports (pytest-cov already combined the data)
+          coverage report
+          coverage xml -o cov.xml
 
       - name: Setup docker (missing on MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'mongodb'
@@ -100,7 +106,7 @@ jobs:
 
       - name: Unit tests (DB)
         if: matrix.backend == 'mongodb'
-        run: pytest -m "mongo" --cov=cachier --cov-report=term --cov-report=xml:cov.xml
+        run: pytest -m "mongo" -n auto --cov=cachier --cov-report=term --cov-report=xml:cov.xml
       - name: Speed eval
         run: python tests/speed_eval.py
 
@@ -126,7 +132,7 @@ jobs:
         if: matrix.backend == 'postgres'
         env:
           SQLALCHEMY_DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
-        run: pytest -m sql --cov=cachier --cov-report=term --cov-report=xml:cov.xml
+        run: pytest -m sql -n auto --cov=cachier --cov-report=term --cov-report=xml:cov.xml
 
       - name: Start Redis in docker
         if: matrix.backend == 'redis'
@@ -145,7 +151,7 @@ jobs:
 
       - name: Unit tests (Redis)
         if: matrix.backend == 'redis'
-        run: pytest -m redis --cov=cachier --cov-report=term --cov-report=xml:cov.xml
+        run: pytest -m redis -n auto --cov=cachier --cov-report=term --cov-report=xml:cov.xml
 
       - name: Upload coverage to Codecov (non PRs)
         continue-on-error: true

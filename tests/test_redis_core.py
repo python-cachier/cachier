@@ -225,21 +225,21 @@ def test_redis_core_keywords():
     """Basic Redis core functionality with keyword arguments."""
 
     @cachier(backend="redis", redis_client=_test_redis_getter)
-    def _test_redis_caching(arg_1, arg_2):
+    def _tfunc_for_keywords(arg_1, arg_2):
         """Some function."""
         return random() + arg_1 + arg_2
 
-    _test_redis_caching.clear_cache()
-    val1 = _test_redis_caching(1, arg_2=2)
-    val2 = _test_redis_caching(1, arg_2=2)
+    _tfunc_for_keywords.clear_cache()
+    val1 = _tfunc_for_keywords(1, arg_2=2)
+    val2 = _tfunc_for_keywords(1, arg_2=2)
     assert val1 == val2
-    val3 = _test_redis_caching(1, arg_2=2, cachier__skip_cache=True)
+    val3 = _tfunc_for_keywords(1, arg_2=2, cachier__skip_cache=True)
     assert val3 != val1
-    val4 = _test_redis_caching(1, arg_2=2)
+    val4 = _tfunc_for_keywords(1, arg_2=2)
     assert val4 == val1
-    val5 = _test_redis_caching(1, arg_2=2, cachier__overwrite_cache=True)
+    val5 = _tfunc_for_keywords(1, arg_2=2, cachier__overwrite_cache=True)
     assert val5 != val1
-    val6 = _test_redis_caching(1, arg_2=2)
+    val6 = _tfunc_for_keywords(1, arg_2=2)
     assert val6 == val5
 
 
@@ -596,12 +596,12 @@ def test_redis_delete_stale_entries():
     old_timestamp = (now - timedelta(hours=2)).isoformat()
     recent_timestamp = (now - timedelta(minutes=30)).isoformat()
 
-    # Set up hget responses
-    delete_mock_client.hget = MagicMock(
+    # Set up hmget responses
+    delete_mock_client.hmget = MagicMock(
         side_effect=[
-            old_timestamp.encode("utf-8"),  # key1 - stale
-            recent_timestamp.encode("utf-8"),  # key2 - not stale
-            None,  # key3 - no timestamp
+            [old_timestamp.encode("utf-8"), b"100"],  # key1 - stale
+            [recent_timestamp.encode("utf-8"), b"100"],  # key2 - not stale
+            [None, None],  # key3 - no timestamp
         ]
     )
 
@@ -628,7 +628,7 @@ def test_redis_delete_stale_entries():
     # Test exception during timestamp parsing
     mock_client.reset_mock()
     mock_client.keys.return_value = [b"key4"]
-    mock_client.hget.return_value = b"invalid-timestamp"
+    mock_client.hmget.return_value = [b"invalid-timestamp", None]
 
     # Need to mock _resolve_redis_client for the original core as well
     core._resolve_redis_client = lambda: mock_client

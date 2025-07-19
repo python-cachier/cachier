@@ -1,8 +1,9 @@
 """A memory-based caching core for cachier."""
 
 import threading
+from collections import OrderedDict
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 from .._types import HashFunc
 from ..config import CacheEntry
@@ -17,9 +18,18 @@ class _MemoryCore(_BaseCore):
         hash_func: Optional[HashFunc],
         wait_for_calc_timeout: Optional[int],
         entry_size_limit: Optional[int] = None,
+        cache_size_limit: Optional[int] = None,
+        replacement_policy: str = "lru",
     ):
-        super().__init__(hash_func, wait_for_calc_timeout, entry_size_limit)
-        self.cache: Dict[str, CacheEntry] = {}
+        super().__init__(
+            hash_func,
+            wait_for_calc_timeout,
+            entry_size_limit,
+            cache_size_limit,
+            replacement_policy,
+        )
+        self.cache: "OrderedDict[str, CacheEntry]" = OrderedDict()
+        self._cache_size = 0
 
     def _hash_func_key(self, key: str) -> str:
         return f"{_get_func_str(self.func)}:{key}"
@@ -28,18 +38,22 @@ class _MemoryCore(_BaseCore):
         self, key: str, reload=False
     ) -> Tuple[str, Optional[CacheEntry]]:
         with self.lock:
-            return key, self.cache.get(self._hash_func_key(key), None)
+            hkey = self._hash_func_key(key)
+            entry = self.cache.get(hkey, None)
+            if entry is not None:
+                self.cache.move_to_end(hkey)
+            return key, entry
 
     def set_entry(self, key: str, func_res: Any) -> bool:
         if not self._should_store(func_res):
             return False
         hash_key = self._hash_func_key(key)
+        size = self._estimate_size(func_res)
         with self.lock:
             try:
-                # we need to retain the existing condition so that
-                # mark_entry_not_calculated can notify all possibly-waiting
-                # threads about it
                 cond = self.cache[hash_key]._condition
+                old_size = self._estimate_size(self.cache[hash_key].value)
+                self._cache_size -= old_size
             except KeyError:  # pragma: no cover
                 cond = None
             self.cache[hash_key] = CacheEntry(
@@ -50,6 +64,12 @@ class _MemoryCore(_BaseCore):
                 _condition=cond,
                 _completed=True,
             )
+            self.cache.move_to_end(hash_key)
+            self._cache_size += size
+            if self.cache_size_limit is not None:
+                while self._cache_size > self.cache_size_limit and self.cache:
+                    old_key, old_entry = self.cache.popitem(last=False)
+                    self._cache_size -= self._estimate_size(old_entry.value)
         return True
 
     def mark_entry_being_calculated(self, key: str) -> None:
@@ -101,6 +121,7 @@ class _MemoryCore(_BaseCore):
     def clear_cache(self) -> None:
         with self.lock:
             self.cache.clear()
+            self._cache_size = 0
 
     def clear_being_calculated(self) -> None:
         with self.lock:
@@ -116,4 +137,5 @@ class _MemoryCore(_BaseCore):
                 k for k, v in self.cache.items() if now - v.time > stale_after
             ]
             for key in keys_to_delete:
-                del self.cache[key]
+                entry = self.cache.pop(key)
+                self._cache_size -= self._estimate_size(entry.value)
