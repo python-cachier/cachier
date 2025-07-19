@@ -193,6 +193,7 @@ markers = [
 
 [tool.coverage.run]
 branch = true
+parallel = true
 # dynamic_context = "test_function"
 omit = [
   "tests/*",

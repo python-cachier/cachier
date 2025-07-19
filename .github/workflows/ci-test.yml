@@ -69,18 +69,19 @@ jobs:
         run: |
           # Run memory tests in parallel (safe by default)
           echo "Running memory tests in parallel..."
-          pytest -m "memory" -n auto --cov=cachier --cov-report=term --cov-report=xml:cov-memory.xml
+          pytest -m "memory" -n auto --cov=cachier --cov-report=
 
           # Run pickle tests in parallel (with isolation)
           echo "Running pickle tests in parallel..."
-          pytest -m "pickle" -n auto --cov=cachier --cov-report=term --cov-report=xml:cov-pickle.xml --cov-append
+          pytest -m "pickle" -n auto --cov=cachier --cov-report= --cov-append
 
           # Run remaining local tests
           echo "Running other local tests..."
-          pytest -m "not mongo and not sql and not redis and not memory and not pickle" -n auto --cov=cachier --cov-report=term --cov-report=xml:cov-other.xml --cov-append
+          pytest -m "not mongo and not sql and not redis and not memory and not pickle" -n auto --cov=cachier --cov-report= --cov-append
 
-          # Combine coverage reports
+          # Combine parallel coverage data and generate final report
           coverage combine
+          coverage report
           coverage xml -o cov.xml
 
       - name: Setup docker (missing on MacOS)
