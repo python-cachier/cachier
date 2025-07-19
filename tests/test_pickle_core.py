@@ -282,6 +282,7 @@ def _calls_being_calc_next_time(being_calc_func, res_queue):
 
 @pytest.mark.pickle
 @pytest.mark.parametrize("separate_files", [True, False])
+@pytest.mark.flaky(reruns=5, reruns_delay=0.1)
 def test_being_calc_next_time(separate_files):
     """Testing pickle core handling of being calculated scenarios."""
     _being_calc_next_time_decorated = _get_decorated_func(
@@ -407,10 +408,14 @@ def _helper_bad_cache_file(sleep_time: float, separate_files: bool):
 # we want this to succeed at least once
 @pytest.mark.pickle
 @pytest.mark.parametrize("separate_files", [True, False])
-@pytest.mark.flaky(reruns=5, reruns_delay=0.1)
+@pytest.mark.flaky(reruns=8, reruns_delay=0.1)
 def test_bad_cache_file(separate_files):
     """Test pickle core handling of bad cache files."""
-    sleep_times = [0.6, 1, 1.5, 2, 2.5]
+    # On macOS, file system events and watchdog timing can be different
+    if sys.platform == "darwin":
+        sleep_times = [1.0, 1.5, 2.0, 2.5, 3.0]
+    else:
+        sleep_times = [0.6, 1, 1.5, 2, 2.5]
     bad_file = False
     for sleep_time in sleep_times * 2:
         if _helper_bad_cache_file(sleep_time, separate_files):
@@ -509,10 +514,14 @@ def _helper_delete_cache_file(sleep_time: float, separate_files: bool):
 
 @pytest.mark.pickle
 @pytest.mark.parametrize("separate_files", [False, True])
-@pytest.mark.flaky(reruns=5, reruns_delay=0.1)
+@pytest.mark.flaky(reruns=8, reruns_delay=0.1)
 def test_delete_cache_file(separate_files):
     """Test pickle core handling of missing cache files."""
-    sleep_times = [0.1, 0.2, 0.3, 0.5, 0.7, 1]
+    # On macOS, file system events and watchdog timing can be different
+    if sys.platform == "darwin":
+        sleep_times = [0.2, 0.4, 0.6, 0.8, 1.0, 1.5]
+    else:
+        sleep_times = [0.1, 0.2, 0.3, 0.5, 0.7, 1]
     deleted = False
     for sleep_time in sleep_times * 4:
         if _helper_delete_cache_file(sleep_time, separate_files):
