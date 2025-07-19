@@ -514,7 +514,7 @@ def _helper_delete_cache_file(sleep_time: float, separate_files: bool):
 
 @pytest.mark.pickle
 @pytest.mark.parametrize("separate_files", [False, True])
-@pytest.mark.flaky(reruns=8, reruns_delay=0.1)
+@pytest.mark.flaky(reruns=10, reruns_delay=0.1)
 def test_delete_cache_file(separate_files):
     """Test pickle core handling of missing cache files."""
     # On macOS, file system events and watchdog timing can be different
