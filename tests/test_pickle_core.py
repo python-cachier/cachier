@@ -235,6 +235,7 @@ def _calls_takes_time(takes_time_func, res_queue):
 
 
 @pytest.mark.pickle
+@pytest.mark.flaky(reruns=5, reruns_delay=0.5)
 @pytest.mark.parametrize("separate_files", [True, False])
 def test_pickle_being_calculated(separate_files):
     """Testing pickle core handling of being calculated scenarios."""

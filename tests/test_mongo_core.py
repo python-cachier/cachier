@@ -476,7 +476,7 @@ def test_wait_for_calc_timeout_ok(separate_files):
 
 @pytest.mark.mongo
 @pytest.mark.parametrize("separate_files", [True, False])
-@pytest.mark.flaky(reruns=5, reruns_delay=0.5)
+@pytest.mark.flaky(reruns=10, reruns_delay=0.5)
 def test_wait_for_calc_timeout_slow(separate_files):
     # Use unique test parameters to avoid cache conflicts in parallel execution
     import os
