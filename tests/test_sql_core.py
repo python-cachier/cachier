@@ -11,6 +11,7 @@ import pytest
 from cachier import cachier
 from cachier.cores.base import RecalculationNeeded
 from cachier.cores.sql import _SQLCore
+from cachier.cores.base import _get_func_str
 
 SQL_CONN_STR = os.environ.get("SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:")
 
@@ -347,3 +348,188 @@ def test_sqlcore_accepts_engine_callable():
     core.set_entry("callable_test", 789)
     key, entry = core.get_entry_by_key("callable_test")
     assert entry.value == 789
+
+
+# Test SQL allow_none=False
+@pytest.mark.sql
+def test_sql_allow_none_false_not_stored():
+    """Test SQL doesn't store None when allow_none=False."""
+    SQL_CONN_STR = os.environ.get(
+        "SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:"
+    )
+    call_count = 0
+
+    @cachier(backend="sql", sql_engine=SQL_CONN_STR, allow_none=False)
+    def returns_none():
+        nonlocal call_count
+        call_count += 1
+        return None
+
+    returns_none.clear_cache()
+
+    # First call
+    result1 = returns_none()
+    assert result1 is None
+    assert call_count == 1
+
+    # Second call should also execute
+    result2 = returns_none()
+    assert result2 is None
+    assert call_count == 2
+
+    returns_none.clear_cache()
+
+
+# Test SQL delete_stale_entries direct call
+@pytest.mark.sql
+def test_sql_delete_stale_direct():
+    """Test SQL stale entry deletion method."""
+    from cachier.cores.sql import _SQLCore
+
+    # Get the engine from environment or use default
+    SQL_CONN_STR = os.environ.get(
+        "SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:"
+    )
+
+    @cachier(
+        backend="sql",
+        sql_engine=SQL_CONN_STR,
+        stale_after=timedelta(seconds=0.5),
+    )
+    def test_func(x):
+        return x * 2
+
+    test_func.clear_cache()
+
+    # Create entries
+    test_func(1)
+    test_func(2)
+
+    # Wait for staleness
+    sleep(0.6)
+
+    # Create core instance for direct testing
+    core = _SQLCore(
+        hash_func=None,
+        sql_engine=SQL_CONN_STR,
+        wait_for_calc_timeout=0,
+    )
+    core.set_func(test_func)
+
+    # Delete stale entries
+    core.delete_stale_entries(timedelta(seconds=0.5))
+
+    test_func.clear_cache()
+
+
+# Test Non-standard SQL database fallback
+@pytest.mark.sql
+def test_sql_non_standard_db():
+    """Test SQL backend code coverage for set_entry method."""
+    # This test improves coverage for the SQL set_entry method
+    SQL_CONN_STR = os.environ.get(
+        "SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:"
+    )
+
+    @cachier(backend="sql", sql_engine=SQL_CONN_STR)
+    def test_func(x):
+        return x * 3
+
+    test_func.clear_cache()
+
+    # Test basic set/get functionality
+    result1 = test_func(10)
+    assert result1 == 30
+
+    # Test overwriting existing entry
+    result2 = test_func(10, cachier__overwrite_cache=True)
+    assert result2 == 30
+
+    # Test with None value when allow_none is True (default)
+    @cachier(backend="sql", sql_engine=SQL_CONN_STR, allow_none=True)
+    def returns_none_allowed():
+        return None
+
+    returns_none_allowed.clear_cache()
+    result3 = returns_none_allowed()
+    assert result3 is None
+
+    # Second call should use cache
+    result4 = returns_none_allowed()
+    assert result4 is None
+
+    test_func.clear_cache()
+    returns_none_allowed.clear_cache()
+
+
+@pytest.mark.sql
+def test_sql_should_store_false():
+    """Test SQL set_entry when _should_store returns False (line 128)."""
+    from cachier.cores.sql import _SQLCore
+
+    # Create core with entry size limit
+    core = _SQLCore(
+        sql_engine=SQL_CONN_STR, hash_func=None, entry_size_limit=10
+    )
+
+    def mock_func(x):
+        return x
+
+    core.set_func(mock_func)
+
+    # Create a large object that exceeds the size limit
+    large_object = "x" * 1000  # Much larger than 10 bytes
+
+    # set_entry with large object should return False
+    result = core.set_entry("test_key", large_object)
+    assert result is False
+
+
+@pytest.mark.sql
+def test_sql_on_conflict_do_update():
+    """Test SQL on_conflict_do_update path (line 158)."""
+    # When running with PostgreSQL, this will test the on_conflict_do_update path
+    # With SQLite in memory, it will also support on_conflict_do_update
+
+    @cachier(backend="sql", sql_engine=SQL_CONN_STR)
+    def test_func(x):
+        return x * 2
+
+    test_func.clear_cache()
+
+    # First call
+    result1 = test_func(5)
+    assert result1 == 10
+
+    # Force an update scenario by marking stale
+    if "postgresql" in SQL_CONN_STR or "sqlite" in SQL_CONN_STR:
+        # Direct table manipulation to force update path
+        from sqlalchemy import create_engine, update
+        from sqlalchemy.orm import sessionmaker
+        from cachier.cores.sql import CacheTable
+
+        engine = create_engine(SQL_CONN_STR)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+        func_str = _get_func_str(test_func)
+
+        # Mark as stale to force update
+        stmt = (
+            update(CacheTable)
+            .where(CacheTable.function_id == func_str)
+            .values(stale=True)
+        )
+
+        try:
+            session.execute(stmt)
+            session.commit()
+        except Exception:
+            # If table doesn't exist or other issue, skip
+            pass
+        finally:
+            session.close()
+
+        # Second call - will use on_conflict_do_update
+        result2 = test_func(5)
+        assert result2 == 10

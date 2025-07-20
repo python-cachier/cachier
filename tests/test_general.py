@@ -8,6 +8,7 @@ import threading
 from contextlib import suppress
 from random import random
 from time import sleep, time
+from datetime import timedelta
 
 import pytest
 
@@ -108,7 +109,7 @@ def test_wait_for_calc_timeout_slow(separate_files):
     if os.environ.get("PYTEST_XDIST_WORKER"):
         import time
 
-        time.sleep(random() * 0.5)  # 0-500ms random delay
+        sleep(random() * 0.5)  # 0-500ms random delay
 
     @cachier.cachier(
         separate_files=separate_files,
@@ -489,3 +490,53 @@ def test_raise_exception(tmpdir, backend: str):
         tmp_test(123)
     with pytest.raises(RuntimeError):
         tmp_test(123)
+
+
+# Trigger cleanup interval check (core.py lines 344-348)
+def test_cleanup_interval_trigger():
+    """Test cleanup is triggered after interval passes."""
+    cleanup_count = 0
+
+    # Track executor submissions
+    from cachier.core import _get_executor
+
+    executor = _get_executor()
+    original_submit = executor.submit
+
+    def mock_submit(func, *args):
+        nonlocal cleanup_count
+        if (
+            hasattr(func, "__name__")
+            and "delete_stale_entries" in func.__name__
+        ):
+            cleanup_count += 1
+        return original_submit(func, *args)
+
+    executor.submit = mock_submit
+
+    try:
+
+        @cachier.cachier(
+            cleanup_stale=True,
+            cleanup_interval=timedelta(seconds=0.01),  # 10ms interval
+            stale_after=timedelta(seconds=10),
+        )
+        def test_func(x):
+            return x * 2
+
+        # First call initializes cleanup time
+        test_func(1)
+
+        # Wait for interval to pass
+        sleep(0.02)
+
+        # Second call should trigger cleanup
+        test_func(2)
+
+        # Give executor time to process
+        sleep(0.1)
+
+        assert cleanup_count >= 1, "Cleanup should have been triggered"
+        test_func.clear_cache()
+    finally:
+        executor.submit = original_submit

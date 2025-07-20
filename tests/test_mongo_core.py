@@ -9,6 +9,7 @@ import sys
 import threading
 from random import random
 from time import sleep, time
+from datetime import timedelta
 from urllib.parse import quote_plus
 
 # third-party imports
@@ -491,7 +492,7 @@ def test_wait_for_calc_timeout_slow(separate_files):
     if os.environ.get("PYTEST_XDIST_WORKER"):
         import time
 
-        time.sleep(random() * 0.5)  # 0-500ms random delay
+        sleep(random() * 0.5)  # 0-500ms random delay
 
     @cachier(
         mongetter=_test_mongetter,
@@ -571,3 +572,92 @@ def test_ignore_self_in_methods():
     assert test_object_2.takes_2_seconds(1, 2) == 3
     end = time()
     assert end - start < 1
+
+
+# Test: MongoDB allow_none=False handling (line 99)
+@pytest.mark.mongo
+def test_mongo_allow_none_false():
+    """Test MongoDB backend with allow_none=False and None return value."""
+
+    @cachier(mongetter=_test_mongetter, allow_none=False)
+    def returns_none():
+        return None
+
+    # First call should execute and return None
+    result1 = returns_none()
+    assert result1 is None
+
+    # Second call should also execute (not cached) because None is not allowed
+    result2 = returns_none()
+    assert result2 is None
+
+    # Clear cache
+    returns_none.clear_cache()
+
+
+# test: mongodb none handling with allow_none=false
+@pytest.mark.mongo
+def test_mongo_allow_none_false_not_stored():
+    """test mongodb doesn't store none when allow_none=false."""
+    call_count = 0
+
+    @cachier(mongetter=_test_mongetter, allow_none=False)
+    def returns_none():
+        nonlocal call_count
+        call_count += 1
+        return None
+
+    returns_none.clear_cache()
+
+    # first call
+    result1 = returns_none()
+    assert result1 is None
+    assert call_count == 1
+
+    # second call should also execute (not cached)
+    result2 = returns_none()
+    assert result2 is None
+    assert call_count == 2
+
+    returns_none.clear_cache()
+
+
+# Test: MongoDB delete_stale_entries
+@pytest.mark.mongo
+def test_mongo_delete_stale_direct():
+    """Test MongoDB stale entry deletion method directly."""
+
+    @cachier(mongetter=_test_mongetter, stale_after=timedelta(seconds=1))
+    def test_func(x):
+        return x * 2
+
+    test_func.clear_cache()
+
+    # Create entries
+    test_func(1)
+    test_func(2)
+
+    # Wait for staleness
+    sleep(1.1)
+
+    # Access the mongo core and call delete_stale_entries
+    # This is a bit hacky but needed to test the specific method
+    from cachier.cores.mongo import _MongoCore
+
+    # Get the collection
+    _test_mongetter()  # Ensure connection is available
+
+    # Create a core instance just for deletion
+    core = _MongoCore(
+        mongetter=_test_mongetter,
+        hash_func=None,
+        wait_for_calc_timeout=0,
+    )
+
+    # Set the function to get the right cache key prefix
+    core.set_func(test_func)
+
+    # Delete stale entries
+    core.delete_stale_entries(timedelta(seconds=1))
+
+    test_func.clear_cache()

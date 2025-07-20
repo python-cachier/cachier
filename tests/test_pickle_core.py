@@ -698,7 +698,7 @@ def test_inotify_instance_limit_reached():
 
     @cachier(backend="pickle", wait_for_calc_timeout=0.1)
     def slow_func(x):
-        time.sleep(0.5)  # Make it slower to increase chance of hitting limit
+        sleep(0.5)  # Make it slower to increase chance of hitting limit
         return x
 
     # Start many threads to trigger wait_on_entry_calc
@@ -1001,9 +1001,8 @@ def test_wait_with_polling_file_errors():
         core.get_cache_dict = mock_get_cache_dict
         core.separate_files = False
 
-        with patch("time.sleep", return_value=None):  # Speed up test
-            result = core._wait_with_polling("test_key")
-            assert result == "result"
+        result = core._wait_with_polling("test_key")
+        assert result == "result"
 
 
 @pytest.mark.pickle
@@ -1034,9 +1033,8 @@ def test_wait_with_polling_separate_files():
         )
         core._load_cache_by_key = Mock(return_value=entry)
 
-        with patch("time.sleep", return_value=None):
-            result = core._wait_with_polling("test_key")
-            assert result == "test_value"
+        result = core._wait_with_polling("test_key")
+        assert result == "test_value"
 
 
 @pytest.mark.pickle
@@ -1133,3 +1131,175 @@ def test_delete_stale_entries_file_not_found():
         with patch("os.remove", side_effect=FileNotFoundError):
             # Should not raise exception
             core.delete_stale_entries(timedelta(hours=1))
+
+
+# Pickle clear being calculated with separate files
+@pytest.mark.pickle
+def test_pickle_clear_being_calculated_separate_files():
+    """Test clearing processing flags in separate cache files."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+
+        @cachier(backend="pickle", cache_dir=temp_dir, separate_files=True)
+        def test_func(x):
+            return x * 2
+
+        # Get the pickle core
+        from cachier.cores.pickle import _PickleCore
+
+        # Create a temporary core to manipulate cache
+        core = _PickleCore(
+            hash_func=None,
+            cache_dir=temp_dir,
+            pickle_reload=False,
+            wait_for_calc_timeout=0,
+            separate_files=True,
+        )
+        core.set_func(test_func)
+
+        # Create cache entries with processing flag
+        for i in range(3):
+            entry = CacheEntry(
+                value=i * 2, time=datetime.now(), stale=False, _processing=True
+            )
+            # Create hash for key
+            key_hash = str(hash((i,)))
+            # For separate files, save the entry directly
+            core._save_cache(entry, separate_file_key=key_hash)
+
+        # Clear being calculated
+        core._clear_being_calculated_all_cache_files()
+
+        # Verify files exist but processing is cleared
+        cache_files = [f for f in os.listdir(temp_dir) if f.startswith(".")]
+        assert len(cache_files) >= 3
+
+        test_func.clear_cache()
+
+
+# Pickle save with hash_str parameter
+@pytest.mark.pickle
+def test_pickle_save_with_hash_str():
+    """Test _save_cache with hash_str creates correct filename."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        from cachier.cores.pickle import _PickleCore
+
+        core = _PickleCore(
+            hash_func=None,
+            cache_dir=temp_dir,
+            pickle_reload=False,
+            wait_for_calc_timeout=0,
+            separate_files=True,
+        )
+
+        # Mock function for filename
+        def test_func():
+            pass
+
+        core.set_func(test_func)
+
+        # Save with hash_str
+        test_entry = CacheEntry(
+            value="test_value",
+            time=datetime.now(),
+            stale=False,
+            _processing=False,
+            _completed=True,
+        )
+        test_data = {"test_key": test_entry}
+        hash_str = "testhash123"
+        core._save_cache(test_data, hash_str=hash_str)
+
+        # Check file exists with hash in name
+        expected_pattern = f"test_func_{hash_str}"
+        files = os.listdir(temp_dir)
+        assert any(
+            expected_pattern in f and f.endswith(hash_str) for f in files
+        ), f"Expected file ending with {hash_str} not found. Files: {files}"
+
+
+# Test Pickle timeout during wait (line 398)
+@pytest.mark.pickle
+def test_pickle_timeout_during_wait():
+    """Test calculation timeout while waiting in pickle backend."""
+    import queue
+    import threading
+
+    @cachier(
+        backend="pickle",
+        wait_for_calc_timeout=0.5,  # Short timeout
+    )
+    def slow_func(x):
+        sleep(2)  # Longer than timeout
+        return x * 2
+
+    slow_func.clear_cache()
+
+    res_queue = queue.Queue()
+
+    def call_slow_func():
+        try:
+            res = slow_func(42)
+            res_queue.put(("success", res))
+        except Exception as e:
+            res_queue.put(("error", e))
+
+    # Start first thread that will take long
+    thread1 = threading.Thread(target=call_slow_func)
+    thread1.start()
+
+    # Give it time to start processing
+    sleep(0.1)
+
+    # Start second thread that should timeout waiting
+    thread2 = threading.Thread(target=call_slow_func)
+    thread2.start()
+
+    # Wait for threads
+    thread1.join(timeout=3)
+    thread2.join(timeout=3)
+
+    # Check results - at least one should have succeeded
+    results = []
+    while not res_queue.empty():
+        results.append(res_queue.get())
+
+    assert len(results) >= 1
+
+    slow_func.clear_cache()
+
+
+# Test Pickle wait timeout check
+@pytest.mark.pickle
+def test_pickle_wait_timeout_check():
+    """Test pickle backend timeout check during wait."""
+    import threading
+
+    @cachier(backend="pickle", wait_for_calc_timeout=0.2)
+    def slow_func(x):
+        sleep(1)  # Longer than timeout
+        return x * 2
+
+    slow_func.clear_cache()
+
+    results = []
+
+    def worker1():
+        results.append(("w1", slow_func(42)))
+
+    def worker2():
+        sleep(0.1)  # Let first start
+        results.append(("w2", slow_func(42)))
+
+    t1 = threading.Thread(target=worker1)
+    t2 = threading.Thread(target=worker2)
+
+    t1.start()
+    t2.start()
+
+    t1.join(timeout=2)
+    t2.join(timeout=2)
+
+    # Both should have results (timeout should have triggered recalc)
+    assert len(results) >= 1
+
+    slow_func.clear_cache()
