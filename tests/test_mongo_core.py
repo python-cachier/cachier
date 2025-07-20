@@ -8,7 +8,7 @@ import queue
 import sys
 import threading
 from random import random
-from time import sleep
+from time import sleep, time
 from urllib.parse import quote_plus
 
 # third-party imports
@@ -419,3 +419,155 @@ def test_callable_hash_param():
     value_b = _params_with_dataframe(1, df=df_b)
 
     assert value_a == value_b  # same content --> same key
+
+
+# ==== Imported from test_general.py ===
+
+MONGO_DELTA_LONG = datetime.timedelta(seconds=10)
+
+
+@pytest.mark.mongo
+@pytest.mark.parametrize("separate_files", [True, False])
+def test_wait_for_calc_timeout_ok(separate_files):
+    @cachier(
+        mongetter=_test_mongetter,
+        stale_after=MONGO_DELTA_LONG,
+        separate_files=separate_files,
+        next_time=False,
+        wait_for_calc_timeout=2,
+    )
+    def _wait_for_calc_timeout_fast(arg_1, arg_2):
+        """Some function."""
+        sleep(1)
+        return random() + arg_1 + arg_2
+
+    def _calls_wait_for_calc_timeout_fast(res_queue):
+        res = _wait_for_calc_timeout_fast(1, 2)
+        res_queue.put(res)
+
+    """ Testing calls that avoid timeouts store the values in cache. """
+    _wait_for_calc_timeout_fast.clear_cache()
+    val1 = _wait_for_calc_timeout_fast(1, 2)
+    val2 = _wait_for_calc_timeout_fast(1, 2)
+    assert val1 == val2
+
+    res_queue = queue.Queue()
+    thread1 = threading.Thread(
+        target=_calls_wait_for_calc_timeout_fast,
+        kwargs={"res_queue": res_queue},
+        daemon=True,
+    )
+    thread2 = threading.Thread(
+        target=_calls_wait_for_calc_timeout_fast,
+        kwargs={"res_queue": res_queue},
+        daemon=True,
+    )
+
+    thread1.start()
+    thread2.start()
+    sleep(2)
+    thread1.join(timeout=2)
+    thread2.join(timeout=2)
+    assert res_queue.qsize() == 2
+    res1 = res_queue.get()
+    res2 = res_queue.get()
+    assert res1 == res2  # Timeout did not kick in, a single call was done
+
+
+@pytest.mark.mongo
+@pytest.mark.parametrize("separate_files", [True, False])
+@pytest.mark.flaky(reruns=5, reruns_delay=0.5)
+def test_wait_for_calc_timeout_slow(separate_files):
+    # Use unique test parameters to avoid cache conflicts in parallel execution
+    import os
+    import uuid
+
+    test_id = os.getpid() + int(
+        uuid.uuid4().int >> 96
+    )  # Unique but deterministic within test
+    arg1, arg2 = test_id, test_id + 1
+
+    # In parallel tests, add random delay to reduce thread contention
+    if os.environ.get("PYTEST_XDIST_WORKER"):
+        import time
+
+        time.sleep(random() * 0.5)  # 0-500ms random delay
+
+    @cachier(
+        mongetter=_test_mongetter,
+        stale_after=MONGO_DELTA_LONG,
+        separate_files=separate_files,
+        next_time=False,
+        wait_for_calc_timeout=2,
+    )
+    def _wait_for_calc_timeout_slow(arg_1, arg_2):
+        sleep(2)
+        return random() + arg_1 + arg_2
+
+    def _calls_wait_for_calc_timeout_slow(res_queue):
+        res = _wait_for_calc_timeout_slow(arg1, arg2)
+        res_queue.put(res)
+
+    """Testing for calls timing out to be performed twice when needed."""
+    _wait_for_calc_timeout_slow.clear_cache()
+    res_queue = queue.Queue()
+    thread1 = threading.Thread(
+        target=_calls_wait_for_calc_timeout_slow,
+        kwargs={"res_queue": res_queue},
+        daemon=True,
+    )
+    thread2 = threading.Thread(
+        target=_calls_wait_for_calc_timeout_slow,
+        kwargs={"res_queue": res_queue},
+        daemon=True,
+    )
+
+    thread1.start()
+    thread2.start()
+    sleep(1)
+    res3 = _wait_for_calc_timeout_slow(arg1, arg2)
+    sleep(3)  # Increased from 4 to give more time for threads to complete
+    thread1.join(timeout=10)  # Increased timeout for thread joins
+    thread2.join(timeout=10)
+    assert res_queue.qsize() == 2
+    res1 = res_queue.get()
+    res2 = res_queue.get()
+    assert res1 != res2  # Timeout kicked in.  Two calls were done
+    res4 = _wait_for_calc_timeout_slow(arg1, arg2)
+    # One of the cached values is returned
+    assert res1 == res4 or res2 == res4 or res3 == res4
+
+
+@pytest.mark.mongo
+def test_precache_value():
+    @cachier(mongetter=_test_mongetter)
+    def dummy_func(arg_1, arg_2):
+        """Some function."""
+        return arg_1 + arg_2
+
+    assert dummy_func.precache_value(2, 2, value_to_cache=5) == 5
+    assert dummy_func(2, 2) == 5
+    dummy_func.clear_cache()
+    assert dummy_func(2, 2) == 4
+    assert dummy_func.precache_value(2, arg_2=2, value_to_cache=5) == 5
+    assert dummy_func(2, arg_2=2) == 5
+
+
+@pytest.mark.mongo
+def test_ignore_self_in_methods():
+    class DummyClass:
+        @cachier(mongetter=_test_mongetter)
+        def takes_2_seconds(self, arg_1, arg_2):
+            """Some function."""
+            sleep(2)
+            return arg_1 + arg_2
+
+    test_object_1 = DummyClass()
+    test_object_2 = DummyClass()
+    test_object_1.takes_2_seconds.clear_cache()
+    test_object_2.takes_2_seconds.clear_cache()
+    assert test_object_1.takes_2_seconds(1, 2) == 3
+    start = time()
+    assert test_object_2.takes_2_seconds(1, 2) == 3
+    end = time()
+    assert end - start < 1

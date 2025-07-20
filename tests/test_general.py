@@ -1,6 +1,5 @@
 """Non-core-specific tests for cachier."""
 
-import datetime
 import functools
 import os
 import queue
@@ -20,11 +19,6 @@ from cachier.core import (
     _max_workers,
     _set_max_workers,
 )
-from tests.test_mongo_core import (
-    _test_mongetter,
-)
-
-MONGO_DELTA_LONG = datetime.timedelta(seconds=10)
 
 
 def test_information():
@@ -51,22 +45,10 @@ def test_set_max_workers():
     _set_max_workers(9)
 
 
-parametrize_keys = "mongetter,stale_after,separate_files"
-parametrize_values = [
-    pytest.param(
-        _test_mongetter, MONGO_DELTA_LONG, False, marks=pytest.mark.mongo
-    ),
-    (None, None, False),
-    (None, None, True),
-]
-
-
-@pytest.mark.parametrize(parametrize_keys, parametrize_values)
 @pytest.mark.seriallocal
-def test_wait_for_calc_timeout_ok(mongetter, stale_after, separate_files):
+@pytest.mark.parametrize("separate_files", [True, False])
+def test_wait_for_calc_timeout_ok(separate_files):
     @cachier.cachier(
-        mongetter=mongetter,
-        stale_after=stale_after,
         separate_files=separate_files,
         next_time=False,
         wait_for_calc_timeout=2,
@@ -109,10 +91,10 @@ def test_wait_for_calc_timeout_ok(mongetter, stale_after, separate_files):
     assert res1 == res2  # Timeout did not kick in, a single call was done
 
 
-@pytest.mark.parametrize(parametrize_keys, parametrize_values)
-@pytest.mark.flaky(reruns=5, reruns_delay=0.5)
+# @pytest.mark.flaky(reruns=5, reruns_delay=0.5)
 @pytest.mark.seriallocal
-def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
+@pytest.mark.parametrize("separate_files", [True, False])
+def test_wait_for_calc_timeout_slow(separate_files):
     # Use unique test parameters to avoid cache conflicts in parallel execution
     import os
     import uuid
@@ -129,8 +111,6 @@ def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
         time.sleep(random() * 0.5)  # 0-500ms random delay
 
     @cachier.cachier(
-        mongetter=mongetter,
-        stale_after=stale_after,
         separate_files=separate_files,
         next_time=False,
         wait_for_calc_timeout=2,
@@ -173,17 +153,9 @@ def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
     assert res1 == res4 or res2 == res4 or res3 == res4
 
 
-@pytest.mark.mongo
-@pytest.mark.parametrize(
-    ("mongetter", "backend"),
-    [
-        pytest.param(_test_mongetter, "mongo", marks=pytest.mark.mongo),
-        (None, "memory"),
-        (None, "pickle"),
-    ],
-)
-def test_precache_value(mongetter, backend):
-    @cachier.cachier(backend=backend, mongetter=mongetter)
+@pytest.mark.parametrize("backend", ["memory", "pickle"])
+def test_precache_value(backend):
+    @cachier.cachier(backend=backend)
     def dummy_func(arg_1, arg_2):
         """Some function."""
         return arg_1 + arg_2
@@ -196,18 +168,10 @@ def test_precache_value(mongetter, backend):
     assert dummy_func(2, arg_2=2) == 5
 
 
-@pytest.mark.mongo
-@pytest.mark.parametrize(
-    ("mongetter", "backend"),
-    [
-        pytest.param(_test_mongetter, "mongo", marks=pytest.mark.mongo),
-        (None, "memory"),
-        (None, "pickle"),
-    ],
-)
-def test_ignore_self_in_methods(mongetter, backend):
+@pytest.mark.parametrize("backend", ["memory", "pickle"])
+def test_ignore_self_in_methods(backend):
     class DummyClass:
-        @cachier.cachier(backend=backend, mongetter=mongetter)
+        @cachier.cachier(backend=backend)
         def takes_2_seconds(self, arg_1, arg_2):
             """Some function."""
             sleep(2)
