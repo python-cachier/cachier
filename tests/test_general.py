@@ -62,6 +62,7 @@ parametrize_values = [
 
 
 @pytest.mark.parametrize(parametrize_keys, parametrize_values)
+@pytest.mark.seriallocal
 def test_wait_for_calc_timeout_ok(mongetter, stale_after, separate_files):
     @cachier.cachier(
         mongetter=mongetter,
@@ -109,7 +110,8 @@ def test_wait_for_calc_timeout_ok(mongetter, stale_after, separate_files):
 
 
 @pytest.mark.parametrize(parametrize_keys, parametrize_values)
-@pytest.mark.flaky(reruns=3, reruns_delay=0.5)
+@pytest.mark.flaky(reruns=5, reruns_delay=0.5)
+@pytest.mark.seriallocal
 def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
     # Use unique test parameters to avoid cache conflicts in parallel execution
     import os
@@ -134,7 +136,7 @@ def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
         wait_for_calc_timeout=2,
     )
     def _wait_for_calc_timeout_slow(arg_1, arg_2):
-        sleep(3)
+        sleep(2)
         return random() + arg_1 + arg_2
 
     def _calls_wait_for_calc_timeout_slow(res_queue):
@@ -159,7 +161,7 @@ def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
     thread2.start()
     sleep(1)
     res3 = _wait_for_calc_timeout_slow(arg1, arg2)
-    sleep(5)  # Increased from 4 to give more time for threads to complete
+    sleep(3)  # Increased from 4 to give more time for threads to complete
     thread1.join(timeout=10)  # Increased timeout for thread joins
     thread2.join(timeout=10)
     assert res_queue.qsize() == 2

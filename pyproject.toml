@@ -181,6 +181,7 @@ markers = [
   "redis: test the Redis core",
   "sql: test the SQL core",
   "maxage: test the max_age functionality",
+  "seriallocal: local core tests that should run serially",
 ]
 
 # Parallel test execution configuration

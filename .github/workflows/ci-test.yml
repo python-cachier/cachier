@@ -68,9 +68,14 @@ jobs:
         if: matrix.backend == 'local'
         run: |
           # Run all local tests in parallel (pickle tests have isolation via conftest.py)
-          pytest -m "not mongo and not sql and not redis" -n auto --cov=cachier --cov-report=
+          pytest -m "not mongo and not sql and not redis and not seriallocal" -n auto --cov=cachier --cov-report=term --cov-report=xml:cov.xml
+          # Run seriallocal tests in serial (no parallelization), and append to the same .coverage file
+          pytest -m "seriallocal" -n0 --cov=cachier --cov-report=term --cov-report=xml:cov.xml --cov-append
 
-          # Generate coverage reports (pytest-cov already combined the data)
+          # Generate coverage reports (pytest-cov already combined the data
+          # from different workers into a single .coverage file for the first
+          # pytest command, and --cov-append used the same .coverage file for
+          # the second one)
           coverage report
           coverage xml -o cov.xml
 
