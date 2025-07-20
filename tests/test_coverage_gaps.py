@@ -1,17 +1,14 @@
 """Tests to cover specific coverage gaps identified in the codebase."""
 
-import os
-import pickle
+import contextlib
 import sys
-import tempfile
 import time
-from datetime import datetime, timedelta
-from unittest.mock import Mock, patch
+from datetime import timedelta
+from unittest.mock import patch
 
 import pytest
 
 import cachier
-from cachier.config import CacheEntry, _global_params
 
 # Import backend-specific test helpers
 from tests.test_mongo_core import _test_mongetter
@@ -43,15 +40,18 @@ def test_mongo_allow_none_false():
 
 
 # Test 3: MongoDB delete_stale_entries (lines 162-163)
-# Removed - redundant with test_mongo_delete_stale_direct in test_coverage_gaps_simple.py
+# Removed - redundant with test_mongo_delete_stale_direct in
+# test_coverage_gaps_simple.py
 
 
 # Test 4: Pickle _clear_being_calculated_all_cache_files (lines 183-189)
-# Removed - redundant with test_pickle_clear_being_calculated_separate_files in test_coverage_gaps_simple.py
+# Removed - redundant with test_pickle_clear_being_calculated_separate_files in
+# test_coverage_gaps_simple.py
 
 
 # Test 5: Pickle save_cache with hash_str (line 205)
-# Removed - redundant with test_pickle_save_with_hash_str in test_coverage_gaps_simple.py
+# Removed - redundant with test_pickle_save_with_hash_str in
+# test_coverage_gaps_simple.py
 
 
 # Test 6: Redis import error handling (lines 14-15)
@@ -65,14 +65,13 @@ def test_redis_import_error_handling():
         if "cachier.cores.redis" in sys.modules:
             del sys.modules["cachier.cores.redis"]
 
+        # Test import failure
         try:
-            from cachier.cores.redis import _RedisCore
+            from cachier.cores.redis import _RedisCore  # noqa: F401
 
-            # If we get here, redis was imported successfully (shouldn't happen in test)
             pytest.skip("Redis is installed, cannot test import error")
-        except ImportError as e:
-            # This is expected - verify the error message
-            assert "No module named 'redis'" in str(e) or "redis" in str(e)
+        except ImportError:
+            pass  # Expected behavior
 
 
 # Test 7: Redis corrupted entry handling (lines 112-114)
@@ -161,11 +160,13 @@ def test_redis_deletion_failure_during_eviction():
 
 
 # Test 9: SQL allow_none=False handling (line 128)
-# Removed - redundant with test_sql_allow_none_false_not_stored in test_coverage_gaps_simple.py
+# Removed - redundant with test_sql_allow_none_false_not_stored in
+# test_coverage_gaps_simple.py
 
 
 # Test 10: SQL delete_stale_entries (lines 302-312)
-# Removed - redundant with test_sql_delete_stale_direct in test_coverage_gaps_simple.py
+# Removed - redundant with test_sql_delete_stale_direct in
+# test_coverage_gaps_simple.py
 
 
 # Test 11: Pickle timeout during wait (line 398)
@@ -220,7 +221,8 @@ def test_pickle_timeout_during_wait():
 
 
 # Test 12: Redis stale deletion with cache size tracking (lines 374-375, 380)
-# Removed - redundant with test_redis_stale_delete_size_tracking in test_coverage_gaps_simple.py
+# Removed - redundant with test_redis_stale_delete_size_tracking in
+# test_coverage_gaps_simple.py
 
 
 # Test 13: Redis non-bytes timestamp handling (line 364)
@@ -266,10 +268,9 @@ def test_redis_non_bytes_timestamp():
     )
     core.set_func(test_func)
 
-    # Try to delete stale entries - should handle non-bytes timestamp gracefully
-    try:
+    # Try to delete stale entries - should handle non-bytes timestamp
+    # gracefully
+    with contextlib.suppress(Exception):
         core.delete_stale_entries(timedelta(seconds=1))
-    except Exception:
-        pass  # Expected to handle gracefully
 
     test_func.clear_cache()

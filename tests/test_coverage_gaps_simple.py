@@ -1,11 +1,9 @@
 """Simple tests to cover specific coverage gaps."""
 
 import os
-import sys
 import tempfile
 import time
 from datetime import datetime, timedelta
-from unittest.mock import Mock, patch
 
 import pytest
 
@@ -116,7 +114,7 @@ def test_mongo_delete_stale_direct():
     from cachier.cores.mongo import _MongoCore
 
     # Get the collection
-    collection = _test_mongetter()
+    _test_mongetter()  # Ensure connection is available
 
     # Create a core instance just for deletion
     core = _MongoCore(
@@ -299,17 +297,14 @@ def test_redis_import_error():
     # Test creating a Redis core without providing a client
     import warnings
 
-    with warnings.catch_warnings(record=True) as w:
+    with warnings.catch_warnings(record=True):
         warnings.simplefilter("always")
 
-        try:
+        with pytest.raises(Exception, match="redis_client"):
 
             @cachier.cachier(backend="redis", redis_client=None)
             def test_func():
                 return "test"
-        except Exception as e:
-            # Expected to fail with MissingRedisClient
-            assert "redis_client" in str(e)
 
 
 # Test 9: Redis corrupted entry in LRU eviction
