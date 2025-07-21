@@ -7,10 +7,11 @@ import time
 from dataclasses import replace
 
 import pytest
+
 import cachier
 from tests.test_mongo_core import (
-    _test_mongetter,
     _get_mongetter_by_collection_name,
+    _test_mongetter,
 )
 
 MONGO_DELTA = datetime.timedelta(seconds=3)

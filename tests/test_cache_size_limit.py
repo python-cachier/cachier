@@ -128,10 +128,10 @@ def test_cache_size_within_limit_mongo():
     try:
         mongo_db = mongo_client["cachier_test"]
         mongo_collection = mongo_db["test_cache_size_within_limit"]
-        
+
         # Clear collection before test
         mongo_collection.delete_many({})
-        
+
         call_count = 0
 
         @cachier.cachier(
@@ -148,7 +148,7 @@ def test_cache_size_within_limit_mongo():
         func(2)
         func(3)
         assert call_count == 3
-        
+
         # All should be cached
         func(1)
         func(2)

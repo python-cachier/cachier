@@ -126,6 +126,7 @@ def _get_mongetter_by_collection_name(collection_name=_COLLECTION_NAME):
 
     This is important for preventing cache conflicts when running tests in
     parallel.
+
     """
 
     def _custom_mongetter():
@@ -690,7 +691,6 @@ def test_mongo_delete_stale_direct():
 @pytest.mark.mongo
 def test_mongo_unsupported_replacement_policy():
     """Test that unsupported replacement policy raises ValueError."""
-    import pymongo
     from cachier.cores.mongo import _MongoCore
 
     # Clear before test

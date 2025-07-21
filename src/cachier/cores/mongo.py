@@ -222,13 +222,15 @@ class _MongoCore(_BaseCore):
         # For entries without last_access, use the time field as fallback
         pipeline = [
             {"$match": {"func": self._func_str, "size": {"$exists": True}}},
-            {"$addFields": {
-                "sort_time": {
-                    "$ifNull": ["$last_access", "$time"]
+            {
+                "$addFields": {
+                    "sort_time": {"$ifNull": ["$last_access", "$time"]}
                 }
-            }},
-            {"$sort": {"sort_time": 1}},  # Sort by sort_time ascending (oldest first)
-            {"$project": {"key": 1, "size": 1}}
+            },
+            {
+                "$sort": {"sort_time": 1}
+            },  # Sort by sort_time ascending (oldest first)
+            {"$project": {"key": 1, "size": 1}},
         ]
         entries = self.mongo_collection.aggregate(pipeline)
 
