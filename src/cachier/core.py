@@ -124,6 +124,8 @@ def cachier(
     cleanup_stale: Optional[bool] = None,
     cleanup_interval: Optional[timedelta] = None,
     entry_size_limit: Optional[Union[int, str]] = None,
+    cache_size_limit: Optional[Union[int, str]] = None,
+    replacement_policy: str = "lru",
 ):
     """Wrap as a persistent, stale-free memoization decorator.
 
@@ -196,6 +198,12 @@ def cachier(
         Maximum serialized size of a cached value. Values exceeding the limit
         are returned but not cached. Human readable strings like ``"10MB"`` are
         allowed.
+    cache_size_limit: int or str, optional
+        Maximum total size allowed for the cache. When exceeded, entries are
+        evicted according to ``replacement_policy``.
+    replacement_policy: str, optional
+        Cache replacement policy used when trimming the cache. Currently only
+        ``"lru"`` is supported.
 
     """
     # Check for deprecated parameters
@@ -212,6 +220,10 @@ def cachier(
     size_limit_bytes = parse_bytes(
         _update_with_defaults(entry_size_limit, "entry_size_limit")
     )
+    cache_limit_bytes = parse_bytes(
+        _update_with_defaults(cache_size_limit, "cache_size_limit")
+    )
+    policy = _update_with_defaults(replacement_policy, "replacement_policy")
     # Override the backend parameter if a mongetter is provided.
     if callable(mongetter):
         backend = "mongo"
@@ -224,6 +236,8 @@ def cachier(
             separate_files=separate_files,
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=size_limit_bytes,
+            cache_size_limit=cache_limit_bytes,
+            replacement_policy=policy,
         )
     elif backend == "mongo":
         core = _MongoCore(
@@ -231,12 +245,16 @@ def cachier(
             mongetter=mongetter,
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=size_limit_bytes,
+            cache_size_limit=cache_limit_bytes,
+            replacement_policy=policy,
         )
     elif backend == "memory":
         core = _MemoryCore(
             hash_func=hash_func,
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=size_limit_bytes,
+            cache_size_limit=cache_limit_bytes,
+            replacement_policy=policy,
         )
     elif backend == "sql":
         core = _SQLCore(
@@ -244,6 +262,8 @@ def cachier(
             sql_engine=sql_engine,
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=size_limit_bytes,
+            cache_size_limit=cache_limit_bytes,
+            replacement_policy=policy,
         )
     elif backend == "redis":
         core = _RedisCore(
@@ -251,6 +271,8 @@ def cachier(
             redis_client=redis_client,
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=size_limit_bytes,
+            cache_size_limit=cache_limit_bytes,
+            replacement_policy=policy,
         )
     else:
         raise ValueError("specified an invalid core: %s" % backend)

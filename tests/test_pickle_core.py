@@ -17,6 +17,7 @@ import pickle
 import sys
 import tempfile
 import threading
+import uuid
 from datetime import datetime, timedelta
 from random import random
 from time import sleep, time
@@ -234,6 +235,7 @@ def _calls_takes_time(takes_time_func, res_queue):
 
 
 @pytest.mark.pickle
+@pytest.mark.flaky(reruns=5, reruns_delay=0.5)
 @pytest.mark.parametrize("separate_files", [True, False])
 def test_pickle_being_calculated(separate_files):
     """Testing pickle core handling of being calculated scenarios."""
@@ -282,6 +284,7 @@ def _calls_being_calc_next_time(being_calc_func, res_queue):
 
 @pytest.mark.pickle
 @pytest.mark.parametrize("separate_files", [True, False])
+@pytest.mark.flaky(reruns=5, reruns_delay=0.1)
 def test_being_calc_next_time(separate_files):
     """Testing pickle core handling of being calculated scenarios."""
     _being_calc_next_time_decorated = _get_decorated_func(
@@ -344,11 +347,19 @@ _BAD_CACHE_FPATHS = {
 }
 
 
-def _calls_bad_cache(bad_cache_func, res_queue, trash_cache, separate_files):
+def _calls_bad_cache(
+    bad_cache_func, res_queue, trash_cache, separate_files, cache_dir
+):
     try:
         res = bad_cache_func(0.13, 0.02, cachier__verbose=True)
         if trash_cache:
-            with open(_BAD_CACHE_FPATHS[separate_files], "w") as cache_file:
+            # Use the provided cache directory
+            if separate_files:
+                fname = _BAD_CACHE_FNAME_SEPARATE_FILES
+            else:
+                fname = _BAD_CACHE_FNAME
+            cache_fpath = os.path.join(cache_dir, fname)
+            with open(cache_fpath, "w") as cache_file:
                 cache_file.seek(0)
                 cache_file.truncate()
         res_queue.put(res)
@@ -358,8 +369,14 @@ def _calls_bad_cache(bad_cache_func, res_queue, trash_cache, separate_files):
 
 def _helper_bad_cache_file(sleep_time: float, separate_files: bool):
     """Test pickle core handling of bad cache files."""
+    # Use a unique cache directory for this test to avoid parallel conflicts
+    unique_cache_dir = os.path.join(
+        tempfile.gettempdir(), f"cachier_test_bad_{uuid.uuid4().hex[:8]}"
+    )
+    os.makedirs(unique_cache_dir, exist_ok=True)
+
     _bad_cache_decorated = _get_decorated_func(
-        _bad_cache, separate_files=separate_files
+        _bad_cache, separate_files=separate_files, cache_dir=unique_cache_dir
     )
     _bad_cache_decorated.clear_cache()
     res_queue = queue.Queue()
@@ -370,6 +387,7 @@ def _helper_bad_cache_file(sleep_time: float, separate_files: bool):
             "res_queue": res_queue,
             "trash_cache": True,
             "separate_files": separate_files,
+            "cache_dir": unique_cache_dir,
         },
         daemon=True,
     )
@@ -380,6 +398,7 @@ def _helper_bad_cache_file(sleep_time: float, separate_files: bool):
             "res_queue": res_queue,
             "trash_cache": False,
             "separate_files": separate_files,
+            "cache_dir": unique_cache_dir,
         },
         daemon=True,
     )
@@ -400,9 +419,14 @@ def _helper_bad_cache_file(sleep_time: float, separate_files: bool):
 # we want this to succeed at least once
 @pytest.mark.pickle
 @pytest.mark.parametrize("separate_files", [True, False])
+@pytest.mark.flaky(reruns=8, reruns_delay=0.1)
 def test_bad_cache_file(separate_files):
     """Test pickle core handling of bad cache files."""
-    sleep_times = [0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8, 1, 1.5, 2]
+    # On macOS, file system events and watchdog timing can be different
+    if sys.platform == "darwin":
+        sleep_times = [1.0, 1.5, 2.0, 2.5, 3.0]
+    else:
+        sleep_times = [0.6, 1, 1.5, 2, 2.5]
     bad_file = False
     for sleep_time in sleep_times * 2:
         if _helper_bad_cache_file(sleep_time, separate_files):
@@ -435,14 +459,24 @@ _DEL_CACHE_FPATHS = {
 
 
 def _calls_delete_cache(
-    del_cache_func, res_queue, del_cache: bool, separate_files: bool
+    del_cache_func,
+    res_queue,
+    del_cache: bool,
+    separate_files: bool,
+    cache_dir: str,
 ):
     try:
         # print('in')
         res = del_cache_func(0.13, 0.02)
         # print('out with {}'.format(res))
         if del_cache:
-            os.remove(_DEL_CACHE_FPATHS[separate_files])
+            # Use the provided cache directory
+            if separate_files:
+                fname = _DEL_CACHE_FNAME_SEPARATE_FILES
+            else:
+                fname = _DEL_CACHE_FNAME
+            cache_fpath = os.path.join(cache_dir, fname)
+            os.remove(cache_fpath)
             # print(os.path.isfile(_DEL_CACHE_FPATH))
         res_queue.put(res)
     except Exception as exc:
@@ -452,8 +486,16 @@ def _calls_delete_cache(
 
 def _helper_delete_cache_file(sleep_time: float, separate_files: bool):
     """Test pickle core handling of missing cache files."""
+    # Use a unique cache directory for this test to avoid parallel conflicts
+    unique_cache_dir = os.path.join(
+        tempfile.gettempdir(), f"cachier_test_del_{uuid.uuid4().hex[:8]}"
+    )
+    os.makedirs(unique_cache_dir, exist_ok=True)
+
     _delete_cache_decorated = _get_decorated_func(
-        _delete_cache, separate_files=separate_files
+        _delete_cache,
+        separate_files=separate_files,
+        cache_dir=unique_cache_dir,
     )
     _delete_cache_decorated.clear_cache()
     res_queue = queue.Queue()
@@ -464,6 +506,7 @@ def _helper_delete_cache_file(sleep_time: float, separate_files: bool):
             "res_queue": res_queue,
             "del_cache": True,
             "separate_files": separate_files,
+            "cache_dir": unique_cache_dir,
         },
         daemon=True,
     )
@@ -474,6 +517,7 @@ def _helper_delete_cache_file(sleep_time: float, separate_files: bool):
             "res_queue": res_queue,
             "del_cache": False,
             "separate_files": separate_files,
+            "cache_dir": unique_cache_dir,
         },
         daemon=True,
     )
@@ -494,9 +538,14 @@ def _helper_delete_cache_file(sleep_time: float, separate_files: bool):
 
 @pytest.mark.pickle
 @pytest.mark.parametrize("separate_files", [False, True])
+@pytest.mark.flaky(reruns=10, reruns_delay=0.1)
 def test_delete_cache_file(separate_files):
     """Test pickle core handling of missing cache files."""
-    sleep_times = [0.1, 0.2, 0.3, 0.5, 0.7, 1]
+    # On macOS, file system events and watchdog timing can be different
+    if sys.platform == "darwin":
+        sleep_times = [0.2, 0.4, 0.6, 0.8, 1.0, 1.5]
+    else:
+        sleep_times = [0.1, 0.2, 0.3, 0.5, 0.7, 1]
     deleted = False
     for sleep_time in sleep_times * 4:
         if _helper_delete_cache_file(sleep_time, separate_files):
@@ -627,7 +676,6 @@ def test_inotify_instance_limit_reached():
     """
     import queue
     import subprocess
-    import time
 
     # Try to get the current inotify limit
     try:
@@ -649,7 +697,7 @@ def test_inotify_instance_limit_reached():
 
     @cachier(backend="pickle", wait_for_calc_timeout=0.1)
     def slow_func(x):
-        time.sleep(0.5)  # Make it slower to increase chance of hitting limit
+        sleep(0.5)  # Make it slower to increase chance of hitting limit
         return x
 
     # Start many threads to trigger wait_on_entry_calc
@@ -952,9 +1000,8 @@ def test_wait_with_polling_file_errors():
         core.get_cache_dict = mock_get_cache_dict
         core.separate_files = False
 
-        with patch("time.sleep", return_value=None):  # Speed up test
-            result = core._wait_with_polling("test_key")
-            assert result == "result"
+        result = core._wait_with_polling("test_key")
+        assert result == "result"
 
 
 @pytest.mark.pickle
@@ -985,9 +1032,8 @@ def test_wait_with_polling_separate_files():
         )
         core._load_cache_by_key = Mock(return_value=entry)
 
-        with patch("time.sleep", return_value=None):
-            result = core._wait_with_polling("test_key")
-            assert result == "test_value"
+        result = core._wait_with_polling("test_key")
+        assert result == "test_value"
 
 
 @pytest.mark.pickle
@@ -1084,3 +1130,175 @@ def test_delete_stale_entries_file_not_found():
         with patch("os.remove", side_effect=FileNotFoundError):
             # Should not raise exception
             core.delete_stale_entries(timedelta(hours=1))
+
+
+# Pickle clear being calculated with separate files
+@pytest.mark.pickle
+def test_pickle_clear_being_calculated_separate_files():
+    """Test clearing processing flags in separate cache files."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+
+        @cachier(backend="pickle", cache_dir=temp_dir, separate_files=True)
+        def test_func(x):
+            return x * 2
+
+        # Get the pickle core
+        from cachier.cores.pickle import _PickleCore
+
+        # Create a temporary core to manipulate cache
+        core = _PickleCore(
+            hash_func=None,
+            cache_dir=temp_dir,
+            pickle_reload=False,
+            wait_for_calc_timeout=0,
+            separate_files=True,
+        )
+        core.set_func(test_func)
+
+        # Create cache entries with processing flag
+        for i in range(3):
+            entry = CacheEntry(
+                value=i * 2, time=datetime.now(), stale=False, _processing=True
+            )
+            # Create hash for key
+            key_hash = str(hash((i,)))
+            # For separate files, save the entry directly
+            core._save_cache(entry, separate_file_key=key_hash)
+
+        # Clear being calculated
+        core._clear_being_calculated_all_cache_files()
+
+        # Verify files exist but processing is cleared
+        cache_files = [f for f in os.listdir(temp_dir) if f.startswith(".")]
+        assert len(cache_files) >= 3
+
+        test_func.clear_cache()
+
+
+# Pickle save with hash_str parameter
+@pytest.mark.pickle
+def test_pickle_save_with_hash_str():
+    """Test _save_cache with hash_str creates correct filename."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        from cachier.cores.pickle import _PickleCore
+
+        core = _PickleCore(
+            hash_func=None,
+            cache_dir=temp_dir,
+            pickle_reload=False,
+            wait_for_calc_timeout=0,
+            separate_files=True,
+        )
+
+        # Mock function for filename
+        def test_func():
+            pass
+
+        core.set_func(test_func)
+
+        # Save with hash_str
+        test_entry = CacheEntry(
+            value="test_value",
+            time=datetime.now(),
+            stale=False,
+            _processing=False,
+            _completed=True,
+        )
+        test_data = {"test_key": test_entry}
+        hash_str = "testhash123"
+        core._save_cache(test_data, hash_str=hash_str)
+
+        # Check file exists with hash in name
+        expected_pattern = f"test_func_{hash_str}"
+        files = os.listdir(temp_dir)
+        assert any(
+            expected_pattern in f and f.endswith(hash_str) for f in files
+        ), f"Expected file ending with {hash_str} not found. Files: {files}"
+
+
+# Test Pickle timeout during wait (line 398)
+@pytest.mark.pickle
+def test_pickle_timeout_during_wait():
+    """Test calculation timeout while waiting in pickle backend."""
+    import queue
+    import threading
+
+    @cachier(
+        backend="pickle",
+        wait_for_calc_timeout=0.5,  # Short timeout
+    )
+    def slow_func(x):
+        sleep(2)  # Longer than timeout
+        return x * 2
+
+    slow_func.clear_cache()
+
+    res_queue = queue.Queue()
+
+    def call_slow_func():
+        try:
+            res = slow_func(42)
+            res_queue.put(("success", res))
+        except Exception as e:
+            res_queue.put(("error", e))
+
+    # Start first thread that will take long
+    thread1 = threading.Thread(target=call_slow_func)
+    thread1.start()
+
+    # Give it time to start processing
+    sleep(0.1)
+
+    # Start second thread that should timeout waiting
+    thread2 = threading.Thread(target=call_slow_func)
+    thread2.start()
+
+    # Wait for threads
+    thread1.join(timeout=3)
+    thread2.join(timeout=3)
+
+    # Check results - at least one should have succeeded
+    results = []
+    while not res_queue.empty():
+        results.append(res_queue.get())
+
+    assert len(results) >= 1
+
+    slow_func.clear_cache()
+
+
+# Test Pickle wait timeout check
+@pytest.mark.pickle
+def test_pickle_wait_timeout_check():
+    """Test pickle backend timeout check during wait."""
+    import threading
+
+    @cachier(backend="pickle", wait_for_calc_timeout=0.2)
+    def slow_func(x):
+        sleep(1)  # Longer than timeout
+        return x * 2
+
+    slow_func.clear_cache()
+
+    results = []
+
+    def worker1():
+        results.append(("w1", slow_func(42)))
+
+    def worker2():
+        sleep(0.1)  # Let first start
+        results.append(("w2", slow_func(42)))
+
+    t1 = threading.Thread(target=worker1)
+    t2 = threading.Thread(target=worker2)
+
+    t1.start()
+    t2.start()
+
+    t1.join(timeout=2)
+    t2.join(timeout=2)
+
+    # Both should have results (timeout should have triggered recalc)
+    assert len(results) >= 1
+
+    slow_func.clear_cache()

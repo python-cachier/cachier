@@ -66,6 +66,8 @@ class Params:
     cleanup_stale: bool = False
     cleanup_interval: timedelta = timedelta(days=1)
     entry_size_limit: Optional[int] = None
+    cache_size_limit: Optional[int] = None
+    replacement_policy: str = "lru"
 
 
 _global_params = Params()
