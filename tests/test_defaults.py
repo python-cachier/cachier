@@ -7,9 +7,11 @@ import time
 from dataclasses import replace
 
 import pytest
-
 import cachier
-from tests.test_mongo_core import _test_mongetter
+from tests.test_mongo_core import (
+    _test_mongetter,
+    _get_mongetter_by_collection_name,
+)
 
 MONGO_DELTA = datetime.timedelta(seconds=3)
 _copied_defaults = replace(cachier.get_global_params())
@@ -219,6 +221,11 @@ def test_stale_after_applies_dynamically(backend, mongetter):
 @pytest.mark.parametrize(*PARAMETRIZE_TEST)
 def test_next_time_applies_dynamically(backend, mongetter):
     NEXT_AFTER_DELTA = datetime.timedelta(seconds=3)
+
+    if backend == "mongo":
+        mongetter = _get_mongetter_by_collection_name(
+            "test_next_time_applies_dynamically"
+        )
 
     @cachier.cachier(backend=backend, mongetter=mongetter)
     def _stale_after_next_time(arg_1, arg_2):

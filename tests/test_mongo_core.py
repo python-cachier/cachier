@@ -121,6 +121,32 @@ def _test_mongetter():
     return db_obj[_COLLECTION_NAME]
 
 
+def _get_mongetter_by_collection_name(collection_name=_COLLECTION_NAME):
+    """Returns a custom mongetter function using a specified collection name.
+
+    This is important for preventing cache conflicts when running tests in
+    parallel.
+    """
+
+    def _custome_mongetter():
+        if not hasattr(_test_mongetter, "client"):
+            if (
+                str(CFG.mget(CfgKey.TEST_VS_DOCKERIZED_MONGO)).lower()
+                == "true"
+            ):
+                print("Using live MongoDB instance for testing.")
+                _test_mongetter.client = _get_cachier_db_mongo_client()
+            else:
+                print("Using in-memory MongoDB instance for testing.")
+                _test_mongetter.client = InMemoryMongoClient()
+        db_obj = _test_mongetter.client["cachier_test"]
+        if _COLLECTION_NAME not in db_obj.list_collection_names():
+            db_obj.create_collection(collection_name)
+        return db_obj[collection_name]
+
+    return _custome_mongetter
+
+
 # === Mongo core tests ===
 
 
@@ -657,5 +683,45 @@ def test_mongo_delete_stale_direct():
 
     # Delete stale entries
     core.delete_stale_entries(timedelta(seconds=1))
+
+    test_func.clear_cache()
+
+
+@pytest.mark.mongo
+def test_mongo_unsupported_replacement_policy():
+    """Test that unsupported replacement policy raises ValueError."""
+    import pymongo
+    from cachier.cores.mongo import _MongoCore
+
+    # Clear before test
+    _test_mongetter().delete_many({})
+
+    @cachier(
+        mongetter=_test_mongetter,
+        cache_size_limit="100B",
+        replacement_policy="lru",  # Start with valid policy
+    )
+    def test_func(x):
+        return "a" * 50
+
+    # First, fill the cache to trigger eviction
+    test_func(1)
+    test_func(2)
+
+    # Now create a core with an unsupported policy
+    core = _MongoCore(
+        hash_func=None,
+        mongetter=_test_mongetter,
+        wait_for_calc_timeout=0,
+        cache_size_limit=100,
+        replacement_policy="invalid_policy",  # Invalid policy
+    )
+    core.set_func(test_func)
+
+    # This should raise ValueError when trying to evict
+    with pytest.raises(
+        ValueError, match="Unsupported replacement policy: invalid_policy"
+    ):
+        core.set_entry("new_key", "a" * 50)
 
     test_func.clear_cache()
