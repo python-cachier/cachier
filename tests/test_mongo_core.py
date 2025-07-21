@@ -128,23 +128,23 @@ def _get_mongetter_by_collection_name(collection_name=_COLLECTION_NAME):
     parallel.
     """
 
-    def _custome_mongetter():
-        if not hasattr(_test_mongetter, "client"):
+    def _custom_mongetter():
+        if not hasattr(_custom_mongetter, "client"):
             if (
                 str(CFG.mget(CfgKey.TEST_VS_DOCKERIZED_MONGO)).lower()
                 == "true"
             ):
                 print("Using live MongoDB instance for testing.")
-                _test_mongetter.client = _get_cachier_db_mongo_client()
+                _custom_mongetter.client = _get_cachier_db_mongo_client()
             else:
                 print("Using in-memory MongoDB instance for testing.")
-                _test_mongetter.client = InMemoryMongoClient()
-        db_obj = _test_mongetter.client["cachier_test"]
+                _custom_mongetter.client = InMemoryMongoClient()
+        db_obj = _custom_mongetter.client["cachier_test"]
         if _COLLECTION_NAME not in db_obj.list_collection_names():
             db_obj.create_collection(collection_name)
         return db_obj[collection_name]
 
-    return _custome_mongetter
+    return _custom_mongetter
 
 
 # === Mongo core tests ===
