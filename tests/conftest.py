@@ -107,14 +107,32 @@ def cleanup_mongo_clients():
     yield
 
     # Cleanup after all tests
-    try:
-        from tests.test_mongo_core import _test_mongetter
+    import contextlib
 
+    try:
+        from tests.test_mongo_core import _mongo_clients, _test_mongetter
+
+        # Close all tracked MongoDB clients
+        for client in _mongo_clients:
+            with contextlib.suppress(Exception):
+                client.close()
+
+        # Clear the list for next test run
+        _mongo_clients.clear()
+
+        # Also clean up _test_mongetter specifically
         if hasattr(_test_mongetter, "client"):
-            # Close the MongoDB client to avoid ResourceWarning
-            _test_mongetter.client.close()
             # Remove the client attribute so future test runs start fresh
             delattr(_test_mongetter, "client")
+
+        # Clean up any _custom_mongetter functions that may have been created
+        import tests.test_mongo_core
+
+        for attr_name in dir(tests.test_mongo_core):
+            attr = getattr(tests.test_mongo_core, attr_name)
+            if callable(attr) and hasattr(attr, "client"):
+                delattr(attr, "client")
+
     except (ImportError, AttributeError):
         # If the module wasn't imported or client wasn't created,
         # then there's nothing to clean up

@@ -107,14 +107,46 @@ _COLLECTION_NAME = (
 )
 
 
+# Global registry to track all MongoDB clients created during tests
+_mongo_clients = []
+
+
+def cleanup_all_mongo_clients():
+    """Clean up all MongoDB clients to prevent ResourceWarning."""
+    import contextlib
+    import sys
+
+    global _mongo_clients
+
+    # Close all tracked clients
+    for client in _mongo_clients:
+        with contextlib.suppress(Exception):
+            client.close()
+
+    # Clear the list
+    _mongo_clients.clear()
+
+    # Clean up any mongetter functions with clients
+    current_module = sys.modules[__name__]
+    for attr_name in dir(current_module):
+        attr = getattr(current_module, attr_name)
+        if callable(attr) and hasattr(attr, "client"):
+            with contextlib.suppress(Exception):
+                if hasattr(attr.client, "close"):
+                    attr.client.close()
+                delattr(attr, "client")
+
+
 def _test_mongetter():
     if not hasattr(_test_mongetter, "client"):
         if str(CFG.mget(CfgKey.TEST_VS_DOCKERIZED_MONGO)).lower() == "true":
             print("Using live MongoDB instance for testing.")
             _test_mongetter.client = _get_cachier_db_mongo_client()
+            _mongo_clients.append(_test_mongetter.client)
         else:
             print("Using in-memory MongoDB instance for testing.")
             _test_mongetter.client = InMemoryMongoClient()
+            _mongo_clients.append(_test_mongetter.client)
     db_obj = _test_mongetter.client["cachier_test"]
     if _COLLECTION_NAME not in db_obj.list_collection_names():
         db_obj.create_collection(_COLLECTION_NAME)
@@ -137,15 +169,27 @@ def _get_mongetter_by_collection_name(collection_name=_COLLECTION_NAME):
             ):
                 print("Using live MongoDB instance for testing.")
                 _custom_mongetter.client = _get_cachier_db_mongo_client()
+                _mongo_clients.append(_custom_mongetter.client)
             else:
                 print("Using in-memory MongoDB instance for testing.")
                 _custom_mongetter.client = InMemoryMongoClient()
+                _mongo_clients.append(_custom_mongetter.client)
         db_obj = _custom_mongetter.client["cachier_test"]
         if _COLLECTION_NAME not in db_obj.list_collection_names():
             db_obj.create_collection(collection_name)
         return db_obj[collection_name]
 
+    # Store the mongetter function for cleanup
+    _custom_mongetter._collection_name = collection_name
     return _custom_mongetter
+
+
+@pytest.fixture(autouse=True)
+def mongo_cleanup():
+    """Ensure MongoDB clients are cleaned up after each test."""
+    yield
+    # Clean up after test
+    cleanup_all_mongo_clients()
 
 
 # === Mongo core tests ===
