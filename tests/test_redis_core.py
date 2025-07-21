@@ -1,13 +1,13 @@
 """Testing the Redis core of cachier."""
 
-import sys
-import time
-import hashlib
-import queue
-import threading
-import warnings
 import contextlib
+import hashlib
 import pickle
+import queue
+import sys
+import threading
+import time
+import warnings
 from datetime import datetime, timedelta
 from random import random
 from time import sleep
@@ -757,8 +757,7 @@ def test_redis_clear_being_calculated_with_pipeline():
     pipeline_mock.execute.assert_called_once()
 
 
-# Tes Redis import error handling (lines 14-15)
-@pytest.mark.redis
+# Test Redis import error handling (lines 14-15)
 def test_redis_import_error_handling():
     """Test Redis backend when redis package is not available."""
     # This test is already covered by test_redis_import_warning
@@ -1117,7 +1116,7 @@ def test_redis_lru_eviction_edge_cases():
 
     redis_client.set(core._cache_size_key, "10")
     # Should not evict anything
-    core._evict_lru_entries(threshold_fraction=0.9)
+    core._evict_lru_entries(redis_client, 10)
 
 
 @pytest.mark.redis
@@ -1158,8 +1157,8 @@ def test_redis_clear_and_delete_edge_cases():
         redis_client.hset(key, "value", pickle.dumps(f"value{i}"))
         redis_client.hset(
             key,
-            "time",
-            pickle.dumps((datetime.now() - timedelta(seconds=2)).timestamp()),
+            "timestamp",
+            (datetime.now() - timedelta(seconds=2)).isoformat(),
         )
 
     # Add special cache size key
@@ -1176,7 +1175,9 @@ def test_redis_clear_and_delete_edge_cases():
     redis_client.hset(key, "value", pickle.dumps("test"))
     # String timestamp instead of bytes
     redis_client.hset(
-        key, "time", str((datetime.now() - timedelta(seconds=2)).timestamp())
+        key,
+        "timestamp",
+        str((datetime.now() - timedelta(seconds=2)).isoformat()),
     )
 
     core2.delete_stale_entries(timedelta(seconds=1))

@@ -6,9 +6,9 @@ import queue
 import subprocess  # nosec: B404
 import threading
 from contextlib import suppress
+from datetime import timedelta
 from random import random
 from time import sleep, time
-from datetime import timedelta
 
 import pytest
 
@@ -107,8 +107,6 @@ def test_wait_for_calc_timeout_slow(separate_files):
 
     # In parallel tests, add random delay to reduce thread contention
     if os.environ.get("PYTEST_XDIST_WORKER"):
-        import time
-
         sleep(random() * 0.5)  # 0-500ms random delay
 
     @cachier.cachier(

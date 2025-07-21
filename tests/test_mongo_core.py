@@ -7,9 +7,9 @@ import platform
 import queue
 import sys
 import threading
+from datetime import timedelta
 from random import random
 from time import sleep, time
-from datetime import timedelta
 from urllib.parse import quote_plus
 
 # third-party imports
@@ -490,8 +490,6 @@ def test_wait_for_calc_timeout_slow(separate_files):
 
     # In parallel tests, add random delay to reduce thread contention
     if os.environ.get("PYTEST_XDIST_WORKER"):
-        import time
-
         sleep(random() * 0.5)  # 0-500ms random delay
 
     @cachier(
@@ -598,7 +596,7 @@ def test_mongo_allow_none_false():
 # test: mongodb none handling with allow_none=false
 @pytest.mark.mongo
 def test_mongo_allow_none_false_not_stored():
-    """test mongodb doesn't store none when allow_none=false."""
+    """Test mongodb doesn't store none when allow_none=false."""
     call_count = 0
 
     @cachier(mongetter=_test_mongetter, allow_none=False)

@@ -9,9 +9,8 @@ from time import sleep
 import pytest
 
 from cachier import cachier
-from cachier.cores.base import RecalculationNeeded
+from cachier.cores.base import RecalculationNeeded, _get_func_str
 from cachier.cores.sql import _SQLCore
-from cachier.cores.base import _get_func_str
 
 SQL_CONN_STR = os.environ.get("SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:")
 
@@ -488,7 +487,8 @@ def test_sql_should_store_false():
 @pytest.mark.sql
 def test_sql_on_conflict_do_update():
     """Test SQL on_conflict_do_update path (line 158)."""
-    # When running with PostgreSQL, this will test the on_conflict_do_update path
+    # When running with PostgreSQL, this will test the
+    # on_conflict_do_update path
     # With SQLite in memory, it will also support on_conflict_do_update
 
     @cachier(backend="sql", sql_engine=SQL_CONN_STR)
@@ -506,6 +506,7 @@ def test_sql_on_conflict_do_update():
         # Direct table manipulation to force update path
         from sqlalchemy import create_engine, update
         from sqlalchemy.orm import sessionmaker
+
         from cachier.cores.sql import CacheTable
 
         engine = create_engine(SQL_CONN_STR)
@@ -526,6 +527,7 @@ def test_sql_on_conflict_do_update():
             session.commit()
         except Exception:
             # If table doesn't exist or other issue, skip
+            # This is expected in some test configurations
             pass
         finally:
             session.close()

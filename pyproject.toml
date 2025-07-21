@@ -130,6 +130,7 @@ lint.per-file-ignores."tests/**" = [
   "D401",
   "S101",
   "S105",
+  "S110",
   "S311",
   "S603",
 ]

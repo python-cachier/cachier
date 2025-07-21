@@ -676,7 +676,6 @@ def test_inotify_instance_limit_reached():
     """
     import queue
     import subprocess
-    import time
 
     # Try to get the current inotify limit
     try:
