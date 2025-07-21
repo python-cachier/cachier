@@ -457,8 +457,12 @@ MONGO_DELTA_LONG = datetime.timedelta(seconds=10)
 @pytest.mark.mongo
 @pytest.mark.parametrize("separate_files", [True, False])
 def test_wait_for_calc_timeout_ok(separate_files):
+    mongetter = _get_mongetter_by_collection_name(
+        "test_wait_for_calc_timeout_ok"
+    )
+
     @cachier(
-        mongetter=_test_mongetter,
+        mongetter=mongetter,
         stale_after=MONGO_DELTA_LONG,
         separate_files=separate_files,
         next_time=False,

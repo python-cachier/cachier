@@ -253,6 +253,10 @@ def test_next_time_applies_dynamically(backend, mongetter):
 @pytest.mark.parametrize(*PARAMETRIZE_TEST)
 def test_wait_for_calc_applies_dynamically(backend, mongetter):
     """Testing for calls timing out to be performed twice when needed."""
+    if backend == "mongo":
+        mongetter = _get_mongetter_by_collection_name(
+            "test_wait_for_calc_applies_dynamically"
+        )
 
     @cachier.cachier(backend=backend, mongetter=mongetter)
     def _wait_for_calc_timeout_slow(arg_1, arg_2):
