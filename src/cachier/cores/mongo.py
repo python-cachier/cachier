@@ -41,6 +41,8 @@ class _MongoCore(_BaseCore):
         mongetter: Optional[Mongetter],
         wait_for_calc_timeout: Optional[int],
         entry_size_limit: Optional[int] = None,
+        cache_size_limit: Optional[int] = None,
+        replacement_policy: str = "lru",
     ):
         if "pymongo" not in sys.modules:
             warnings.warn(
@@ -53,6 +55,8 @@ class _MongoCore(_BaseCore):
             hash_func=hash_func,
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=entry_size_limit,
+            cache_size_limit=cache_size_limit,
+            replacement_policy=replacement_policy,
         )
         if mongetter is None:
             raise MissingMongetter(
@@ -81,6 +85,17 @@ class _MongoCore(_BaseCore):
         val = None
         if "value" in res:
             val = pickle.loads(res["value"])
+
+        # Update last_access for LRU tracking
+        if (
+            self.cache_size_limit is not None
+            and self.replacement_policy == "lru"
+        ):
+            self.mongo_collection.update_one(
+                {"func": self._func_str, "key": key},
+                {"$set": {"last_access": datetime.now()}},
+            )
+
         entry = CacheEntry(
             value=val,
             time=res.get("time", None),
@@ -94,6 +109,9 @@ class _MongoCore(_BaseCore):
         if not self._should_store(func_res):
             return False
         thebytes = pickle.dumps(func_res)
+        entry_size = self._estimate_size(func_res)
+        now = datetime.now()
+
         self.mongo_collection.update_one(
             filter={"func": self._func_str, "key": key},
             update={
@@ -101,7 +119,9 @@ class _MongoCore(_BaseCore):
                     "func": self._func_str,
                     "key": key,
                     "value": Binary(thebytes),
-                    "time": datetime.now(),
+                    "time": now,
+                    "last_access": now,
+                    "size": entry_size,
                     "stale": False,
                     "processing": False,
                     "completed": True,
@@ -109,6 +129,11 @@ class _MongoCore(_BaseCore):
             },
             upsert=True,
         )
+
+        # Check if we need to evict entries
+        if self.cache_size_limit is not None:
+            self._evict_if_needed()
+
         return True
 
     def mark_entry_being_calculated(self, key: str) -> None:
@@ -159,3 +184,73 @@ class _MongoCore(_BaseCore):
         self.mongo_collection.delete_many(
             filter={"func": self._func_str, "time": {"$lt": threshold}}
         )
+
+    def _get_total_cache_size(self) -> int:
+        """Calculate the total size of all cache entries for this function."""
+        pipeline = [
+            {"$match": {"func": self._func_str, "size": {"$exists": True}}},
+            {"$group": {"_id": None, "total": {"$sum": "$size"}}},
+        ]
+        result = list(self.mongo_collection.aggregate(pipeline))
+        return result[0]["total"] if result else 0
+
+    def _evict_if_needed(self) -> None:
+        """Evict entries if cache size exceeds the limit."""
+        if self.cache_size_limit is None:
+            return
+
+        total_size = self._get_total_cache_size()
+
+        if total_size <= self.cache_size_limit:
+            return
+
+        if self.replacement_policy == "lru":
+            self._evict_lru_entries(total_size)
+        else:
+            raise ValueError(
+                f"Unsupported replacement policy: {self.replacement_policy}"
+            )
+
+    def _evict_lru_entries(self, current_size: int) -> None:
+        """Evict least recently used entries to stay within cache_size_limit.
+
+        Removes entries in order of least recently accessed until the total
+        cache size is within the configured limit.
+
+        """
+        # Find all entries with their last access time and size
+        # For entries without last_access, use the time field as fallback
+        pipeline = [
+            {"$match": {"func": self._func_str, "size": {"$exists": True}}},
+            {
+                "$addFields": {
+                    "sort_time": {"$ifNull": ["$last_access", "$time"]}
+                }
+            },
+            {
+                "$sort": {"sort_time": 1}
+            },  # Sort by sort_time ascending (oldest first)
+            {"$project": {"key": 1, "size": 1}},
+        ]
+        entries = self.mongo_collection.aggregate(pipeline)
+
+        total_evicted = 0
+        keys_to_evict = []
+
+        # cache_size_limit is guaranteed to be not None by the caller
+        cache_limit = self.cache_size_limit
+        if cache_limit is None:  # pragma: no cover
+            return
+
+        for entry in entries:
+            if current_size - total_evicted <= cache_limit:
+                break
+
+            keys_to_evict.append(entry["key"])
+            total_evicted += entry.get("size", 0)
+
+        # Delete the entries
+        if keys_to_evict:
+            self.mongo_collection.delete_many(
+                {"func": self._func_str, "key": {"$in": keys_to_evict}}
+            )

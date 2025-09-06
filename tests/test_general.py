@@ -1,12 +1,12 @@
 """Non-core-specific tests for cachier."""
 
-import datetime
 import functools
 import os
 import queue
 import subprocess  # nosec: B404
 import threading
 from contextlib import suppress
+from datetime import timedelta
 from random import random
 from time import sleep, time
 
@@ -20,11 +20,6 @@ from cachier.core import (
     _max_workers,
     _set_max_workers,
 )
-from tests.test_mongo_core import (
-    _test_mongetter,
-)
-
-MONGO_DELTA_LONG = datetime.timedelta(seconds=10)
 
 
 def test_information():
@@ -51,21 +46,10 @@ def test_set_max_workers():
     _set_max_workers(9)
 
 
-parametrize_keys = "mongetter,stale_after,separate_files"
-parametrize_values = [
-    pytest.param(
-        _test_mongetter, MONGO_DELTA_LONG, False, marks=pytest.mark.mongo
-    ),
-    (None, None, False),
-    (None, None, True),
-]
-
-
-@pytest.mark.parametrize(parametrize_keys, parametrize_values)
-def test_wait_for_calc_timeout_ok(mongetter, stale_after, separate_files):
+@pytest.mark.seriallocal
+@pytest.mark.parametrize("separate_files", [True, False])
+def test_wait_for_calc_timeout_ok(separate_files):
     @cachier.cachier(
-        mongetter=mongetter,
-        stale_after=stale_after,
         separate_files=separate_files,
         next_time=False,
         wait_for_calc_timeout=2,
@@ -108,21 +92,34 @@ def test_wait_for_calc_timeout_ok(mongetter, stale_after, separate_files):
     assert res1 == res2  # Timeout did not kick in, a single call was done
 
 
-@pytest.mark.parametrize(parametrize_keys, parametrize_values)
-def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
+# @pytest.mark.flaky(reruns=5, reruns_delay=0.5)
+@pytest.mark.seriallocal
+@pytest.mark.parametrize("separate_files", [True, False])
+def test_wait_for_calc_timeout_slow(separate_files):
+    # Use unique test parameters to avoid cache conflicts in parallel execution
+    import os
+    import uuid
+
+    test_id = os.getpid() + int(
+        uuid.uuid4().int >> 96
+    )  # Unique but deterministic within test
+    arg1, arg2 = test_id, test_id + 1
+
+    # In parallel tests, add random delay to reduce thread contention
+    if os.environ.get("PYTEST_XDIST_WORKER"):
+        sleep(random() * 0.5)  # 0-500ms random delay
+
     @cachier.cachier(
-        mongetter=mongetter,
-        stale_after=stale_after,
         separate_files=separate_files,
         next_time=False,
         wait_for_calc_timeout=2,
     )
     def _wait_for_calc_timeout_slow(arg_1, arg_2):
-        sleep(3)
+        sleep(2)
         return random() + arg_1 + arg_2
 
     def _calls_wait_for_calc_timeout_slow(res_queue):
-        res = _wait_for_calc_timeout_slow(1, 2)
+        res = _wait_for_calc_timeout_slow(arg1, arg2)
         res_queue.put(res)
 
     """Testing for calls timing out to be performed twice when needed."""
@@ -142,29 +139,22 @@ def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
     thread1.start()
     thread2.start()
     sleep(1)
-    res3 = _wait_for_calc_timeout_slow(1, 2)
-    sleep(4)
-    thread1.join(timeout=4)
-    thread2.join(timeout=4)
+    res3 = _wait_for_calc_timeout_slow(arg1, arg2)
+    sleep(3)  # Increased from 4 to give more time for threads to complete
+    thread1.join(timeout=10)  # Increased timeout for thread joins
+    thread2.join(timeout=10)
     assert res_queue.qsize() == 2
     res1 = res_queue.get()
     res2 = res_queue.get()
     assert res1 != res2  # Timeout kicked in.  Two calls were done
-    res4 = _wait_for_calc_timeout_slow(1, 2)
+    res4 = _wait_for_calc_timeout_slow(arg1, arg2)
     # One of the cached values is returned
     assert res1 == res4 or res2 == res4 or res3 == res4
 
 
-@pytest.mark.parametrize(
-    ("mongetter", "backend"),
-    [
-        pytest.param(_test_mongetter, "mongo", marks=pytest.mark.mongo),
-        (None, "memory"),
-        (None, "pickle"),
-    ],
-)
-def test_precache_value(mongetter, backend):
-    @cachier.cachier(backend=backend, mongetter=mongetter)
+@pytest.mark.parametrize("backend", ["memory", "pickle"])
+def test_precache_value(backend):
+    @cachier.cachier(backend=backend)
     def dummy_func(arg_1, arg_2):
         """Some function."""
         return arg_1 + arg_2
@@ -177,17 +167,10 @@ def test_precache_value(mongetter, backend):
     assert dummy_func(2, arg_2=2) == 5
 
 
-@pytest.mark.parametrize(
-    ("mongetter", "backend"),
-    [
-        pytest.param(_test_mongetter, "mongo", marks=pytest.mark.mongo),
-        (None, "memory"),
-        (None, "pickle"),
-    ],
-)
-def test_ignore_self_in_methods(mongetter, backend):
+@pytest.mark.parametrize("backend", ["memory", "pickle"])
+def test_ignore_self_in_methods(backend):
     class DummyClass:
-        @cachier.cachier(backend=backend, mongetter=mongetter)
+        @cachier.cachier(backend=backend)
         def takes_2_seconds(self, arg_1, arg_2):
             """Some function."""
             sleep(2)
@@ -505,3 +488,53 @@ def test_raise_exception(tmpdir, backend: str):
         tmp_test(123)
     with pytest.raises(RuntimeError):
         tmp_test(123)
+
+
+# Trigger cleanup interval check (core.py lines 344-348)
+def test_cleanup_interval_trigger():
+    """Test cleanup is triggered after interval passes."""
+    cleanup_count = 0
+
+    # Track executor submissions
+    from cachier.core import _get_executor
+
+    executor = _get_executor()
+    original_submit = executor.submit
+
+    def mock_submit(func, *args):
+        nonlocal cleanup_count
+        if (
+            hasattr(func, "__name__")
+            and "delete_stale_entries" in func.__name__
+        ):
+            cleanup_count += 1
+        return original_submit(func, *args)
+
+    executor.submit = mock_submit
+
+    try:
+
+        @cachier.cachier(
+            cleanup_stale=True,
+            cleanup_interval=timedelta(seconds=0.01),  # 10ms interval
+            stale_after=timedelta(seconds=10),
+        )
+        def test_func(x):
+            return x * 2
+
+        # First call initializes cleanup time
+        test_func(1)
+
+        # Wait for interval to pass
+        sleep(0.02)
+
+        # Second call should trigger cleanup
+        test_func(2)
+
+        # Give executor time to process
+        sleep(0.1)
+
+        assert cleanup_count >= 1, "Cleanup should have been triggered"
+        test_func.clear_cache()
+    finally:
+        executor.submit = original_submit

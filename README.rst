@@ -286,6 +286,19 @@ human readable string like ``"200MB"``.
 When ``cachier__verbose=True`` is passed to a call that returns a value
 exceeding the limit, an informative message is printed.
 
+Cache Size Limit
+~~~~~~~~~~~~~~~~
+``cache_size_limit`` constrains the total size of the cache. When the
+limit is exceeded, entries are evicted according to the chosen
+``replacement_policy``. Currently an ``"lru"`` policy is implemented for
+the memory and pickle backends.
+
+.. code-block:: python
+
+  @cachier(cache_size_limit="100KB")
+  def heavy(x):
+      return x * 2
+
 Ignore Cache
 ~~~~~~~~~~~~
 
@@ -644,6 +657,44 @@ To test all cachier backends (MongoDB, Redis, SQL, Memory, Pickle) locally with 
   ./scripts/test-local.sh all -f tests/test_main.py -f tests/test_redis_core_coverage.py
 
 The unified test script automatically manages Docker containers, installs required dependencies, and runs the appropriate test suites. The ``-f`` / ``--files`` option allows you to run specific test files instead of the entire test suite. See ``scripts/README-local-testing.md`` for detailed documentation.
+
+
+Writing Tests - Important Best Practices
+----------------------------------------
+
+When writing tests for cachier, follow these critical guidelines to ensure test isolation:
+
+**Test Function Isolation Rule:** Never share cachier-decorated functions between multiple test functions. Each test must use its own cachier-decorated function to ensure proper test isolation, especially when running tests in parallel.
+
+.. code-block:: python
+
+  # GOOD: Each test has its own decorated function
+  def test_feature_a():
+      @cachier()
+      def my_func_a(x):
+          return x * 2
+      assert my_func_a(5) == 10
+
+  def test_feature_b():
+      @cachier()
+      def my_func_b(x):  # Different function for different test
+          return x * 2
+      assert my_func_b(5) == 10
+
+  # BAD: Sharing a decorated function between tests
+  @cachier()
+  def shared_func(x):  # Don't do this!
+      return x * 2
+
+  def test_feature_a():
+      assert shared_func(5) == 10
+
+  def test_feature_b():
+      assert shared_func(5) == 10  # This may conflict with test_feature_a
+
+This isolation is crucial because cachier's function identification mechanism uses the full module path and function name as cache keys. Sharing functions between tests can lead to cache conflicts, especially when tests run in parallel with pytest-xdist.
+
+For more detailed testing guidelines, see ``tests/README.md``.
 
 
 Running pre-commit hooks locally

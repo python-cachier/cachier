@@ -9,7 +9,10 @@ from dataclasses import replace
 import pytest
 
 import cachier
-from tests.test_mongo_core import _test_mongetter
+from tests.test_mongo_core import (
+    _get_mongetter_by_collection_name,
+    _test_mongetter,
+)
 
 MONGO_DELTA = datetime.timedelta(seconds=3)
 _copied_defaults = replace(cachier.get_global_params())
@@ -220,6 +223,11 @@ def test_stale_after_applies_dynamically(backend, mongetter):
 def test_next_time_applies_dynamically(backend, mongetter):
     NEXT_AFTER_DELTA = datetime.timedelta(seconds=3)
 
+    if backend == "mongo":
+        mongetter = _get_mongetter_by_collection_name(
+            "test_next_time_applies_dynamically"
+        )
+
     @cachier.cachier(backend=backend, mongetter=mongetter)
     def _stale_after_next_time(arg_1, arg_2):
         """Some function."""
@@ -245,6 +253,10 @@ def test_next_time_applies_dynamically(backend, mongetter):
 @pytest.mark.parametrize(*PARAMETRIZE_TEST)
 def test_wait_for_calc_applies_dynamically(backend, mongetter):
     """Testing for calls timing out to be performed twice when needed."""
+    if backend == "mongo":
+        mongetter = _get_mongetter_by_collection_name(
+            "test_wait_for_calc_applies_dynamically"
+        )
 
     @cachier.cachier(backend=backend, mongetter=mongetter)
     def _wait_for_calc_timeout_slow(arg_1, arg_2):

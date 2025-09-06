@@ -130,6 +130,7 @@ lint.per-file-ignores."tests/**" = [
   "D401",
   "S101",
   "S105",
+  "S110",
   "S311",
   "S603",
 ]
@@ -172,6 +173,7 @@ addopts = [
   "-v",
   "-s",
   "-W error",
+  # Note: parallel execution is opt-in via --parallel flag or -n option
 ]
 markers = [
   "mongo: test the MongoDB core",
@@ -180,12 +182,20 @@ markers = [
   "redis: test the Redis core",
   "sql: test the SQL core",
   "maxage: test the max_age functionality",
+  "seriallocal: local core tests that should run serially",
 ]
+
+# Parallel test execution configuration
+# Use: pytest -n auto (for automatic worker detection)
+# Or: pytest -n 4 (for specific number of workers)
+# Memory tests are safe to run in parallel by default
+# Pickle tests require isolation (handled by conftest.py fixture)
 
 # --- coverage ---
 
 [tool.coverage.run]
 branch = true
+parallel = true
 # dynamic_context = "test_function"
 omit = [
   "tests/*",

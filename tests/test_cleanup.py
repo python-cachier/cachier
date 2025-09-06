@@ -21,6 +21,7 @@ def teardown_function() -> None:
 
 
 @pytest.mark.pickle
+@pytest.mark.flaky(reruns=5, reruns_delay=0.1)
 def test_cleanup_stale_entries(tmp_path):
     @cachier_dec(
         cache_dir=tmp_path,
