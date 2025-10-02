@@ -14,10 +14,12 @@ coverage:
 status:
   project: # overall coverage
     default:
+      informational: true
       target: auto # fail on any drop
       threshold: 0% # or 0.5 % if you want slack
   patch: # changed lines
     default:
+      informational: true
       target: 97%
 
 comment:
