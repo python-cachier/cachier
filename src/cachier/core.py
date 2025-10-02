@@ -54,8 +54,6 @@ def _function_thread(core, key, func, args, kwds):
         core.set_entry(key, func_res)
     except BaseException as exc:
         print(f"Function call failed with the following exception:\n{exc}")
-    finally:
-        core.mark_entry_not_calculated(key)
 
 
 def _calc_entry(
@@ -378,9 +376,12 @@ def cachier(
                 if _next_time:
                     _print("Async calc and return stale")
                     core.mark_entry_being_calculated(key)
-                    _get_executor().submit(
-                        _function_thread, core, key, func, args, kwds
-                    )
+                    try:
+                        _get_executor().submit(
+                            _function_thread, core, key, func, args, kwds
+                        )
+                    finally:
+                        core.mark_entry_not_calculated(key)
                     return entry.value
                 _print("Calling decorated function and waiting")
                 return _calc_entry(core, key, func, args, kwds, _print)
