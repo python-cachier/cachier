@@ -27,12 +27,16 @@ class RecalculationNeeded(Exception):
 
 
 def _get_func_str(func: Callable) -> str:
+    """Return a string identifier for the function (module + name).
+
+    We accept Any here because static analysis can't always prove that the
+    runtime object will have __module__ and __name__, but at runtime the
+    decorated functions always do.
+    """
     return f".{func.__module__}.{func.__name__}"
 
 
-class _BaseCore:
-    __metaclass__ = abc.ABCMeta
-
+class _BaseCore(metaclass=abc.ABCMeta):
     def __init__(
         self,
         hash_func: Optional[HashFunc],

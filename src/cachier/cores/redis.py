@@ -84,13 +84,49 @@ class _RedisCore(_BaseCore):
             if not cached_data:
                 return key, None
 
+            # helper to fetch field regardless of bytes/str keys
+            def _raw(field: str):
+                # try bytes key first, then str key
+                bkey = field.encode("utf-8")
+                if bkey in cached_data:
+                    return cached_data[bkey]
+                return cached_data.get(field)
+
             # Deserialize the value
             value = None
-            if cached_data.get(b"value"):
-                value = pickle.loads(cached_data[b"value"])
+            raw_value = _raw("value")
+            if raw_value is not None:
+                try:
+                    if isinstance(raw_value, bytes):
+                        value = pickle.loads(raw_value)
+                    elif isinstance(raw_value, str):
+                        # try to recover by encoding; prefer utf-8 but fall back
+                        # to latin-1 in case raw binary was coerced to str
+                        try:
+                            value = pickle.loads(raw_value.encode("utf-8"))
+                        except Exception:
+                            value = pickle.loads(raw_value.encode("latin-1"))
+                    else:
+                        # unexpected type; attempt pickle.loads directly
+                        try:
+                            value = pickle.loads(raw_value)
+                        except Exception:
+                            value = None
+                except Exception as exc:
+                    warnings.warn(
+                        f"Redis value deserialization failed: {exc}",
+                        stacklevel=2,
+                    )
 
             # Parse timestamp
-            timestamp_str = cached_data.get(b"timestamp", b"").decode("utf-8")
+            raw_ts = _raw("timestamp") or b""
+            if isinstance(raw_ts, bytes):
+                try:
+                    timestamp_str = raw_ts.decode("utf-8")
+                except Exception:
+                    timestamp_str = raw_ts.decode("latin-1", errors="ignore")
+            else:
+                timestamp_str = str(raw_ts)
             timestamp = (
                 datetime.fromisoformat(timestamp_str)
                 if timestamp_str
@@ -98,20 +134,20 @@ class _RedisCore(_BaseCore):
             )
 
             # Parse boolean fields
-            stale = (
-                cached_data.get(b"stale", b"false").decode("utf-8").lower()
-                == "true"
-            )
-            processing = (
-                cached_data.get(b"processing", b"false")
-                .decode("utf-8")
-                .lower()
-                == "true"
-            )
-            completed = (
-                cached_data.get(b"completed", b"false").decode("utf-8").lower()
-                == "true"
-            )
+            def _bool_field(name: str) -> bool:
+                raw = _raw(name) or b"false"
+                if isinstance(raw, bytes):
+                    try:
+                        s = raw.decode("utf-8")
+                    except Exception:
+                        s = raw.decode("latin-1", errors="ignore")
+                else:
+                    s = str(raw)
+                return s.lower() == "true"
+
+            stale = _bool_field("stale")
+            processing = _bool_field("processing")
+            completed = _bool_field("completed")
 
             entry = CacheEntry(
                 value=value,
@@ -126,9 +162,9 @@ class _RedisCore(_BaseCore):
             return key, None
 
     def set_entry(self, key: str, func_res: Any) -> bool:
+        """Map the given result to the given key in Redis."""
         if not self._should_store(func_res):
             return False
-        """Map the given result to the given key in Redis."""
         redis_client = self._resolve_redis_client()
         redis_key = self._get_redis_key(key)
 
@@ -242,8 +278,16 @@ class _RedisCore(_BaseCore):
                 ts = redis_client.hget(key, "timestamp")
                 if ts is None:
                     continue
+                # ts may be bytes or str depending on client configuration
+                if isinstance(ts, bytes):
+                    try:
+                        ts_s = ts.decode("utf-8")
+                    except Exception:
+                        ts_s = ts.decode("latin-1", errors="ignore")
+                else:
+                    ts_s = str(ts)
                 try:
-                    ts_val = datetime.fromisoformat(ts.decode("utf-8"))
+                    ts_val = datetime.fromisoformat(ts_s)
                 except Exception as exc:
                     warnings.warn(
                         f"Redis timestamp parse failed: {exc}", stacklevel=2

@@ -54,6 +54,8 @@ def _function_thread(core, key, func, args, kwds):
         core.set_entry(key, func_res)
     except BaseException as exc:
         print(f"Function call failed with the following exception:\n{exc}")
+    finally:
+        core.mark_entry_not_calculated(key)
 
 
 def _calc_entry(
@@ -358,11 +360,7 @@ def cachier(
                         )
                         nonneg_max_age = False
                     else:
-                        max_allowed_age = (
-                            min(_stale_after, max_age)
-                            if max_age is not None
-                            else _stale_after
-                        )
+                        max_allowed_age = min(_stale_after, max_age)
                 # note: if max_age < 0, we always consider a value stale
                 if nonneg_max_age and (now - entry.time <= max_allowed_age):
                     _print("And it is fresh!")
@@ -380,12 +378,9 @@ def cachier(
                 if _next_time:
                     _print("Async calc and return stale")
                     core.mark_entry_being_calculated(key)
-                    try:
-                        _get_executor().submit(
-                            _function_thread, core, key, func, args, kwds
-                        )
-                    finally:
-                        core.mark_entry_not_calculated(key)
+                    _get_executor().submit(
+                        _function_thread, core, key, func, args, kwds
+                    )
                     return entry.value
                 _print("Calling decorated function and waiting")
                 return _calc_entry(core, key, func, args, kwds, _print)
