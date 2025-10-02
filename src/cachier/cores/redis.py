@@ -100,8 +100,8 @@ class _RedisCore(_BaseCore):
                     if isinstance(raw_value, bytes):
                         value = pickle.loads(raw_value)
                     elif isinstance(raw_value, str):
-                        # try to recover by encoding; prefer utf-8 but fall back
-                        # to latin-1 in case raw binary was coerced to str
+                        # try to recover by encoding; prefer utf-8 but fall
+                        # back to latin-1 in case raw binary was coerced to str
                         try:
                             value = pickle.loads(raw_value.encode("utf-8"))
                         except Exception:
