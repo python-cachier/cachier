@@ -32,6 +32,7 @@ def _get_func_str(func: Callable) -> str:
     We accept Any here because static analysis can't always prove that the
     runtime object will have __module__ and __name__, but at runtime the
     decorated functions always do.
+
     """
     return f".{func.__module__}.{func.__name__}"
 
