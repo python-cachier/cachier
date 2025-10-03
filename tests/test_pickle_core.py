@@ -15,7 +15,6 @@ import hashlib
 import os
 import pickle
 import sys
-import tempfile
 import threading
 from datetime import datetime, timedelta
 from random import random
