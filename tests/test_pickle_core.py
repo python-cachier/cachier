@@ -15,7 +15,6 @@ import hashlib
 import os
 import pickle
 import sys
-import tempfile
 import threading
 from datetime import datetime, timedelta
 from random import random
@@ -733,82 +732,79 @@ def test_convert_legacy_cache_entry_dict():
 
 
 @pytest.mark.pickle
-def test_save_cache_with_invalid_separate_file_key():
+def test_save_cache_with_invalid_separate_file_key(tmp_path):
     """Test _save_cache raises error with invalid separate_file_key."""
     # Test line 179-181: ValueError when separate_file_key used with dict
-    with tempfile.TemporaryDirectory() as temp_dir:
-        core = _PickleCore(
-            hash_func=None,
-            cache_dir=temp_dir,
-            pickle_reload=False,
-            wait_for_calc_timeout=10,
-            separate_files=False,
-        )
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=10,
+        separate_files=False,
+    )
 
-        # Set a mock function
-        def mock_func():
-            pass
+    # Set a mock function
+    def mock_func():
+        pass
 
-        core.set_func(mock_func)
+    core.set_func(mock_func)
 
-        # Should raise ValueError when using separate_file_key with a dict
-        with pytest.raises(
-            ValueError,
-            match="`separate_file_key` should only be used with a CacheEntry",
-        ):
-            core._save_cache({"key": "value"}, separate_file_key="test_key")
+    # Should raise ValueError when using separate_file_key with a dict
+    with pytest.raises(
+        ValueError,
+        match="`separate_file_key` should only be used with a CacheEntry",
+    ):
+        core._save_cache({"key": "value"}, separate_file_key="test_key")
 
 
 @pytest.mark.pickle
-def test_set_entry_should_not_store():
+def test_set_entry_should_not_store(tmp_path):
     """Test set_entry when value should not be stored."""
     # Test line 204: early return when _should_store returns False
-    with tempfile.TemporaryDirectory() as temp_dir:
-        core = _PickleCore(
-            hash_func=None,
-            cache_dir=temp_dir,
-            pickle_reload=False,
-            wait_for_calc_timeout=10,
-            separate_files=False,
-        )
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=10,
+        separate_files=False,
+    )
 
-        # Set a mock function
-        def mock_func():
-            pass
+    # Set a mock function
+    def mock_func():
+        pass
 
-        core.set_func(mock_func)
+    core.set_func(mock_func)
 
-        # Mock _should_store to return False
-        core._should_store = Mock(return_value=False)
+    # Mock _should_store to return False
+    core._should_store = Mock(return_value=False)
 
-        result = core.set_entry("test_key", None)
-        assert result is False
+    result = core.set_entry("test_key", None)
+    assert result is False
 
 
 @pytest.mark.pickle
-def test_mark_entry_not_calculated_separate_files_no_entry():
+def test_mark_entry_not_calculated_separate_files_no_entry(tmp_path):
     """Test _mark_entry_not_calculated_separate_files with no entry."""
     # Test line 236: early return when entry is None
-    with tempfile.TemporaryDirectory() as temp_dir:
-        core = _PickleCore(
-            hash_func=None,
-            cache_dir=temp_dir,
-            pickle_reload=False,
-            wait_for_calc_timeout=10,
-            separate_files=True,
-        )
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=10,
+        separate_files=True,
+    )
 
-        # Set a mock function
-        def mock_func():
-            pass
+    # Set a mock function
+    def mock_func():
+        pass
 
-        core.set_func(mock_func)
+    core.set_func(mock_func)
 
-        # Mock get_entry_by_key to return None
-        core.get_entry_by_key = Mock(return_value=("test_key", None))
+    # Mock get_entry_by_key to return None
+    core.get_entry_by_key = Mock(return_value=("test_key", None))
 
-        # Should return without error
-        core._mark_entry_not_calculated_separate_files("test_key")
+    # Should return without error
+    core._mark_entry_not_calculated_separate_files("test_key")
 
 
 @pytest.mark.pickle
@@ -840,247 +836,241 @@ def test_cleanup_observer_exception():
 
 
 @pytest.mark.pickle
-def test_wait_on_entry_calc_inotify_limit():
+def test_wait_on_entry_calc_inotify_limit(tmp_path):
     """Test wait_on_entry_calc fallback when inotify limit is reached."""
     # Test lines 298-302: OSError handling for inotify limit
-    with tempfile.TemporaryDirectory() as temp_dir:
-        core = _PickleCore(
-            hash_func=None,
-            cache_dir=temp_dir,
-            pickle_reload=False,
-            wait_for_calc_timeout=10,
-            separate_files=False,
-        )
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=10,
+        separate_files=False,
+    )
 
-        # Set a mock function
-        def mock_func():
-            pass
+    # Set a mock function
+    def mock_func():
+        pass
 
-        core.set_func(mock_func)
+    core.set_func(mock_func)
 
-        # Create a cache entry that's being calculated
-        cache_entry = CacheEntry(
-            value="test_value",
-            time=datetime.now(),
-            stale=False,
-            _processing=True,  # Should be processing
-        )
-        core._save_cache({"test_key": cache_entry})
+    # Create a cache entry that's being calculated
+    cache_entry = CacheEntry(
+        value="test_value",
+        time=datetime.now(),
+        stale=False,
+        _processing=True,  # Should be processing
+    )
+    core._save_cache({"test_key": cache_entry})
 
-        # Mock _wait_with_inotify to raise OSError with inotify message
-        def mock_wait_inotify(key, filename):
-            raise OSError("inotify instance limit reached")
+    # Mock _wait_with_inotify to raise OSError with inotify message
+    def mock_wait_inotify(key, filename):
+        raise OSError("inotify instance limit reached")
 
-        core._wait_with_inotify = mock_wait_inotify
+    core._wait_with_inotify = mock_wait_inotify
 
-        # Mock _wait_with_polling to return a value
-        core._wait_with_polling = Mock(return_value="polling_result")
+    # Mock _wait_with_polling to return a value
+    core._wait_with_polling = Mock(return_value="polling_result")
 
-        result = core.wait_on_entry_calc("test_key")
-        assert result == "polling_result"
-        core._wait_with_polling.assert_called_once_with("test_key")
+    result = core.wait_on_entry_calc("test_key")
+    assert result == "polling_result"
+    core._wait_with_polling.assert_called_once_with("test_key")
 
 
 @pytest.mark.pickle
-def test_wait_on_entry_calc_other_os_error():
+def test_wait_on_entry_calc_other_os_error(tmp_path):
     """Test wait_on_entry_calc re-raises non-inotify OSErrors."""
     # Test line 302: re-raise other OSErrors
-    with tempfile.TemporaryDirectory() as temp_dir:
-        core = _PickleCore(
-            hash_func=None,
-            cache_dir=temp_dir,
-            pickle_reload=False,
-            wait_for_calc_timeout=10,
-            separate_files=False,
-        )
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=10,
+        separate_files=False,
+    )
 
-        # Set a mock function
-        def mock_func():
-            pass
+    # Set a mock function
+    def mock_func():
+        pass
 
-        core.set_func(mock_func)
+    core.set_func(mock_func)
 
-        # Mock _wait_with_inotify to raise different OSError
-        def mock_wait_inotify(key, filename):
-            raise OSError("Different error")
+    # Mock _wait_with_inotify to raise different OSError
+    def mock_wait_inotify(key, filename):
+        raise OSError("Different error")
 
-        core._wait_with_inotify = mock_wait_inotify
+    core._wait_with_inotify = mock_wait_inotify
 
-        with pytest.raises(OSError, match="Different error"):
-            core.wait_on_entry_calc("test_key")
+    with pytest.raises(OSError, match="Different error"):
+        core.wait_on_entry_calc("test_key")
 
 
 @pytest.mark.pickle
-def test_wait_with_polling_file_errors():
+def test_wait_with_polling_file_errors(tmp_path):
     """Test _wait_with_polling handles file errors gracefully."""
     # Test lines 352-354: FileNotFoundError/EOFError handling
-    with tempfile.TemporaryDirectory() as temp_dir:
-        core = _PickleCore(
-            hash_func=None,
-            cache_dir=temp_dir,
-            pickle_reload=False,
-            wait_for_calc_timeout=2,  # Short timeout
-            separate_files=False,
-        )
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=2,  # Short timeout
+        separate_files=False,
+    )
 
-        # Set a mock function
-        def mock_func():
-            pass
+    # Set a mock function
+    def mock_func():
+        pass
 
-        core.set_func(mock_func)
+    core.set_func(mock_func)
 
-        # Mock methods to simulate file errors then success
-        call_count = 0
+    # Mock methods to simulate file errors then success
+    call_count = 0
 
-        def mock_get_cache_dict():
-            nonlocal call_count
-            call_count += 1
-            if call_count == 1:
-                raise FileNotFoundError("Cache file not found")
-            elif call_count == 2:
-                raise EOFError("Cache file corrupted")
-            else:
-                return {
-                    "test_key": CacheEntry(
-                        value="result",
-                        time=datetime.now(),
-                        stale=False,
-                        _processing=False,
-                    )
-                }
+    def mock_get_cache_dict():
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            raise FileNotFoundError("Cache file not found")
+        elif call_count == 2:
+            raise EOFError("Cache file corrupted")
+        else:
+            return {
+                "test_key": CacheEntry(
+                    value="result",
+                    time=datetime.now(),
+                    stale=False,
+                    _processing=False,
+                )
+            }
 
-        core.get_cache_dict = mock_get_cache_dict
-        core.separate_files = False
+    core.get_cache_dict = mock_get_cache_dict
+    core.separate_files = False
 
-        with patch("time.sleep", return_value=None):  # Speed up test
-            result = core._wait_with_polling("test_key")
-            assert result == "result"
+    with patch("time.sleep", return_value=None):  # Speed up test
+        result = core._wait_with_polling("test_key")
+        assert result == "result"
 
 
 @pytest.mark.pickle
-def test_wait_with_polling_separate_files():
+def test_wait_with_polling_separate_files(tmp_path):
     """Test _wait_with_polling with separate files mode."""
     # Test lines 342-343: separate files branch
-    with tempfile.TemporaryDirectory() as temp_dir:
-        core = _PickleCore(
-            hash_func=None,
-            cache_dir=temp_dir,
-            pickle_reload=False,
-            wait_for_calc_timeout=10,
-            separate_files=True,
-        )
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=10,
+        separate_files=True,
+    )
 
-        # Set a mock function
-        def mock_func():
-            pass
+    # Set a mock function
+    def mock_func():
+        pass
 
-        core.set_func(mock_func)
+    core.set_func(mock_func)
 
-        # Mock _load_cache_by_key
-        entry = CacheEntry(
-            value="test_value",
-            time=datetime.now(),
-            stale=False,
-            _processing=False,
-        )
-        core._load_cache_by_key = Mock(return_value=entry)
+    # Mock _load_cache_by_key
+    entry = CacheEntry(
+        value="test_value",
+        time=datetime.now(),
+        stale=False,
+        _processing=False,
+    )
+    core._load_cache_by_key = Mock(return_value=entry)
 
-        with patch("time.sleep", return_value=None):
-            result = core._wait_with_polling("test_key")
-            assert result == "test_value"
+    with patch("time.sleep", return_value=None):
+        result = core._wait_with_polling("test_key")
+        assert result == "test_value"
 
 
 @pytest.mark.pickle
-def test_delete_stale_entries_separate_files():
+def test_delete_stale_entries_separate_files(tmp_path):
     """Test delete_stale_entries with separate files mode."""
     # Test lines 377-387: separate files deletion logic
-    with tempfile.TemporaryDirectory() as temp_dir:
-        core = _PickleCore(
-            hash_func=None,
-            cache_dir=temp_dir,
-            pickle_reload=False,
-            wait_for_calc_timeout=10,
-            separate_files=True,
-        )
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=10,
+        separate_files=True,
+    )
 
-        # Set a mock function
-        def mock_func():
-            pass
+    # Set a mock function
+    def mock_func():
+        pass
 
-        core.set_func(mock_func)
+    core.set_func(mock_func)
 
-        # Create some cache files
-        base_path = core.cache_fpath
+    # Create some cache files
+    base_path = core.cache_fpath
 
-        # Create stale entry file
-        stale_entry = CacheEntry(
-            value="stale_value",
-            time=datetime.now() - timedelta(hours=2),
-            stale=False,
-            _processing=False,
-        )
-        stale_file = f"{base_path}_stalekey"
-        with open(stale_file, "wb") as f:
-            pickle.dump(stale_entry, f)
+    # Create stale entry file
+    stale_entry = CacheEntry(
+        value="stale_value",
+        time=datetime.now() - timedelta(hours=2),
+        stale=False,
+        _processing=False,
+    )
+    stale_file = f"{base_path}_stalekey"
+    with open(stale_file, "wb") as f:
+        pickle.dump(stale_entry, f)
 
-        # Create fresh entry file
-        fresh_entry = CacheEntry(
-            value="fresh_value",
-            time=datetime.now(),
-            stale=False,
-            _processing=False,
-        )
-        fresh_file = f"{base_path}_freshkey"
-        with open(fresh_file, "wb") as f:
-            pickle.dump(fresh_entry, f)
+    # Create fresh entry file
+    fresh_entry = CacheEntry(
+        value="fresh_value",
+        time=datetime.now(),
+        stale=False,
+        _processing=False,
+    )
+    fresh_file = f"{base_path}_freshkey"
+    with open(fresh_file, "wb") as f:
+        pickle.dump(fresh_entry, f)
 
-        # Create non-matching file (should be ignored)
-        other_file = os.path.join(temp_dir, "other_file.txt")
-        with open(other_file, "w") as f:
-            f.write("other content")
+    # Create non-matching file (should be ignored)
+    other_file = os.path.join(tmp_path, "other_file.txt")
+    with open(other_file, "w") as f:
+        f.write("other content")
 
-        # Before running delete, check that files exist
-        assert os.path.exists(stale_file)
-        assert os.path.exists(fresh_file)
+    # Before running delete, check that files exist
+    assert os.path.exists(stale_file)
+    assert os.path.exists(fresh_file)
 
-        # Run delete_stale_entries
-        core.delete_stale_entries(timedelta(hours=1))
+    # Run delete_stale_entries
+    core.delete_stale_entries(timedelta(hours=1))
 
-        # Check that only stale file was deleted
-        assert not os.path.exists(stale_file)
-        assert os.path.exists(fresh_file)
-        assert os.path.exists(other_file)
+    # Check that only stale file was deleted
+    assert not os.path.exists(stale_file)
+    assert os.path.exists(fresh_file)
+    assert os.path.exists(other_file)
 
 
 @pytest.mark.pickle
-def test_delete_stale_entries_file_not_found():
+def test_delete_stale_entries_file_not_found(tmp_path):
     """Test delete_stale_entries handles FileNotFoundError."""
     # Test lines 385-386: FileNotFoundError suppression
-    with tempfile.TemporaryDirectory() as temp_dir:
-        core = _PickleCore(
-            hash_func=None,
-            cache_dir=temp_dir,
-            pickle_reload=False,
-            wait_for_calc_timeout=10,
-            separate_files=True,
-        )
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=10,
+        separate_files=True,
+    )
 
-        # Set a mock function
-        def mock_func():
-            pass
+    # Set a mock function
+    def mock_func():
+        pass
 
-        core.set_func(mock_func)
+    core.set_func(mock_func)
 
-        # Mock _load_cache_by_key to return a stale entry
-        stale_entry = CacheEntry(
-            value="stale",
-            time=datetime.now() - timedelta(hours=2),
-            stale=False,
-            _processing=False,
-        )
-        core._load_cache_by_key = Mock(return_value=stale_entry)
+    # Mock _load_cache_by_key to return a stale entry
+    stale_entry = CacheEntry(
+        value="stale",
+        time=datetime.now() - timedelta(hours=2),
+        stale=False,
+        _processing=False,
+    )
+    core._load_cache_by_key = Mock(return_value=stale_entry)
 
-        # Mock os.remove to raise FileNotFoundError
-        with patch("os.remove", side_effect=FileNotFoundError):
-            # Should not raise exception
-            core.delete_stale_entries(timedelta(hours=1))
+    # Mock os.remove to raise FileNotFoundError
+    with patch("os.remove", side_effect=FileNotFoundError):
+        # Should not raise exception
+        core.delete_stale_entries(timedelta(hours=1))
