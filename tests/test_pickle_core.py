@@ -35,6 +35,7 @@ import pandas as pd
 from cachier import cachier
 from cachier.config import CacheEntry, _global_params
 from cachier.cores.pickle import _PickleCore
+from cachier.cores.redis import _RedisCore
 
 
 def _get_decorated_func(func, **kwargs):
@@ -1088,7 +1089,7 @@ def test_delete_stale_entries_file_not_found():
 
 @pytest.mark.pickle
 def test_loading_pickle(temp_dir):
-    """Cover the internal _loading_pickle behavior for valid, corrupted, and missing files."""
+    """Cover for valid, corrupted, and missing files."""
     import importlib
 
     pickle_module = importlib.import_module("cachier.cores.pickle")
@@ -1119,7 +1120,6 @@ def test_loading_pickle(temp_dir):
 
 
 # Redis core static method tests
-@pytest.mark.skipif(not REDIS_AVAILABLE, reason="Redis not available")
 def test_redis_loading_pickle():
     """Test _RedisCore._loading_pickle with various inputs and exceptions."""
     # Valid bytes
@@ -1152,7 +1152,6 @@ def test_redis_loading_pickle():
         mock_warn.assert_called_once()
 
 
-@pytest.mark.skipif(not REDIS_AVAILABLE, reason="Redis not available")
 def test_redis_get_raw_field():
     """Test _RedisCore._get_raw_field with bytes and string keys."""
     # Test with bytes key
@@ -1168,7 +1167,6 @@ def test_redis_get_raw_field():
     assert _RedisCore._get_raw_field(cached_data, "field") is None
 
 
-@pytest.mark.skipif(not REDIS_AVAILABLE, reason="Redis not available")
 def test_redis_get_bool_field():
     """Test _RedisCore._get_bool_field with various inputs and exceptions."""
     # Test with bytes "true"
@@ -1195,4 +1193,3 @@ def test_redis_get_bool_field():
     # Test with non-string/bytes value
     cached_data = {b"flag": 123}
     assert _RedisCore._get_bool_field(cached_data, "flag") is False
-
