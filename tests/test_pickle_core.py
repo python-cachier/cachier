@@ -1088,7 +1088,9 @@ def test_delete_stale_entries_file_not_found():
 
 @pytest.mark.pickle
 def test_loading_pickle(temp_dir):
-    """Cover the internal _loading_pickle behavior for valid, corrupted, and missing files."""
+    """Cover the internal _loading_pickle behavior for valid, corrupted, and
+    missing files.
+    """
     import importlib
 
     pickle_module = importlib.import_module("cachier.cores.pickle")
@@ -1195,4 +1197,3 @@ def test_redis_get_bool_field():
     # Test with non-string/bytes value
     cached_data = {b"flag": 123}
     assert _RedisCore._get_bool_field(cached_data, "flag") is False
-
