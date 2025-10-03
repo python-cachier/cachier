@@ -73,6 +73,32 @@ class _RedisCore(_BaseCore):
         super().set_func(func)
         self._func_str = _get_func_str(func)
 
+    @staticmethod
+    def _loading_pickle(raw_value) -> Any:
+        """Helper to load pickled data with some recovery attempts."""
+        try:
+            if isinstance(raw_value, bytes):
+                return pickle.loads(raw_value)
+            elif isinstance(raw_value, str):
+                # try to recover by encoding; prefer utf-8 but fall
+                # back to latin-1 in case raw binary was coerced to str
+                try:
+                    return  pickle.loads(raw_value.encode("utf-8"))
+                except Exception:
+                    return  pickle.loads(raw_value.encode("latin-1"))
+            else:
+                # unexpected type; attempt pickle.loads directly
+                try:
+                    return  pickle.loads(raw_value)
+                except Exception:
+                    return None
+        except Exception as exc:
+            warnings.warn(
+                f"Redis value deserialization failed: {exc}",
+                stacklevel=2,
+            )
+        return None
+
     def get_entry_by_key(self, key: str) -> Tuple[str, Optional[CacheEntry]]:
         """Get entry based on given key from Redis."""
         redis_client = self._resolve_redis_client()
@@ -96,27 +122,7 @@ class _RedisCore(_BaseCore):
             value = None
             raw_value = _raw("value")
             if raw_value is not None:
-                try:
-                    if isinstance(raw_value, bytes):
-                        value = pickle.loads(raw_value)
-                    elif isinstance(raw_value, str):
-                        # try to recover by encoding; prefer utf-8 but fall
-                        # back to latin-1 in case raw binary was coerced to str
-                        try:
-                            value = pickle.loads(raw_value.encode("utf-8"))
-                        except Exception:
-                            value = pickle.loads(raw_value.encode("latin-1"))
-                    else:
-                        # unexpected type; attempt pickle.loads directly
-                        try:
-                            value = pickle.loads(raw_value)
-                        except Exception:
-                            value = None
-                except Exception as exc:
-                    warnings.warn(
-                        f"Redis value deserialization failed: {exc}",
-                        stacklevel=2,
-                    )
+                value = self._loading_pickle(raw_value)
 
             # Parse timestamp
             raw_ts = _raw("timestamp") or b""
