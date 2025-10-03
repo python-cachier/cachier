@@ -109,7 +109,7 @@ class _RedisCore(_BaseCore):
         return cached_data.get(field)
 
     @staticmethod
-    def _bool_field(cached_data, name: str) -> bool:
+    def _get_bool_field(cached_data, name: str) -> bool:
         """Fetch boolean field from cached_data."""
         raw = _RedisCore._get_raw_field(cached_data, name) or b"false"
         if isinstance(raw, bytes):
@@ -153,9 +153,9 @@ class _RedisCore(_BaseCore):
                 else datetime.now()
             )
 
-            stale = _RedisCore._bool_field(cached_data, "stale")
-            processing = _RedisCore._bool_field(cached_data, "processing")
-            completed = _RedisCore._bool_field(cached_data, "completed")
+            stale = _RedisCore._get_bool_field(cached_data, "stale")
+            processing = _RedisCore._get_bool_field(cached_data, "processing")
+            completed = _RedisCore._get_bool_field(cached_data, "completed")
 
             entry = CacheEntry(
                 value=value,
