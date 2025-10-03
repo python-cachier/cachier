@@ -1119,8 +1119,8 @@ def test_loading_pickle(temp_dir):
 # Redis core static method tests
 @pytest.mark.parametrize(
     ("test_input", "expected"),
-    [  # valid string
-        (pickle.dumps({"test": 123}), {"test": 123}),
+    [
+        (pickle.dumps({"test": 123}), {"test": 123}),  # valid string
         # (pickle.dumps({"test": 123}).decode("utf-8"), {"test": 123}),
         (b"\x80\x04\x95", None),  # corrupted bytes
         (123, None),  # unexpected type
