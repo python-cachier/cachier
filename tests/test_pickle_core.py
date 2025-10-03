@@ -733,12 +733,12 @@ def test_convert_legacy_cache_entry_dict():
 
 
 @pytest.mark.pickle
-def test_save_cache_with_invalid_separate_file_key(temp_dir):
+def test_save_cache_with_invalid_separate_file_key(tmp_path):
     """Test _save_cache raises error with invalid separate_file_key."""
     # Test line 179-181: ValueError when separate_file_key used with dict
     core = _PickleCore(
         hash_func=None,
-        cache_dir=temp_dir,
+        cache_dir=tmp_path,
         pickle_reload=False,
         wait_for_calc_timeout=10,
         separate_files=False,
@@ -759,12 +759,12 @@ def test_save_cache_with_invalid_separate_file_key(temp_dir):
 
 
 @pytest.mark.pickle
-def test_set_entry_should_not_store(temp_dir):
+def test_set_entry_should_not_store(tmp_path):
     """Test set_entry when value should not be stored."""
     # Test line 204: early return when _should_store returns False
     core = _PickleCore(
         hash_func=None,
-        cache_dir=temp_dir,
+        cache_dir=tmp_path,
         pickle_reload=False,
         wait_for_calc_timeout=10,
         separate_files=False,
@@ -784,12 +784,12 @@ def test_set_entry_should_not_store(temp_dir):
 
 
 @pytest.mark.pickle
-def test_mark_entry_not_calculated_separate_files_no_entry(temp_dir):
+def test_mark_entry_not_calculated_separate_files_no_entry(tmp_path):
     """Test _mark_entry_not_calculated_separate_files with no entry."""
     # Test line 236: early return when entry is None
     core = _PickleCore(
         hash_func=None,
-        cache_dir=temp_dir,
+        cache_dir=tmp_path,
         pickle_reload=False,
         wait_for_calc_timeout=10,
         separate_files=True,
@@ -837,12 +837,12 @@ def test_cleanup_observer_exception():
 
 
 @pytest.mark.pickle
-def test_wait_on_entry_calc_inotify_limit(temp_dir):
+def test_wait_on_entry_calc_inotify_limit(tmp_path):
     """Test wait_on_entry_calc fallback when inotify limit is reached."""
     # Test lines 298-302: OSError handling for inotify limit
     core = _PickleCore(
         hash_func=None,
-        cache_dir=temp_dir,
+        cache_dir=tmp_path,
         pickle_reload=False,
         wait_for_calc_timeout=10,
         separate_files=False,
@@ -878,12 +878,12 @@ def test_wait_on_entry_calc_inotify_limit(temp_dir):
 
 
 @pytest.mark.pickle
-def test_wait_on_entry_calc_other_os_error(temp_dir):
+def test_wait_on_entry_calc_other_os_error(tmp_path):
     """Test wait_on_entry_calc re-raises non-inotify OSErrors."""
     # Test line 302: re-raise other OSErrors
     core = _PickleCore(
         hash_func=None,
-        cache_dir=temp_dir,
+        cache_dir=tmp_path,
         pickle_reload=False,
         wait_for_calc_timeout=10,
         separate_files=False,
@@ -906,12 +906,12 @@ def test_wait_on_entry_calc_other_os_error(temp_dir):
 
 
 @pytest.mark.pickle
-def test_wait_with_polling_file_errors(temp_dir):
+def test_wait_with_polling_file_errors(tmp_path):
     """Test _wait_with_polling handles file errors gracefully."""
     # Test lines 352-354: FileNotFoundError/EOFError handling
     core = _PickleCore(
         hash_func=None,
-        cache_dir=temp_dir,
+        cache_dir=tmp_path,
         pickle_reload=False,
         wait_for_calc_timeout=2,  # Short timeout
         separate_files=False,
@@ -952,12 +952,12 @@ def test_wait_with_polling_file_errors(temp_dir):
 
 
 @pytest.mark.pickle
-def test_wait_with_polling_separate_files(temp_dir):
+def test_wait_with_polling_separate_files(tmp_path):
     """Test _wait_with_polling with separate files mode."""
     # Test lines 342-343: separate files branch
     core = _PickleCore(
         hash_func=None,
-        cache_dir=temp_dir,
+        cache_dir=tmp_path,
         pickle_reload=False,
         wait_for_calc_timeout=10,
         separate_files=True,
@@ -984,12 +984,12 @@ def test_wait_with_polling_separate_files(temp_dir):
 
 
 @pytest.mark.pickle
-def test_delete_stale_entries_separate_files(temp_dir):
+def test_delete_stale_entries_separate_files(tmp_path):
     """Test delete_stale_entries with separate files mode."""
     # Test lines 377-387: separate files deletion logic
     core = _PickleCore(
         hash_func=None,
-        cache_dir=temp_dir,
+        cache_dir=tmp_path,
         pickle_reload=False,
         wait_for_calc_timeout=10,
         separate_files=True,
@@ -1027,7 +1027,7 @@ def test_delete_stale_entries_separate_files(temp_dir):
         pickle.dump(fresh_entry, f)
 
     # Create non-matching file (should be ignored)
-    other_file = os.path.join(temp_dir, "other_file.txt")
+    other_file = os.path.join(tmp_path, "other_file.txt")
     with open(other_file, "w") as f:
         f.write("other content")
 
@@ -1045,12 +1045,12 @@ def test_delete_stale_entries_separate_files(temp_dir):
 
 
 @pytest.mark.pickle
-def test_delete_stale_entries_file_not_found(temp_dir):
+def test_delete_stale_entries_file_not_found(tmp_path):
     """Test delete_stale_entries handles FileNotFoundError."""
     # Test lines 385-386: FileNotFoundError suppression
     core = _PickleCore(
         hash_func=None,
-        cache_dir=temp_dir,
+        cache_dir=tmp_path,
         pickle_reload=False,
         wait_for_calc_timeout=10,
         separate_files=True,
