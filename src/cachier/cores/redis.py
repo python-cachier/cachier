@@ -75,7 +75,7 @@ class _RedisCore(_BaseCore):
 
     @staticmethod
     def _loading_pickle(raw_value) -> Any:
-        """Helper to load pickled data with some recovery attempts."""
+        """Load pickled data with some recovery attempts."""
         try:
             if isinstance(raw_value, bytes):
                 return pickle.loads(raw_value)
@@ -83,13 +83,13 @@ class _RedisCore(_BaseCore):
                 # try to recover by encoding; prefer utf-8 but fall
                 # back to latin-1 in case raw binary was coerced to str
                 try:
-                    return  pickle.loads(raw_value.encode("utf-8"))
+                    return pickle.loads(raw_value.encode("utf-8"))
                 except Exception:
-                    return  pickle.loads(raw_value.encode("latin-1"))
+                    return pickle.loads(raw_value.encode("latin-1"))
             else:
                 # unexpected type; attempt pickle.loads directly
                 try:
-                    return  pickle.loads(raw_value)
+                    return pickle.loads(raw_value)
                 except Exception:
                     return None
         except Exception as exc:
@@ -101,7 +101,7 @@ class _RedisCore(_BaseCore):
 
     @staticmethod
     def _get_raw_field(cached_data, field: str):
-        """Helper to fetch field from cached_data with bytes/str key handling."""
+        """Fetch field from cached_data with bytes/str key handling."""
         # try bytes key first, then str key
         bkey = field.encode("utf-8")
         if bkey in cached_data:
@@ -110,6 +110,7 @@ class _RedisCore(_BaseCore):
 
     @staticmethod
     def _bool_field(cached_data, name: str) -> bool:
+        """Fetch boolean field from cached_data."""
         raw = _RedisCore._get_raw_field(cached_data, name) or b"false"
         if isinstance(raw, bytes):
             try:
