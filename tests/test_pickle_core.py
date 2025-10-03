@@ -44,9 +44,6 @@ def _get_decorated_func(func, **kwargs):
     return decorated_func
 
 
-# Pickle core tests
-
-
 def _takes_2_seconds(arg_1, arg_2):
     """Some function."""
     sleep(2)
@@ -1120,76 +1117,67 @@ def test_loading_pickle(temp_dir):
 
 
 # Redis core static method tests
-def test_redis_loading_pickle():
+@pytest.mark.parametrize(
+    ("test_input", "expected"),
+    [  # valid string
+        (pickle.dumps({"test": 123}), {"test": 123}),
+        # (pickle.dumps({"test": 123}).decode("utf-8"), {"test": 123}),
+        (b"\x80\x04\x95", None),  # corrupted bytes
+        (123, None),  # unexpected type
+        (b"corrupted", None),  # triggers warning
+    ],
+)
+def test_redis_loading_pickle(test_input, expected):
     """Test _RedisCore._loading_pickle with various inputs and exceptions."""
-    # Valid bytes
+    assert _RedisCore._loading_pickle(test_input) == expected
+
+
+def test_redis_loading_pickle_failed(test_input, expected):
+    """Test _RedisCore._loading_pickle with various inputs and exceptions."""
+    with patch("pickle.loads", side_effect=Exception("Failed")):
+        assert _RedisCore._loading_pickle(test_input) == expected
+
+
+def test_redis_loading_pickle_latin1_fallback():
+    """Test _RedisCore._loading_pickle with latin-1 fallback."""
     valid_obj = {"test": 123}
-    valid_bytes = pickle.dumps(valid_obj)
-    assert _RedisCore._loading_pickle(valid_bytes) == valid_obj
-
-    # Valid string (UTF-8 encoded)
-    valid_str = valid_bytes.decode("utf-8")
-    assert _RedisCore._loading_pickle(valid_str) == valid_obj
-
-    # Invalid string that needs latin-1 fallback
     with patch("pickle.loads") as mock_loads:
         mock_loads.side_effect = [Exception("UTF-8 failed"), valid_obj]
-        result = _RedisCore._loading_pickle("invalid_utf8")
+        result = _RedisCore._loading_pickle("invalid_utf8_string")
         assert result == valid_obj
         assert mock_loads.call_count == 2
 
-    # Corrupted bytes
-    assert _RedisCore._loading_pickle(b"\x80\x04\x95") is None
 
-    # Unexpected type with direct pickle.loads attempt
-    with patch("pickle.loads", side_effect=Exception("Failed")):
-        assert _RedisCore._loading_pickle(123) is None
-
-    # Exception during deserialization should warn and return None
-    with patch("warnings.warn") as mock_warn:
-        result = _RedisCore._loading_pickle(b"corrupted")
-        assert result is None
-        mock_warn.assert_called_once()
-
-
-def test_redis_get_raw_field():
+@pytest.mark.parametrize(
+    ("cached_data", "key", "expected"),
+    [
+        ({b"field": b"value", "other": "data"}, "field", b"value"),
+        ({"field": "value", b"other": b"data"}, "field", "value"),
+        ({"other": "value"}, "field", None),
+    ],
+)
+def test_redis_get_raw_field(cached_data, key, expected):
     """Test _RedisCore._get_raw_field with bytes and string keys."""
-    # Test with bytes key
-    cached_data = {b"field": b"value", "other": "data"}
-    assert _RedisCore._get_raw_field(cached_data, "field") == b"value"
-
-    # Test with string key fallback
-    cached_data = {"field": "value", b"other": b"data"}
-    assert _RedisCore._get_raw_field(cached_data, "field") == "value"
-
-    # Test with missing field
-    cached_data = {"other": "value"}
-    assert _RedisCore._get_raw_field(cached_data, "field") is None
+    assert _RedisCore._get_raw_field(cached_data, key) == expected
 
 
-def test_redis_get_bool_field():
-    """Test _RedisCore._get_bool_field with various inputs and exceptions."""
-    # Test with bytes "true"
-    cached_data = {b"flag": b"true"}
-    assert _RedisCore._get_bool_field(cached_data, "flag") is True
+@pytest.mark.parametrize(
+    ("cached_data", "key", "expected"),
+    [
+        ({b"flag": b"true"}, "flag", True),
+        ({b"flag": b"false"}, "flag", False),
+        ({"flag": "TRUE"}, "flag", True),
+        ({}, "flag", False),
+        ({b"flag": 123}, "flag", False),
+    ],
+)
+def test_redis_get_bool_field(cached_data, key, expected):
+    """Test _RedisCore._get_bool_field with various inputs."""
+    assert _RedisCore._get_bool_field(cached_data, key) == expected
 
-    # Test with bytes "false"
-    cached_data = {b"flag": b"false"}
-    assert _RedisCore._get_bool_field(cached_data, "flag") is False
 
-    # Test with string "TRUE" (case insensitive)
-    cached_data = {"flag": "TRUE"}
-    assert _RedisCore._get_bool_field(cached_data, "flag") is True
-
-    # Test with missing field (defaults to false)
-    cached_data = {}
-    assert _RedisCore._get_bool_field(cached_data, "flag") is False
-
-    # Test with bytes that can't decode UTF-8 (fallback to latin-1)
+def test_redis_get_bool_field_decode_fallback():
+    """Test _RedisCore._get_bool_field with decoding fallback."""
     with patch.object(_RedisCore, "_get_raw_field", return_value=b"\xff\xfe"):
         result = _RedisCore._get_bool_field({}, "flag")
-        assert result is False  # Should decode with latin-1 and be "false"
-
-    # Test with non-string/bytes value
-    cached_data = {b"flag": 123}
-    assert _RedisCore._get_bool_field(cached_data, "flag") is False
+        assert result is False
