@@ -99,6 +99,27 @@ class _RedisCore(_BaseCore):
             )
         return None
 
+    @staticmethod
+    def _get_raw_field(cached_data, field: str):
+        """Helper to fetch field from cached_data with bytes/str key handling."""
+        # try bytes key first, then str key
+        bkey = field.encode("utf-8")
+        if bkey in cached_data:
+            return cached_data[bkey]
+        return cached_data.get(field)
+
+    @staticmethod
+    def _bool_field(cached_data, name: str) -> bool:
+        raw = _RedisCore._get_raw_field(cached_data, name) or b"false"
+        if isinstance(raw, bytes):
+            try:
+                s = raw.decode("utf-8")
+            except Exception:
+                s = raw.decode("latin-1", errors="ignore")
+        else:
+            s = str(raw)
+        return s.lower() == "true"
+
     def get_entry_by_key(self, key: str) -> Tuple[str, Optional[CacheEntry]]:
         """Get entry based on given key from Redis."""
         redis_client = self._resolve_redis_client()
@@ -110,22 +131,14 @@ class _RedisCore(_BaseCore):
             if not cached_data:
                 return key, None
 
-            # helper to fetch field regardless of bytes/str keys
-            def _raw(field: str):
-                # try bytes key first, then str key
-                bkey = field.encode("utf-8")
-                if bkey in cached_data:
-                    return cached_data[bkey]
-                return cached_data.get(field)
-
             # Deserialize the value
             value = None
-            raw_value = _raw("value")
+            raw_value = _RedisCore._get_raw_field(cached_data, "value")
             if raw_value is not None:
                 value = self._loading_pickle(raw_value)
 
             # Parse timestamp
-            raw_ts = _raw("timestamp") or b""
+            raw_ts = _RedisCore._get_raw_field(cached_data, "timestamp") or b""
             if isinstance(raw_ts, bytes):
                 try:
                     timestamp_str = raw_ts.decode("utf-8")
@@ -139,21 +152,9 @@ class _RedisCore(_BaseCore):
                 else datetime.now()
             )
 
-            # Parse boolean fields
-            def _bool_field(name: str) -> bool:
-                raw = _raw(name) or b"false"
-                if isinstance(raw, bytes):
-                    try:
-                        s = raw.decode("utf-8")
-                    except Exception:
-                        s = raw.decode("latin-1", errors="ignore")
-                else:
-                    s = str(raw)
-                return s.lower() == "true"
-
-            stale = _bool_field("stale")
-            processing = _bool_field("processing")
-            completed = _bool_field("completed")
+            stale = _RedisCore._bool_field(cached_data, "stale")
+            processing = _RedisCore._bool_field(cached_data, "processing")
+            completed = _RedisCore._bool_field(cached_data, "completed")
 
             entry = CacheEntry(
                 value=value,
