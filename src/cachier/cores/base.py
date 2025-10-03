@@ -34,9 +34,11 @@ class _BaseCore:
         self,
         hash_func: Optional[HashFunc],
         wait_for_calc_timeout: Optional[int],
+        return_stale_on_timeout: Optional[bool] = None,
     ):
         self.hash_func = _update_with_defaults(hash_func, "hash_func")
         self.wait_for_calc_timeout = wait_for_calc_timeout
+        self.return_stale_on_timeout = return_stale_on_timeout
         self.lock = threading.RLock()
 
     def set_func(self, func):

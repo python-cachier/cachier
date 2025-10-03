@@ -78,8 +78,9 @@ class _PickleCore(_BaseCore):
         cache_dir: Optional[Union[str, os.PathLike]],
         separate_files: Optional[bool],
         wait_for_calc_timeout: Optional[int],
+        return_stale_on_timeout: Optional[bool] = None,
     ):
-        super().__init__(hash_func, wait_for_calc_timeout)
+        super().__init__(hash_func, wait_for_calc_timeout, return_stale_on_timeout)
         self._cache_dict: Dict[str, CacheEntry] = {}
         self.reload = _update_with_defaults(pickle_reload, "pickle_reload")
         self.cache_dir = os.path.expanduser(

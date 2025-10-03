@@ -120,6 +120,7 @@ def cachier(
     pickle_reload: Optional[bool] = None,
     separate_files: Optional[bool] = None,
     wait_for_calc_timeout: Optional[int] = None,
+    return_stale_on_timeout: Optional[bool] = None,
     allow_none: Optional[bool] = None,
     cleanup_stale: Optional[bool] = None,
     cleanup_interval: Optional[timedelta] = None,
@@ -177,12 +178,16 @@ def cachier(
         Instead of a single cache file per-function, each function's cache is
         split between several files, one for each argument set. This can help
         if you per-function cache files become too large.
-    wait_for_calc_timeout: int, optional, for MongoDB only
+    wait_for_calc_timeout: int, optional
         The maximum time to wait for an ongoing calculation. When a
         process started to calculate the value setting being_calculated to
         True, any process trying to read the same entry will wait a maximum of
         seconds specified in this parameter. 0 means wait forever.
         Once the timeout expires the calculation will be triggered.
+    return_stale_on_timeout: bool, optional
+        If True, when wait_for_calc_timeout expires, return the existing stale
+        value instead of triggering a new calculation. Only applies when there
+        is a stale value available. Defaults to False.
     allow_none: bool, optional
         Allows storing None values in the cache. If False, functions returning
         None will not be cached and are recalculated every call.
@@ -215,28 +220,32 @@ def cachier(
             cache_dir=cache_dir,
             separate_files=separate_files,
             wait_for_calc_timeout=wait_for_calc_timeout,
+            return_stale_on_timeout=return_stale_on_timeout,
         )
     elif backend == "mongo":
         core = _MongoCore(
             hash_func=hash_func,
             mongetter=mongetter,
             wait_for_calc_timeout=wait_for_calc_timeout,
+            return_stale_on_timeout=return_stale_on_timeout,
         )
     elif backend == "memory":
         core = _MemoryCore(
-            hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout
+            hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout, return_stale_on_timeout=return_stale_on_timeout
         )
     elif backend == "sql":
         core = _SQLCore(
             hash_func=hash_func,
             sql_engine=sql_engine,
             wait_for_calc_timeout=wait_for_calc_timeout,
+            return_stale_on_timeout=return_stale_on_timeout,
         )
     elif backend == "redis":
         core = _RedisCore(
             hash_func=hash_func,
             redis_client=redis_client,
             wait_for_calc_timeout=wait_for_calc_timeout,
+            return_stale_on_timeout=return_stale_on_timeout,
         )
     else:
         raise ValueError("specified an invalid core: %s" % backend)
@@ -291,6 +300,9 @@ def cachier(
                 stale_after, "stale_after", kwds
             )
             _next_time = _update_with_defaults(next_time, "next_time", kwds)
+            _return_stale_on_timeout = _update_with_defaults(
+                return_stale_on_timeout, "return_stale_on_timeout", kwds
+            )
             _cleanup_flag = _update_with_defaults(
                 cleanup_stale, "cleanup_stale", kwds
             )
@@ -362,6 +374,9 @@ def cachier(
                     try:
                         return core.wait_on_entry_calc(key)
                     except RecalculationNeeded:
+                        if _return_stale_on_timeout and entry and entry.value is not None:
+                            _print("Timeout reached, returning stale value.")
+                            return entry.value
                         return _calc_entry(core, key, func, args, kwds)
                 if _next_time:
                     _print("Async calc and return stale")
@@ -380,6 +395,9 @@ def cachier(
                 try:
                     return core.wait_on_entry_calc(key)
                 except RecalculationNeeded:
+                    if _return_stale_on_timeout and entry and entry.value is not None:
+                        _print("Timeout reached, returning stale value.")
+                        return entry.value
                     return _calc_entry(core, key, func, args, kwds)
             _print("No entry found. No current calc. Calling like a boss.")
             return _calc_entry(core, key, func, args, kwds)
