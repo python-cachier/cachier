@@ -83,13 +83,13 @@ class _RedisCore(_BaseCore):
                 # try to recover by encoding; prefer utf-8 but fall
                 # back to latin-1 in case raw binary was coerced to str
                 try:
-                    return  pickle.loads(raw_value.encode("utf-8"))
+                    return pickle.loads(raw_value.encode("utf-8"))
                 except Exception:
-                    return  pickle.loads(raw_value.encode("latin-1"))
+                    return pickle.loads(raw_value.encode("latin-1"))
             else:
                 # unexpected type; attempt pickle.loads directly
                 try:
-                    return  pickle.loads(raw_value)
+                    return pickle.loads(raw_value)
                 except Exception:
                     return None
         except Exception as exc:
