@@ -134,8 +134,8 @@ def cachier(
     value is their id), equal objects across different sessions will not yield
     identical keys.
 
-    Parameters:
-    ---------
+    Parameters
+    ----------
     hash_func : callable, optional
         A callable that gets the args and kwargs from the decorated function
         and returns a hash key for them. This parameter can be used to enable

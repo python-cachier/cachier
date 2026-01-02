@@ -101,6 +101,7 @@ def set_default_params(**params: Any) -> None:
     """Configure default parameters applicable to all memoized functions.
 
     Deprecated, use :func:`~cachier.config.set_global_params` instead.
+
     """
     # It is kept for backwards compatibility with desperation warning
     import warnings
@@ -152,6 +153,7 @@ def get_default_params() -> Params:
     """Get current set of default parameters.
 
     Deprecated, use :func:`~cachier.config.get_global_params` instead.
+
     """
     # It is kept for backwards compatibility with desperation warning
     import warnings
