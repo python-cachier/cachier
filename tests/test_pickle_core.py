@@ -526,7 +526,6 @@ def _error_throwing_func(arg1):
 @pytest.mark.parametrize("separate_files", [True, False])
 def test_error_throwing_func(separate_files):
     # with
-    _error_throwing_func.count = 0
     _error_throwing_func_decorated = _get_decorated_func(
         _error_throwing_func,
         stale_after=timedelta(seconds=1),
@@ -534,6 +533,7 @@ def test_error_throwing_func(separate_files):
         separate_files=separate_files,
     )
     _error_throwing_func_decorated.clear_cache()
+    _error_throwing_func.count = 0
     res1 = _error_throwing_func_decorated(4)
     sleep(1.5)
     res2 = _error_throwing_func_decorated(4)
