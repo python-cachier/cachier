@@ -34,6 +34,7 @@ import pandas as pd
 from cachier import cachier
 from cachier.config import CacheEntry, _global_params
 from cachier.cores.pickle import _PickleCore
+from cachier.cores.redis import _RedisCore
 
 
 def _get_decorated_func(func, **kwargs):
