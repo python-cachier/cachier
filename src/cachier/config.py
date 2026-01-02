@@ -128,10 +128,10 @@ def set_global_params(**params: Any) -> None:
       to the global parameters.
     - If a decorator parameter is left as None, the decorator/core may read
       the corresponding value from the global params at call time. Parameters
-      that are read dynamically (when the decorator parameter was None) include:
+      that are read dynamically (when decorator parameter was None) include:
       'stale_after', 'next_time', 'allow_none', 'cleanup_stale',
       'cleanup_interval', and 'caching_enabled'. In some cores, if the
-      decorator was created without a concrete value for 'wait_for_calc_timeout',
+      decorator was created without concrete value for 'wait_for_calc_timeout',
       calls that check calculation timeouts will fall back to the global
       'wait_for_calc_timeout' as well.
 
