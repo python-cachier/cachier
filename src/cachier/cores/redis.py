@@ -143,7 +143,7 @@ class _RedisCore(_BaseCore):
             if isinstance(raw_ts, bytes):
                 try:
                     timestamp_str = raw_ts.decode("utf-8")
-                except Exception:
+                except UnicodeDecodeError:
                     timestamp_str = raw_ts.decode("latin-1", errors="ignore")
             else:
                 timestamp_str = str(raw_ts)

@@ -358,6 +358,7 @@ def cachier(
                         )
                         nonneg_max_age = False
                     else:
+                        assert max_age is not None
                         max_allowed_age = min(_stale_after, max_age)
                 # note: if max_age < 0, we always consider a value stale
                 if nonneg_max_age and (now - entry.time <= max_allowed_age):
