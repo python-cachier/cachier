@@ -36,7 +36,6 @@ from cachier.config import CacheEntry, _global_params
 from cachier.cores.pickle import _PickleCore
 
 
-
 def _get_decorated_func(func, **kwargs):
     cachier_decorator = cachier(**kwargs)
     decorated_func = cachier_decorator(func)
