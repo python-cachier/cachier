@@ -95,8 +95,8 @@ class _BaseCore(metaclass=abc.ABCMeta):
     def get_entry_by_key(self, key: str) -> Tuple[str, Optional[CacheEntry]]:
         """Get entry based on given key.
 
-        Return the result mapped to the given key in this core's cache, if such
-        a mapping exists.
+        Return the key and the :class:`~cachier.config.CacheEntry` mapped to the
+        given key in this core's cache, if such a mapping exists.
 
         """
 
