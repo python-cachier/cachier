@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 from unittest.mock import NonCallableMock, patch
 
 import pytest
@@ -133,3 +133,26 @@ class TestRedisCoreExceptions:
 
         with pytest.warns(UserWarning, match="Redis timestamp parse failed"):
             core.delete_stale_entries(timedelta(seconds=1))
+
+    def test_delete_stale_entries_latin1_fallback(self, core, mock_redis):
+        """Test delete_stale_entries uses latin-1 for invalid utf-8."""
+        mock_redis.keys.return_value = [b"key1"]
+        # b'\xff' is invalid utf-8 start byte
+        mock_redis.hget.return_value = b"\xff"
+
+        # It will decode to "ÿ" (latin-1) then fail date parsing
+        with pytest.warns(UserWarning, match="Redis timestamp parse failed"):
+            core.delete_stale_entries(timedelta(seconds=1))
+
+    def test_delete_stale_entries_str_timestamp(self, core, mock_redis):
+        """Test delete_stale_entries handles string timestamps (not bytes)."""
+        mock_redis.keys.return_value = [b"key1"]
+        now = datetime.now()
+        old_time = now - timedelta(hours=1)
+        # Return a string, not bytes
+        mock_redis.hget.return_value = old_time.isoformat()
+
+        # Should not warn, and should delete key because
+        # it is stale (stale_after=1s)
+        core.delete_stale_entries(timedelta(seconds=1))
+        mock_redis.delete.assert_called_with(b"key1")

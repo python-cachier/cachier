@@ -382,9 +382,8 @@ def cachier(
                         _get_executor().submit(
                             _function_thread, core, key, func, args, kwds
                         )
-                    except Exception:
+                    finally:
                         core.mark_entry_not_calculated(key)
-                        raise
                     return entry.value
                 _print("Calling decorated function and waiting")
                 return _calc_entry(core, key, func, args, kwds, _print)
