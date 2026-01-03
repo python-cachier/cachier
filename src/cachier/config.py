@@ -98,7 +98,11 @@ def _update_with_defaults(
 
 
 def set_default_params(**params: Any) -> None:
-    """Configure default parameters applicable to all memoized functions."""
+    """Configure default parameters applicable to all memoized functions.
+
+    Deprecated, use :func:`~cachier.config.set_global_params` instead.
+
+    """
     # It is kept for backwards compatibility with desperation warning
     import warnings
 
@@ -115,13 +119,21 @@ def set_global_params(**params: Any) -> None:
     """Configure global parameters applicable to all memoized functions.
 
     This function takes the same keyword parameters as the ones defined in the
-    decorator, which can be passed all at once or with multiple calls.
-    Parameters given directly to a decorator take precedence over any values
-    set by this function.
+    decorator. Parameters given directly to a decorator take precedence over
+    any values set by this function.
 
-    Only 'stale_after', 'next_time', and 'wait_for_calc_timeout' can be changed
-    after the memoization decorator has been applied. Other parameters will
-    only have an effect on decorators applied after this function is run.
+    Note on dynamic behavior:
+    - If a decorator parameter is provided explicitly (not None), that value
+      is used for the decorated function and is not affected by later changes
+      to the global parameters.
+    - If a decorator parameter is left as None, the decorator/core may read
+      the corresponding value from the global params at call time. Parameters
+      that are read dynamically (when decorator parameter was None) include:
+      'stale_after', 'next_time', 'allow_none', 'cleanup_stale',
+      'cleanup_interval', and 'caching_enabled'. In some cores, if the
+      decorator was created without concrete value for 'wait_for_calc_timeout',
+      calls that check calculation timeouts will fall back to the global
+      'wait_for_calc_timeout' as well.
 
     """
     import cachier
@@ -138,7 +150,11 @@ def set_global_params(**params: Any) -> None:
 
 
 def get_default_params() -> Params:
-    """Get current set of default parameters."""
+    """Get current set of default parameters.
+
+    Deprecated, use :func:`~cachier.config.get_global_params` instead.
+
+    """
     # It is kept for backwards compatibility with desperation warning
     import warnings
 
