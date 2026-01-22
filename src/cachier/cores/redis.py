@@ -73,6 +73,54 @@ class _RedisCore(_BaseCore):
         super().set_func(func)
         self._func_str = _get_func_str(func)
 
+    @staticmethod
+    def _loading_pickle(raw_value) -> Any:
+        """Load pickled data with some recovery attempts."""
+        try:
+            if isinstance(raw_value, bytes):
+                return pickle.loads(raw_value)
+            elif isinstance(raw_value, str):
+                # try to recover by encoding; prefer utf-8 but fall
+                # back to latin-1 in case raw binary was coerced to str
+                try:
+                    return pickle.loads(raw_value.encode("utf-8"))
+                except Exception:
+                    return pickle.loads(raw_value.encode("latin-1"))
+            else:
+                # unexpected type; attempt pickle.loads directly
+                try:
+                    return pickle.loads(raw_value)
+                except Exception:
+                    return None
+        except Exception as exc:
+            warnings.warn(
+                f"Redis value deserialization failed: {exc}",
+                stacklevel=2,
+            )
+        return None
+
+    @staticmethod
+    def _get_raw_field(cached_data, field: str):
+        """Fetch field from cached_data with bytes/str key handling."""
+        # try bytes key first, then str key
+        bkey = field.encode("utf-8")
+        if bkey in cached_data:
+            return cached_data[bkey]
+        return cached_data.get(field)
+
+    @staticmethod
+    def _get_bool_field(cached_data, name: str) -> bool:
+        """Fetch boolean field from cached_data."""
+        raw = _RedisCore._get_raw_field(cached_data, name) or b"false"
+        if isinstance(raw, bytes):
+            try:
+                s = raw.decode("utf-8")
+            except Exception:
+                s = raw.decode("latin-1", errors="ignore")
+        else:
+            s = str(raw)
+        return s.lower() == "true"
+
     def get_entry_by_key(self, key: str) -> Tuple[str, Optional[CacheEntry]]:
         """Get entry based on given key from Redis."""
         redis_client = self._resolve_redis_client()
@@ -86,32 +134,28 @@ class _RedisCore(_BaseCore):
 
             # Deserialize the value
             value = None
-            if cached_data.get(b"value"):
-                value = pickle.loads(cached_data[b"value"])
+            raw_value = _RedisCore._get_raw_field(cached_data, "value")
+            if raw_value is not None:
+                value = self._loading_pickle(raw_value)
 
             # Parse timestamp
-            timestamp_str = cached_data.get(b"timestamp", b"").decode("utf-8")
+            raw_ts = _RedisCore._get_raw_field(cached_data, "timestamp") or b""
+            if isinstance(raw_ts, bytes):
+                try:
+                    timestamp_str = raw_ts.decode("utf-8")
+                except UnicodeDecodeError:
+                    timestamp_str = raw_ts.decode("latin-1", errors="ignore")
+            else:
+                timestamp_str = str(raw_ts)
             timestamp = (
                 datetime.fromisoformat(timestamp_str)
                 if timestamp_str
                 else datetime.now()
             )
 
-            # Parse boolean fields
-            stale = (
-                cached_data.get(b"stale", b"false").decode("utf-8").lower()
-                == "true"
-            )
-            processing = (
-                cached_data.get(b"processing", b"false")
-                .decode("utf-8")
-                .lower()
-                == "true"
-            )
-            completed = (
-                cached_data.get(b"completed", b"false").decode("utf-8").lower()
-                == "true"
-            )
+            stale = _RedisCore._get_bool_field(cached_data, "stale")
+            processing = _RedisCore._get_bool_field(cached_data, "processing")
+            completed = _RedisCore._get_bool_field(cached_data, "completed")
 
             entry = CacheEntry(
                 value=value,
@@ -126,9 +170,9 @@ class _RedisCore(_BaseCore):
             return key, None
 
     def set_entry(self, key: str, func_res: Any) -> bool:
+        """Map the given result to the given key in Redis."""
         if not self._should_store(func_res):
             return False
-        """Map the given result to the given key in Redis."""
         redis_client = self._resolve_redis_client()
         redis_key = self._get_redis_key(key)
 
@@ -242,8 +286,16 @@ class _RedisCore(_BaseCore):
                 ts = redis_client.hget(key, "timestamp")
                 if ts is None:
                     continue
+                # ts may be bytes or str depending on client configuration
+                if isinstance(ts, bytes):
+                    try:
+                        ts_s = ts.decode("utf-8")
+                    except Exception:
+                        ts_s = ts.decode("latin-1", errors="ignore")
+                else:
+                    ts_s = str(ts)
                 try:
-                    ts_val = datetime.fromisoformat(ts.decode("utf-8"))
+                    ts_val = datetime.fromisoformat(ts_s)
                 except Exception as exc:
                     warnings.warn(
                         f"Redis timestamp parse failed: {exc}", stacklevel=2
