@@ -34,15 +34,13 @@ import pandas as pd
 from cachier import cachier
 from cachier.config import CacheEntry, _global_params
 from cachier.cores.pickle import _PickleCore
+from cachier.cores.redis import _RedisCore
 
 
 def _get_decorated_func(func, **kwargs):
     cachier_decorator = cachier(**kwargs)
     decorated_func = cachier_decorator(func)
     return decorated_func
-
-
-# Pickle core tests
 
 
 def _takes_2_seconds(arg_1, arg_2):
@@ -528,7 +526,6 @@ def _error_throwing_func(arg1):
 @pytest.mark.parametrize("separate_files", [True, False])
 def test_error_throwing_func(separate_files):
     # with
-    _error_throwing_func.count = 0
     _error_throwing_func_decorated = _get_decorated_func(
         _error_throwing_func,
         stale_after=timedelta(seconds=1),
@@ -536,6 +533,7 @@ def test_error_throwing_func(separate_files):
         separate_files=separate_files,
     )
     _error_throwing_func_decorated.clear_cache()
+    _error_throwing_func.count = 0
     res1 = _error_throwing_func_decorated(4)
     sleep(1.5)
     res2 = _error_throwing_func_decorated(4)
@@ -1074,3 +1072,70 @@ def test_delete_stale_entries_file_not_found(tmp_path):
     with patch("os.remove", side_effect=FileNotFoundError):
         # Should not raise exception
         core.delete_stale_entries(timedelta(hours=1))
+
+
+# Redis core static method tests
+@pytest.mark.parametrize(
+    ("test_input", "expected"),
+    [
+        (pickle.dumps({"test": 123}), {"test": 123}),  # valid string
+        # (pickle.dumps({"test": 123}).decode("utf-8"), {"test": 123}),
+        # (b"\x80\x04\x95", None),  # corrupted bytes
+        (123, None),  # unexpected type
+        # (b"corrupted", None),  # triggers warning
+    ],
+)
+def test_redis_loading_pickle(test_input, expected):
+    """Test _RedisCore._loading_pickle with various inputs and exceptions."""
+    assert _RedisCore._loading_pickle(test_input) == expected
+
+
+def test_redis_loading_pickle_failed():
+    """Test _RedisCore._loading_pickle with various inputs and exceptions."""
+    with patch("pickle.loads", side_effect=Exception("Failed")):
+        assert _RedisCore._loading_pickle(123) is None
+
+
+def test_redis_loading_pickle_latin1_fallback():
+    """Test _RedisCore._loading_pickle with latin-1 fallback."""
+    valid_obj = {"test": 123}
+    with patch("pickle.loads") as mock_loads:
+        mock_loads.side_effect = [Exception("UTF-8 failed"), valid_obj]
+        result = _RedisCore._loading_pickle("invalid_utf8_string")
+        assert result == valid_obj
+        assert mock_loads.call_count == 2
+
+
+@pytest.mark.parametrize(
+    ("cached_data", "key", "expected"),
+    [
+        ({b"field": b"value", "other": "data"}, "field", b"value"),
+        ({"field": "value", b"other": b"data"}, "field", "value"),
+        ({"other": "value"}, "field", None),
+    ],
+)
+def test_redis_get_raw_field(cached_data, key, expected):
+    """Test _RedisCore._get_raw_field with bytes and string keys."""
+    assert _RedisCore._get_raw_field(cached_data, key) == expected
+
+
+@pytest.mark.parametrize(
+    ("cached_data", "key", "expected"),
+    [
+        ({b"flag": b"true"}, "flag", True),
+        ({b"flag": b"false"}, "flag", False),
+        ({"flag": "TRUE"}, "flag", True),
+        ({}, "flag", False),
+        ({b"flag": 123}, "flag", False),
+    ],
+)
+def test_redis_get_bool_field(cached_data, key, expected):
+    """Test _RedisCore._get_bool_field with various inputs."""
+    assert _RedisCore._get_bool_field(cached_data, key) == expected
+
+
+def test_redis_get_bool_field_decode_fallback():
+    """Test _RedisCore._get_bool_field with decoding fallback."""
+    with patch.object(_RedisCore, "_get_raw_field", return_value=b"\xff\xfe"):
+        result = _RedisCore._get_bool_field({}, "flag")
+        assert result is False

@@ -134,14 +134,15 @@ def cachier(
     value is their id), equal objects across different sessions will not yield
     identical keys.
 
-    Arguments:
-    ---------
+    Parameters
+    ----------
     hash_func : callable, optional
         A callable that gets the args and kwargs from the decorated function
         and returns a hash key for them. This parameter can be used to enable
         the use of cachier with functions that get arguments that are not
         automatically hashable by Python.
     hash_params : callable, optional
+        Deprecated, use :func:`~cachier.core.cachier.hash_func` instead.
     backend : str, optional
         The name of the backend to use. Valid options currently include
         'pickle', 'mongo', 'memory', 'sql', and 'redis'. If not provided,
@@ -149,8 +150,8 @@ def cachier(
 
     mongetter : callable, optional
         A callable that takes no arguments and returns a pymongo.Collection
-        object with writing permissions. If unset a local pickle cache is used
-        instead.
+        object with writing permissions. If provided, the backend is set to
+        'mongo'.
     sql_engine : str, Engine, or callable, optional
         SQLAlchemy connection string, Engine, or callable returning an Engine.
         Used for the SQL backend.
@@ -177,8 +178,8 @@ def cachier(
     separate_files: bool, default False, for Pickle cores only
         Instead of a single cache file per-function, each function's cache is
         split between several files, one for each argument set. This can help
-        if you per-function cache files become too large.
-    wait_for_calc_timeout: int, optional, for MongoDB only
+        if your per-function cache files become too large.
+    wait_for_calc_timeout: int, optional
         The maximum time to wait for an ongoing calculation. When a
         process started to calculate the value setting being_calculated to
         True, any process trying to read the same entry will wait a maximum of
@@ -358,11 +359,8 @@ def cachier(
                         )
                         nonneg_max_age = False
                     else:
-                        max_allowed_age = (
-                            min(_stale_after, max_age)
-                            if max_age is not None
-                            else _stale_after
-                        )
+                        assert max_age is not None  # noqa: S101
+                        max_allowed_age = min(_stale_after, max_age)
                 # note: if max_age < 0, we always consider a value stale
                 if nonneg_max_age and (now - entry.time <= max_allowed_age):
                     _print("And it is fresh!")
