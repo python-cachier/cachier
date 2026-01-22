@@ -11,15 +11,13 @@ updates:
     schedule:
       interval: "monthly"
     # Labels on pull requests for version updates only
-    labels: ["CI"]
+    labels: ["dependencies"]
     pull-request-branch-name:
       # Separate sections of the branch name with a hyphen
       # for example, `dependabot-npm_and_yarn-next_js-acorn-6.4.1`
       separator: "-"
     # Allow up to 5 open pull requests for pip dependencies
     open-pull-requests-limit: 5
-    reviewers:
-      - "borda"
 
   # Enable version updates for GitHub Actions
   - package-ecosystem: "github-actions"
@@ -30,10 +28,9 @@ updates:
     # Labels on pull requests for version updates only
     labels: ["CI"]
     pull-request-branch-name:
-      # Separate sections of the branch name with a hyphen
-      # for example, `dependabot-npm_and_yarn-next_js-acorn-6.4.1`
       separator: "-"
-    # Allow up to 5 open pull requests for GitHub Actions
-    open-pull-requests-limit: 5
-    reviewers:
-      - "borda"
+    open-pull-requests-limit: 1
+    groups:
+      github-actions:
+        patterns:
+          - "*"
