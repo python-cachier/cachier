@@ -63,7 +63,7 @@ repos:
       # basic check
       - id: ruff
         name: Ruff check
-        args: ["--fix"]
+        args: ["--fix"] #, "--unsafe-fixes"
 
   # it needs to be after formatting hooks because the lines might be changed
   - repo: https://github.com/pre-commit/mirrors-mypy
