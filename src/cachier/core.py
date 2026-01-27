@@ -94,7 +94,10 @@ def _convert_args_kwargs(
             var_positional_name = param_name
         elif param.kind == inspect.Parameter.VAR_KEYWORD:
             var_keyword_name = param_name
-        else:
+        elif param.kind in (
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        ):
             regular_params.append(param_name)
 
     # Map positional arguments to regular parameters
@@ -127,23 +130,15 @@ def _convert_args_kwargs(
     # Merge args expanded as kwargs and the original kwds
     kwargs.update(args_as_kw)
 
-    # Handle variadic keyword arguments
+    # Handle variadic keyword arguments and keyword-only parameters
     if var_keyword_name:
         # Separate kwds that match known parameters from those that don't
-        known_param_kwds = {}
-        extra_kwds = {}
         for k, v in kwds.items():
             if k in sig.parameters:
-                param = sig.parameters[k]
-                if param.kind != inspect.Parameter.VAR_KEYWORD:
-                    known_param_kwds[k] = v
-                else:
-                    extra_kwds[k] = v
+                kwargs[k] = v
             else:
-                extra_kwds[k] = v
-        kwargs.update(known_param_kwds)
-        # Store extra kwargs with their original keys
-        kwargs.update(extra_kwds)
+                # Extra kwargs go directly into the result dict
+                kwargs[k] = v
     else:
         kwargs.update(kwds)
 
