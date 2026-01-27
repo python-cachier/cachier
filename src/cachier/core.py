@@ -556,10 +556,12 @@ def cachier(
         is_coroutine = inspect.iscoroutinefunction(func)
 
         if is_coroutine:
+
             @wraps(func)
             async def func_wrapper(*args, **kwargs):
                 return await _call_async(*args, **kwargs)
         else:
+
             @wraps(func)
             def func_wrapper(*args, **kwargs):
                 return _call(*args, **kwargs)

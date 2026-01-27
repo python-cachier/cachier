@@ -1,7 +1,8 @@
 """Example demonstrating async/coroutine support in Cachier.
 
-This example shows how to use the @cachier decorator with async functions
-to cache the results of HTTP requests or other async operations.
+This example shows how to use the @cachier decorator with async functions to
+cache the results of HTTP requests or other async operations.
+
 """
 
 import asyncio
@@ -30,7 +31,7 @@ async def calculate_complex_result(x: int, y: int) -> int:
     """Simulate a complex calculation."""
     print(f"  Computing {x} ** {y}...")
     await asyncio.sleep(0.5)  # Simulate computation time
-    return x ** y
+    return x**y
 
 
 # Example 3: Async function with stale_after (without next_time for simplicity)
@@ -59,7 +60,9 @@ async def demo_http_caching():
             """Fetch GitHub user data with caching."""
             print(f"  Making API request for {username}...")
             async with httpx.AsyncClient() as client:
-                response = await client.get(f"https://api.github.com/users/{username}")
+                response = await client.get(
+                    f"https://api.github.com/users/{username}"
+                )
                 return response.json()
 
         # First call - makes actual HTTP request
@@ -67,8 +70,8 @@ async def demo_http_caching():
         user1 = await fetch_github_user("torvalds")
         duration1 = time.time() - start
         print(f"  First call took {duration1:.2f}s")
-        user_name = user1.get('name', 'N/A')
-        user_repos = user1.get('public_repos', 'N/A')
+        user_name = user1.get("name", "N/A")
+        user_repos = user1.get("public_repos", "N/A")
         print(f"  User: {user_name}, Repos: {user_repos}")
 
         # Second call - uses cache (much faster)
@@ -76,7 +79,7 @@ async def demo_http_caching():
         await fetch_github_user("torvalds")
         duration2 = time.time() - start
         print(f"  Second call took {duration2:.2f}s (from cache)")
-        print(f"  Cache speedup: {duration1/duration2:.1f}x")
+        print(f"  Cache speedup: {duration1 / duration2:.1f}x")
 
     except ImportError:
         msg = "  (Skipping - httpx not installed. "
@@ -101,7 +104,7 @@ async def main():
     user = await fetch_user_data(42)
     duration2 = time.time() - start
     print(f"Second call: {user} (took {duration2:.2f}s)")
-    print(f"Speedup: {duration1/duration2:.1f}x faster!")
+    print(f"Speedup: {duration1 / duration2:.1f}x faster!")
 
     # Example 2: Memory backend
     print("\n=== Example 2: Memory Backend (Fast, Non-Persistent) ===")

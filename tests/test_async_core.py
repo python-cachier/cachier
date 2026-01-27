@@ -14,6 +14,7 @@ from cachier import cachier
 @pytest.mark.asyncio
 async def test_async_basic_memory():
     """Test basic async caching with memory backend."""
+
     @cachier(backend="memory")
     async def async_func(x):
         await asyncio.sleep(0.1)
@@ -40,6 +41,7 @@ async def test_async_basic_memory():
 @pytest.mark.asyncio
 async def test_async_basic_pickle():
     """Test basic async caching with pickle backend."""
+
     @cachier(backend="pickle")
     async def async_func(x):
         await asyncio.sleep(0.1)
@@ -216,6 +218,7 @@ async def test_async_overwrite_cache():
 @pytest.mark.asyncio
 async def test_async_method():
     """Test async caching on class methods."""
+
     class MyClass:
         def __init__(self, value):
             self.value = value
@@ -253,6 +256,7 @@ async def test_async_method():
 @pytest.mark.memory
 def test_sync_still_works():
     """Ensure sync functions still work after adding async support."""
+
     @cachier(backend="memory")
     def sync_func(x):
         sleep(0.1)
@@ -279,6 +283,7 @@ def test_sync_still_works():
 @pytest.mark.asyncio
 async def test_async_different_args():
     """Test async caching with different argument types."""
+
     @cachier(backend="memory")
     async def async_func(x, y, z=10):
         await asyncio.sleep(0.1)
@@ -351,6 +356,7 @@ async def test_async_concurrent():
     will all execute in parallel (no waiting/blocking). However, once
     any of them completes and caches the result, subsequent calls will
     use the cached value.
+
     """
     call_count = 0
 
