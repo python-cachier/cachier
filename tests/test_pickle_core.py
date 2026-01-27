@@ -903,6 +903,75 @@ def test_wait_on_entry_calc_other_os_error(tmp_path):
 
 
 @pytest.mark.pickle
+def test_wait_on_entry_calc_runtime_error_watch_scheduled(tmp_path):
+    """Test wait_on_entry_calc fallback when RuntimeError occurs (FSEvents)."""
+    # Test RuntimeError handling for "Cannot add watch" on macOS FSEvents
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=10,
+        separate_files=False,
+    )
+
+    # Set a mock function
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+
+    # Create a cache entry that's being calculated
+    cache_entry = CacheEntry(
+        value="test_value",
+        time=datetime.now(),
+        stale=False,
+        _processing=True,  # Should be processing
+    )
+    core._save_cache({"test_key": cache_entry})
+
+    # Mock _wait_with_inotify to raise RuntimeError with FSEvents message
+    def mock_wait_inotify(key, filename):
+        raise RuntimeError("Cannot add watch")
+
+    core._wait_with_inotify = mock_wait_inotify
+
+    # Mock _wait_with_polling to return a value
+    core._wait_with_polling = Mock(return_value="polling_result")
+
+    result = core.wait_on_entry_calc("test_key")
+    assert result == "polling_result"
+    core._wait_with_polling.assert_called_once_with("test_key")
+
+
+@pytest.mark.pickle
+def test_wait_on_entry_calc_other_runtime_error(tmp_path):
+    """Test wait_on_entry_calc re-raises non-watch RuntimeErrors."""
+    # Test that other RuntimeErrors are re-raised
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=10,
+        separate_files=False,
+    )
+
+    # Set a mock function
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+
+    # Mock _wait_with_inotify to raise different RuntimeError
+    def mock_wait_inotify(key, filename):
+        raise RuntimeError("Different runtime error")
+
+    core._wait_with_inotify = mock_wait_inotify
+
+    with pytest.raises(RuntimeError, match="Different runtime error"):
+        core.wait_on_entry_calc("test_key")
+
+
+@pytest.mark.pickle
 def test_wait_with_polling_file_errors(tmp_path):
     """Test _wait_with_polling handles file errors gracefully."""
     # Test lines 352-354: FileNotFoundError/EOFError handling
