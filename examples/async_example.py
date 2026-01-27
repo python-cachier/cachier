@@ -17,7 +17,11 @@ async def fetch_user_data(user_id: int) -> dict:
     """Simulate fetching user data from an API."""
     print(f"  Fetching user {user_id} from API...")
     await asyncio.sleep(1)  # Simulate network delay
-    return {"id": user_id, "name": f"User{user_id}", "email": f"user{user_id}@example.com"}
+    return {
+        "id": user_id,
+        "name": f"User{user_id}",
+        "email": f"user{user_id}@example.com",
+    }
 
 
 # Example 2: Async function with memory backend (faster, but not persistent)
@@ -35,7 +39,12 @@ async def get_weather_data(city: str) -> dict:
     """Simulate fetching weather data with automatic refresh when stale."""
     print(f"  Fetching weather for {city}...")
     await asyncio.sleep(0.5)
-    return {"city": city, "temp": 72, "condition": "sunny", "timestamp": time.time()}
+    return {
+        "city": city,
+        "temp": 72,
+        "condition": "sunny",
+        "timestamp": time.time(),
+    }
 
 
 # Example 4: Real-world HTTP request caching (requires httpx)
@@ -58,17 +67,21 @@ async def demo_http_caching():
         user1 = await fetch_github_user("torvalds")
         duration1 = time.time() - start
         print(f"  First call took {duration1:.2f}s")
-        print(f"  User: {user1.get('name', 'N/A')}, Repos: {user1.get('public_repos', 'N/A')}")
+        user_name = user1.get('name', 'N/A')
+        user_repos = user1.get('public_repos', 'N/A')
+        print(f"  User: {user_name}, Repos: {user_repos}")
 
         # Second call - uses cache (much faster)
         start = time.time()
-        user2 = await fetch_github_user("torvalds")
+        await fetch_github_user("torvalds")
         duration2 = time.time() - start
         print(f"  Second call took {duration2:.2f}s (from cache)")
         print(f"  Cache speedup: {duration1/duration2:.1f}x")
 
     except ImportError:
-        print("  (Skipping - httpx not installed. Install with: pip install httpx)")
+        msg = "  (Skipping - httpx not installed. "
+        msg += "Install with: pip install httpx)"
+        print(msg)
 
 
 async def main():
@@ -121,7 +134,7 @@ async def main():
     print("Making 5 concurrent requests...")
     print("(First 3 are unique and will execute, last 2 are duplicates)")
     start = time.time()
-    users = await asyncio.gather(
+    await asyncio.gather(
         fetch_user_data(1),
         fetch_user_data(2),
         fetch_user_data(3),
@@ -130,11 +143,11 @@ async def main():
     )
     duration = time.time() - start
     print(f"All requests completed in {duration:.2f}s")
-    
+
     # Now test that subsequent calls use cache
     print("\nMaking the same requests again (should use cache):")
     start = time.time()
-    users2 = await asyncio.gather(
+    await asyncio.gather(
         fetch_user_data(1),
         fetch_user_data(2),
         fetch_user_data(3),

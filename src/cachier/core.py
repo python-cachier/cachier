@@ -419,7 +419,9 @@ def cachier(
             _print("No entry found. No current calc. Calling like a boss.")
             return _calc_entry(core, key, func, args, kwds, _print)
 
-        async def _call_async(*args, max_age: Optional[timedelta] = None, **kwds):
+        async def _call_async(
+            *args, max_age: Optional[timedelta] = None, **kwds
+        ):
             nonlocal allow_none, last_cleanup
             _allow_none = _update_with_defaults(allow_none, "allow_none", kwds)
             # print('Inside async wrapper for {}.'.format(func.__name__))
@@ -472,12 +474,18 @@ def cachier(
                 )
             key, entry = core.get_entry((), kwargs)
             if overwrite_cache:
-                return await _calc_entry_async(core, key, func, args, kwds, _print)
+                result = await _calc_entry_async(
+                    core, key, func, args, kwds, _print
+                )
+                return result
             if entry is None or (
                 not entry._completed and not entry._processing
             ):
                 _print("No entry found. No current calc. Calling like a boss.")
-                return await _calc_entry_async(core, key, func, args, kwds, _print)
+                result = await _calc_entry_async(
+                    core, key, func, args, kwds, _print
+                )
+                return result
             _print("Entry found.")
             if _allow_none or entry.value is not None:
                 _print("Cached result found.")
@@ -506,7 +514,10 @@ def cachier(
                     _print("Already calc. Recalculating (async - no wait).")
                     # For async, don't wait - just recalculate
                     # This avoids blocking the event loop
-                    return await _calc_entry_async(core, key, func, args, kwds, _print)
+                    result = await _calc_entry_async(
+                        core, key, func, args, kwds, _print
+                    )
+                    return result
                 if _next_time:
                     _print("Async calc and return stale")
                     core.mark_entry_being_calculated(key)
@@ -517,12 +528,19 @@ def cachier(
                     core.mark_entry_not_calculated(key)
                     return entry.value
                 _print("Calling decorated function and waiting")
-                return await _calc_entry_async(core, key, func, args, kwds, _print)
+                result = await _calc_entry_async(
+                    core, key, func, args, kwds, _print
+                )
+                return result
             if entry._processing:
-                _print("No value but being calculated. Recalculating (async - no wait).")
+                msg = "No value but being calculated. Recalculating"
+                _print(f"{msg} (async - no wait).")
                 # For async, don't wait - just recalculate
                 # This avoids blocking the event loop
-                return await _calc_entry_async(core, key, func, args, kwds, _print)
+                result = await _calc_entry_async(
+                    core, key, func, args, kwds, _print
+                )
+                return result
             _print("No entry found. No current calc. Calling like a boss.")
             return await _calc_entry_async(core, key, func, args, kwds, _print)
 
@@ -530,9 +548,10 @@ def cachier(
         # that passes *args and **kwargs to _call. This ensures that user
         # arguments are not shifted, and max_age is only settable via keyword
         # argument.
-        # For async functions, we create an async wrapper that calls _call_async.
+        # For async functions, we create an async wrapper that calls
+        # _call_async.
         is_coroutine = inspect.iscoroutinefunction(func)
-        
+
         if is_coroutine:
             @wraps(func)
             async def func_wrapper(*args, **kwargs):
