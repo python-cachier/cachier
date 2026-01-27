@@ -520,6 +520,9 @@ def cachier(
                     return result
                 if _next_time:
                     _print("Async calc and return stale")
+                    # Mark entry as being calculated then immediately unmark
+                    # This matches sync behavior and ensures entry exists
+                    # Background task will update cache when complete
                     core.mark_entry_being_calculated(key)
                     # Use asyncio.create_task for background execution
                     asyncio.create_task(
