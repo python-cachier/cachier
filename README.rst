@@ -395,7 +395,7 @@ Access metrics programmatically for custom monitoring:
 .. code-block:: python
 
   stats = my_function.metrics.get_stats()
-  
+
   if stats.hit_rate < 70.0:
       print(f"Warning: Cache hit rate is {stats.hit_rate}%")
       print(f"Consider increasing cache size or adjusting stale_after")

@@ -106,7 +106,9 @@ def test_prometheus_exporter_multiple_functions():
 
 
 def test_metrics_exporter_interface():
-    """Test that PrometheusExporter implements the MetricsExporter interface."""
+    """Test that PrometheusExporter implements the MetricsExporter
+    interface.
+    """
     exporter = PrometheusExporter(port=9095)
 
     # Check that it has the required methods

@@ -49,9 +49,7 @@ class PrometheusExporter(MetricsExporter):
 
     """
 
-    def __init__(
-        self, port: int = 9090, use_prometheus_client: bool = True
-    ):
+    def __init__(self, port: int = 9090, use_prometheus_client: bool = True):
         """Initialize Prometheus exporter.
 
         Parameters
@@ -240,8 +238,8 @@ class PrometheusExporter(MetricsExporter):
     def start(self) -> None:
         """Start the Prometheus exporter.
 
-        If prometheus_client is available, starts the HTTP server.
-        Otherwise, provides a simple HTTP server for text format metrics.
+        If prometheus_client is available, starts the HTTP server. Otherwise,
+        provides a simple HTTP server for text format metrics.
 
         """
         if self._prom_client:
@@ -284,9 +282,7 @@ class PrometheusExporter(MetricsExporter):
         def run_server():
             self._server.serve_forever()
 
-        self._server_thread = threading.Thread(
-            target=run_server, daemon=True
-        )
+        self._server_thread = threading.Thread(target=run_server, daemon=True)
         self._server_thread.start()
 
     def stop(self) -> None:

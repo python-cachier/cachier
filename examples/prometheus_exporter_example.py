@@ -2,6 +2,7 @@
 
 This example shows how to export cachier metrics to Prometheus for monitoring.
 The exporter can work with or without the prometheus_client library.
+
 """
 
 import time
@@ -51,7 +52,7 @@ for i in range(20):
 for i in range(15):
     calculate_cube(i % 3)
 
-print(f"✓ Generated activity on both functions")
+print("✓ Generated activity on both functions")
 
 # Display metrics for each function
 print("\n" + "=" * 60)
@@ -59,14 +60,14 @@ print("Metrics Summary")
 print("=" * 60)
 
 square_stats = calculate_square.metrics.get_stats()
-print(f"\ncalculate_square:")
+print("\ncalculate_square:")
 print(f"  Hits: {square_stats.hits}")
 print(f"  Misses: {square_stats.misses}")
 print(f"  Hit rate: {square_stats.hit_rate:.1f}%")
 print(f"  Total calls: {square_stats.total_calls}")
 
 cube_stats = calculate_cube.metrics.get_stats()
-print(f"\ncalculate_cube:")
+print("\ncalculate_cube:")
 print(f"  Hits: {cube_stats.hits}")
 print(f"  Misses: {cube_stats.misses}")
 print(f"  Hit rate: {cube_stats.hit_rate:.1f}%")

@@ -183,9 +183,7 @@ def test_metrics_sampling_rate():
         return x * 2
 
     # Partial sampling
-    @cachier(
-        backend="memory", enable_metrics=True, metrics_sampling_rate=0.5
-    )
+    @cachier(backend="memory", enable_metrics=True, metrics_sampling_rate=0.5)
     def func_partial_sampling(x):
         return x * 2
 
@@ -348,9 +346,7 @@ def test_cache_metrics_invalid_sampling_rate():
 def test_metrics_size_limit_rejection():
     """Test that size limit rejections are tracked."""
 
-    @cachier(
-        backend="memory", enable_metrics=True, entry_size_limit="1KB"
-    )
+    @cachier(backend="memory", enable_metrics=True, entry_size_limit="1KB")
     def test_func(n):
         # Return large data that exceeds 1KB
         return "x" * (n * 1000)

@@ -92,7 +92,7 @@ result = time_sensitive_operation(5)
 print(f"  Result: {result}")
 
 stats = time_sensitive_operation.metrics.get_stats()
-print(f"\nMetrics after stale access:")
+print("\nMetrics after stale access:")
 print(f"  Hits: {stats.hits}")
 print(f"  Stale hits: {stats.stale_hits}")
 print(f"  Recalculations: {stats.recalculations}")
@@ -121,7 +121,7 @@ for i in range(100):
     sampled_operation(i % 10)
 
 stats = sampled_operation.metrics.get_stats()
-print(f"\nMetrics (with 50% sampling):")
+print("\nMetrics (with 50% sampling):")
 print(f"  Total calls recorded: {stats.total_calls}")
 print(f"  Hits: {stats.hits}")
 print(f"  Misses: {stats.misses}")
@@ -204,7 +204,7 @@ for i in range(20):
 
 # Check health
 is_healthy, message = check_cache_health(monitored_operation, threshold=70.0)
-print(f"\nCache health check:")
+print("\nCache health check:")
 print(f"  Status: {'✓ HEALTHY' if is_healthy else '✗ UNHEALTHY'}")
 print(f"  {message}")
 

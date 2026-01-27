@@ -228,12 +228,12 @@ def cachier(
     size_limit_bytes = parse_bytes(
         _update_with_defaults(entry_size_limit, "entry_size_limit")
     )
-    
+
     # Create metrics object if enabled
     cache_metrics = None
     if enable_metrics:
         cache_metrics = CacheMetrics(sampling_rate=metrics_sampling_rate)
-    
+
     # Override the backend parameter if a mongetter is provided.
     if callable(mongetter):
         backend = "mongo"
@@ -363,10 +363,10 @@ def cachier(
                     if core.func_is_method
                     else func(**kwargs)
                 )
-            
+
             # Start timing for metrics
             start_time = time.time() if cache_metrics else None
-            
+
             key, entry = core.get_entry((), kwargs)
             if overwrite_cache:
                 if cache_metrics:
@@ -417,21 +417,29 @@ def cachier(
                     if _next_time:
                         _print("Returning stale.")
                         if cache_metrics:
-                            cache_metrics.record_latency(time.time() - start_time)
+                            cache_metrics.record_latency(
+                                time.time() - start_time
+                            )
                         return entry.value  # return stale val
                     _print("Already calc. Waiting on change.")
                     try:
                         result = core.wait_on_entry_calc(key)
                         if cache_metrics:
-                            cache_metrics.record_latency(time.time() - start_time)
+                            cache_metrics.record_latency(
+                                time.time() - start_time
+                            )
                         return result
                     except RecalculationNeeded:
                         if cache_metrics:
                             cache_metrics.record_wait_timeout()
                             cache_metrics.record_recalculation()
-                        result = _calc_entry(core, key, func, args, kwds, _print)
+                        result = _calc_entry(
+                            core, key, func, args, kwds, _print
+                        )
                         if cache_metrics:
-                            cache_metrics.record_latency(time.time() - start_time)
+                            cache_metrics.record_latency(
+                                time.time() - start_time
+                            )
                         return result
                 if _next_time:
                     _print("Async calc and return stale")

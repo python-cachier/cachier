@@ -9,6 +9,7 @@ This document provides a technical summary of the cache analytics and observabil
 ### Core Components
 
 1. **CacheMetrics Class** (`src/cachier/metrics.py`)
+
    - Thread-safe metric collection using `threading.RLock`
    - Tracks: hits, misses, latencies, stale hits, recalculations, wait timeouts, size rejections
    - Time-windowed aggregation support
@@ -16,29 +17,34 @@ This document provides a technical summary of the cache analytics and observabil
    - Zero overhead when disabled (default)
 
 2. **MetricSnapshot** (`src/cachier/metrics.py`)
+
    - Immutable snapshot of metrics at a point in time
    - Includes hit rate calculation
    - Average latency in milliseconds
    - Cache size information
 
 3. **MetricsContext** (`src/cachier/metrics.py`)
+
    - Context manager for timing operations
    - Automatically records operation latency
 
 ### Integration Points
 
 1. **Core Decorator** (`src/cachier/core.py`)
+
    - Added `enable_metrics` parameter (default: False)
    - Added `metrics_sampling_rate` parameter (default: 1.0)
    - Exposes `metrics` attribute on decorated functions
    - Tracks metrics at every cache decision point
 
 2. **Base Core** (`src/cachier/cores/base.py`)
+
    - Added optional `metrics` parameter to `__init__`
    - All backend cores inherit metrics support
    - Metrics tracked in size limit checking
 
 3. **All Backend Cores**
+
    - Memory, Pickle, Mongo, Redis, SQL all support metrics
    - No backend-specific metric logic needed
    - Metrics tracked at the decorator level for consistency
@@ -46,10 +52,12 @@ This document provides a technical summary of the cache analytics and observabil
 ### Exporters
 
 1. **MetricsExporter** (`src/cachier/exporters/base.py`)
+
    - Abstract base class for exporters
    - Defines interface: register_function, export_metrics, start, stop
 
 2. **PrometheusExporter** (`src/cachier/exporters/prometheus.py`)
+
    - Exports metrics in Prometheus text format
    - Can use prometheus_client library if available
    - Falls back to simple HTTP server
@@ -62,9 +70,11 @@ This document provides a technical summary of the cache analytics and observabil
 ```python
 from cachier import cachier
 
-@cachier(backend='memory', enable_metrics=True)
+
+@cachier(backend="memory", enable_metrics=True)
 def expensive_function(x):
-    return x ** 2
+    return x**2
+
 
 # Access metrics
 stats = expensive_function.metrics.get_stats()
@@ -76,9 +86,9 @@ print(f"Latency: {stats.avg_latency_ms}ms")
 
 ```python
 @cachier(
-    backend='redis', 
+    backend="redis",
     enable_metrics=True,
-    metrics_sampling_rate=0.1  # Sample 10% of calls
+    metrics_sampling_rate=0.1,  # Sample 10% of calls
 )
 def high_traffic_function(x):
     return x * 2
@@ -98,19 +108,19 @@ exporter.start()
 
 ## Tracked Metrics
 
-| Metric | Description | Type |
-|--------|-------------|------|
-| hits | Cache hits | Counter |
-| misses | Cache misses | Counter |
-| hit_rate | Hit rate percentage | Gauge |
-| total_calls | Total cache accesses | Counter |
-| avg_latency_ms | Average operation latency | Gauge |
-| stale_hits | Stale cache accesses | Counter |
-| recalculations | Cache recalculations | Counter |
-| wait_timeouts | Concurrent wait timeouts | Counter |
-| entry_count | Number of cache entries | Gauge |
-| total_size_bytes | Total cache size | Gauge |
-| size_limit_rejections | Size limit rejections | Counter |
+| Metric                | Description               | Type    |
+| --------------------- | ------------------------- | ------- |
+| hits                  | Cache hits                | Counter |
+| misses                | Cache misses              | Counter |
+| hit_rate              | Hit rate percentage       | Gauge   |
+| total_calls           | Total cache accesses      | Counter |
+| avg_latency_ms        | Average operation latency | Gauge   |
+| stale_hits            | Stale cache accesses      | Counter |
+| recalculations        | Cache recalculations      | Counter |
+| wait_timeouts         | Concurrent wait timeouts  | Counter |
+| entry_count           | Number of cache entries   | Gauge   |
+| total_size_bytes      | Total cache size          | Gauge   |
+| size_limit_rejections | Size limit rejections     | Counter |
 
 ## Performance Considerations
 
@@ -156,6 +166,7 @@ class CacheMetrics(sampling_rate=1.0, window_sizes=None)
 ```
 
 Methods:
+
 - `record_hit()` - Record a cache hit
 - `record_miss()` - Record a cache miss
 - `record_stale_hit()` - Record a stale hit
@@ -169,6 +180,7 @@ Methods:
 ### MetricSnapshot
 
 Dataclass with fields:
+
 - hits, misses, hit_rate, total_calls
 - avg_latency_ms, stale_hits, recalculations
 - wait_timeouts, entry_count, total_size_bytes
@@ -181,6 +193,7 @@ class PrometheusExporter(port=9090, use_prometheus_client=True)
 ```
 
 Methods:
+
 - `register_function(func)` - Register a cached function
 - `export_metrics(func_name, metrics)` - Export metrics
 - `start()` - Start HTTP server
@@ -189,6 +202,7 @@ Methods:
 ## Files Modified/Created
 
 ### New Files
+
 - `src/cachier/metrics.py` - Core metrics implementation
 - `src/cachier/exporters/__init__.py` - Exporters module
 - `src/cachier/exporters/base.py` - Base exporter interface
@@ -199,6 +213,7 @@ Methods:
 - `examples/prometheus_exporter_example.py` - Prometheus example
 
 ### Modified Files
+
 - `src/cachier/__init__.py` - Export metrics classes
 - `src/cachier/core.py` - Integrate metrics tracking
 - `src/cachier/cores/base.py` - Add metrics parameter
