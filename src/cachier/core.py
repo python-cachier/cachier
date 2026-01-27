@@ -94,7 +94,7 @@ def _convert_args_kwargs(
             var_positional_name = param_name
         elif param.kind == inspect.Parameter.VAR_KEYWORD:
             var_keyword_name = param_name
-        else:
+        elif param.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD):
             regular_params.append(param_name)
 
     # Map positional arguments to regular parameters
@@ -134,11 +134,7 @@ def _convert_args_kwargs(
         extra_kwds = {}
         for k, v in kwds.items():
             if k in sig.parameters:
-                param = sig.parameters[k]
-                if param.kind != inspect.Parameter.VAR_KEYWORD:
-                    known_param_kwds[k] = v
-                else:
-                    extra_kwds[k] = v
+                known_param_kwds[k] = v
             else:
                 extra_kwds[k] = v
         kwargs.update(known_param_kwds)
