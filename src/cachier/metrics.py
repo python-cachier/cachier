@@ -381,12 +381,14 @@ class MetricsContext:
     def __enter__(self):
         """Start timing the operation."""
         if self.metrics:
-            self.start_time = time.time()
+            # Use a monotonic clock for measuring elapsed time to avoid
+            # issues with system clock adjustments.
+            self.start_time = time.perf_counter()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Record the operation latency."""
         if self.metrics:
-            latency = time.time() - self.start_time
+            latency = time.perf_counter() - self.start_time
             self.metrics.record_latency(latency)
         return False
