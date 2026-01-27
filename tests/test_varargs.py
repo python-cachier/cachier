@@ -110,7 +110,7 @@ class TestVarargsEmpty:
 
         # Second call should use cache
         previous_call_count = self.call_count
-        result2 = self.get_data()
+        _ = self.get_data()
         assert self.call_count == previous_call_count
 
 
@@ -192,7 +192,9 @@ class TestVarkwargsDifferentCacheKeys:
         result1 = self.get_data(type="domains", action="print")
         assert self.call_count == 1
 
-        result2 = self.get_data(type="users", action="print", fields="allfields")
+        result2 = self.get_data(
+            type="users", action="print", fields="allfields"
+        )
         assert self.call_count == 2
         assert result1 != result2
 
@@ -295,7 +297,7 @@ class TestKeywordOnlyParameters:
         get_data.clear_cache()
 
     def test_different_kw_only_values_produce_different_results(self):
-        """Test that different keyword-only values produce different results."""
+        """Test that different keyword-only values produce dif results."""
         result1 = self.get_data("a", "b", kw_only="value1")
         assert self.call_count == 1
 
@@ -408,9 +410,11 @@ class TestMixedVarargsKeywordOnly:
         assert result1 != result2
 
     def test_different_kw_with_default_produces_different_results(self):
-        """Test that different kw_with_default values produce different results."""
+        """Test that different kw_with_default values produce dif results."""
         result1 = self.get_data("r1", "a", "b", kw_only="k1")
-        result3 = self.get_data("r1", "a", "b", kw_only="k1", kw_with_default="custom")
+        result3 = self.get_data(
+            "r1", "a", "b", kw_only="k1", kw_with_default="custom"
+        )
         assert self.call_count == 2
         assert result3 != result1
 
