@@ -30,30 +30,23 @@ class _RedisCore(_BaseCore):
     def __init__(
         self,
         hash_func: Optional[HashFunc],
-        redis_client: Optional[
-            Union["redis.Redis", Callable[[], "redis.Redis"]]
-        ],
+        redis_client: Optional[Union["redis.Redis", Callable[[], "redis.Redis"]]],
         wait_for_calc_timeout: Optional[int] = None,
         key_prefix: str = "cachier",
         entry_size_limit: Optional[int] = None,
     ):
         if not REDIS_AVAILABLE:
             warnings.warn(
-                "`redis` was not found. Redis cores will not function. "
-                "Install with `pip install redis`.",
+                "`redis` was not found. Redis cores will not function. Install with `pip install redis`.",
                 ImportWarning,
                 stacklevel=2,
             )
 
         super().__init__(
-            hash_func=hash_func,
-            wait_for_calc_timeout=wait_for_calc_timeout,
-            entry_size_limit=entry_size_limit,
+            hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout, entry_size_limit=entry_size_limit
         )
         if redis_client is None:
-            raise MissingRedisClient(
-                "must specify ``redis_client`` when using the redis core"
-            )
+            raise MissingRedisClient("must specify ``redis_client`` when using the redis core")
         self.redis_client = redis_client
         self.key_prefix = key_prefix
         self._func_str = None
@@ -147,11 +140,7 @@ class _RedisCore(_BaseCore):
                     timestamp_str = raw_ts.decode("latin-1", errors="ignore")
             else:
                 timestamp_str = str(raw_ts)
-            timestamp = (
-                datetime.fromisoformat(timestamp_str)
-                if timestamp_str
-                else datetime.now()
-            )
+            timestamp = datetime.fromisoformat(timestamp_str) if timestamp_str else datetime.now()
 
             stale = _RedisCore._get_bool_field(cached_data, "stale")
             processing = _RedisCore._get_bool_field(cached_data, "processing")
@@ -206,17 +195,10 @@ class _RedisCore(_BaseCore):
             now = datetime.now()
             redis_client.hset(
                 redis_key,
-                mapping={
-                    "timestamp": now.isoformat(),
-                    "stale": "false",
-                    "processing": "true",
-                    "completed": "false",
-                },
+                mapping={"timestamp": now.isoformat(), "stale": "false", "processing": "true", "completed": "false"},
             )
         except Exception as e:
-            warnings.warn(
-                f"Redis mark_entry_being_calculated failed: {e}", stacklevel=2
-            )
+            warnings.warn(f"Redis mark_entry_being_calculated failed: {e}", stacklevel=2)
 
     def mark_entry_not_calculated(self, key: str) -> None:
         """Mark the entry mapped by the given key as not being calculated."""
@@ -226,9 +208,7 @@ class _RedisCore(_BaseCore):
         try:
             redis_client.hset(redis_key, "processing", "false")
         except Exception as e:
-            warnings.warn(
-                f"Redis mark_entry_not_calculated failed: {e}", stacklevel=2
-            )
+            warnings.warn(f"Redis mark_entry_not_calculated failed: {e}", stacklevel=2)
 
     def wait_on_entry_calc(self, key: str) -> Any:
         """Wait on the entry with keys being calculated and returns result."""
@@ -271,9 +251,7 @@ class _RedisCore(_BaseCore):
                     pipe.hset(key, "processing", "false")
                 pipe.execute()
         except Exception as e:
-            warnings.warn(
-                f"Redis clear_being_calculated failed: {e}", stacklevel=2
-            )
+            warnings.warn(f"Redis clear_being_calculated failed: {e}", stacklevel=2)
 
     def delete_stale_entries(self, stale_after: timedelta) -> None:
         """Remove stale entries from the Redis cache."""
@@ -297,13 +275,9 @@ class _RedisCore(_BaseCore):
                 try:
                     ts_val = datetime.fromisoformat(ts_s)
                 except Exception as exc:
-                    warnings.warn(
-                        f"Redis timestamp parse failed: {exc}", stacklevel=2
-                    )
+                    warnings.warn(f"Redis timestamp parse failed: {exc}", stacklevel=2)
                     continue
                 if ts_val < threshold:
                     redis_client.delete(key)
         except Exception as e:
-            warnings.warn(
-                f"Redis delete_stale_entries failed: {e}", stacklevel=2
-            )
+            warnings.warn(f"Redis delete_stale_entries failed: {e}", stacklevel=2)

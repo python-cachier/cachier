@@ -103,16 +103,10 @@ def _convert_args_kwargs(
         kwds.update({k: v for k, v in func.keywords.items() if k not in kwds})
         func = func.func
     func_params = list(inspect.signature(func).parameters)
-    args_as_kw = dict(
-        zip(func_params[1:], args[1:])
-        if _is_method
-        else zip(func_params, args)
-    )
+    args_as_kw = dict(zip(func_params[1:], args[1:]) if _is_method else zip(func_params, args))
     # init with default values
     kwargs = {
-        k: v.default
-        for k, v in inspect.signature(func).parameters.items()
-        if v.default is not inspect.Parameter.empty
+        k: v.default for k, v in inspect.signature(func).parameters.items() if v.default is not inspect.Parameter.empty
     }
     # merge args expanded as kwargs and the original kwds
     kwargs.update(dict(**args_as_kw, **kwds))
@@ -122,8 +116,7 @@ def _convert_args_kwargs(
 def _pop_kwds_with_deprecation(kwds, name: str, default_value: bool):
     if name in kwds:
         warnings.warn(
-            f"`{name}` is deprecated and will be removed in a future release,"
-            " use `cachier__` alternative instead.",
+            f"`{name}` is deprecated and will be removed in a future release, use `cachier__` alternative instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -224,18 +217,13 @@ def cachier(
     """
     # Check for deprecated parameters
     if hash_params is not None:
-        message = (
-            "hash_params will be removed in a future release, "
-            "please use hash_func instead"
-        )
+        message = "hash_params will be removed in a future release, please use hash_func instead"
         warn(message, DeprecationWarning, stacklevel=2)
         hash_func = hash_params
     # Update parameters with defaults if input is None
     backend = _update_with_defaults(backend, "backend")
     mongetter = _update_with_defaults(mongetter, "mongetter")
-    size_limit_bytes = parse_bytes(
-        _update_with_defaults(entry_size_limit, "entry_size_limit")
-    )
+    size_limit_bytes = parse_bytes(_update_with_defaults(entry_size_limit, "entry_size_limit"))
     # Override the backend parameter if a mongetter is provided.
     if callable(mongetter):
         backend = "mongo"
@@ -258,9 +246,7 @@ def cachier(
         )
     elif backend == "memory":
         core = _MemoryCore(
-            hash_func=hash_func,
-            wait_for_calc_timeout=wait_for_calc_timeout,
-            entry_size_limit=size_limit_bytes,
+            hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout, entry_size_limit=size_limit_bytes
         )
     elif backend == "sql":
         core = _SQLCore(
@@ -313,41 +299,25 @@ def cachier(
             nonlocal allow_none, last_cleanup
             _allow_none = _update_with_defaults(allow_none, "allow_none", kwds)
             # print('Inside general wrapper for {}.'.format(func.__name__))
-            ignore_cache = _pop_kwds_with_deprecation(
-                kwds, "ignore_cache", False
-            )
-            overwrite_cache = _pop_kwds_with_deprecation(
-                kwds, "overwrite_cache", False
-            )
+            ignore_cache = _pop_kwds_with_deprecation(kwds, "ignore_cache", False)
+            overwrite_cache = _pop_kwds_with_deprecation(kwds, "overwrite_cache", False)
             verbose = _pop_kwds_with_deprecation(kwds, "verbose_cache", False)
             ignore_cache = kwds.pop("cachier__skip_cache", ignore_cache)
-            overwrite_cache = kwds.pop(
-                "cachier__overwrite_cache", overwrite_cache
-            )
+            overwrite_cache = kwds.pop("cachier__overwrite_cache", overwrite_cache)
             verbose = kwds.pop("cachier__verbose", verbose)
-            _stale_after = _update_with_defaults(
-                stale_after, "stale_after", kwds
-            )
+            _stale_after = _update_with_defaults(stale_after, "stale_after", kwds)
             _next_time = _update_with_defaults(next_time, "next_time", kwds)
-            _cleanup_flag = _update_with_defaults(
-                cleanup_stale, "cleanup_stale", kwds
-            )
-            _cleanup_interval_val = _update_with_defaults(
-                cleanup_interval, "cleanup_interval", kwds
-            )
+            _cleanup_flag = _update_with_defaults(cleanup_stale, "cleanup_stale", kwds)
+            _cleanup_interval_val = _update_with_defaults(cleanup_interval, "cleanup_interval", kwds)
             # merge args expanded as kwargs and the original kwds
-            kwargs = _convert_args_kwargs(
-                func, _is_method=core.func_is_method, args=args, kwds=kwds
-            )
+            kwargs = _convert_args_kwargs(func, _is_method=core.func_is_method, args=args, kwds=kwds)
 
             if _cleanup_flag:
                 now = datetime.now()
                 with cleanup_lock:
                     if now - last_cleanup >= _cleanup_interval_val:
                         last_cleanup = now
-                        _get_executor().submit(
-                            core.delete_stale_entries, _stale_after
-                        )
+                        _get_executor().submit(core.delete_stale_entries, _stale_after)
 
             _print = print if verbose else lambda x: None
 
@@ -355,17 +325,11 @@ def cachier(
             from .config import _global_params
 
             if ignore_cache or not _global_params.caching_enabled:
-                return (
-                    func(args[0], **kwargs)
-                    if core.func_is_method
-                    else func(**kwargs)
-                )
+                return func(args[0], **kwargs) if core.func_is_method else func(**kwargs)
             key, entry = core.get_entry((), kwargs)
             if overwrite_cache:
                 return _calc_entry(core, key, func, args, kwds, _print)
-            if entry is None or (
-                not entry._completed and not entry._processing
-            ):
+            if entry is None or (not entry._completed and not entry._processing):
                 _print("No entry found. No current calc. Calling like a boss.")
                 return _calc_entry(core, key, func, args, kwds, _print)
             _print("Entry found.")
@@ -376,10 +340,7 @@ def cachier(
                 nonneg_max_age = True
                 if max_age is not None:
                     if max_age < ZERO_TIMEDELTA:
-                        _print(
-                            "max_age is negative. "
-                            "Cached result considered stale."
-                        )
+                        _print("max_age is negative. Cached result considered stale.")
                         nonneg_max_age = False
                     else:
                         assert max_age is not None  # noqa: S101
@@ -402,9 +363,7 @@ def cachier(
                     _print("Async calc and return stale")
                     core.mark_entry_being_calculated(key)
                     try:
-                        _get_executor().submit(
-                            _function_thread, core, key, func, args, kwds
-                        )
+                        _get_executor().submit(_function_thread, core, key, func, args, kwds)
                     finally:
                         core.mark_entry_not_calculated(key)
                     return entry.value
@@ -592,9 +551,7 @@ def cachier(
 
             """
             # merge args expanded as kwargs and the original kwds
-            kwargs = _convert_args_kwargs(
-                func, _is_method=core.func_is_method, args=args, kwds=kwds
-            )
+            kwargs = _convert_args_kwargs(func, _is_method=core.func_is_method, args=args, kwds=kwds)
             return core.precache_value((), kwargs, value_to_cache)
 
         func_wrapper.clear_cache = _clear_cache
