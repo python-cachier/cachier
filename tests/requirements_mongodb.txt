@@ -1,4 +1,4 @@
-
+-r requirements.txt
 # to connect to the test mongodb server
 pymongo
 dnspython

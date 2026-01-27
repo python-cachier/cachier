@@ -36,7 +36,7 @@ cachier/
 │   └── __main__.py
 ├── tests/                 # Pytest-based tests, backend-marked
 │   ├── test_*.py
-│   └── *_requirements.txt # Backend-specific test requirements
+│   └── requirements_*.txt # Backend-specific test requirements
 ├── examples/              # Usage examples
 ├── README.rst             # Main documentation
 ├── pyproject.toml         # Build, lint, type, test config
@@ -55,7 +55,7 @@ ______________________________________________________________________
    pip install .[all]
    ```
 
-   - For backend-specific dev: see `tests/*_requirements.txt`.
+   - For backend-specific dev: see `tests/requirements_*.txt`.
 
 2. **Run tests:**
 
@@ -111,7 +111,7 @@ ______________________________________________________________________
 - **Default:** Pickle (local file cache, `~/.cachier/`)
 - **Others:** Memory, MongoDB, SQL, Redis
 - **Adding a backend:** Implement in `src/cachier/cores/`, subclass `BaseCore`, add tests with appropriate markers, update docs, and CI matrix if needed.
-- **Optional dependencies:** Code/tests must gracefully skip if backend deps are missing. Install backend-specific deps via `tests/*_requirements.txt`.
+- **Optional dependencies:** Code/tests must gracefully skip if backend deps are missing. Install backend-specific deps via `tests/requirements_*.txt`.
 - **Requirements files:** `tests/sql_requirements.txt`, `tests/redis_requirements.txt` for backend-specific dependencies.
 
 ### 3. **Decorator Usage**
@@ -125,7 +125,7 @@ ______________________________________________________________________
 - **Run all tests:** `pytest`
 - **Backend-specific:** Use markers, e.g. `pytest -m mongo`, `pytest -m redis`, `pytest -m sql`
 - **Available markers:** `mongo`, `memory`, `pickle`, `redis`, `sql`, `maxage` (see `pyproject.toml`)
-- **Requirements:** See `tests/*_requirements.txt` for backend test deps.
+- **Requirements:** See `tests/requirements_*.txt` for backend test deps.
 - **CI:** Matrix covers OS/backend combinations. Mongo/SQL/Redis require Dockerized services.
 - **Missing deps:** Tests gracefully skip if optional backend dependencies are missing.
 
@@ -406,9 +406,9 @@ ______________________________________________________________________
   pip install -e .
   pip install -r tests/requirements.txt
   # For specific backends:
-  pip install -r tests/mongodb_requirements.txt
-  pip install -r tests/redis_requirements.txt
-  pip install -r tests/sql_requirements.txt
+  pip install -r tests/requirements_mongodb.txt
+  pip install -r tests/requirements_redis.txt
+  pip install -r tests/requirements_postgres.txt
   ```
 - **Run all tests:** `pytest`
 - **Run backend-specific tests:** `pytest -m <backend>` (mongo, redis, sql, memory, pickle, maxage)
@@ -421,7 +421,7 @@ ______________________________________________________________________
 - **Build package:** `python -m build`
 - **Check docs:** `python setup.py checkdocs`
 - **Run example:** `python examples/redis_example.py`
-- **Update requirements:** Edit `tests/*_requirements.txt` as needed (sql_requirements.txt, redis_requirements.txt).
+- **Update requirements:** Edit `tests/requirements_*.txt` as needed (sql_requirements.txt, redis_requirements.txt).
 
 ### Local Testing with Docker
 
@@ -488,7 +488,7 @@ ______________________________________________________________________
 
 ### b. **Best Practices for Coding Assistance Agents**
 
-- **Always check for backend-specific requirements** before running backend tests or code (see `tests/*_requirements.txt`).
+- **Always check for backend-specific requirements** before running backend tests or code (see `tests/requirements_*.txt`).
 - **When adding a backend:** Update all relevant places (core, tests, docs, CI matrix, requirements files).
 - **When editing core logic:** Ensure all backends are still supported and tested.
 - **When updating the decorator API:** Update docstrings, README, and tests.
