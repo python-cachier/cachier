@@ -53,6 +53,7 @@ Features
 * Redis-based caching for high-performance scenarios.
 * Thread-safety.
 * **Per-call max age:** Specify a maximum age for cached values per call.
+* **Cache analytics and observability:** Track cache performance metrics including hit rates, latencies, and more.
 
 Cachier is **NOT**:
 
@@ -314,6 +315,99 @@ Cache `None` Values
 ~~~~~~~~~~~~~~~~~~~
 
 By default, ``cachier`` does not cache ``None`` values. You can override this behaviour by passing ``allow_none=True`` to the function call.
+
+
+Cache Analytics and Observability
+==================================
+
+Cachier provides built-in metrics collection to monitor cache performance in production environments. This feature is particularly useful for understanding cache effectiveness, identifying optimization opportunities, and debugging performance issues.
+
+Enabling Metrics
+----------------
+
+Enable metrics by setting ``enable_metrics=True`` when decorating a function:
+
+.. code-block:: python
+
+  from cachier import cachier
+
+  @cachier(backend='memory', enable_metrics=True)
+  def expensive_operation(x):
+      return x ** 2
+
+  # Access metrics
+  stats = expensive_operation.metrics.get_stats()
+  print(f"Hit rate: {stats.hit_rate}%")
+  print(f"Avg latency: {stats.avg_latency_ms}ms")
+
+Tracked Metrics
+---------------
+
+The metrics system tracks:
+
+* **Cache hits and misses**: Number of cache hits/misses and hit rate percentage
+* **Operation latencies**: Average time for cache operations
+* **Stale cache hits**: Number of times stale cache entries were accessed
+* **Recalculations**: Count of cache recalculations triggered
+* **Wait timeouts**: Timeouts during concurrent calculation waits
+* **Size limit rejections**: Entries rejected due to ``entry_size_limit``
+* **Cache size**: Number of entries and total size in bytes
+
+Sampling Rate
+-------------
+
+For high-traffic functions, you can reduce overhead by sampling a fraction of operations:
+
+.. code-block:: python
+
+  @cachier(enable_metrics=True, metrics_sampling_rate=0.1)  # Sample 10% of calls
+  def high_traffic_function(x):
+      return x * 2
+
+Exporting to Prometheus
+------------------------
+
+Export metrics to Prometheus for monitoring and alerting:
+
+.. code-block:: python
+
+  from cachier import cachier
+  from cachier.exporters import PrometheusExporter
+
+  @cachier(backend='redis', enable_metrics=True)
+  def my_operation(x):
+      return x ** 2
+
+  # Set up Prometheus exporter
+  exporter = PrometheusExporter(port=9090)
+  exporter.register_function(my_operation)
+  exporter.start()
+
+  # Metrics available at http://localhost:9090/metrics
+
+The exporter provides metrics in Prometheus text format, compatible with standard Prometheus scraping. You can also use the ``prometheus_client`` library for advanced features.
+
+Programmatic Access
+-------------------
+
+Access metrics programmatically for custom monitoring:
+
+.. code-block:: python
+
+  stats = my_function.metrics.get_stats()
+  
+  if stats.hit_rate < 70.0:
+      print(f"Warning: Cache hit rate is {stats.hit_rate}%")
+      print(f"Consider increasing cache size or adjusting stale_after")
+
+Reset Metrics
+-------------
+
+Clear collected metrics:
+
+.. code-block:: python
+
+  my_function.metrics.reset()
 
 
 Cachier Cores

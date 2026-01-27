@@ -9,8 +9,8 @@
 import threading
 import time
 from collections import deque
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from dataclasses import dataclass
+from datetime import timedelta
 from typing import Deque, Optional
 
 
@@ -106,6 +106,16 @@ class CacheMetrics:
         sampling_rate: float = 1.0,
         window_sizes: Optional[list[timedelta]] = None,
     ):
+        """Initialize cache metrics collector.
+
+        Parameters
+        ----------
+        sampling_rate : float
+            Sampling rate between 0.0 and 1.0
+        window_sizes : list of timedelta, optional
+            Time windows for aggregated metrics
+
+        """
         if not 0.0 <= sampling_rate <= 1.0:
             raise ValueError("sampling_rate must be between 0.0 and 1.0")
 
@@ -145,7 +155,7 @@ class CacheMetrics:
         # Import here to avoid circular dependency
         import random
 
-        self._random = random.Random()
+        self._random = random.Random()  # noqa: S311
 
     def _should_sample(self) -> bool:
         """Determine if this metric should be sampled.
@@ -357,6 +367,14 @@ class MetricsContext:
     """
 
     def __init__(self, metrics: Optional[CacheMetrics]):
+        """Initialize metrics context.
+
+        Parameters
+        ----------
+        metrics : CacheMetrics, optional
+            Metrics object to record to
+
+        """
         self.metrics = metrics
         self.start_time = 0.0
 

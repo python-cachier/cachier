@@ -52,6 +52,16 @@ class PrometheusExporter(MetricsExporter):
     def __init__(
         self, port: int = 9090, use_prometheus_client: bool = True
     ):
+        """Initialize Prometheus exporter.
+
+        Parameters
+        ----------
+        port : int
+            HTTP server port
+        use_prometheus_client : bool
+            Whether to use prometheus_client library
+
+        """
         self.port = port
         self.use_prometheus_client = use_prometheus_client
         self._registered_functions: Dict[str, Callable] = {}
@@ -104,7 +114,9 @@ class PrometheusExporter(MetricsExporter):
             ["function"],
         )
         self._entry_count = Gauge(
-            "cachier_entry_count", "Current number of cache entries", ["function"]
+            "cachier_entry_count",
+            "Current number of cache entries",
+            ["function"],
         )
         self._cache_size = Gauge(
             "cachier_cache_size_bytes",
@@ -203,7 +215,8 @@ class PrometheusExporter(MetricsExporter):
                 # Hit rate
                 if not lines or "hit_rate" not in lines[-1]:
                     lines.append(
-                        "# HELP cachier_cache_hit_rate Cache hit rate percentage"
+                        "# HELP cachier_cache_hit_rate Cache "
+                        "hit rate percentage"
                     )
                     lines.append("# TYPE cachier_cache_hit_rate gauge")
                 lines.append(
@@ -237,7 +250,8 @@ class PrometheusExporter(MetricsExporter):
                 from prometheus_client import start_http_server
 
                 start_http_server(self.port)
-            except Exception:
+            except Exception:  # noqa: S110
+                # Silently fail if server can't start
                 pass
         else:
             # Provide simple HTTP server for text format
@@ -262,9 +276,8 @@ class PrometheusExporter(MetricsExporter):
                     self.send_response(404)
                     self.end_headers()
 
-            def log_message(self, format, *args):
+            def log_message(self, fmt, *args):
                 """Suppress log messages."""
-                pass
 
         self._server = HTTPServer(("", self.port), MetricsHandler)
 
