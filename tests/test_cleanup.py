@@ -34,9 +34,7 @@ def test_cleanup_stale_entries(tmp_path):
     add.clear_cache()
     add(1)
     add(2)
-    fname = f".{add.__module__}.{add.__qualname__}".replace("<", "_").replace(
-        ">", "_"
-    )
+    fname = f".{add.__module__}.{add.__qualname__}".replace("<", "_").replace(">", "_")
     cache_path = os.path.join(add.cache_dpath(), fname)
     with open(cache_path, "rb") as fh:
         data = pickle.load(fh)

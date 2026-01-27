@@ -44,9 +44,7 @@ class ConcreteCachingCore(_BaseCore):
 def test_estimate_size_fallback():
     """Test _estimate_size falls back to sys.getsizeof when asizeof fails."""
     # Test lines 101-102: exception handling in _estimate_size
-    core = ConcreteCachingCore(
-        hash_func=None, wait_for_calc_timeout=10, entry_size_limit=1000
-    )
+    core = ConcreteCachingCore(hash_func=None, wait_for_calc_timeout=10, entry_size_limit=1000)
 
     # Mock asizeof to raise exception
     with patch(
@@ -61,9 +59,7 @@ def test_estimate_size_fallback():
 def test_should_store_exception():
     """Test _should_store returns True when size estimation fails."""
     # Test lines 109-110: exception handling in _should_store
-    core = ConcreteCachingCore(
-        hash_func=None, wait_for_calc_timeout=10, entry_size_limit=1000
-    )
+    core = ConcreteCachingCore(hash_func=None, wait_for_calc_timeout=10, entry_size_limit=1000)
 
     # Mock both size estimation methods to fail
     patch1 = patch(
