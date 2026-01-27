@@ -212,8 +212,9 @@ def test_varargs_memory_backend():
     assert call_count == 2
     assert result1 != result2
 
+    previous_call_count = call_count
     result3 = get_data("a", "b")
-    assert call_count == 2
+    assert call_count == previous_call_count
     assert result3 == result1
 
     get_data.clear_cache()
