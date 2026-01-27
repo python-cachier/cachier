@@ -130,13 +130,7 @@ class _SQLCore(_BaseCore):
                     completed=True,
                 ).on_conflict_do_update(
                     index_elements=[CacheTable.function_id, CacheTable.key],
-                    set_={
-                        "value": thebytes,
-                        "timestamp": now,
-                        "stale": False,
-                        "processing": False,
-                        "completed": True,
-                    },
+                    set_={"value": thebytes, "timestamp": now, "stale": False, "processing": False, "completed": True},
                 )
                 if hasattr(base_insert, "on_conflict_do_update")
                 else None
@@ -156,19 +150,8 @@ class _SQLCore(_BaseCore):
                 if row:
                     session.execute(
                         update(CacheTable)
-                        .where(
-                            and_(
-                                CacheTable.function_id == self._func_str,
-                                CacheTable.key == key,
-                            )
-                        )
-                        .values(
-                            value=thebytes,
-                            timestamp=now,
-                            stale=False,
-                            processing=False,
-                            completed=True,
-                        )
+                        .where(and_(CacheTable.function_id == self._func_str, CacheTable.key == key))
+                        .values(value=thebytes, timestamp=now, stale=False, processing=False, completed=True)
                     )
                 else:
                     session.add(
@@ -199,12 +182,7 @@ class _SQLCore(_BaseCore):
             if row:
                 session.execute(
                     update(CacheTable)
-                    .where(
-                        and_(
-                            CacheTable.function_id == self._func_str,
-                            CacheTable.key == key,
-                        )
-                    )
+                    .where(and_(CacheTable.function_id == self._func_str, CacheTable.key == key))
                     .values(processing=True)
                 )
             else:
@@ -226,12 +204,7 @@ class _SQLCore(_BaseCore):
         with self._lock, self._Session() as session:
             session.execute(
                 update(CacheTable)
-                .where(
-                    and_(
-                        CacheTable.function_id == self._func_str,
-                        CacheTable.key == key,
-                    )
-                )
+                .where(and_(CacheTable.function_id == self._func_str, CacheTable.key == key))
                 .values(processing=False)
             )
             session.commit()
@@ -243,12 +216,7 @@ class _SQLCore(_BaseCore):
         while True:
             with self._lock, self._Session() as session:
                 row = session.execute(
-                    select(CacheTable).where(
-                        and_(
-                            CacheTable.function_id == self._func_str,
-                            CacheTable.key == key,
-                        )
-                    )
+                    select(CacheTable).where(and_(CacheTable.function_id == self._func_str, CacheTable.key == key))
                 ).scalar_one_or_none()
                 if not row:
                     raise RecalculationNeeded()
@@ -267,12 +235,7 @@ class _SQLCore(_BaseCore):
         with self._lock, self._Session() as session:
             session.execute(
                 update(CacheTable)
-                .where(
-                    and_(
-                        CacheTable.function_id == self._func_str,
-                        CacheTable.processing,
-                    )
-                )
+                .where(and_(CacheTable.function_id == self._func_str, CacheTable.processing))
                 .values(processing=False)
             )
             session.commit()

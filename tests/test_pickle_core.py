@@ -97,10 +97,7 @@ def _stale_after_seconds(arg_1, arg_2):
 def test_stale_after(separate_files):
     """Testing the stale_after functionality."""
     _stale_after_seconds_decorated = _get_decorated_func(
-        _stale_after_seconds,
-        stale_after=DELTA,
-        next_time=False,
-        separate_files=separate_files,
+        _stale_after_seconds, stale_after=DELTA, next_time=False, separate_files=separate_files
     )
     _stale_after_seconds_decorated.clear_cache()
     val1 = _stale_after_seconds_decorated(1, 2)
@@ -124,10 +121,7 @@ def _stale_after_next_time(arg_1, arg_2):
 def test_stale_after_next_time(separate_files):
     """Testing the stale_after with next_time functionality."""
     _stale_after_next_time_decorated = _get_decorated_func(
-        _stale_after_next_time,
-        stale_after=DELTA,
-        next_time=True,
-        separate_files=separate_files,
+        _stale_after_next_time, stale_after=DELTA, next_time=True, separate_files=separate_files
     )
     _stale_after_next_time_decorated.clear_cache()
     val1 = _stale_after_next_time_decorated(1, 2)
@@ -229,18 +223,12 @@ def test_pickle_being_calculated(separate_files):
     res_queue = queue.Queue()
     thread1 = threading.Thread(
         target=_calls_takes_time,
-        kwargs={
-            "takes_time_func": _takes_time_decorated,
-            "res_queue": res_queue,
-        },
+        kwargs={"takes_time_func": _takes_time_decorated, "res_queue": res_queue},
         daemon=True,
     )
     thread2 = threading.Thread(
         target=_calls_takes_time,
-        kwargs={
-            "takes_time_func": _takes_time_decorated,
-            "res_queue": res_queue,
-        },
+        kwargs={"takes_time_func": _takes_time_decorated, "res_queue": res_queue},
         daemon=True,
     )
     thread1.start()
@@ -281,18 +269,12 @@ def test_being_calc_next_time(separate_files):
     res_queue = queue.Queue()
     thread1 = threading.Thread(
         target=_calls_being_calc_next_time,
-        kwargs={
-            "being_calc_func": _being_calc_next_time_decorated,
-            "res_queue": res_queue,
-        },
+        kwargs={"being_calc_func": _being_calc_next_time_decorated, "res_queue": res_queue},
         daemon=True,
     )
     thread2 = threading.Thread(
         target=_calls_being_calc_next_time,
-        kwargs={
-            "being_calc_func": _being_calc_next_time_decorated,
-            "res_queue": res_queue,
-        },
+        kwargs={"being_calc_func": _being_calc_next_time_decorated, "res_queue": res_queue},
         daemon=True,
     )
     thread1.start()
@@ -531,10 +513,7 @@ def _takes_2_seconds_custom_dir(arg_1, arg_2):
 def test_pickle_core_custom_cache_dir(separate_files):
     """Basic Pickle core functionality."""
     _takes_2_seconds_custom_dir_decorated = _get_decorated_func(
-        _takes_2_seconds_custom_dir,
-        next_time=False,
-        cache_dir=CUSTOM_DIR,
-        separate_files=separate_files,
+        _takes_2_seconds_custom_dir, next_time=False, cache_dir=CUSTOM_DIR, separate_files=separate_files
     )
     _takes_2_seconds_custom_dir_decorated.clear_cache()
     _takes_2_seconds_custom_dir_decorated("a", "b")
@@ -599,10 +578,7 @@ def test_inotify_instance_limit_reached():
     # Try to get the current inotify limit
     try:
         result = subprocess.run(
-            ["/bin/cat", "/proc/sys/fs/inotify/max_user_instances"],
-            capture_output=True,
-            text=True,
-            timeout=5,
+            ["/bin/cat", "/proc/sys/fs/inotify/max_user_instances"], capture_output=True, text=True, timeout=5
         )
         if result.returncode == 0:
             current_limit = int(result.stdout.strip())

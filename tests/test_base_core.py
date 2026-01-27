@@ -47,10 +47,7 @@ def test_estimate_size_fallback():
     core = ConcreteCachingCore(hash_func=None, wait_for_calc_timeout=10, entry_size_limit=1000)
 
     # Mock asizeof to raise exception
-    with patch(
-        "cachier.cores.base.asizeof.asizeof",
-        side_effect=Exception("asizeof failed"),
-    ):
+    with patch("cachier.cores.base.asizeof.asizeof", side_effect=Exception("asizeof failed")):
         # Should fall back to sys.getsizeof
         size = core._estimate_size("test_value")
         assert size > 0  # sys.getsizeof should return a positive value
@@ -62,10 +59,7 @@ def test_should_store_exception():
     core = ConcreteCachingCore(hash_func=None, wait_for_calc_timeout=10, entry_size_limit=1000)
 
     # Mock both size estimation methods to fail
-    patch1 = patch(
-        "cachier.cores.base.asizeof.asizeof",
-        side_effect=Exception("asizeof failed"),
-    )
+    patch1 = patch("cachier.cores.base.asizeof.asizeof", side_effect=Exception("asizeof failed"))
     patch2 = patch("sys.getsizeof", side_effect=Exception("getsizeof failed"))
     with patch1, patch2:
         # Should return True (allow storage) when size can't be determined

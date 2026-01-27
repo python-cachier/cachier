@@ -136,10 +136,7 @@ def set_global_params(**params: Any) -> None:
     import cachier
 
     valid_params = {k: v for k, v in params.items() if hasattr(cachier.config._global_params, k)}
-    cachier.config._global_params = replace(
-        cachier.config._global_params,
-        **valid_params,
-    )
+    cachier.config._global_params = replace(cachier.config._global_params, **valid_params)
 
 
 def get_default_params() -> Params:

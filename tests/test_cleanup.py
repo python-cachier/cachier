@@ -23,10 +23,7 @@ def teardown_function() -> None:
 @pytest.mark.pickle
 def test_cleanup_stale_entries(tmp_path):
     @cachier_dec(
-        cache_dir=tmp_path,
-        stale_after=timedelta(seconds=1),
-        cleanup_stale=True,
-        cleanup_interval=timedelta(seconds=0),
+        cache_dir=tmp_path, stale_after=timedelta(seconds=1), cleanup_stale=True, cleanup_interval=timedelta(seconds=0)
     )
     def add(x):
         return x + 1

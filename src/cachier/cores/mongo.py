@@ -142,10 +142,7 @@ class _MongoCore(_BaseCore):
 
     def clear_being_calculated(self) -> None:
         self.mongo_collection.update_many(
-            filter={
-                "func": self._func_str,
-                "processing": True,
-            },
+            filter={"func": self._func_str, "processing": True},
             update={"$set": {"processing": False}},
         )
 

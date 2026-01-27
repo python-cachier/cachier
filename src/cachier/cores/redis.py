@@ -43,9 +43,7 @@ class _RedisCore(_BaseCore):
             )
 
         super().__init__(
-            hash_func=hash_func,
-            wait_for_calc_timeout=wait_for_calc_timeout,
-            entry_size_limit=entry_size_limit,
+            hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout, entry_size_limit=entry_size_limit
         )
         if redis_client is None:
             raise MissingRedisClient("must specify ``redis_client`` when using the redis core")
@@ -197,12 +195,7 @@ class _RedisCore(_BaseCore):
             now = datetime.now()
             redis_client.hset(
                 redis_key,
-                mapping={
-                    "timestamp": now.isoformat(),
-                    "stale": "false",
-                    "processing": "true",
-                    "completed": "false",
-                },
+                mapping={"timestamp": now.isoformat(), "stale": "false", "processing": "true", "completed": "false"},
             )
         except Exception as e:
             warnings.warn(f"Redis mark_entry_being_calculated failed: {e}", stacklevel=2)

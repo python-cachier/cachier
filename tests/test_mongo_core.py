@@ -78,10 +78,7 @@ class CfgKey:
     TEST_VS_DOCKERIZED_MONGO = "TEST_VS_DOCKERIZED_MONGO"
 
 
-CFG = Birch(
-    namespace="cachier",
-    defaults={CfgKey.TEST_VS_DOCKERIZED_MONGO: False},
-)
+CFG = Birch(namespace="cachier", defaults={CfgKey.TEST_VS_DOCKERIZED_MONGO: False})
 
 
 # URI_TEMPLATE = "mongodb://myUser:myPassword@localhost:27017/"
