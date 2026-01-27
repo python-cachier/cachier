@@ -154,9 +154,9 @@ The script automatically sets the required environment variables:
 2. **Python dependencies** - Install test requirements:
    ```bash
    pip install -r tests/requirements.txt
-   pip install -r tests/mongodb_requirements.txt  # For MongoDB tests
-   pip install -r tests/redis_requirements.txt    # For Redis tests
-   pip install -r tests/sql_requirements.txt      # For SQL tests
+   pip install -r tests/requirements_mongodb.txt  # For MongoDB tests
+   pip install -r tests/requirements_redis.txt    # For Redis tests
+   pip install -r tests/requirements_postgres.txt      # For SQL tests
    ```
 
 ## Troubleshooting

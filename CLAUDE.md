@@ -406,9 +406,9 @@ ______________________________________________________________________
   pip install -e .
   pip install -r tests/requirements.txt
   # For specific backends:
-  pip install -r tests/mongodb_requirements.txt
-  pip install -r tests/redis_requirements.txt
-  pip install -r tests/sql_requirements.txt
+  pip install -r tests/requirements_mongodb.txt
+  pip install -r tests/requirements_redis.txt
+  pip install -r tests/requirements_postgres.txt
   ```
 - **Run all tests:** `pytest`
 - **Run backend-specific tests:** `pytest -m <backend>` (mongo, redis, sql, memory, pickle, maxage)
