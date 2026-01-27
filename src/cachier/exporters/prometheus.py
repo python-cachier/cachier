@@ -74,61 +74,124 @@ class PrometheusExporter(MetricsExporter):
         self._lock = threading.Lock()
         self._server: Optional[Any] = None
         self._server_thread: Optional[threading.Thread] = None
+        
+        # Track last-seen values for delta calculation
+        self._last_seen: Dict[str, Dict[str, int]] = {}
 
         # Try to import prometheus_client if requested
         self._prom_client = None
         if use_prometheus_client and PROMETHEUS_CLIENT_AVAILABLE:
             self._prom_client = prometheus_client
             self._init_prometheus_metrics()
+            self._setup_collector()
 
-    def _init_prometheus_metrics(self) -> None:
-        """Initialize Prometheus metrics using prometheus_client."""
+    def _setup_collector(self) -> None:
+        """Set up a custom collector to pull metrics from registered functions."""
         if not self._prom_client:
             return
+        
+        try:
+            from prometheus_client.core import GaugeMetricFamily, CounterMetricFamily
+            from prometheus_client import REGISTRY
+        except (ImportError, AttributeError):
+            # If prometheus_client is not properly available, skip collector setup
+            return
+        
+        class CachierCollector:
+            """Custom Prometheus collector that pulls metrics from registered functions."""
+            
+            def __init__(self, exporter):
+                self.exporter = exporter
+            
+            def collect(self):
+                """Collect metrics from all registered functions."""
+                with self.exporter._lock:
+                    # Collect hits
+                    hits = CounterMetricFamily(
+                        'cachier_cache_hits',
+                        'Total cache hits',
+                        labels=['function']
+                    )
+                    
+                    # Collect misses
+                    misses = CounterMetricFamily(
+                        'cachier_cache_misses',
+                        'Total cache misses',
+                        labels=['function']
+                    )
+                    
+                    # Collect hit rate
+                    hit_rate = GaugeMetricFamily(
+                        'cachier_cache_hit_rate',
+                        'Cache hit rate percentage',
+                        labels=['function']
+                    )
+                    
+                    # Collect stale hits
+                    stale_hits = CounterMetricFamily(
+                        'cachier_stale_hits',
+                        'Total stale cache hits',
+                        labels=['function']
+                    )
+                    
+                    # Collect recalculations
+                    recalculations = CounterMetricFamily(
+                        'cachier_recalculations',
+                        'Total cache recalculations',
+                        labels=['function']
+                    )
+                    
+                    # Collect entry count
+                    entry_count = GaugeMetricFamily(
+                        'cachier_entry_count',
+                        'Current number of cache entries',
+                        labels=['function']
+                    )
+                    
+                    # Collect cache size
+                    cache_size = GaugeMetricFamily(
+                        'cachier_cache_size_bytes',
+                        'Total cache size in bytes',
+                        labels=['function']
+                    )
+                    
+                    for func_name, func in self.exporter._registered_functions.items():
+                        if not hasattr(func, 'metrics') or func.metrics is None:
+                            continue
+                        
+                        stats = func.metrics.get_stats()
+                        
+                        hits.add_metric([func_name], stats.hits)
+                        misses.add_metric([func_name], stats.misses)
+                        hit_rate.add_metric([func_name], stats.hit_rate)
+                        stale_hits.add_metric([func_name], stats.stale_hits)
+                        recalculations.add_metric([func_name], stats.recalculations)
+                        entry_count.add_metric([func_name], stats.entry_count)
+                        cache_size.add_metric([func_name], stats.total_size_bytes)
+                    
+                    yield hits
+                    yield misses
+                    yield hit_rate
+                    yield stale_hits
+                    yield recalculations
+                    yield entry_count
+                    yield cache_size
+        
+        # Register the custom collector
+        try:
+            REGISTRY.register(CachierCollector(self))
+        except Exception:
+            # If registration fails, continue without collector
+            pass
 
-        # Define Prometheus metrics
-        from prometheus_client import Counter, Gauge, Histogram
-
-        self._hits = Counter(
-            "cachier_cache_hits_total",
-            "Total number of cache hits",
-            ["function"],
-        )
-        self._misses = Counter(
-            "cachier_cache_misses_total",
-            "Total number of cache misses",
-            ["function"],
-        )
-        self._hit_rate = Gauge(
-            "cachier_cache_hit_rate",
-            "Cache hit rate percentage",
-            ["function"],
-        )
-        self._latency = Histogram(
-            "cachier_operation_latency_seconds",
-            "Cache operation latency in seconds",
-            ["function"],
-        )
-        self._stale_hits = Counter(
-            "cachier_stale_hits_total",
-            "Total number of stale cache hits",
-            ["function"],
-        )
-        self._recalculations = Counter(
-            "cachier_recalculations_total",
-            "Total number of cache recalculations",
-            ["function"],
-        )
-        self._entry_count = Gauge(
-            "cachier_entry_count",
-            "Current number of cache entries",
-            ["function"],
-        )
-        self._cache_size = Gauge(
-            "cachier_cache_size_bytes",
-            "Total cache size in bytes",
-            ["function"],
-        )
+    def _init_prometheus_metrics(self) -> None:
+        """Initialize Prometheus metrics using prometheus_client.
+        
+        Note: With custom collector, we don't need to pre-define metrics.
+        The collector will generate them dynamically at scrape time.
+        """
+        # Metrics are now handled by the custom collector in _setup_collector()
+        pass
 
     def register_function(self, func: Callable) -> None:
         """Register a cached function for metrics export.
@@ -156,6 +219,10 @@ class PrometheusExporter(MetricsExporter):
 
     def export_metrics(self, func_name: str, metrics: Any) -> None:
         """Export metrics for a specific function to Prometheus.
+        
+        With custom collector mode, metrics are automatically pulled at scrape time.
+        This method is kept for backward compatibility but is a no-op when using
+        prometheus_client with custom collector.
 
         Parameters
         ----------
@@ -165,21 +232,9 @@ class PrometheusExporter(MetricsExporter):
             Metrics snapshot to export
 
         """
-        if not self._prom_client:
-            return
-
-        # Update Prometheus metrics
-        self._hits.labels(function=func_name).inc(metrics.hits)
-        self._misses.labels(function=func_name).inc(metrics.misses)
-        self._hit_rate.labels(function=func_name).set(metrics.hit_rate)
-        self._stale_hits.labels(function=func_name).inc(metrics.stale_hits)
-        self._recalculations.labels(function=func_name).inc(
-            metrics.recalculations
-        )
-        self._entry_count.labels(function=func_name).set(metrics.entry_count)
-        self._cache_size.labels(function=func_name).set(
-            metrics.total_size_bytes
-        )
+        # With custom collector, metrics are pulled automatically at scrape time
+        # No need to manually push metrics
+        pass
 
     def _generate_text_metrics(self) -> str:
         """Generate Prometheus text format metrics.
