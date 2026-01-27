@@ -53,9 +53,7 @@ def test_set_max_workers():
 
 parametrize_keys = "mongetter,stale_after,separate_files"
 parametrize_values = [
-    pytest.param(
-        _test_mongetter, MONGO_DELTA_LONG, False, marks=pytest.mark.mongo
-    ),
+    pytest.param(_test_mongetter, MONGO_DELTA_LONG, False, marks=pytest.mark.mongo),
     (None, None, False),
     (None, None, True),
 ]

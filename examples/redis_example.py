@@ -113,9 +113,7 @@ def demo_callable_client():
 
     def get_redis_client():
         """Get a Redis client."""
-        return redis.Redis(
-            host="localhost", port=6379, db=0, decode_responses=False
-        )
+        return redis.Redis(host="localhost", port=6379, db=0, decode_responses=False)
 
     @cachier(backend="redis", redis_client=get_redis_client)
     def cached_with_callable(n):
