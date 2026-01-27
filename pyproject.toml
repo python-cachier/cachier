@@ -181,6 +181,7 @@ markers = [
   "redis: test the Redis core",
   "sql: test the SQL core",
   "maxage: test the max_age functionality",
+  "asyncio: marks tests as async",
 ]
 
 # --- coverage ---
