@@ -379,13 +379,14 @@ Export metrics to Prometheus for monitoring and alerting:
       return x ** 2
 
   # Set up Prometheus exporter
-  exporter = PrometheusExporter(port=9090)
+  # Note: use_prometheus_client=False ensures live metrics are exposed for registered functions.
+  exporter = PrometheusExporter(port=9090, use_prometheus_client=False)
   exporter.register_function(my_operation)
   exporter.start()
 
   # Metrics available at http://localhost:9090/metrics
 
-The exporter provides metrics in Prometheus text format, compatible with standard Prometheus scraping. You can also use the ``prometheus_client`` library for advanced features.
+The exporter provides metrics in Prometheus text format, compatible with standard Prometheus scraping, when used with ``use_prometheus_client=False`` as shown above. A ``prometheus_client``-based mode is also available via ``use_prometheus_client=True``, but in the current release it may not expose live values for registered functions.
 
 Programmatic Access
 -------------------
