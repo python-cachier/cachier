@@ -121,9 +121,12 @@ def test_metrics_exporter_interface():
 
 @pytest.mark.memory
 def test_prometheus_exporter_with_prometheus_client_fallback():
-    """Test PrometheusExporter with use_prometheus_client=True falls back gracefully."""
+    """Test PrometheusExporter with use_prometheus_client=True falls back
+    gracefully.
+    """
+
     # When prometheus_client is not available, it should fall back to text mode
-    @cachier(backend='memory', enable_metrics=True)
+    @cachier(backend="memory", enable_metrics=True)
     def test_func(x):
         return x * 2
 
@@ -139,11 +142,11 @@ def test_prometheus_exporter_with_prometheus_client_fallback():
 
     # Verify function is registered
     assert test_func in exporter._registered_functions.values()
-    
+
     # Verify text metrics can be generated (fallback mode)
     metrics_text = exporter._generate_text_metrics()
-    assert 'cachier_cache_hits_total' in metrics_text
-    
+    assert "cachier_cache_hits_total" in metrics_text
+
     test_func.clear_cache()
 
 
@@ -152,25 +155,25 @@ def test_prometheus_exporter_collector_metrics():
     """Test that custom collector generates correct metrics."""
     from cachier import cachier
     from cachier.exporters import PrometheusExporter
-    
-    @cachier(backend='memory', enable_metrics=True)
+
+    @cachier(backend="memory", enable_metrics=True)
     def test_func(x):
         return x * 2
 
     test_func.clear_cache()
-    
+
     # Use text mode to verify metrics are accessible
     exporter = PrometheusExporter(port=9096, use_prometheus_client=False)
     exporter.register_function(test_func)
-    
+
     # Generate metrics
     test_func(5)
     test_func(5)  # hit
     test_func(10)  # miss
-    
+
     # Get stats to verify
     stats = test_func.metrics.get_stats()
     assert stats.hits == 1
     assert stats.misses == 2
-    
+
     test_func.clear_cache()

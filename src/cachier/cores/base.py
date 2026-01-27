@@ -121,8 +121,9 @@ class _BaseCore(metaclass=abc.ABCMeta):
 
     def _update_size_metrics(self) -> None:
         """Update cache size metrics if metrics are enabled.
-        
+
         Subclasses should call this after cache modifications.
+
         """
         if self.metrics is None:
             return
@@ -137,25 +138,27 @@ class _BaseCore(metaclass=abc.ABCMeta):
 
     def _get_entry_count(self) -> int:
         """Get the number of entries in the cache.
-        
+
         Subclasses should override this to provide accurate counts.
-        
+
         Returns
         -------
         int
             Number of entries in cache
+
         """
         return 0
 
     def _get_total_size(self) -> int:
         """Get the total size of the cache in bytes.
-        
+
         Subclasses should override this to provide accurate sizes.
-        
+
         Returns
         -------
         int
             Total size in bytes
+
         """
         return 0
 

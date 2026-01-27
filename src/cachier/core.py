@@ -375,7 +375,9 @@ def cachier(
                 result = _calc_entry(core, key, func, args, kwds, _print)
                 if cache_metrics:
                     assert start_time is not None  # noqa: S101
-                    cache_metrics.record_latency(time.perf_counter() - start_time)
+                    cache_metrics.record_latency(
+                        time.perf_counter() - start_time
+                    )
                 return result
             if entry is None or (
                 not entry._completed and not entry._processing
@@ -387,7 +389,9 @@ def cachier(
                 result = _calc_entry(core, key, func, args, kwds, _print)
                 if cache_metrics:
                     assert start_time is not None  # noqa: S101
-                    cache_metrics.record_latency(time.perf_counter() - start_time)
+                    cache_metrics.record_latency(
+                        time.perf_counter() - start_time
+                    )
                 return result
             _print("Entry found.")
             if _allow_none or entry.value is not None:
@@ -411,7 +415,9 @@ def cachier(
                     if cache_metrics:
                         cache_metrics.record_hit()
                         assert start_time is not None  # noqa: S101
-                        cache_metrics.record_latency(time.perf_counter() - start_time)
+                        cache_metrics.record_latency(
+                            time.perf_counter() - start_time
+                        )
                     return entry.value
                 _print("But it is stale... :(")
                 if cache_metrics:
@@ -460,7 +466,9 @@ def cachier(
                         core.mark_entry_not_calculated(key)
                     if cache_metrics:
                         assert start_time is not None  # noqa: S101
-                        cache_metrics.record_latency(time.perf_counter() - start_time)
+                        cache_metrics.record_latency(
+                            time.perf_counter() - start_time
+                        )
                     return entry.value
                 _print("Calling decorated function and waiting")
                 if cache_metrics:
@@ -468,7 +476,9 @@ def cachier(
                 result = _calc_entry(core, key, func, args, kwds, _print)
                 if cache_metrics:
                     assert start_time is not None  # noqa: S101
-                    cache_metrics.record_latency(time.perf_counter() - start_time)
+                    cache_metrics.record_latency(
+                        time.perf_counter() - start_time
+                    )
                 return result
             if entry._processing:
                 _print("No value but being calculated. Waiting.")
@@ -476,7 +486,9 @@ def cachier(
                     result = core.wait_on_entry_calc(key)
                     if cache_metrics:
                         assert start_time is not None  # noqa: S101
-                        cache_metrics.record_latency(time.perf_counter() - start_time)
+                        cache_metrics.record_latency(
+                            time.perf_counter() - start_time
+                        )
                     return result
                 except RecalculationNeeded:
                     if cache_metrics:
@@ -486,7 +498,9 @@ def cachier(
                     result = _calc_entry(core, key, func, args, kwds, _print)
                     if cache_metrics:
                         assert start_time is not None  # noqa: S101
-                        cache_metrics.record_latency(time.perf_counter() - start_time)
+                        cache_metrics.record_latency(
+                            time.perf_counter() - start_time
+                        )
                     return result
             _print("No entry found. No current calc. Calling like a boss.")
             if cache_metrics:
