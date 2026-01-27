@@ -503,30 +503,26 @@ def cachier(
                     if _next_time:
                         _print("Returning stale.")
                         return entry.value  # return stale val
-                    _print("Already calc. Waiting on change.")
-                    try:
-                        return core.wait_on_entry_calc(key)
-                    except RecalculationNeeded:
-                        return await _calc_entry_async(core, key, func, args, kwds, _print)
+                    _print("Already calc. Recalculating (async - no wait).")
+                    # For async, don't wait - just recalculate
+                    # This avoids blocking the event loop
+                    return await _calc_entry_async(core, key, func, args, kwds, _print)
                 if _next_time:
                     _print("Async calc and return stale")
                     core.mark_entry_being_calculated(key)
-                    try:
-                        # Use asyncio.create_task for background execution
-                        asyncio.create_task(
-                            _function_thread_async(core, key, func, args, kwds)
-                        )
-                    finally:
-                        core.mark_entry_not_calculated(key)
+                    # Use asyncio.create_task for background execution
+                    asyncio.create_task(
+                        _function_thread_async(core, key, func, args, kwds)
+                    )
+                    core.mark_entry_not_calculated(key)
                     return entry.value
                 _print("Calling decorated function and waiting")
                 return await _calc_entry_async(core, key, func, args, kwds, _print)
             if entry._processing:
-                _print("No value but being calculated. Waiting.")
-                try:
-                    return core.wait_on_entry_calc(key)
-                except RecalculationNeeded:
-                    return await _calc_entry_async(core, key, func, args, kwds, _print)
+                _print("No value but being calculated. Recalculating (async - no wait).")
+                # For async, don't wait - just recalculate
+                # This avoids blocking the event loop
+                return await _calc_entry_async(core, key, func, args, kwds, _print)
             _print("No entry found. No current calc. Calling like a boss.")
             return await _calc_entry_async(core, key, func, args, kwds, _print)
 

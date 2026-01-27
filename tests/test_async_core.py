@@ -343,7 +343,13 @@ async def test_async_max_age():
 @pytest.mark.memory
 @pytest.mark.asyncio
 async def test_async_concurrent():
-    """Test concurrent async calls with caching."""
+    """Test concurrent async calls with caching.
+    
+    Note: For async functions, concurrent calls with the same arguments
+    will all execute in parallel (no waiting/blocking). However, once
+    any of them completes and caches the result, subsequent calls will
+    use the cached value.
+    """
     call_count = 0
     
     @cachier(backend="memory")
@@ -356,18 +362,24 @@ async def test_async_concurrent():
     async_func.clear_cache()
     call_count = 0
     
-    # First call
-    result1 = await async_func(5)
-    assert result1 == 10
-    assert call_count == 1
-    
-    # Concurrent calls should all use cache
-    results = await asyncio.gather(
+    # First concurrent calls - all will execute in parallel
+    results1 = await asyncio.gather(
         async_func(5),
         async_func(5),
         async_func(5),
     )
-    assert all(r == 10 for r in results)
-    assert call_count == 1  # Should not have called function again
+    assert all(r == 10 for r in results1)
+    # All three calls executed
+    assert call_count == 3
+    
+    # Subsequent calls should use cache
+    call_count = 0
+    results2 = await asyncio.gather(
+        async_func(5),
+        async_func(5),
+        async_func(5),
+    )
+    assert all(r == 10 for r in results2)
+    assert call_count == 0  # No new calls, all from cache
     
     async_func.clear_cache()
