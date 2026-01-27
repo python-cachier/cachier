@@ -87,10 +87,11 @@ async def test_async_stale_after():
     assert result1 == 10
     assert call_count == 1
 
-    # Second call - should use cache
+    # Second call - should use cache (no additional call)
+    call_count_before = call_count
     result2 = await async_func(5)
     assert result2 == 10
-    assert call_count == 1
+    assert call_count == call_count_before  # Verify cache was used
 
     # Wait for cache to become stale
     await asyncio.sleep(1.5)
@@ -127,10 +128,11 @@ async def test_async_next_time():
     assert result1 == 10
     assert call_count == 1
 
-    # Second call - should use cache
+    # Second call - should use cache (no additional call)
+    call_count_before = call_count
     result2 = await async_func(5)
     assert result2 == 10
-    assert call_count == 1
+    assert call_count == call_count_before  # Verify cache was used
 
     # Wait for cache to become stale
     await asyncio.sleep(1.5)
@@ -329,10 +331,11 @@ async def test_async_max_age():
     assert result1 == 10
     assert call_count == 1
 
-    # Second call - should use cache
+    # Second call - should use cache (no additional call)
+    call_count_before = call_count
     result2 = await async_func(5)
     assert result2 == 10
-    assert call_count == 1
+    assert call_count == call_count_before  # Verify cache was used
 
     # Wait a bit
     await asyncio.sleep(0.5)
@@ -391,3 +394,68 @@ async def test_async_concurrent():
     assert call_count == 0  # No new calls, all from cache
 
     async_func.clear_cache()
+
+
+# Test async with allow_none parameter
+@pytest.mark.memory
+@pytest.mark.asyncio
+async def test_async_allow_none():
+    """Test async caching with allow_none parameter."""
+    call_count = 0
+
+    # Test with allow_none=False (default)
+    @cachier(backend="memory")
+    async def async_func_no_none(x):
+        nonlocal call_count
+        call_count += 1
+        await asyncio.sleep(0.1)
+        return None if x == 0 else x * 2
+
+    async_func_no_none.clear_cache()
+    call_count = 0
+
+    # First call returning None - should not be cached
+    result1 = await async_func_no_none(0)
+    assert result1 is None
+    assert call_count == 1
+
+    # Second call with same args - should recalculate (None not cached)
+    result2 = await async_func_no_none(0)
+    assert result2 is None
+    assert call_count == 2
+
+    # Call with non-None result - should be cached
+    result3 = await async_func_no_none(5)
+    assert result3 == 10
+    assert call_count == 3
+
+    # Call again - should use cache
+    result4 = await async_func_no_none(5)
+    assert result4 == 10
+    assert call_count == 3  # No additional call
+
+    async_func_no_none.clear_cache()
+
+    # Test with allow_none=True
+    call_count = 0
+
+    @cachier(backend="memory", allow_none=True)
+    async def async_func_with_none(x):
+        nonlocal call_count
+        call_count += 1
+        await asyncio.sleep(0.1)
+        return None if x == 0 else x * 2
+
+    async_func_with_none.clear_cache()
+
+    # First call returning None - should be cached
+    result1 = await async_func_with_none(0)
+    assert result1 is None
+    assert call_count == 1
+
+    # Second call with same args - should use cached None
+    result2 = await async_func_with_none(0)
+    assert result2 is None
+    assert call_count == 1  # No additional call
+
+    async_func_with_none.clear_cache()

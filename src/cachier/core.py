@@ -61,7 +61,7 @@ async def _function_thread_async(core, key, func, args, kwds):
     try:
         func_res = await func(*args, **kwds)
         core.set_entry(key, func_res)
-    except BaseException as exc:
+    except Exception as exc:
         print(f"Function call failed with the following exception:\n{exc}")
 
 
@@ -422,6 +422,10 @@ def cachier(
         async def _call_async(
             *args, max_age: Optional[timedelta] = None, **kwds
         ):
+            # NOTE: For async functions, wait_for_calc_timeout is not honored.
+            # Instead of blocking the event loop waiting for concurrent
+            # calculations, async functions will recalculate in parallel.
+            # This avoids deadlocks and maintains async efficiency.
             nonlocal allow_none, last_cleanup
             _allow_none = _update_with_defaults(allow_none, "allow_none", kwds)
             # print('Inside async wrapper for {}.'.format(func.__name__))

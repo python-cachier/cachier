@@ -82,9 +82,9 @@ async def demo_http_caching():
         if duration2 > 0:
             print(f"  Cache speedup: {duration1 / duration2:.1f}x")
         else:
-            print(
-                "  Cache speedup: instantaneous (duration too small to measure)"
-            )
+            msg = "  Cache speedup: instantaneous "
+            msg += "(duration too small to measure)"
+            print(msg)
 
     except ImportError:
         msg = "  (Skipping - httpx not installed. "
@@ -109,7 +109,10 @@ async def main():
     user = await fetch_user_data(42)
     duration2 = time.time() - start
     print(f"Second call: {user} (took {duration2:.2f}s)")
-    print(f"Speedup: {duration1 / duration2:.1f}x faster!")
+    if duration2 > 0:
+        print(f"Speedup: {duration1 / duration2:.1f}x faster!")
+    else:
+        print("Speedup: instantaneous (duration too small to measure)")
 
     # Example 2: Memory backend
     print("\n=== Example 2: Memory Backend (Fast, Non-Persistent) ===")
