@@ -7,7 +7,6 @@ import pytest
 from cachier import cachier
 
 
-@pytest.mark.pickle
 @pytest.mark.parametrize("backend", ["pickle", "memory"])
 class TestVarargsDifferentCacheKeys:
     """Test *args get unique cache keys for different arguments."""
@@ -74,7 +73,6 @@ class TestVarargsDifferentCacheKeys:
         assert result4 == result2
 
 
-@pytest.mark.pickle
 @pytest.mark.parametrize("backend", ["pickle", "memory"])
 class TestVarargsEmpty:
     """Test that functions with *args work with no arguments."""
@@ -114,7 +112,6 @@ class TestVarargsEmpty:
         assert self.call_count == previous_call_count
 
 
-@pytest.mark.pickle
 @pytest.mark.parametrize("backend", ["pickle", "memory"])
 class TestVarargsWithRegularArgs:
     """Test regular and variadic arguments work correctly."""
@@ -165,7 +162,6 @@ class TestVarargsWithRegularArgs:
         assert result4 == result1
 
 
-@pytest.mark.pickle
 @pytest.mark.parametrize("backend", ["pickle", "memory"])
 class TestVarkwargsDifferentCacheKeys:
     """Test **kwargs get unique cache keys for different arguments."""
@@ -211,7 +207,6 @@ class TestVarkwargsDifferentCacheKeys:
         assert result3 == result1
 
 
-@pytest.mark.pickle
 @pytest.mark.parametrize("backend", ["pickle", "memory"])
 class TestVarargsAndVarkwargs:
     """Test that functions with both *args and **kwargs work correctly."""
@@ -274,7 +269,6 @@ class TestVarargsAndVarkwargs:
         assert result1 != result2
 
 
-@pytest.mark.pickle
 @pytest.mark.parametrize("backend", ["pickle", "memory"])
 class TestKeywordOnlyParameters:
     """Test that functions with keyword-only parameters work correctly."""
@@ -317,7 +311,6 @@ class TestKeywordOnlyParameters:
         assert result3 == result1
 
 
-@pytest.mark.pickle
 @pytest.mark.parametrize("backend", ["pickle", "memory"])
 class TestKeywordOnlyWithDefault:
     """Test keyword-only parameters with defaults work correctly."""
@@ -375,7 +368,6 @@ class TestKeywordOnlyWithDefault:
         assert result4 == result2
 
 
-@pytest.mark.pickle
 @pytest.mark.parametrize("backend", ["pickle", "memory"])
 class TestMixedVarargsKeywordOnly:
     """Test *args and keyword-only parameters work correctly."""
