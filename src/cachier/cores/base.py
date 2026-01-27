@@ -12,12 +12,15 @@ import inspect
 import sys
 import threading
 from datetime import timedelta
-from typing import Any, Callable, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple
 
 from pympler import asizeof  # type: ignore
 
 from .._types import HashFunc
 from ..config import CacheEntry, _update_with_defaults
+
+if TYPE_CHECKING:
+    from ..metrics import CacheMetrics
 
 
 class RecalculationNeeded(Exception):
@@ -43,11 +46,13 @@ class _BaseCore(metaclass=abc.ABCMeta):
         hash_func: Optional[HashFunc],
         wait_for_calc_timeout: Optional[int],
         entry_size_limit: Optional[int] = None,
+        metrics: Optional["CacheMetrics"] = None,
     ):
         self.hash_func = _update_with_defaults(hash_func, "hash_func")
         self.wait_for_calc_timeout = wait_for_calc_timeout
         self.lock = threading.RLock()
         self.entry_size_limit = entry_size_limit
+        self.metrics = metrics
 
     def set_func(self, func):
         """Set the function this core will use.

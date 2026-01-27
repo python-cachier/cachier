@@ -2,11 +2,14 @@
 
 import threading
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
 from .._types import HashFunc
 from ..config import CacheEntry
 from .base import _BaseCore, _get_func_str
+
+if TYPE_CHECKING:
+    from ..metrics import CacheMetrics
 
 
 class _MemoryCore(_BaseCore):
@@ -17,8 +20,11 @@ class _MemoryCore(_BaseCore):
         hash_func: Optional[HashFunc],
         wait_for_calc_timeout: Optional[int],
         entry_size_limit: Optional[int] = None,
+        metrics: Optional["CacheMetrics"] = None,
     ):
-        super().__init__(hash_func, wait_for_calc_timeout, entry_size_limit)
+        super().__init__(
+            hash_func, wait_for_calc_timeout, entry_size_limit, metrics
+        )
         self.cache: Dict[str, CacheEntry] = {}
 
     def _hash_func_key(self, key: str) -> str:

@@ -8,6 +8,7 @@ from .config import (
     set_global_params,
 )
 from .core import cachier
+from .metrics import CacheMetrics, MetricSnapshot
 from .util import parse_bytes
 
 __all__ = [
@@ -19,5 +20,7 @@ __all__ = [
     "parse_bytes",
     "enable_caching",
     "disable_caching",
+    "CacheMetrics",
+    "MetricSnapshot",
     "__version__",
 ]

@@ -10,6 +10,7 @@
 import inspect
 import os
 import threading
+import time
 import warnings
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
@@ -26,6 +27,7 @@ from .cores.mongo import _MongoCore
 from .cores.pickle import _PickleCore
 from .cores.redis import _RedisCore
 from .cores.sql import _SQLCore
+from .metrics import CacheMetrics
 from .util import parse_bytes
 
 MAX_WORKERS_ENVAR_NAME = "CACHIER_MAX_WORKERS"
@@ -65,6 +67,9 @@ def _calc_entry(
         stored = core.set_entry(key, func_res)
         if not stored:
             printer("Result exceeds entry_size_limit; not cached")
+            # Track size limit rejection in metrics if available
+            if core.metrics:
+                core.metrics.record_size_limit_rejection()
         return func_res
     finally:
         core.mark_entry_not_calculated(key)
@@ -124,6 +129,8 @@ def cachier(
     cleanup_stale: Optional[bool] = None,
     cleanup_interval: Optional[timedelta] = None,
     entry_size_limit: Optional[Union[int, str]] = None,
+    enable_metrics: bool = False,
+    metrics_sampling_rate: float = 1.0,
 ):
     """Wrap as a persistent, stale-free memoization decorator.
 
@@ -197,6 +204,14 @@ def cachier(
         Maximum serialized size of a cached value. Values exceeding the limit
         are returned but not cached. Human readable strings like ``"10MB"`` are
         allowed.
+    enable_metrics: bool, optional
+        Enable metrics collection for this cached function. When enabled,
+        cache hits, misses, latencies, and other performance metrics are
+        tracked. Defaults to False.
+    metrics_sampling_rate: float, optional
+        Sampling rate for metrics collection (0.0 to 1.0). Lower values
+        reduce overhead at the cost of accuracy. Only used when enable_metrics
+        is True. Defaults to 1.0 (100% sampling).
 
     """
     # Check for deprecated parameters
@@ -213,6 +228,12 @@ def cachier(
     size_limit_bytes = parse_bytes(
         _update_with_defaults(entry_size_limit, "entry_size_limit")
     )
+    
+    # Create metrics object if enabled
+    cache_metrics = None
+    if enable_metrics:
+        cache_metrics = CacheMetrics(sampling_rate=metrics_sampling_rate)
+    
     # Override the backend parameter if a mongetter is provided.
     if callable(mongetter):
         backend = "mongo"
@@ -225,6 +246,7 @@ def cachier(
             separate_files=separate_files,
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=size_limit_bytes,
+            metrics=cache_metrics,
         )
     elif backend == "mongo":
         core = _MongoCore(
@@ -232,12 +254,14 @@ def cachier(
             mongetter=mongetter,
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=size_limit_bytes,
+            metrics=cache_metrics,
         )
     elif backend == "memory":
         core = _MemoryCore(
             hash_func=hash_func,
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=size_limit_bytes,
+            metrics=cache_metrics,
         )
     elif backend == "sql":
         core = _SQLCore(
@@ -245,6 +269,7 @@ def cachier(
             sql_engine=sql_engine,
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=size_limit_bytes,
+            metrics=cache_metrics,
         )
     elif backend == "redis":
         core = _RedisCore(
@@ -252,6 +277,7 @@ def cachier(
             redis_client=redis_client,
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=size_limit_bytes,
+            metrics=cache_metrics,
         )
     else:
         raise ValueError("specified an invalid core: %s" % backend)
@@ -337,14 +363,30 @@ def cachier(
                     if core.func_is_method
                     else func(**kwargs)
                 )
+            
+            # Start timing for metrics
+            start_time = time.time() if cache_metrics else None
+            
             key, entry = core.get_entry((), kwargs)
             if overwrite_cache:
-                return _calc_entry(core, key, func, args, kwds, _print)
+                if cache_metrics:
+                    cache_metrics.record_miss()
+                    cache_metrics.record_recalculation()
+                result = _calc_entry(core, key, func, args, kwds, _print)
+                if cache_metrics:
+                    cache_metrics.record_latency(time.time() - start_time)
+                return result
             if entry is None or (
                 not entry._completed and not entry._processing
             ):
                 _print("No entry found. No current calc. Calling like a boss.")
-                return _calc_entry(core, key, func, args, kwds, _print)
+                if cache_metrics:
+                    cache_metrics.record_miss()
+                    cache_metrics.record_recalculation()
+                result = _calc_entry(core, key, func, args, kwds, _print)
+                if cache_metrics:
+                    cache_metrics.record_latency(time.time() - start_time)
+                return result
             _print("Entry found.")
             if _allow_none or entry.value is not None:
                 _print("Cached result found.")
@@ -364,19 +406,37 @@ def cachier(
                 # note: if max_age < 0, we always consider a value stale
                 if nonneg_max_age and (now - entry.time <= max_allowed_age):
                     _print("And it is fresh!")
+                    if cache_metrics:
+                        cache_metrics.record_hit()
+                        cache_metrics.record_latency(time.time() - start_time)
                     return entry.value
                 _print("But it is stale... :(")
+                if cache_metrics:
+                    cache_metrics.record_stale_hit()
                 if entry._processing:
                     if _next_time:
                         _print("Returning stale.")
+                        if cache_metrics:
+                            cache_metrics.record_latency(time.time() - start_time)
                         return entry.value  # return stale val
                     _print("Already calc. Waiting on change.")
                     try:
-                        return core.wait_on_entry_calc(key)
+                        result = core.wait_on_entry_calc(key)
+                        if cache_metrics:
+                            cache_metrics.record_latency(time.time() - start_time)
+                        return result
                     except RecalculationNeeded:
-                        return _calc_entry(core, key, func, args, kwds, _print)
+                        if cache_metrics:
+                            cache_metrics.record_wait_timeout()
+                            cache_metrics.record_recalculation()
+                        result = _calc_entry(core, key, func, args, kwds, _print)
+                        if cache_metrics:
+                            cache_metrics.record_latency(time.time() - start_time)
+                        return result
                 if _next_time:
                     _print("Async calc and return stale")
+                    if cache_metrics:
+                        cache_metrics.record_recalculation()
                     core.mark_entry_being_calculated(key)
                     try:
                         _get_executor().submit(
@@ -384,17 +444,40 @@ def cachier(
                         )
                     finally:
                         core.mark_entry_not_calculated(key)
+                    if cache_metrics:
+                        cache_metrics.record_latency(time.time() - start_time)
                     return entry.value
                 _print("Calling decorated function and waiting")
-                return _calc_entry(core, key, func, args, kwds, _print)
+                if cache_metrics:
+                    cache_metrics.record_recalculation()
+                result = _calc_entry(core, key, func, args, kwds, _print)
+                if cache_metrics:
+                    cache_metrics.record_latency(time.time() - start_time)
+                return result
             if entry._processing:
                 _print("No value but being calculated. Waiting.")
                 try:
-                    return core.wait_on_entry_calc(key)
+                    result = core.wait_on_entry_calc(key)
+                    if cache_metrics:
+                        cache_metrics.record_latency(time.time() - start_time)
+                    return result
                 except RecalculationNeeded:
-                    return _calc_entry(core, key, func, args, kwds, _print)
+                    if cache_metrics:
+                        cache_metrics.record_wait_timeout()
+                        cache_metrics.record_miss()
+                        cache_metrics.record_recalculation()
+                    result = _calc_entry(core, key, func, args, kwds, _print)
+                    if cache_metrics:
+                        cache_metrics.record_latency(time.time() - start_time)
+                    return result
             _print("No entry found. No current calc. Calling like a boss.")
-            return _calc_entry(core, key, func, args, kwds, _print)
+            if cache_metrics:
+                cache_metrics.record_miss()
+                cache_metrics.record_recalculation()
+            result = _calc_entry(core, key, func, args, kwds, _print)
+            if cache_metrics:
+                cache_metrics.record_latency(time.time() - start_time)
+            return result
 
         # MAINTAINER NOTE: The main function wrapper is now a standard function
         # that passes *args and **kwargs to _call. This ensures that user
@@ -435,6 +518,7 @@ def cachier(
         func_wrapper.clear_being_calculated = _clear_being_calculated
         func_wrapper.cache_dpath = _cache_dpath
         func_wrapper.precache_value = _precache_value
+        func_wrapper.metrics = cache_metrics  # Expose metrics object
         return func_wrapper
 
     return _cachier_decorator
