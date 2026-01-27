@@ -40,12 +40,17 @@ def test_varargs_different_cache_keys(backend):
     )
 
     # Test 2: Calling with the same arguments should use cache
+    previous_call_count = call_count
     result3 = get_data("print", "domains")
-    assert call_count == 2, "Function should not be called again (cache hit)"
+    assert call_count == previous_call_count, (
+        "Function should not be called again (cache hit)"
+    )
     assert result3 == result1
 
     result4 = get_data("print", "users", "allfields")
-    assert call_count == 2, "Function should not be called again (cache hit)"
+    assert call_count == previous_call_count, (
+        "Function should not be called again (cache hit)"
+    )
     assert result4 == result2
 
     get_data.clear_cache()
@@ -72,8 +77,9 @@ def test_varargs_empty():
     assert "()" in result1
 
     # Second call should use cache
+    previous_call_count = call_count
     result2 = get_data()
-    assert call_count == 1
+    assert call_count == previous_call_count
     assert result2 == result1
 
     get_data.clear_cache()
@@ -108,8 +114,9 @@ def test_varargs_with_regular_args():
     assert result3 != result2
 
     # Test cache hits
+    previous_call_count = call_count
     result4 = get_data("print", "domains")
-    assert call_count == 3
+    assert call_count == previous_call_count
     assert result4 == result1
 
     get_data.clear_cache()
@@ -139,8 +146,9 @@ def test_varkwargs_different_cache_keys():
     assert result1 != result2
 
     # Test cache hits
+    previous_call_count = call_count
     result3 = get_data(type="domains", action="print")
-    assert call_count == 2
+    assert call_count == previous_call_count
     assert result3 == result1
 
     get_data.clear_cache()
