@@ -79,7 +79,10 @@ async def demo_http_caching():
         await fetch_github_user("torvalds")
         duration2 = time.time() - start
         print(f"  Second call took {duration2:.2f}s (from cache)")
-        print(f"  Cache speedup: {duration1 / duration2:.1f}x")
+        if duration2 > 0:
+            print(f"  Cache speedup: {duration1 / duration2:.1f}x")
+        else:
+            print("  Cache speedup: instantaneous (duration too small to measure)")
 
     except ImportError:
         msg = "  (Skipping - httpx not installed. "
