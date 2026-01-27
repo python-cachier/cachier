@@ -119,6 +119,46 @@ class _BaseCore(metaclass=abc.ABCMeta):
         except Exception:
             return True
 
+    def _update_size_metrics(self) -> None:
+        """Update cache size metrics if metrics are enabled.
+        
+        Subclasses should call this after cache modifications.
+        """
+        if self.metrics is None:
+            return
+        try:
+            # Get cache size - subclasses should override if they can provide this
+            entry_count = self._get_entry_count()
+            total_size = self._get_total_size()
+            self.metrics.update_size_metrics(entry_count, total_size)
+        except (AttributeError, NotImplementedError):
+            # Silently skip if subclass doesn't implement size tracking
+            pass
+
+    def _get_entry_count(self) -> int:
+        """Get the number of entries in the cache.
+        
+        Subclasses should override this to provide accurate counts.
+        
+        Returns
+        -------
+        int
+            Number of entries in cache
+        """
+        return 0
+
+    def _get_total_size(self) -> int:
+        """Get the total size of the cache in bytes.
+        
+        Subclasses should override this to provide accurate sizes.
+        
+        Returns
+        -------
+        int
+            Total size in bytes
+        """
+        return 0
+
     @abc.abstractmethod
     def set_entry(self, key: str, func_res: Any) -> bool:
         """Map the given result to the given key in this core's cache."""

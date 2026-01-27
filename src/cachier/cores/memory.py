@@ -56,6 +56,8 @@ class _MemoryCore(_BaseCore):
                 _condition=cond,
                 _completed=True,
             )
+            # Update size metrics after modifying cache
+            self._update_size_metrics()
         return True
 
     def mark_entry_being_calculated(self, key: str) -> None:
@@ -107,6 +109,8 @@ class _MemoryCore(_BaseCore):
     def clear_cache(self) -> None:
         with self.lock:
             self.cache.clear()
+            # Update size metrics after clearing
+            self._update_size_metrics()
 
     def clear_being_calculated(self) -> None:
         with self.lock:
@@ -123,3 +127,22 @@ class _MemoryCore(_BaseCore):
             ]
             for key in keys_to_delete:
                 del self.cache[key]
+            # Update size metrics after deletion
+            if keys_to_delete:
+                self._update_size_metrics()
+
+    def _get_entry_count(self) -> int:
+        """Get the number of entries in the memory cache."""
+        with self.lock:
+            return len(self.cache)
+
+    def _get_total_size(self) -> int:
+        """Get the total size of cached values in bytes."""
+        with self.lock:
+            total = 0
+            for entry in self.cache.values():
+                try:
+                    total += self._estimate_size(entry.value)
+                except Exception:
+                    pass
+            return total

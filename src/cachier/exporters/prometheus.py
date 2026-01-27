@@ -49,7 +49,12 @@ class PrometheusExporter(MetricsExporter):
 
     """
 
-    def __init__(self, port: int = 9090, use_prometheus_client: bool = True):
+    def __init__(
+        self,
+        port: int = 9090,
+        use_prometheus_client: bool = True,
+        host: str = "127.0.0.1",
+    ):
         """Initialize Prometheus exporter.
 
         Parameters
@@ -58,9 +63,12 @@ class PrometheusExporter(MetricsExporter):
             HTTP server port
         use_prometheus_client : bool
             Whether to use prometheus_client library
+        host : str
+            Host address to bind to (default: 127.0.0.1 for localhost only)
 
         """
         self.port = port
+        self.host = host
         self.use_prometheus_client = use_prometheus_client
         self._registered_functions: Dict[str, Callable] = {}
         self._lock = threading.Lock()
@@ -183,54 +191,130 @@ class PrometheusExporter(MetricsExporter):
 
         """
         lines = []
+        
+        # Emit HELP/TYPE headers once at the top for each metric
         lines.append("# HELP cachier_cache_hits_total Total cache hits")
         lines.append("# TYPE cachier_cache_hits_total counter")
-
+        
         with self._lock:
             for func_name, func in self._registered_functions.items():
-                if not hasattr(func, "metrics"):
+                if not hasattr(func, "metrics") or func.metrics is None:
                     continue
-
                 stats = func.metrics.get_stats()
-
-                # Hits
                 lines.append(
-                    f'cachier_cache_hits_total{{function="{func_name}"}} '
-                    f"{stats.hits}"
+                    f'cachier_cache_hits_total{{function="{func_name}"}} {stats.hits}'
                 )
 
-                # Misses
-                if not lines or "misses" not in lines[-1]:
-                    lines.append(
-                        "# HELP cachier_cache_misses_total Total cache misses"
-                    )
-                    lines.append("# TYPE cachier_cache_misses_total counter")
+        # Misses
+        lines.append("")
+        lines.append("# HELP cachier_cache_misses_total Total cache misses")
+        lines.append("# TYPE cachier_cache_misses_total counter")
+        
+        with self._lock:
+            for func_name, func in self._registered_functions.items():
+                if not hasattr(func, "metrics") or func.metrics is None:
+                    continue
+                stats = func.metrics.get_stats()
                 lines.append(
-                    f'cachier_cache_misses_total{{function="{func_name}"}} '
-                    f"{stats.misses}"
+                    f'cachier_cache_misses_total{{function="{func_name}"}} {stats.misses}'
                 )
 
-                # Hit rate
-                if not lines or "hit_rate" not in lines[-1]:
-                    lines.append(
-                        "# HELP cachier_cache_hit_rate Cache "
-                        "hit rate percentage"
-                    )
-                    lines.append("# TYPE cachier_cache_hit_rate gauge")
+        # Hit rate
+        lines.append("")
+        lines.append("# HELP cachier_cache_hit_rate Cache hit rate percentage")
+        lines.append("# TYPE cachier_cache_hit_rate gauge")
+        
+        with self._lock:
+            for func_name, func in self._registered_functions.items():
+                if not hasattr(func, "metrics") or func.metrics is None:
+                    continue
+                stats = func.metrics.get_stats()
                 lines.append(
-                    f'cachier_cache_hit_rate{{function="{func_name}"}} '
-                    f"{stats.hit_rate:.2f}"
+                    f'cachier_cache_hit_rate{{function="{func_name}"}} {stats.hit_rate:.2f}'
                 )
 
-                # Entry count
-                if not lines or "entry_count" not in lines[-1]:
-                    lines.append(
-                        "# HELP cachier_entry_count Current cache entries"
-                    )
-                    lines.append("# TYPE cachier_entry_count gauge")
+        # Average latency
+        lines.append("")
+        lines.append("# HELP cachier_avg_latency_ms Average cache operation latency in milliseconds")
+        lines.append("# TYPE cachier_avg_latency_ms gauge")
+        
+        with self._lock:
+            for func_name, func in self._registered_functions.items():
+                if not hasattr(func, "metrics") or func.metrics is None:
+                    continue
+                stats = func.metrics.get_stats()
                 lines.append(
-                    f'cachier_entry_count{{function="{func_name}"}} '
-                    f"{stats.entry_count}"
+                    f'cachier_avg_latency_ms{{function="{func_name}"}} {stats.avg_latency_ms:.4f}'
+                )
+
+        # Stale hits
+        lines.append("")
+        lines.append("# HELP cachier_stale_hits_total Total stale cache hits")
+        lines.append("# TYPE cachier_stale_hits_total counter")
+        
+        with self._lock:
+            for func_name, func in self._registered_functions.items():
+                if not hasattr(func, "metrics") or func.metrics is None:
+                    continue
+                stats = func.metrics.get_stats()
+                lines.append(
+                    f'cachier_stale_hits_total{{function="{func_name}"}} {stats.stale_hits}'
+                )
+
+        # Recalculations
+        lines.append("")
+        lines.append("# HELP cachier_recalculations_total Total cache recalculations")
+        lines.append("# TYPE cachier_recalculations_total counter")
+        
+        with self._lock:
+            for func_name, func in self._registered_functions.items():
+                if not hasattr(func, "metrics") or func.metrics is None:
+                    continue
+                stats = func.metrics.get_stats()
+                lines.append(
+                    f'cachier_recalculations_total{{function="{func_name}"}} {stats.recalculations}'
+                )
+
+        # Entry count
+        lines.append("")
+        lines.append("# HELP cachier_entry_count Current cache entries")
+        lines.append("# TYPE cachier_entry_count gauge")
+        
+        with self._lock:
+            for func_name, func in self._registered_functions.items():
+                if not hasattr(func, "metrics") or func.metrics is None:
+                    continue
+                stats = func.metrics.get_stats()
+                lines.append(
+                    f'cachier_entry_count{{function="{func_name}"}} {stats.entry_count}'
+                )
+
+        # Cache size
+        lines.append("")
+        lines.append("# HELP cachier_cache_size_bytes Total cache size in bytes")
+        lines.append("# TYPE cachier_cache_size_bytes gauge")
+        
+        with self._lock:
+            for func_name, func in self._registered_functions.items():
+                if not hasattr(func, "metrics") or func.metrics is None:
+                    continue
+                stats = func.metrics.get_stats()
+                lines.append(
+                    f'cachier_cache_size_bytes{{function="{func_name}"}} {stats.total_size_bytes}'
+                )
+
+        # Size limit rejections
+        lines.append("")
+        lines.append("# HELP cachier_size_limit_rejections_total Entries rejected due to size limit")
+        lines.append("# TYPE cachier_size_limit_rejections_total counter")
+        
+        with self._lock:
+            for func_name, func in self._registered_functions.items():
+                if not hasattr(func, "metrics") or func.metrics is None:
+                    continue
+                stats = func.metrics.get_stats()
+                lines.append(
+                    f'cachier_size_limit_rejections_total{{function="{func_name}"}} {stats.size_limit_rejections}'
                 )
 
         return "\n".join(lines) + "\n"
@@ -277,7 +361,7 @@ class PrometheusExporter(MetricsExporter):
             def log_message(self, fmt, *args):
                 """Suppress log messages."""
 
-        self._server = HTTPServer(("", self.port), MetricsHandler)
+        self._server = HTTPServer((self.host, self.port), MetricsHandler)
 
         def run_server():
             self._server.serve_forever()
