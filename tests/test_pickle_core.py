@@ -73,9 +73,7 @@ def test_pickle_core(reload, separate_files):
 @pytest.mark.parametrize("separate_files", [True, False])
 def test_pickle_core_keywords(separate_files):
     """Basic Pickle core functionality with keyword arguments."""
-    _takes_2_seconds_decorated = _get_decorated_func(
-        _takes_2_seconds, next_time=False, separate_files=separate_files
-    )
+    _takes_2_seconds_decorated = _get_decorated_func(_takes_2_seconds, next_time=False, separate_files=separate_files)
     _takes_2_seconds_decorated.clear_cache()
     _takes_2_seconds_decorated("a", arg_2="b")
     start = time()
@@ -159,12 +157,8 @@ def _random_num_with_arg(a):
 @pytest.mark.parametrize("separate_files", [True, False])
 def test_overwrite_cache(separate_files):
     """Tests that the overwrite feature works correctly."""
-    _random_num_decorated = _get_decorated_func(
-        _random_num, separate_files=separate_files
-    )
-    _random_num_with_arg_decorated = _get_decorated_func(
-        _random_num_with_arg, separate_files=separate_files
-    )
+    _random_num_decorated = _get_decorated_func(_random_num, separate_files=separate_files)
+    _random_num_with_arg_decorated = _get_decorated_func(_random_num_with_arg, separate_files=separate_files)
     _random_num_decorated.clear_cache()
     int1 = _random_num_decorated()
     int2 = _random_num_decorated()
@@ -190,12 +184,8 @@ def test_overwrite_cache(separate_files):
 @pytest.mark.parametrize("separate_files", [True, False])
 def test_ignore_cache(separate_files):
     """Tests that the ignore_cache feature works correctly."""
-    _random_num_decorated = _get_decorated_func(
-        _random_num, separate_files=separate_files
-    )
-    _random_num_with_arg_decorated = _get_decorated_func(
-        _random_num_with_arg, separate_files=separate_files
-    )
+    _random_num_decorated = _get_decorated_func(_random_num, separate_files=separate_files)
+    _random_num_with_arg_decorated = _get_decorated_func(_random_num_with_arg, separate_files=separate_files)
     _random_num_decorated.clear_cache()
     int1 = _random_num_decorated()
     int2 = _random_num_decorated()
@@ -234,9 +224,7 @@ def _calls_takes_time(takes_time_func, res_queue):
 @pytest.mark.parametrize("separate_files", [True, False])
 def test_pickle_being_calculated(separate_files):
     """Testing pickle core handling of being calculated scenarios."""
-    _takes_time_decorated = _get_decorated_func(
-        _takes_time, separate_files=separate_files
-    )
+    _takes_time_decorated = _get_decorated_func(_takes_time, separate_files=separate_files)
     _takes_time_decorated.clear_cache()
     res_queue = queue.Queue()
     thread1 = threading.Thread(
@@ -327,14 +315,11 @@ def _bad_cache(arg_1, arg_2):
 # _BAD_CACHE_FNAME = '.__main__._bad_cache'
 _BAD_CACHE_FNAME = ".tests.test_pickle_core._bad_cache"
 _BAD_CACHE_FNAME_SEPARATE_FILES = (
-    ".tests.test_pickle_core._bad_cache_"
-    f"{hashlib.sha256(pickle.dumps((0.13, 0.02))).hexdigest()}"
+    f".tests.test_pickle_core._bad_cache_{hashlib.sha256(pickle.dumps((0.13, 0.02))).hexdigest()}"
 )
 EXPANDED_CACHIER_DIR = os.path.expanduser(_global_params.cache_dir)
 _BAD_CACHE_FPATH = os.path.join(EXPANDED_CACHIER_DIR, _BAD_CACHE_FNAME)
-_BAD_CACHE_FPATH_SEPARATE_FILES = os.path.join(
-    EXPANDED_CACHIER_DIR, _BAD_CACHE_FNAME_SEPARATE_FILES
-)
+_BAD_CACHE_FPATH_SEPARATE_FILES = os.path.join(EXPANDED_CACHIER_DIR, _BAD_CACHE_FNAME_SEPARATE_FILES)
 _BAD_CACHE_FPATHS = {
     True: _BAD_CACHE_FPATH_SEPARATE_FILES,
     False: _BAD_CACHE_FPATH,
@@ -355,9 +340,7 @@ def _calls_bad_cache(bad_cache_func, res_queue, trash_cache, separate_files):
 
 def _helper_bad_cache_file(sleep_time: float, separate_files: bool):
     """Test pickle core handling of bad cache files."""
-    _bad_cache_decorated = _get_decorated_func(
-        _bad_cache, separate_files=separate_files
-    )
+    _bad_cache_decorated = _get_decorated_func(_bad_cache, separate_files=separate_files)
     _bad_cache_decorated.clear_cache()
     res_queue = queue.Queue()
     thread1 = threading.Thread(
@@ -418,22 +401,17 @@ def _delete_cache(arg_1, arg_2):
 # _DEL_CACHE_FNAME = '.__main__._delete_cache'
 _DEL_CACHE_FNAME = ".tests.test_pickle_core._delete_cache"
 _DEL_CACHE_FNAME_SEPARATE_FILES = (
-    ".tests.test_pickle_core._delete_cache_"
-    f"{hashlib.sha256(pickle.dumps((0.13, 0.02))).hexdigest()}"
+    f".tests.test_pickle_core._delete_cache_{hashlib.sha256(pickle.dumps((0.13, 0.02))).hexdigest()}"
 )
 _DEL_CACHE_FPATH = os.path.join(EXPANDED_CACHIER_DIR, _DEL_CACHE_FNAME)
-_DEL_CACHE_FPATH_SEPARATE_FILES = os.path.join(
-    EXPANDED_CACHIER_DIR, _DEL_CACHE_FNAME_SEPARATE_FILES
-)
+_DEL_CACHE_FPATH_SEPARATE_FILES = os.path.join(EXPANDED_CACHIER_DIR, _DEL_CACHE_FNAME_SEPARATE_FILES)
 _DEL_CACHE_FPATHS = {
     True: _DEL_CACHE_FPATH_SEPARATE_FILES,
     False: _DEL_CACHE_FPATH,
 }
 
 
-def _calls_delete_cache(
-    del_cache_func, res_queue, del_cache: bool, separate_files: bool
-):
+def _calls_delete_cache(del_cache_func, res_queue, del_cache: bool, separate_files: bool):
     try:
         # print('in')
         res = del_cache_func(0.13, 0.02)
@@ -449,9 +427,7 @@ def _calls_delete_cache(
 
 def _helper_delete_cache_file(sleep_time: float, separate_files: bool):
     """Test pickle core handling of missing cache files."""
-    _delete_cache_decorated = _get_decorated_func(
-        _delete_cache, separate_files=separate_files
-    )
+    _delete_cache_decorated = _get_decorated_func(_delete_cache, separate_files=separate_files)
     _delete_cache_decorated.clear_cache()
     res_queue = queue.Queue()
     thread1 = threading.Thread(
@@ -507,9 +483,7 @@ def test_delete_cache_file(separate_files):
 @pytest.mark.parametrize("separate_files", [False, True])
 def test_clear_being_calculated(separate_files):
     """Test pickle core clear `being calculated` functionality."""
-    _takes_time_decorated = _get_decorated_func(
-        _takes_time, separate_files=separate_files
-    )
+    _takes_time_decorated = _get_decorated_func(_takes_time, separate_files=separate_files)
     _takes_time_decorated.clear_being_calculated()
 
 
@@ -579,15 +553,11 @@ def test_callable_hash_param(separate_files):
     def _hash_func(args, kwargs):
         def _hash(obj):
             if isinstance(obj, pd.core.frame.DataFrame):
-                return hashlib.sha256(
-                    pd.util.hash_pandas_object(obj).values.tobytes()
-                ).hexdigest()
+                return hashlib.sha256(pd.util.hash_pandas_object(obj).values.tobytes()).hexdigest()
             return obj
 
         k_args = tuple(map(_hash, args))
-        k_kwargs = tuple(
-            sorted({k: _hash(v) for k, v in kwargs.items()}.items())
-        )
+        k_kwargs = tuple(sorted({k: _hash(v) for k, v in kwargs.items()}.items()))
         return k_args + k_kwargs
 
     @cachier(hash_func=_hash_func, separate_files=separate_files)
@@ -655,9 +625,7 @@ def test_inotify_instance_limit_reached():
     results = queue.Queue()
 
     # Be more aggressive - try to exhaust the limit
-    N = (
-        min(current_limit * 4, 4096) if current_limit is not None else 4096
-    )  # Try to exceed the limit more aggressively
+    N = min(current_limit * 4, 4096) if current_limit is not None else 4096  # Try to exceed the limit more aggressively
     print(f"Starting {N} threads to test inotify exhaustion")
 
     def call():
@@ -680,20 +648,14 @@ def test_inotify_instance_limit_reached():
     for t in threads:
         t.join()
 
-    print(
-        f"Test completed. Got {len(errors)} errors, {results.qsize()} results"
-    )
+    print(f"Test completed. Got {len(errors)} errors, {results.qsize()} results")
 
     # If any OSError with "inotify instance limit reached" is raised,
     # the test FAILS (expected failure due to the bug)
     if any("inotify instance limit reached" in str(e) for e in errors):
-        print(
-            "FAILURE: Hit inotify instance limit - this indicates the bug "
-            "still exists"
-        )
+        print("FAILURE: Hit inotify instance limit - this indicates the bug still exists")
         raise AssertionError(
-            "inotify instance limit reached error occurred. "
-            f"Got {len(errors)} errors with inotify limit issues."
+            f"inotify instance limit reached error occurred. Got {len(errors)} errors with inotify limit issues."
         )
 
     # If no inotify errors but other errors, fail
@@ -702,10 +664,7 @@ def test_inotify_instance_limit_reached():
         raise AssertionError(f"Unexpected OSErrors: {errors}")
 
     # If no errors at all, the test PASSES (issue is fixed!)
-    print(
-        "SUCCESS: No inotify instance limit errors occurred - the issue "
-        "appears to be fixed!"
-    )
+    print("SUCCESS: No inotify instance limit errors occurred - the issue appears to be fixed!")
     # No need to return - test passes naturally
 
 

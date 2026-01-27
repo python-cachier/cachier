@@ -55,9 +55,7 @@ class _MongoCore(_BaseCore):
             entry_size_limit=entry_size_limit,
         )
         if mongetter is None:
-            raise MissingMongetter(
-                "must specify ``mongetter`` when using the mongo core"
-            )
+            raise MissingMongetter("must specify ``mongetter`` when using the mongo core")
         self.mongetter = mongetter
         self.mongo_collection = self.mongetter()
         index_inf = self.mongo_collection.index_information()
@@ -73,9 +71,7 @@ class _MongoCore(_BaseCore):
         return _get_func_str(self.func)
 
     def get_entry_by_key(self, key: str) -> Tuple[str, Optional[CacheEntry]]:
-        res = self.mongo_collection.find_one(
-            {"func": self._func_str, "key": key}
-        )
+        res = self.mongo_collection.find_one({"func": self._func_str, "key": key})
         if not res:
             return key, None
         val = None
@@ -156,6 +152,4 @@ class _MongoCore(_BaseCore):
     def delete_stale_entries(self, stale_after: timedelta) -> None:
         """Delete stale entries from the MongoDB cache."""
         threshold = datetime.now() - stale_after
-        self.mongo_collection.delete_many(
-            filter={"func": self._func_str, "time": {"$lt": threshold}}
-        )
+        self.mongo_collection.delete_many(filter={"func": self._func_str, "time": {"$lt": threshold}})
