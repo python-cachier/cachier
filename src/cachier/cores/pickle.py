@@ -300,6 +300,16 @@ class _PickleCore(_BaseCore):
                 return self._wait_with_polling(key)
             else:
                 raise
+        except RuntimeError as e:
+            if "Cannot add watch" in str(e):
+                # Fall back to polling if watch already scheduled (FSEvents)
+                logging.debug(
+                    "Watch already scheduled for %s, falling back to polling",
+                    self.cache_dir,
+                )
+                return self._wait_with_polling(key)
+            else:
+                raise
 
     def _wait_with_inotify(self, key: str, filename: str) -> Any:  # type: ignore[valid-type]
         """Wait for calculation using inotify with proper cleanup."""
