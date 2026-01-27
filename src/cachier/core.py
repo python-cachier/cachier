@@ -65,9 +65,7 @@ async def _function_thread_async(core, key, func, args, kwds):
         print(f"Function call failed with the following exception:\n{exc}")
 
 
-def _calc_entry(
-    core, key, func, args, kwds, printer=lambda *_: None
-) -> Optional[Any]:
+def _calc_entry(core, key, func, args, kwds, printer=lambda *_: None) -> Optional[Any]:
     core.mark_entry_being_calculated(key)
     try:
         func_res = func(*args, **kwds)
@@ -79,9 +77,7 @@ def _calc_entry(
         core.mark_entry_not_calculated(key)
 
 
-async def _calc_entry_async(
-    core, key, func, args, kwds, printer=lambda *_: None
-) -> Optional[Any]:
+async def _calc_entry_async(core, key, func, args, kwds, printer=lambda *_: None) -> Optional[Any]:
     core.mark_entry_being_calculated(key)
     try:
         func_res = await func(*args, **kwds)
@@ -93,9 +89,7 @@ async def _calc_entry_async(
         core.mark_entry_not_calculated(key)
 
 
-def _convert_args_kwargs(
-    func, _is_method: bool, args: tuple, kwds: dict
-) -> dict:
+def _convert_args_kwargs(func, _is_method: bool, args: tuple, kwds: dict) -> dict:
     """Convert mix of positional and keyword arguments to aggregated kwargs."""
     # unwrap if the function is functools.partial
     if hasattr(func, "func"):
@@ -378,9 +372,7 @@ def cachier(
             _print("No entry found. No current calc. Calling like a boss.")
             return _calc_entry(core, key, func, args, kwds, _print)
 
-        async def _call_async(
-            *args, max_age: Optional[timedelta] = None, **kwds
-        ):
+        async def _call_async(*args, max_age: Optional[timedelta] = None, **kwds):
             # NOTE: For async functions, wait_for_calc_timeout is not honored.
             # Instead of blocking the event loop waiting for concurrent
             # calculations, async functions will recalculate in parallel.
@@ -388,41 +380,25 @@ def cachier(
             nonlocal allow_none, last_cleanup
             _allow_none = _update_with_defaults(allow_none, "allow_none", kwds)
             # print('Inside async wrapper for {}.'.format(func.__name__))
-            ignore_cache = _pop_kwds_with_deprecation(
-                kwds, "ignore_cache", False
-            )
-            overwrite_cache = _pop_kwds_with_deprecation(
-                kwds, "overwrite_cache", False
-            )
+            ignore_cache = _pop_kwds_with_deprecation(kwds, "ignore_cache", False)
+            overwrite_cache = _pop_kwds_with_deprecation(kwds, "overwrite_cache", False)
             verbose = _pop_kwds_with_deprecation(kwds, "verbose_cache", False)
             ignore_cache = kwds.pop("cachier__skip_cache", ignore_cache)
-            overwrite_cache = kwds.pop(
-                "cachier__overwrite_cache", overwrite_cache
-            )
+            overwrite_cache = kwds.pop("cachier__overwrite_cache", overwrite_cache)
             verbose = kwds.pop("cachier__verbose", verbose)
-            _stale_after = _update_with_defaults(
-                stale_after, "stale_after", kwds
-            )
+            _stale_after = _update_with_defaults(stale_after, "stale_after", kwds)
             _next_time = _update_with_defaults(next_time, "next_time", kwds)
-            _cleanup_flag = _update_with_defaults(
-                cleanup_stale, "cleanup_stale", kwds
-            )
-            _cleanup_interval_val = _update_with_defaults(
-                cleanup_interval, "cleanup_interval", kwds
-            )
+            _cleanup_flag = _update_with_defaults(cleanup_stale, "cleanup_stale", kwds)
+            _cleanup_interval_val = _update_with_defaults(cleanup_interval, "cleanup_interval", kwds)
             # merge args expanded as kwargs and the original kwds
-            kwargs = _convert_args_kwargs(
-                func, _is_method=core.func_is_method, args=args, kwds=kwds
-            )
+            kwargs = _convert_args_kwargs(func, _is_method=core.func_is_method, args=args, kwds=kwds)
 
             if _cleanup_flag:
                 now = datetime.now()
                 with cleanup_lock:
                     if now - last_cleanup >= _cleanup_interval_val:
                         last_cleanup = now
-                        _get_executor().submit(
-                            core.delete_stale_entries, _stale_after
-                        )
+                        _get_executor().submit(core.delete_stale_entries, _stale_after)
 
             _print = print if verbose else lambda x: None
 
@@ -430,24 +406,14 @@ def cachier(
             from .config import _global_params
 
             if ignore_cache or not _global_params.caching_enabled:
-                return (
-                    await func(args[0], **kwargs)
-                    if core.func_is_method
-                    else await func(**kwargs)
-                )
+                return await func(args[0], **kwargs) if core.func_is_method else await func(**kwargs)
             key, entry = core.get_entry((), kwargs)
             if overwrite_cache:
-                result = await _calc_entry_async(
-                    core, key, func, args, kwds, _print
-                )
+                result = await _calc_entry_async(core, key, func, args, kwds, _print)
                 return result
-            if entry is None or (
-                not entry._completed and not entry._processing
-            ):
+            if entry is None or (not entry._completed and not entry._processing):
                 _print("No entry found. No current calc. Calling like a boss.")
-                result = await _calc_entry_async(
-                    core, key, func, args, kwds, _print
-                )
+                result = await _calc_entry_async(core, key, func, args, kwds, _print)
                 return result
             _print("Entry found.")
             if _allow_none or entry.value is not None:
@@ -457,10 +423,7 @@ def cachier(
                 nonneg_max_age = True
                 if max_age is not None:
                     if max_age < ZERO_TIMEDELTA:
-                        _print(
-                            "max_age is negative. "
-                            "Cached result considered stale."
-                        )
+                        _print("max_age is negative. Cached result considered stale.")
                         nonneg_max_age = False
                     else:
                         assert max_age is not None  # noqa: S101
@@ -477,9 +440,7 @@ def cachier(
                     _print("Already calc. Recalculating (async - no wait).")
                     # For async, don't wait - just recalculate
                     # This avoids blocking the event loop
-                    result = await _calc_entry_async(
-                        core, key, func, args, kwds, _print
-                    )
+                    result = await _calc_entry_async(core, key, func, args, kwds, _print)
                     return result
                 if _next_time:
                     _print("Async calc and return stale")
@@ -488,24 +449,18 @@ def cachier(
                     # Background task will update cache when complete
                     core.mark_entry_being_calculated(key)
                     # Use asyncio.create_task for background execution
-                    asyncio.create_task(
-                        _function_thread_async(core, key, func, args, kwds)
-                    )
+                    asyncio.create_task(_function_thread_async(core, key, func, args, kwds))
                     core.mark_entry_not_calculated(key)
                     return entry.value
                 _print("Calling decorated function and waiting")
-                result = await _calc_entry_async(
-                    core, key, func, args, kwds, _print
-                )
+                result = await _calc_entry_async(core, key, func, args, kwds, _print)
                 return result
             if entry._processing:
                 msg = "No value but being calculated. Recalculating"
                 _print(f"{msg} (async - no wait).")
                 # For async, don't wait - just recalculate
                 # This avoids blocking the event loop
-                result = await _calc_entry_async(
-                    core, key, func, args, kwds, _print
-                )
+                result = await _calc_entry_async(core, key, func, args, kwds, _print)
                 return result
             _print("No entry found. No current calc. Calling like a boss.")
             return await _calc_entry_async(core, key, func, args, kwds, _print)

@@ -116,9 +116,7 @@ class TestStaleCache:
         """Test that cache is used before stale_after expiry."""
         call_count = 0
 
-        @cachier(
-            backend="memory", stale_after=timedelta(seconds=1), next_time=False
-        )
+        @cachier(backend="memory", stale_after=timedelta(seconds=1), next_time=False)
         async def async_func(x):
             nonlocal call_count
             call_count += 1

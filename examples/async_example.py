@@ -60,9 +60,7 @@ async def demo_http_caching():
             """Fetch GitHub user data with caching."""
             print(f"  Making API request for {username}...")
             async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    f"https://api.github.com/users/{username}"
-                )
+                response = await client.get(f"https://api.github.com/users/{username}")
                 return response.json()
 
         # First call - makes actual HTTP request
