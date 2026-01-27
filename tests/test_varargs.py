@@ -324,4 +324,3 @@ def test_mixed_varargs_keyword_only():
     assert result4 == result1
 
     get_data.clear_cache()
-
