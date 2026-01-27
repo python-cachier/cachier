@@ -36,13 +36,9 @@ class TestVarargsDifferentCacheKeys:
         assert "('print', 'domains')" in result1
 
         result2 = self.get_data("print", "users", "allfields")
-        assert self.call_count == 2, (
-            "Function should be called again with different args"
-        )
+        assert self.call_count == 2, "Function should be called again with different args"
         assert "('print', 'users', 'allfields')" in result2
-        assert result1 != result2, (
-            "Different args should produce different results"
-        )
+        assert result1 != result2, "Different args should produce different results"
 
     def test_same_args_use_cache(self):
         """Test that calling with same arguments uses cache."""
@@ -53,9 +49,7 @@ class TestVarargsDifferentCacheKeys:
         # Second call with same args should use cache
         previous_call_count = self.call_count
         result3 = self.get_data("print", "domains")
-        assert self.call_count == previous_call_count, (
-            "Function should not be called again (cache hit)"
-        )
+        assert self.call_count == previous_call_count, "Function should not be called again (cache hit)"
         assert result3 == result1
 
     def test_another_set_of_args_cache_hit(self):
@@ -67,9 +61,7 @@ class TestVarargsDifferentCacheKeys:
         # Second call with same args should use cache
         previous_call_count = self.call_count
         result4 = self.get_data("print", "users", "allfields")
-        assert self.call_count == previous_call_count, (
-            "Function should not be called again (cache hit)"
-        )
+        assert self.call_count == previous_call_count, "Function should not be called again (cache hit)"
         assert result4 == result2
 
 
@@ -188,9 +180,7 @@ class TestVarkwargsDifferentCacheKeys:
         result1 = self.get_data(type="domains", action="print")
         assert self.call_count == 1
 
-        result2 = self.get_data(
-            type="users", action="print", fields="allfields"
-        )
+        result2 = self.get_data(type="users", action="print", fields="allfields")
         assert self.call_count == 2
         assert result1 != result2
 
@@ -404,9 +394,7 @@ class TestMixedVarargsKeywordOnly:
     def test_different_kw_with_default_produces_different_results(self):
         """Test that different kw_with_default values produce dif results."""
         result1 = self.get_data("r1", "a", "b", kw_only="k1")
-        result3 = self.get_data(
-            "r1", "a", "b", kw_only="k1", kw_with_default="custom"
-        )
+        result3 = self.get_data("r1", "a", "b", kw_only="k1", kw_with_default="custom")
         assert self.call_count == 2
         assert result3 != result1
 

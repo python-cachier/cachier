@@ -117,11 +117,7 @@ def _convert_args_kwargs(func, _is_method: bool, args: tuple, kwds: dict) -> dic
             args_as_kw[f"__varargs_{i}__"] = arg
 
     # Init with default values
-    kwargs = {
-        k: v.default
-        for k, v in sig.parameters.items()
-        if v.default is not inspect.Parameter.empty
-    }
+    kwargs = {k: v.default for k, v in sig.parameters.items() if v.default is not inspect.Parameter.empty}
 
     # Merge args expanded as kwargs and the original kwds
     kwargs.update(args_as_kw)
