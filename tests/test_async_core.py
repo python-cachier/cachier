@@ -450,9 +450,39 @@ class TestMaxAge:
         assert call_count == 1
 
         # Second call with max_age - should use cache
+        previous_call_count = call_count
         result2 = await async_func(5, max_age=timedelta(seconds=10))
         assert result2 == 10
-        assert call_count == 1  # No additional call
+        assert call_count == previous_call_count  # No additional call
+
+        async_func.clear_cache()
+
+    @pytest.mark.memory
+    @pytest.mark.asyncio
+    @pytest.mark.maxage
+    async def test_negative_max_age_forces_recalculation(self):
+        """Test that negative max_age forces recalculation."""
+        call_count = 0
+
+        @cachier(backend="memory", stale_after=timedelta(days=1))
+        async def async_func(x):
+            nonlocal call_count
+            call_count += 1
+            await asyncio.sleep(0.1)
+            return x * 2
+
+        async_func.clear_cache()
+        call_count = 0
+
+        # First call
+        result1 = await async_func(5)
+        assert result1 == 10
+        assert call_count == 1
+
+        # Second call with negative max_age - should recalculate
+        result2 = await async_func(5, max_age=timedelta(seconds=-1))
+        assert result2 == 10
+        assert call_count == 2
 
         async_func.clear_cache()
 
@@ -525,6 +555,43 @@ class TestConcurrentAccess:
 
         async_func.clear_cache()
 
+    @pytest.mark.memory
+    @pytest.mark.asyncio
+    async def test_stale_entry_being_processed_with_next_time(self):
+        """Test stale entry being processed returns stale value with next_time=True."""
+        call_count = 0
+
+        @cachier(backend="memory", stale_after=timedelta(seconds=1), next_time=True)
+        async def async_func(x):
+            nonlocal call_count
+            call_count += 1
+            await asyncio.sleep(0.5)
+            return call_count * 10
+
+        async_func.clear_cache()
+        call_count = 0
+
+        # First call
+        result1 = await async_func(5)
+        assert result1 == 10
+        assert call_count == 1
+
+        # Wait for cache to become stale
+        await asyncio.sleep(1.5)
+
+        # Call returns stale value, triggers background update
+        result2 = await async_func(5)
+        assert result2 == 10  # Returns stale value
+
+        # Wait for background task to complete
+        await asyncio.sleep(1)
+
+        # Next call gets the new value
+        result3 = await async_func(5)
+        assert result3 == 20
+
+        async_func.clear_cache()
+
 
 # =============================================================================
 # None Value Handling Tests
@@ -584,9 +651,10 @@ class TestNoneHandling:
         assert call_count == 1
 
         # Second call with same args - should use cached None
+        previous_call_count = call_count
         result2 = await async_func(0)
         assert result2 is None
-        assert call_count == 1  # No additional call
+        assert call_count == previous_call_count  # No additional call
 
         async_func.clear_cache()
 
@@ -612,8 +680,9 @@ class TestNoneHandling:
         assert call_count == 1
 
         # Call again - should use cache
+        previous_call_count = call_count
         result2 = await async_func(5)
         assert result2 == 10
-        assert call_count == 1  # No additional call
+        assert call_count == previous_call_count  # No additional call
 
         async_func.clear_cache()
