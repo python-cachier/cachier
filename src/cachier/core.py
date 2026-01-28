@@ -61,7 +61,7 @@ async def _function_thread_async(core, key, func, args, kwds):
     try:
         func_res = await func(*args, **kwds)
         core.set_entry(key, func_res)
-    except Exception as exc:
+    except BaseException as exc:
         print(f"Function call failed with the following exception:\n{exc}")
 
 
