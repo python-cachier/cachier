@@ -662,4 +662,3 @@ class TestEdgeCasesEmptyAndNone:
         result2 = self.get_data(1, 0)
         assert self.call_count == 2
         assert result1 != result2
-
