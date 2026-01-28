@@ -1,7 +1,7 @@
 """Example demonstrating async/coroutine support in Cachier.
 
-This example shows how to use the @cachier decorator with async functions to
-cache the results of HTTP requests or other async operations.
+This example shows how to use the @cachier decorator with async functions to cache the results of HTTP requests or other
+async operations.
 
 """
 
