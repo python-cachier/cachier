@@ -21,7 +21,7 @@ async def fetch_user_data(user_id: int) -> dict:
     return {
         "id": user_id,
         "name": f"User{user_id}",
-        "email": f"user{user_id}@example.com",
+        "email": f"user{user_id}@example.com"
     }
 
 
@@ -44,7 +44,7 @@ async def get_weather_data(city: str) -> dict:
         "city": city,
         "temp": 72,
         "condition": "sunny",
-        "timestamp": time.time(),
+        "timestamp": time.time()
     }
 
 
