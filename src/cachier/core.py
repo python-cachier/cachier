@@ -79,17 +79,14 @@ def _convert_args_kwargs(func, _is_method: bool, args: tuple, kwds: dict) -> dic
     sig = inspect.signature(func)
     func_params = list(sig.parameters)
 
-    # Separate regular parameters from VAR_POSITIONAL and VAR_KEYWORD
+    # Separate regular parameters from VAR_POSITIONAL
     regular_params = []
     var_positional_name = None
-    var_keyword_name = None
 
     for param_name in func_params:
         param = sig.parameters[param_name]
         if param.kind == inspect.Parameter.VAR_POSITIONAL:
             var_positional_name = param_name
-        elif param.kind == inspect.Parameter.VAR_KEYWORD:
-            var_keyword_name = param_name
         elif param.kind in (
             inspect.Parameter.POSITIONAL_ONLY,
             inspect.Parameter.POSITIONAL_OR_KEYWORD,
@@ -122,17 +119,8 @@ def _convert_args_kwargs(func, _is_method: bool, args: tuple, kwds: dict) -> dic
     # Merge args expanded as kwargs and the original kwds
     kwargs.update(args_as_kw)
 
-    # Handle variadic keyword arguments and keyword-only parameters
-    if var_keyword_name:
-        # Separate kwds that match known parameters from those that don't
-        for k, v in kwds.items():
-            if k in sig.parameters:
-                kwargs[k] = v
-            else:
-                # Extra kwargs go directly into the result dict
-                kwargs[k] = v
-    else:
-        kwargs.update(kwds)
+    # Handle keyword arguments (including variadic keyword arguments)
+    kwargs.update(kwds)
 
     return OrderedDict(sorted(kwargs.items()))
 
