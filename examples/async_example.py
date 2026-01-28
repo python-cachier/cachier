@@ -80,14 +80,10 @@ async def demo_http_caching():
         if duration2 > 0:
             print(f"  Cache speedup: {duration1 / duration2:.1f}x")
         else:
-            msg = "  Cache speedup: instantaneous "
-            msg += "(duration too small to measure)"
-            print(msg)
+            print("  Cache speedup: instantaneous (duration too small to measure)")
 
     except ImportError:
-        msg = "  (Skipping - httpx not installed. "
-        msg += "Install with: pip install httpx)"
-        print(msg)
+        print("  (Skipping - httpx not installed. Install with: pip install httpx)")
 
 
 async def main():
