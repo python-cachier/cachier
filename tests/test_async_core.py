@@ -1007,4 +1007,3 @@ class TestAsyncStaleProcessing:
         assert result_new > 10  # Updated in background
 
         slow_async_func.clear_cache()
-
