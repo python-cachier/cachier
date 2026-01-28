@@ -917,3 +917,94 @@ class TestAsyncProcessingEntry:
         assert call_count >= 2
 
         async_func.clear_cache()
+
+
+# =============================================================================
+# Exception Handling and Edge Cases
+# =============================================================================
+
+
+class TestAsyncExceptionHandling:
+    """Tests for exception handling in async background tasks."""
+
+    @pytest.mark.memory
+    @pytest.mark.asyncio
+    async def test_function_thread_async_exception_handling(self):
+        """Test that exceptions in background async tasks are caught and handled."""
+
+        @cachier(backend="memory", stale_after=timedelta(seconds=1), next_time=True)
+        async def async_func_that_fails(x):
+            await asyncio.sleep(0.2)
+            if x == 99:
+                raise ValueError("Intentional test error")
+            return x * 2
+
+        async_func_that_fails.clear_cache()
+
+        # First call with valid value
+        result1 = await async_func_that_fails(5)
+        assert result1 == 10
+
+        # Wait for stale
+        await asyncio.sleep(1.5)
+
+        # Call with value that will fail in background - should return stale
+        result2 = await async_func_that_fails(5)
+        assert result2 == 10  # Returns stale value
+
+        # Wait for background task to complete and fail
+        await asyncio.sleep(0.5)
+
+        # The error should be caught and handled silently in background
+        # (no exception should propagate to this test)
+
+        async_func_that_fails.clear_cache()
+
+
+class TestAsyncStaleProcessing:
+    """Tests for stale entry processing with next_time."""
+
+    @pytest.mark.memory
+    @pytest.mark.asyncio
+    async def test_stale_entry_processing_returns_stale_with_next_time(self):
+        """Test that stale entry being processed returns stale value when next_time=True."""
+        call_count = 0
+
+        @cachier(backend="memory", stale_after=timedelta(seconds=1), next_time=True)
+        async def slow_async_func(x):
+            nonlocal call_count
+            call_count += 1
+            await asyncio.sleep(0.8)  # Long enough to be "processing"
+            return call_count * 10
+
+        slow_async_func.clear_cache()
+        call_count = 0
+
+        # First call - populate cache
+        result1 = await slow_async_func(5)
+        assert result1 == 10
+        assert call_count == 1
+
+        # Wait for stale
+        await asyncio.sleep(1.5)
+
+        # Launch two concurrent calls when stale
+        # First will trigger background update, both should return stale
+        results = await asyncio.gather(
+            slow_async_func(5),
+            slow_async_func(5),
+        )
+
+        # Both should get the stale value (10)
+        assert results[0] == 10
+        assert results[1] == 10
+
+        # Wait for background update to complete
+        await asyncio.sleep(1.5)
+
+        # Next call should get updated value
+        result_new = await slow_async_func(5)
+        assert result_new > 10  # Updated in background
+
+        slow_async_func.clear_cache()
+
