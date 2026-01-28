@@ -75,14 +75,53 @@ def _convert_args_kwargs(func, _is_method: bool, args: tuple, kwds: dict) -> dic
         args = func.args + args
         kwds.update({k: v for k, v in func.keywords.items() if k not in kwds})
         func = func.func
-    func_params = list(inspect.signature(func).parameters)
-    args_as_kw = dict(zip(func_params[1:], args[1:]) if _is_method else zip(func_params, args))
-    # init with default values
-    kwargs = {
-        k: v.default for k, v in inspect.signature(func).parameters.items() if v.default is not inspect.Parameter.empty
-    }
-    # merge args expanded as kwargs and the original kwds
-    kwargs.update(dict(**args_as_kw, **kwds))
+
+    sig = inspect.signature(func)
+    func_params = list(sig.parameters)
+
+    # Separate regular parameters from VAR_POSITIONAL
+    regular_params = []
+    var_positional_name = None
+
+    for param_name in func_params:
+        param = sig.parameters[param_name]
+        if param.kind == inspect.Parameter.VAR_POSITIONAL:
+            var_positional_name = param_name
+        elif param.kind in (
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        ):
+            regular_params.append(param_name)
+
+    # Map positional arguments to regular parameters
+    if _is_method:
+        # Skip 'self' for methods
+        args_to_map = args[1:]
+        params_to_use = regular_params[1:]
+    else:
+        args_to_map = args
+        params_to_use = regular_params
+
+    # Map as many args as possible to regular parameters
+    num_regular = len(params_to_use)
+    args_as_kw = dict(zip(params_to_use, args_to_map[:num_regular]))
+
+    # Handle variadic positional arguments
+    # Store them with indexed keys like __varargs_0__, __varargs_1__, etc.
+    if var_positional_name and len(args_to_map) > num_regular:
+        var_args = args_to_map[num_regular:]
+        for i, arg in enumerate(var_args):
+            args_as_kw[f"__varargs_{i}__"] = arg
+
+    # Init with default values
+    kwargs = {k: v.default for k, v in sig.parameters.items() if v.default is not inspect.Parameter.empty}
+
+    # Merge args expanded as kwargs and the original kwds
+    kwargs.update(args_as_kw)
+
+    # Handle keyword arguments (including variadic keyword arguments)
+    kwargs.update(kwds)
+
     return OrderedDict(sorted(kwargs.items()))
 
 
