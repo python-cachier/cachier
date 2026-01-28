@@ -687,3 +687,233 @@ class TestNoneHandling:
         assert call_count == previous_call_count  # No additional call
 
         async_func.clear_cache()
+
+
+# =============================================================================
+# Additional Coverage Tests
+# =============================================================================
+
+
+class TestAsyncVerboseMode:
+    """Tests for verbose_cache parameter with async functions."""
+
+    @pytest.mark.memory
+    @pytest.mark.asyncio
+    async def test_verbose_cache_parameter(self, capsys):
+        """Test verbose_cache parameter prints debug info."""
+        import warnings
+
+        call_count = 0
+
+        @cachier(backend="memory")
+        async def async_func(x):
+            nonlocal call_count
+            call_count += 1
+            await asyncio.sleep(0.1)
+            return x * 2
+
+        async_func.clear_cache()
+        call_count = 0
+
+        # First call with verbose=True (deprecated but still works)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            result1 = await async_func(5, verbose_cache=True)
+        assert result1 == 10
+        captured = capsys.readouterr()
+        assert "No entry found" in captured.out or "Calling" in captured.out
+
+        # Second call with verbose=True
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            result2 = await async_func(5, verbose_cache=True)
+        assert result2 == 10
+        captured = capsys.readouterr()
+        assert "Entry found" in captured.out or "Cached result" in captured.out
+
+        async_func.clear_cache()
+
+    @pytest.mark.memory
+    @pytest.mark.asyncio
+    async def test_cachier_verbose_kwarg(self, capsys):
+        """Test cachier__verbose keyword argument."""
+        @cachier(backend="memory")
+        async def async_func(x):
+            await asyncio.sleep(0.1)
+            return x * 3
+
+        async_func.clear_cache()
+
+        # Use cachier__verbose keyword
+        result = await async_func(7, cachier__verbose=True)
+        assert result == 21
+        captured = capsys.readouterr()
+        assert len(captured.out) > 0  # Should have printed something
+
+        async_func.clear_cache()
+
+
+class TestAsyncGlobalCachingControl:
+    """Tests for global caching enable/disable with async functions."""
+
+    @pytest.mark.memory
+    @pytest.mark.asyncio
+    async def test_disable_caching_globally(self):
+        """Test disabling caching globally affects async functions."""
+        import cachier
+
+        call_count = 0
+
+        @cachier.cachier(backend="memory")
+        async def async_func(x):
+            nonlocal call_count
+            call_count += 1
+            await asyncio.sleep(0.1)
+            return x * 2
+
+        async_func.clear_cache()
+        call_count = 0
+
+        # Enable caching (default)
+        cachier.enable_caching()
+
+        # First call - should cache
+        result1 = await async_func(5)
+        assert result1 == 10
+        assert call_count == 1
+
+        # Second call - should use cache
+        result2 = await async_func(5)
+        assert result2 == 10
+        assert call_count == 1
+
+        # Disable caching
+        cachier.disable_caching()
+
+        # Third call - should not use cache
+        result3 = await async_func(5)
+        assert result3 == 10
+        assert call_count == 2
+
+        # Fourth call - still should not use cache
+        result4 = await async_func(5)
+        assert result4 == 10
+        assert call_count == 3
+
+        # Re-enable caching
+        cachier.enable_caching()
+
+        async_func.clear_cache()
+
+
+class TestAsyncCleanupStale:
+    """Tests for cleanup_stale functionality with async functions."""
+
+    @pytest.mark.memory
+    @pytest.mark.asyncio
+    async def test_cleanup_stale_entries(self):
+        """Test that stale entries are cleaned up with cleanup_stale=True."""
+        call_count = 0
+
+        @cachier(
+            backend="memory",
+            stale_after=timedelta(seconds=1),
+            cleanup_stale=True,
+            cleanup_interval=timedelta(milliseconds=100),
+        )
+        async def async_func(x):
+            nonlocal call_count
+            call_count += 1
+            await asyncio.sleep(0.1)
+            return x * 2
+
+        async_func.clear_cache()
+        call_count = 0
+
+        # First call
+        result1 = await async_func(5)
+        assert result1 == 10
+        assert call_count == 1
+
+        # Wait for stale
+        await asyncio.sleep(1.5)
+
+        # Second call - triggers cleanup in background
+        result2 = await async_func(5)
+        assert result2 == 10
+        assert call_count == 2
+
+        # Give cleanup time to run
+        await asyncio.sleep(0.5)
+
+        async_func.clear_cache()
+
+
+class TestAsyncProcessingEntry:
+    """Tests for entry being processed scenarios with async functions."""
+
+    @pytest.mark.memory
+    @pytest.mark.asyncio
+    async def test_entry_processing_without_value(self):
+        """Test async recalculation when entry is processing but has no value."""
+        call_count = 0
+
+        @cachier(backend="memory")
+        async def async_func(x):
+            nonlocal call_count
+            call_count += 1
+            await asyncio.sleep(0.3)
+            return x * 2
+
+        async_func.clear_cache()
+        call_count = 0
+
+        # Launch concurrent calls - they should all execute
+        results = await asyncio.gather(
+            async_func(10),
+            async_func(10),
+            async_func(10),
+        )
+
+        assert all(r == 20 for r in results)
+        # All three should have executed since async doesn't wait
+        assert call_count == 3
+
+        async_func.clear_cache()
+
+    @pytest.mark.memory
+    @pytest.mark.asyncio
+    async def test_stale_entry_processing_recalculates(self):
+        """Test that stale entry being processed causes recalculation."""
+        call_count = 0
+
+        @cachier(backend="memory", stale_after=timedelta(seconds=1))
+        async def async_func(x):
+            nonlocal call_count
+            call_count += 1
+            await asyncio.sleep(0.5)
+            return call_count * 10
+
+        async_func.clear_cache()
+        call_count = 0
+
+        # First call
+        result1 = await async_func(5)
+        assert result1 == 10
+        assert call_count == 1
+
+        # Wait for stale
+        await asyncio.sleep(1.5)
+
+        # Launch concurrent calls on stale entry
+        # Both should recalculate (no waiting in async)
+        await asyncio.gather(
+            async_func(5),
+            async_func(5),
+        )
+
+        # Both should have executed
+        assert call_count >= 2
+
+        async_func.clear_cache()
+
