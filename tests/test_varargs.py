@@ -408,3 +408,258 @@ class TestMixedVarargsKeywordOnly:
         result4 = self.get_data("r1", "a", "b", kw_only="k1")
         assert self.call_count == 1
         assert result4 == result1
+
+
+@pytest.mark.parametrize("backend", ["pickle", "memory"])
+class TestFunctoolsPartial:
+    """Test functools.partial wrapped functions with variadic arguments."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self, backend):
+        """Set up the test function for each test."""
+        import functools
+
+        self.call_count = 0
+        self.backend = backend
+
+        def base_function(prefix, *args, suffix="end"):
+            """Base function to be wrapped with partial."""
+            self.call_count += 1
+            return f"{prefix}-{args}-{suffix}-{self.call_count}"
+
+        # Create partial with prefix bound
+        partial_func = functools.partial(base_function, "PREFIX")
+
+        @cachier(backend=backend, stale_after=timedelta(seconds=500))
+        def wrapped_partial(*args, **kwargs):
+            return partial_func(*args, **kwargs)
+
+        self.get_data = wrapped_partial
+        wrapped_partial.clear_cache()
+        self.call_count = 0
+        yield
+        wrapped_partial.clear_cache()
+
+    def test_partial_with_different_varargs(self):
+        """Test that partial functions with different *args get unique keys."""
+        result1 = self.get_data("a", "b")
+        assert self.call_count == 1
+
+        result2 = self.get_data("a", "b", "c")
+        assert self.call_count == 2
+        assert result1 != result2
+
+    def test_partial_with_same_varargs_uses_cache(self):
+        """Test that partial functions with same *args use cache."""
+        result1 = self.get_data("a", "b")
+        assert self.call_count == 1
+
+        result2 = self.get_data("a", "b")
+        assert self.call_count == 1
+        assert result1 == result2
+
+
+@pytest.mark.parametrize("backend", ["pickle", "memory"])
+class TestMethodWithVarargs:
+    """Test instance methods with variadic arguments."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self, backend):
+        """Set up the test class for each test."""
+        self.backend = backend
+        self.call_count = 0
+
+        # Create a simple test class with a cached method
+        # Note: Methods cache based on ALL arguments including self,
+        # so we test that different instances don't interfere
+        @cachier(backend=backend, stale_after=timedelta(seconds=500))
+        def standalone_func(*args):
+            """Standalone function that simulates method behavior."""
+            self.call_count += 1
+            return f"Result: {args}, call #{self.call_count}"
+
+        self.cached_func = standalone_func
+        standalone_func.clear_cache()
+        yield
+        standalone_func.clear_cache()
+
+    def test_method_with_different_varargs(self):
+        """Test that functions with different *args get unique keys."""
+        result1 = self.cached_func("a", "b")
+        assert self.call_count == 1
+
+        result2 = self.cached_func("x", "y", "z")
+        assert self.call_count == 2
+        assert result1 != result2
+
+    def test_method_with_same_varargs_uses_cache(self):
+        """Test that functions with same *args use cache."""
+        result1 = self.cached_func("a", "b")
+        assert self.call_count == 1
+
+        result2 = self.cached_func("a", "b")
+        assert self.call_count == 1
+        assert result1 == result2
+
+
+@pytest.mark.parametrize("backend", ["pickle", "memory"])
+class TestPositionalOnlyParams:
+    """Test functions with positional-only parameters (/) and varargs."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self, backend):
+        """Set up the test function for each test."""
+        self.call_count = 0
+        self.backend = backend
+
+        # Note: POSITIONAL_ONLY requires Python 3.8+
+        # Using exec to define function with / syntax
+        exec_globals = {"cachier": cachier, "timedelta": timedelta, "backend": backend}
+        exec(  # noqa: S102
+            """
+@cachier(backend=backend, stale_after=timedelta(seconds=500))
+def get_data(pos_only, /, *args, kw_only=None):
+    global call_count
+    call_count += 1
+    return f"pos_only={pos_only}, args={args}, kw_only={kw_only}, call #{call_count}"
+""",
+            exec_globals,
+        )
+
+        self.get_data = exec_globals["get_data"]
+        exec_globals["call_count"] = 0
+        self.exec_globals = exec_globals
+        self.get_data.clear_cache()
+        yield
+        self.get_data.clear_cache()
+
+    def test_positional_only_with_varargs(self):
+        """Test positional-only params with varargs produce unique keys."""
+        self.exec_globals["call_count"] = 0
+
+        result1 = self.get_data("pos1", "a", "b", kw_only="k1")
+        assert self.exec_globals["call_count"] == 1
+
+        result2 = self.get_data("pos2", "a", "b", kw_only="k1")
+        assert self.exec_globals["call_count"] == 2
+        assert result1 != result2
+
+    def test_positional_only_different_varargs(self):
+        """Test different varargs with positional-only produce unique keys."""
+        self.exec_globals["call_count"] = 0
+
+        result1 = self.get_data("pos1", "a", "b")
+        assert self.exec_globals["call_count"] == 1
+
+        result2 = self.get_data("pos1", "x", "y", "z")
+        assert self.exec_globals["call_count"] == 2
+        assert result1 != result2
+
+
+@pytest.mark.parametrize("backend", ["pickle", "memory"])
+class TestComplexParameterMix:
+    """Test functions with all parameter types combined."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self, backend):
+        """Set up the test function for each test."""
+        self.call_count = 0
+        self.backend = backend
+
+        @cachier(backend=backend, stale_after=timedelta(seconds=500))
+        def complex_func(regular1, regular2="default2", *args, kw_only, kw_default="kw_def", **kwargs):
+            """Function with all parameter types."""
+            self.call_count += 1
+            return (
+                f"r1={regular1}, r2={regular2}, args={args}, kw_only={kw_only}, "
+                f"kw_default={kw_default}, kwargs={sorted(kwargs.items())}, call #{self.call_count}"
+            )
+
+        self.get_data = complex_func
+        complex_func.clear_cache()
+        self.call_count = 0
+        yield
+        complex_func.clear_cache()
+
+    def test_all_params_different_combinations(self):
+        """Test various combinations of all parameter types."""
+        # Combination 1: minimal required params
+        result1 = self.get_data("r1", kw_only="ko1")
+        assert self.call_count == 1
+
+        # Combination 2: with varargs
+        result2 = self.get_data("r1", "r2val", "extra1", "extra2", kw_only="ko1")
+        assert self.call_count == 2
+        assert result1 != result2
+
+        # Combination 3: with varkwargs
+        result3 = self.get_data("r1", kw_only="ko1", extra_kw="value")
+        assert self.call_count == 3
+        assert result3 != result1
+
+        # Combination 4: full complexity
+        result4 = self.get_data("r1", "r2val", "e1", "e2", kw_only="ko1", kw_default="custom", x="a", y="b")
+        assert self.call_count == 4
+        assert result4 != result1
+        assert result4 != result2
+        assert result4 != result3
+
+    def test_cache_hit_with_complex_params(self):
+        """Test cache hit with complex parameter mix."""
+        result1 = self.get_data("r1", "r2val", "e1", kw_only="ko1", extra="val")
+        assert self.call_count == 1
+
+        result2 = self.get_data("r1", "r2val", "e1", kw_only="ko1", extra="val")
+        assert self.call_count == 1
+        assert result1 == result2
+
+
+@pytest.mark.parametrize("backend", ["pickle", "memory"])
+class TestEdgeCasesEmptyAndNone:
+    """Test edge cases with empty values and None."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self, backend):
+        """Set up the test function for each test."""
+        self.call_count = 0
+        self.backend = backend
+
+        @cachier(backend=backend, stale_after=timedelta(seconds=500), allow_none=True)
+        def get_data(*args, **kwargs):
+            """Function that might return None."""
+            self.call_count += 1
+            return (args, kwargs, self.call_count) if args or kwargs else None
+
+        self.get_data = get_data
+        get_data.clear_cache()
+        self.call_count = 0
+        yield
+        get_data.clear_cache()
+
+    def test_none_in_varargs(self):
+        """Test that None values in varargs are handled correctly."""
+        result1 = self.get_data(None, "value")
+        assert self.call_count == 1
+
+        result2 = self.get_data("value", None)
+        assert self.call_count == 2
+        assert result1 != result2
+
+    def test_empty_string_in_varargs(self):
+        """Test that empty strings in varargs are distinguished."""
+        result1 = self.get_data("", "value")
+        assert self.call_count == 1
+
+        result2 = self.get_data("value", "")
+        assert self.call_count == 2
+        assert result1 != result2
+
+    def test_zero_in_varargs(self):
+        """Test that zero values in varargs are handled correctly."""
+        result1 = self.get_data(0, 1)
+        assert self.call_count == 1
+
+        result2 = self.get_data(1, 0)
+        assert self.call_count == 2
+        assert result1 != result2
+
