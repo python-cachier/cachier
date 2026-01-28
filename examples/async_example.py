@@ -18,11 +18,7 @@ async def fetch_user_data(user_id: int) -> dict:
     """Simulate fetching user data from an API."""
     print(f"  Fetching user {user_id} from API...")
     await asyncio.sleep(1)  # Simulate network delay
-    return {
-        "id": user_id,
-        "name": f"User{user_id}",
-        "email": f"user{user_id}@example.com"
-    }
+    return {"id": user_id, "name": f"User{user_id}", "email": f"user{user_id}@example.com"}
 
 
 # Example 2: Async function with memory backend (faster, but not persistent)
@@ -40,12 +36,7 @@ async def get_weather_data(city: str) -> dict:
     """Simulate fetching weather data with automatic refresh when stale."""
     print(f"  Fetching weather for {city}...")
     await asyncio.sleep(0.5)
-    return {
-        "city": city,
-        "temp": 72,
-        "condition": "sunny",
-        "timestamp": time.time()
-    }
+    return {"city": city, "temp": 72, "condition": "sunny", "timestamp": time.time()}
 
 
 # Example 4: Real-world HTTP request caching (requires httpx)

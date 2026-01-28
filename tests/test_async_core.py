@@ -737,6 +737,7 @@ class TestAsyncVerboseMode:
     @pytest.mark.asyncio
     async def test_cachier_verbose_kwarg(self, capsys):
         """Test cachier__verbose keyword argument."""
+
         @cachier(backend="memory")
         async def async_func(x):
             await asyncio.sleep(0.1)
@@ -916,4 +917,3 @@ class TestAsyncProcessingEntry:
         assert call_count >= 2
 
         async_func.clear_cache()
-
