@@ -132,9 +132,10 @@ class TestStaleCache:
         assert call_count == 1
 
         # Second call - should use cache (no additional call)
+        previous_call_count = call_count
         result2 = await async_func(5)
         assert result2 == 10
-        assert call_count == 1  # Verify cache was used
+        assert call_count == previous_call_count  # Verify cache was used
 
         async_func.clear_cache()
 
