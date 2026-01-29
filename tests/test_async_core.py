@@ -929,14 +929,16 @@ class TestAsyncExceptionHandling:
 
     @pytest.mark.memory
     @pytest.mark.asyncio
-    async def test_function_thread_async_exception_handling(self):
-        """Test that exceptions in background async tasks are caught and handled."""
+    async def test_function_thread_async_exception_handling(self, capsys):
+        """Test that exceptions in background async tasks are caught and printed."""
+        exception_raised = False
 
         @cachier(backend="memory", stale_after=timedelta(seconds=1), next_time=True)
         async def async_func_that_fails(x):
-            await asyncio.sleep(0.2)
-            if x == 99:
-                raise ValueError("Intentional test error")
+            nonlocal exception_raised
+            await asyncio.sleep(0.1)
+            if exception_raised:
+                raise ValueError("Intentional test error in background")
             return x * 2
 
         async_func_that_fails.clear_cache()
@@ -948,21 +950,92 @@ class TestAsyncExceptionHandling:
         # Wait for stale
         await asyncio.sleep(1.5)
 
-        # Call with value that will fail in background - should return stale
+        # Set flag to raise exception in next call
+        exception_raised = True
+
+        # Call again - should return stale value and update in background
+        # Background task will fail and exception should be caught and printed
         result2 = await async_func_that_fails(5)
         assert result2 == 10  # Returns stale value
 
         # Wait for background task to complete and fail
         await asyncio.sleep(0.5)
 
-        # The error should be caught and handled silently in background
-        # (no exception should propagate to this test)
+        # Check that exception was caught and printed (line 65)
+        captured = capsys.readouterr()
+        assert "Function call failed with the following exception" in captured.out
+        assert "Intentional test error in background" in captured.out
 
         async_func_that_fails.clear_cache()
+
+    @pytest.mark.memory
+    @pytest.mark.asyncio
+    async def test_entry_size_limit_exceeded_async(self, capsys):
+        """Test that exceeding entry_size_limit prints a message (line 86)."""
+
+        @cachier(backend="memory", entry_size_limit=10)  # Very small limit
+        async def async_func_large_result(x):
+            await asyncio.sleep(0.1)
+            # Return a large result that exceeds 10 bytes
+            return "x" * 1000
+
+        async_func_large_result.clear_cache()
+
+        # Call function with cachier__verbose=True - result should exceed size limit
+        result = await async_func_large_result(5, cachier__verbose=True)
+        assert len(result) == 1000
+
+        # Check that the size limit message was printed (line 86)
+        captured = capsys.readouterr()
+        assert "Result exceeds entry_size_limit; not cached" in captured.out
+
+        async_func_large_result.clear_cache()
 
 
 class TestAsyncStaleProcessing:
     """Tests for stale entry processing with next_time."""
+
+    @pytest.mark.memory
+    @pytest.mark.asyncio
+    async def test_stale_entry_being_processed_returns_stale(self):
+        """Test lines 476-478: stale entry being processed with next_time returns stale value."""
+        call_count = 0
+
+        @cachier(backend="memory", stale_after=timedelta(seconds=1), next_time=True)
+        async def slow_async_func(x):
+            nonlocal call_count
+            call_count += 1
+            await asyncio.sleep(1.0)  # Long enough to overlap calls
+            return call_count * 10
+
+        slow_async_func.clear_cache()
+        call_count = 0
+
+        # First call - populate cache
+        result1 = await slow_async_func(5)
+        assert result1 == 10
+        assert call_count == 1
+
+        # Wait for stale
+        await asyncio.sleep(1.5)
+
+        # Start a slow recalculation that will take 1 second
+        # Do NOT await it - let it run in background
+        task1 = asyncio.create_task(slow_async_func(5))
+        
+        # Give it a tiny bit of time to mark entry as being processed
+        await asyncio.sleep(0.1)
+        
+        # Now make another call while first one is still processing
+        # This should hit lines 476-478 and return stale value
+        result2 = await slow_async_func(5)
+        assert result2 == 10  # Should return stale value (from first call)
+        
+        # Wait for background task to complete
+        result3 = await task1
+        # result3 might be 10 (stale) or 20 (new), depending on timing
+        
+        slow_async_func.clear_cache()
 
     @pytest.mark.memory
     @pytest.mark.asyncio
