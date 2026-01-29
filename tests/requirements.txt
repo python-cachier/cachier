@@ -3,6 +3,7 @@
 pytest
 coverage
 pytest-cov
+pytest-asyncio
 birch
 # to be able to run `python setup.py checkdocs`
 collective.checkdocs

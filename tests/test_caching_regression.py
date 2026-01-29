@@ -1,7 +1,6 @@
 """Test for caching enable/disable regression issue.
 
-This test ensures that decorators defined when caching is disabled can still be
-enabled later via enable_caching().
+This test ensures that decorators defined when caching is disabled can still be enabled later via enable_caching().
 
 """
 
