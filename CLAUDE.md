@@ -157,6 +157,7 @@ ______________________________________________________________________
 ### General structure
 
 The repository contains a Python package called Cachier that provides persistent function caching with several backends:
+
 ```
 cachier/
 ├── src/cachier/ # Main library code
@@ -180,6 +181,7 @@ cachier/
 ├── README.rst # Main documentation
 └── ...
 ```
+
 ### Key functionality
 
 - core.py exposes the cachier decorator. It chooses a backend (pickle, mongo, memory, SQL, or Redis) and wraps the target function:
