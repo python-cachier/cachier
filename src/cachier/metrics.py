@@ -144,9 +144,7 @@ class CacheMetrics:
         # Assuming ~1000 ops/sec max, keep 1 day of data = 86.4M points
         # Limit to 100K points for memory efficiency
         max_latency_points = 100000
-        self._latencies: Deque[_TimestampedMetric] = deque(
-            maxlen=max_latency_points
-        )
+        self._latencies: Deque[_TimestampedMetric] = deque(maxlen=max_latency_points)
 
         # Size tracking
         self._entry_count = 0
@@ -249,13 +247,9 @@ class CacheMetrics:
             return
         with self._lock:
             timestamp = time.time()
-            self._latencies.append(
-                _TimestampedMetric(timestamp=timestamp, value=latency_seconds)
-            )
+            self._latencies.append(_TimestampedMetric(timestamp=timestamp, value=latency_seconds))
 
-    def update_size_metrics(
-        self, entry_count: int, total_size_bytes: int
-    ) -> None:
+    def update_size_metrics(self, entry_count: int, total_size_bytes: int) -> None:
         """Update cache size metrics.
 
         Parameters
@@ -270,9 +264,7 @@ class CacheMetrics:
             self._entry_count = entry_count
             self._total_size_bytes = total_size_bytes
 
-    def _calculate_avg_latency(
-        self, window: Optional[timedelta] = None
-    ) -> float:
+    def _calculate_avg_latency(self, window: Optional[timedelta] = None) -> float:
         """Calculate average latency within a time window.
 
         Parameters
@@ -289,11 +281,7 @@ class CacheMetrics:
         now = time.time()
         cutoff = now - window.total_seconds() if window else 0
 
-        latencies = [
-            metric.value
-            for metric in self._latencies
-            if metric.timestamp >= cutoff
-        ]
+        latencies = [metric.value for metric in self._latencies if metric.timestamp >= cutoff]
 
         if not latencies:
             return 0.0
@@ -317,9 +305,7 @@ class CacheMetrics:
         """
         with self._lock:
             total_calls = self._hits + self._misses
-            hit_rate = (
-                (self._hits / total_calls * 100) if total_calls > 0 else 0.0
-            )
+            hit_rate = (self._hits / total_calls * 100) if total_calls > 0 else 0.0
             avg_latency = self._calculate_avg_latency(window)
 
             return MetricSnapshot(

@@ -22,9 +22,7 @@ class _MemoryCore(_BaseCore):
         entry_size_limit: Optional[int] = None,
         metrics: Optional["CacheMetrics"] = None,
     ):
-        super().__init__(
-            hash_func, wait_for_calc_timeout, entry_size_limit, metrics
-        )
+        super().__init__(hash_func, wait_for_calc_timeout, entry_size_limit, metrics)
         self.cache: Dict[str, CacheEntry] = {}
 
     def _hash_func_key(self, key: str) -> str:

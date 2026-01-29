@@ -166,10 +166,7 @@ class PrometheusExporter(MetricsExporter):
                         func_name,
                         func,
                     ) in self.exporter._registered_functions.items():
-                        if (
-                            not hasattr(func, "metrics")
-                            or func.metrics is None
-                        ):
+                        if not hasattr(func, "metrics") or func.metrics is None:
                             continue
 
                         stats = func.metrics.get_stats()
@@ -178,13 +175,9 @@ class PrometheusExporter(MetricsExporter):
                         misses.add_metric([func_name], stats.misses)
                         hit_rate.add_metric([func_name], stats.hit_rate)
                         stale_hits.add_metric([func_name], stats.stale_hits)
-                        recalculations.add_metric(
-                            [func_name], stats.recalculations
-                        )
+                        recalculations.add_metric([func_name], stats.recalculations)
                         entry_count.add_metric([func_name], stats.entry_count)
-                        cache_size.add_metric(
-                            [func_name], stats.total_size_bytes
-                        )
+                        cache_size.add_metric([func_name], stats.total_size_bytes)
 
                     yield hits
                     yield misses
@@ -227,8 +220,7 @@ class PrometheusExporter(MetricsExporter):
         """
         if not hasattr(func, "metrics") or func.metrics is None:
             raise ValueError(
-                f"Function {func.__name__} does not have metrics enabled. "
-                "Use @cachier(enable_metrics=True)"
+                f"Function {func.__name__} does not have metrics enabled. Use @cachier(enable_metrics=True)"
             )
 
         with self._lock:
@@ -274,9 +266,7 @@ class PrometheusExporter(MetricsExporter):
                 if not hasattr(func, "metrics") or func.metrics is None:
                     continue
                 stats = func.metrics.get_stats()
-                lines.append(
-                    f'cachier_cache_hits_total{{function="{func_name}"}} {stats.hits}'
-                )
+                lines.append(f'cachier_cache_hits_total{{function="{func_name}"}} {stats.hits}')
 
         # Misses
         lines.append("")
@@ -288,9 +278,7 @@ class PrometheusExporter(MetricsExporter):
                 if not hasattr(func, "metrics") or func.metrics is None:
                     continue
                 stats = func.metrics.get_stats()
-                lines.append(
-                    f'cachier_cache_misses_total{{function="{func_name}"}} {stats.misses}'
-                )
+                lines.append(f'cachier_cache_misses_total{{function="{func_name}"}} {stats.misses}')
 
         # Hit rate
         lines.append("")
@@ -302,15 +290,11 @@ class PrometheusExporter(MetricsExporter):
                 if not hasattr(func, "metrics") or func.metrics is None:
                     continue
                 stats = func.metrics.get_stats()
-                lines.append(
-                    f'cachier_cache_hit_rate{{function="{func_name}"}} {stats.hit_rate:.2f}'
-                )
+                lines.append(f'cachier_cache_hit_rate{{function="{func_name}"}} {stats.hit_rate:.2f}')
 
         # Average latency
         lines.append("")
-        lines.append(
-            "# HELP cachier_avg_latency_ms Average cache operation latency in milliseconds"
-        )
+        lines.append("# HELP cachier_avg_latency_ms Average cache operation latency in milliseconds")
         lines.append("# TYPE cachier_avg_latency_ms gauge")
 
         with self._lock:
@@ -318,9 +302,7 @@ class PrometheusExporter(MetricsExporter):
                 if not hasattr(func, "metrics") or func.metrics is None:
                     continue
                 stats = func.metrics.get_stats()
-                lines.append(
-                    f'cachier_avg_latency_ms{{function="{func_name}"}} {stats.avg_latency_ms:.4f}'
-                )
+                lines.append(f'cachier_avg_latency_ms{{function="{func_name}"}} {stats.avg_latency_ms:.4f}')
 
         # Stale hits
         lines.append("")
@@ -332,15 +314,11 @@ class PrometheusExporter(MetricsExporter):
                 if not hasattr(func, "metrics") or func.metrics is None:
                     continue
                 stats = func.metrics.get_stats()
-                lines.append(
-                    f'cachier_stale_hits_total{{function="{func_name}"}} {stats.stale_hits}'
-                )
+                lines.append(f'cachier_stale_hits_total{{function="{func_name}"}} {stats.stale_hits}')
 
         # Recalculations
         lines.append("")
-        lines.append(
-            "# HELP cachier_recalculations_total Total cache recalculations"
-        )
+        lines.append("# HELP cachier_recalculations_total Total cache recalculations")
         lines.append("# TYPE cachier_recalculations_total counter")
 
         with self._lock:
@@ -348,9 +326,7 @@ class PrometheusExporter(MetricsExporter):
                 if not hasattr(func, "metrics") or func.metrics is None:
                     continue
                 stats = func.metrics.get_stats()
-                lines.append(
-                    f'cachier_recalculations_total{{function="{func_name}"}} {stats.recalculations}'
-                )
+                lines.append(f'cachier_recalculations_total{{function="{func_name}"}} {stats.recalculations}')
 
         # Entry count
         lines.append("")
@@ -362,15 +338,11 @@ class PrometheusExporter(MetricsExporter):
                 if not hasattr(func, "metrics") or func.metrics is None:
                     continue
                 stats = func.metrics.get_stats()
-                lines.append(
-                    f'cachier_entry_count{{function="{func_name}"}} {stats.entry_count}'
-                )
+                lines.append(f'cachier_entry_count{{function="{func_name}"}} {stats.entry_count}')
 
         # Cache size
         lines.append("")
-        lines.append(
-            "# HELP cachier_cache_size_bytes Total cache size in bytes"
-        )
+        lines.append("# HELP cachier_cache_size_bytes Total cache size in bytes")
         lines.append("# TYPE cachier_cache_size_bytes gauge")
 
         with self._lock:
@@ -378,15 +350,11 @@ class PrometheusExporter(MetricsExporter):
                 if not hasattr(func, "metrics") or func.metrics is None:
                     continue
                 stats = func.metrics.get_stats()
-                lines.append(
-                    f'cachier_cache_size_bytes{{function="{func_name}"}} {stats.total_size_bytes}'
-                )
+                lines.append(f'cachier_cache_size_bytes{{function="{func_name}"}} {stats.total_size_bytes}')
 
         # Size limit rejections
         lines.append("")
-        lines.append(
-            "# HELP cachier_size_limit_rejections_total Entries rejected due to size limit"
-        )
+        lines.append("# HELP cachier_size_limit_rejections_total Entries rejected due to size limit")
         lines.append("# TYPE cachier_size_limit_rejections_total counter")
 
         with self._lock:

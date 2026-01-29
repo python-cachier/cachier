@@ -126,10 +126,7 @@ print(f"  Total calls recorded: {stats.total_calls}")
 print(f"  Hits: {stats.hits}")
 print(f"  Misses: {stats.misses}")
 print(f"  Hit rate: {stats.hit_rate:.1f}%")
-print(
-    "  Note: Total calls < 100 due to sampling; hit rate is approximately"
-    " representative of overall behavior."
-)
+print("  Note: Total calls < 100 due to sampling; hit rate is approximately representative of overall behavior.")
 
 # Example 4: Comprehensive metrics snapshot
 print("\n" + "=" * 60)

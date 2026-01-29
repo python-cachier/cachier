@@ -84,9 +84,7 @@ class _PickleCore(_BaseCore):
         entry_size_limit: Optional[int] = None,
         metrics: Optional["CacheMetrics"] = None,
     ):
-        super().__init__(
-            hash_func, wait_for_calc_timeout, entry_size_limit, metrics
-        )
+        super().__init__(hash_func, wait_for_calc_timeout, entry_size_limit, metrics)
         self._cache_dict: Dict[str, CacheEntry] = {}
         self.reload = _update_with_defaults(pickle_reload, "pickle_reload")
         self.cache_dir = os.path.expanduser(_update_with_defaults(cache_dir, "cache_dir"))

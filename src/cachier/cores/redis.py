@@ -50,7 +50,7 @@ class _RedisCore(_BaseCore):
             hash_func=hash_func,
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=entry_size_limit,
-            metrics=metrics
+            metrics=metrics,
         )
         if redis_client is None:
             raise MissingRedisClient("must specify ``redis_client`` when using the redis core")
