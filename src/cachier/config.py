@@ -83,9 +83,7 @@ class CacheEntry:
     _completed: bool = False
 
 
-def _update_with_defaults(
-    param, name: str, func_kwargs: Optional[dict] = None
-):
+def _update_with_defaults(param, name: str, func_kwargs: Optional[dict] = None):
     import cachier
 
     if func_kwargs:
@@ -107,8 +105,7 @@ def set_default_params(**params: Any) -> None:
     import warnings
 
     warnings.warn(
-        "Called `set_default_params` is deprecated and will be removed."
-        " Please use `set_global_params` instead.",
+        "Called `set_default_params` is deprecated and will be removed. Please use `set_global_params` instead.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -138,11 +135,7 @@ def set_global_params(**params: Any) -> None:
     """
     import cachier
 
-    valid_params = {
-        k: v
-        for k, v in params.items()
-        if hasattr(cachier.config._global_params, k)
-    }
+    valid_params = {k: v for k, v in params.items() if hasattr(cachier.config._global_params, k)}
     cachier.config._global_params = replace(
         cachier.config._global_params,
         **valid_params,
@@ -159,8 +152,7 @@ def get_default_params() -> Params:
     import warnings
 
     warnings.warn(
-        "Called `get_default_params` is deprecated and will be removed."
-        " Please use `get_global_params` instead.",
+        "Called `get_default_params` is deprecated and will be removed. Please use `get_global_params` instead.",
         DeprecationWarning,
         stacklevel=2,
     )

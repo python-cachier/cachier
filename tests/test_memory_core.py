@@ -173,12 +173,8 @@ def test_memory_being_calculated():
     """Testing memory core handling of being calculated scenarios."""
     _takes_time.clear_cache()
     res_queue = queue.Queue()
-    thread1 = threading.Thread(
-        target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True
-    )
-    thread2 = threading.Thread(
-        target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True
-    )
+    thread1 = threading.Thread(target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True)
+    thread2 = threading.Thread(target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True)
     thread1.start()
     sleep(0.5)
     thread2.start()
@@ -209,16 +205,8 @@ def test_being_calc_next_time():
     _being_calc_next_time(0.13, 0.02)
     sleep(1.1)
     res_queue = queue.Queue()
-    thread1 = threading.Thread(
-        target=_calls_being_calc_next_time,
-        kwargs={"res_queue": res_queue},
-        daemon=True,
-    )
-    thread2 = threading.Thread(
-        target=_calls_being_calc_next_time,
-        kwargs={"res_queue": res_queue},
-        daemon=True,
-    )
+    thread1 = threading.Thread(target=_calls_being_calc_next_time, kwargs={"res_queue": res_queue}, daemon=True)
+    thread2 = threading.Thread(target=_calls_being_calc_next_time, kwargs={"res_queue": res_queue}, daemon=True)
     thread1.start()
     sleep(0.5)
     thread2.start()
@@ -249,12 +237,8 @@ def test_clear_being_calculated():
     """Test memory core clear `being calculated` functionality."""
     _takes_time.clear_cache()
     res_queue = queue.Queue()
-    thread1 = threading.Thread(
-        target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True
-    )
-    thread2 = threading.Thread(
-        target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True
-    )
+    thread1 = threading.Thread(target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True)
+    thread2 = threading.Thread(target=_calls_takes_time, kwargs={"res_queue": res_queue}, daemon=True)
     thread1.start()
     _takes_time.clear_being_calculated()
     sleep(0.5)
@@ -298,15 +282,11 @@ def test_callable_hash_param():
     def _hash_func(args, kwargs):
         def _hash(obj):
             if isinstance(obj, pd.core.frame.DataFrame):
-                return hashlib.sha256(
-                    pd.util.hash_pandas_object(obj).values.tobytes()
-                ).hexdigest()
+                return hashlib.sha256(pd.util.hash_pandas_object(obj).values.tobytes()).hexdigest()
             return obj
 
         k_args = tuple(map(_hash, args))
-        k_kwargs = tuple(
-            sorted({k: _hash(v) for k, v in kwargs.items()}.items())
-        )
+        k_kwargs = tuple(sorted({k: _hash(v) for k, v in kwargs.items()}.items()))
         return k_args + k_kwargs
 
     @cachier(backend="memory", hash_func=_hash_func)
@@ -398,21 +378,11 @@ def test_delete_stale_entries():
     core.cache[core._hash_func_key("stale_key")] = stale_entry
 
     # Fresh entry (30 minutes old)
-    fresh_entry = CacheEntry(
-        value="fresh_value",
-        time=now - timedelta(minutes=30),
-        stale=False,
-        _processing=False,
-    )
+    fresh_entry = CacheEntry(value="fresh_value", time=now - timedelta(minutes=30), stale=False, _processing=False)
     core.cache[core._hash_func_key("fresh_key")] = fresh_entry
 
     # Very fresh entry (just created)
-    very_fresh_entry = CacheEntry(
-        value="very_fresh_value",
-        time=now,
-        stale=False,
-        _processing=False,
-    )
+    very_fresh_entry = CacheEntry(value="very_fresh_value", time=now, stale=False, _processing=False)
     core.cache[core._hash_func_key("very_fresh_key")] = very_fresh_entry
 
     # Delete entries older than 1 hour
@@ -453,12 +423,7 @@ def test_delete_stale_entries_all_stale():
 
     # Add only stale entries
     for i in range(5):
-        entry = CacheEntry(
-            value=f"value_{i}",
-            time=old_time,
-            stale=False,
-            _processing=False,
-        )
+        entry = CacheEntry(value=f"value_{i}", time=old_time, stale=False, _processing=False)
         core.cache[core._hash_func_key(f"key_{i}")] = entry
 
     # Delete entries older than 1 day

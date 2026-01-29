@@ -49,9 +49,7 @@ if SQLALCHEMY_AVAILABLE:
         stale = Column(Boolean, default=False)
         processing = Column(Boolean, default=False)
         completed = Column(Boolean, default=False)
-        __table_args__ = (
-            Index("ix_func_key", "function_id", "key", unique=True),
-        )
+        __table_args__ = (Index("ix_func_key", "function_id", "key", unique=True),)
 
 
 class _SQLCore(_BaseCore):
@@ -70,10 +68,7 @@ class _SQLCore(_BaseCore):
         metrics: Optional["CacheMetrics"] = None,
     ):
         if not SQLALCHEMY_AVAILABLE:
-            raise ImportError(
-                "SQLAlchemy is required for the SQL core. "
-                "Install with `pip install SQLAlchemy`."
-            )
+            raise ImportError("SQLAlchemy is required for the SQL core. Install with `pip install SQLAlchemy`.")
         super().__init__(
             hash_func=hash_func,
             wait_for_calc_timeout=wait_for_calc_timeout,
@@ -93,10 +88,7 @@ class _SQLCore(_BaseCore):
             return create_engine(sql_engine, future=True)
         if callable(sql_engine):
             return sql_engine()
-        raise ValueError(
-            "sql_engine must be a SQLAlchemy Engine, connection string, "
-            "or callable returning an Engine."
-        )
+        raise ValueError("sql_engine must be a SQLAlchemy Engine, connection string, or callable returning an Engine.")
 
     def set_func(self, func):
         super().set_func(func)
@@ -143,13 +135,7 @@ class _SQLCore(_BaseCore):
                     completed=True,
                 ).on_conflict_do_update(
                     index_elements=[CacheTable.function_id, CacheTable.key],
-                    set_={
-                        "value": thebytes,
-                        "timestamp": now,
-                        "stale": False,
-                        "processing": False,
-                        "completed": True,
-                    },
+                    set_={"value": thebytes, "timestamp": now, "stale": False, "processing": False, "completed": True},
                 )
                 if hasattr(base_insert, "on_conflict_do_update")
                 else None
@@ -169,19 +155,8 @@ class _SQLCore(_BaseCore):
                 if row:
                     session.execute(
                         update(CacheTable)
-                        .where(
-                            and_(
-                                CacheTable.function_id == self._func_str,
-                                CacheTable.key == key,
-                            )
-                        )
-                        .values(
-                            value=thebytes,
-                            timestamp=now,
-                            stale=False,
-                            processing=False,
-                            completed=True,
-                        )
+                        .where(and_(CacheTable.function_id == self._func_str, CacheTable.key == key))
+                        .values(value=thebytes, timestamp=now, stale=False, processing=False, completed=True)
                     )
                 else:
                     session.add(
@@ -212,12 +187,7 @@ class _SQLCore(_BaseCore):
             if row:
                 session.execute(
                     update(CacheTable)
-                    .where(
-                        and_(
-                            CacheTable.function_id == self._func_str,
-                            CacheTable.key == key,
-                        )
-                    )
+                    .where(and_(CacheTable.function_id == self._func_str, CacheTable.key == key))
                     .values(processing=True)
                 )
             else:
@@ -239,12 +209,7 @@ class _SQLCore(_BaseCore):
         with self._lock, self._Session() as session:
             session.execute(
                 update(CacheTable)
-                .where(
-                    and_(
-                        CacheTable.function_id == self._func_str,
-                        CacheTable.key == key,
-                    )
-                )
+                .where(and_(CacheTable.function_id == self._func_str, CacheTable.key == key))
                 .values(processing=False)
             )
             session.commit()
@@ -256,44 +221,26 @@ class _SQLCore(_BaseCore):
         while True:
             with self._lock, self._Session() as session:
                 row = session.execute(
-                    select(CacheTable).where(
-                        and_(
-                            CacheTable.function_id == self._func_str,
-                            CacheTable.key == key,
-                        )
-                    )
+                    select(CacheTable).where(and_(CacheTable.function_id == self._func_str, CacheTable.key == key))
                 ).scalar_one_or_none()
                 if not row:
                     raise RecalculationNeeded()
                 if not row.processing:
-                    return (
-                        pickle.loads(row.value)
-                        if row.value is not None
-                        else None
-                    )
+                    return pickle.loads(row.value) if row.value is not None else None
             time.sleep(1)
             time_spent += 1
             self.check_calc_timeout(time_spent)
 
     def clear_cache(self) -> None:
         with self._lock, self._Session() as session:
-            session.execute(
-                delete(CacheTable).where(
-                    CacheTable.function_id == self._func_str
-                )
-            )
+            session.execute(delete(CacheTable).where(CacheTable.function_id == self._func_str))
             session.commit()
 
     def clear_being_calculated(self) -> None:
         with self._lock, self._Session() as session:
             session.execute(
                 update(CacheTable)
-                .where(
-                    and_(
-                        CacheTable.function_id == self._func_str,
-                        CacheTable.processing,
-                    )
-                )
+                .where(and_(CacheTable.function_id == self._func_str, CacheTable.processing))
                 .values(processing=False)
             )
             session.commit()

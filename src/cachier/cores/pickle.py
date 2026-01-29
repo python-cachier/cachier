@@ -89,12 +89,8 @@ class _PickleCore(_BaseCore):
         )
         self._cache_dict: Dict[str, CacheEntry] = {}
         self.reload = _update_with_defaults(pickle_reload, "pickle_reload")
-        self.cache_dir = os.path.expanduser(
-            _update_with_defaults(cache_dir, "cache_dir")
-        )
-        self.separate_files = _update_with_defaults(
-            separate_files, "separate_files"
-        )
+        self.cache_dir = os.path.expanduser(_update_with_defaults(cache_dir, "cache_dir"))
+        self.separate_files = _update_with_defaults(separate_files, "separate_files")
         self._cache_used_fpath = ""
 
     @property
@@ -105,9 +101,7 @@ class _PickleCore(_BaseCore):
     @property
     def cache_fpath(self) -> str:
         os.makedirs(self.cache_dir, exist_ok=True)
-        return os.path.abspath(
-            os.path.join(os.path.realpath(self.cache_dir), self.cache_fname)
-        )
+        return os.path.abspath(os.path.join(os.path.realpath(self.cache_dir), self.cache_fname))
 
     @staticmethod
     def _convert_legacy_cache_entry(
@@ -130,10 +124,7 @@ class _PickleCore(_BaseCore):
             self._cache_used_fpath = str(self.cache_fpath)
         except (FileNotFoundError, EOFError):
             cache = {}
-        return {
-            k: _PickleCore._convert_legacy_cache_entry(v)
-            for k, v in cache.items()
-        }
+        return {k: _PickleCore._convert_legacy_cache_entry(v) for k, v in cache.items()}
 
     def get_cache_dict(self, reload: bool = False) -> Dict[str, CacheEntry]:
         if self._cache_used_fpath != self.cache_fpath:
@@ -146,9 +137,7 @@ class _PickleCore(_BaseCore):
             self._cache_dict = self._load_cache_dict()
         return self._cache_dict
 
-    def _load_cache_by_key(
-        self, key=None, hash_str=None
-    ) -> Optional[CacheEntry]:
+    def _load_cache_by_key(self, key=None, hash_str=None) -> Optional[CacheEntry]:
         fpath = self.cache_fpath
         fpath += f"_{hash_str or key}"
         try:
@@ -168,9 +157,7 @@ class _PickleCore(_BaseCore):
         path, name = os.path.split(self.cache_fpath)
         for subpath in os.listdir(path):
             if subpath.startswith(name):
-                entry = self._load_cache_by_key(
-                    hash_str=subpath.split("_")[-1]
-                )
+                entry = self._load_cache_by_key(hash_str=subpath.split("_")[-1])
                 if entry is not None:
                     entry._processing = False
                     self._save_cache(entry, hash_str=subpath.split("_")[-1])
@@ -182,9 +169,7 @@ class _PickleCore(_BaseCore):
         hash_str: Optional[str] = None,
     ) -> None:
         if separate_file_key and not isinstance(cache, CacheEntry):
-            raise ValueError(
-                "`separate_file_key` should only be used with a CacheEntry"
-            )
+            raise ValueError("`separate_file_key` should only be used with a CacheEntry")
         fpath = self.cache_fpath
         if separate_file_key is not None:
             fpath += f"_{separate_file_key}"
@@ -198,9 +183,7 @@ class _PickleCore(_BaseCore):
                 self._cache_dict = cache
                 self._cache_used_fpath = str(self.cache_fpath)
 
-    def get_entry_by_key(
-        self, key: str, reload: bool = False
-    ) -> Tuple[str, Optional[CacheEntry]]:
+    def get_entry_by_key(self, key: str, reload: bool = False) -> Tuple[str, Optional[CacheEntry]]:
         if self.separate_files:
             return key, self._load_cache_by_key(key)
         return key, self.get_cache_dict(reload).get(key)
@@ -227,12 +210,7 @@ class _PickleCore(_BaseCore):
 
     def mark_entry_being_calculated_separate_files(self, key: str) -> None:
         self._save_cache(
-            CacheEntry(
-                value=None,
-                time=datetime.now(),
-                stale=False,
-                _processing=True,
-            ),
+            CacheEntry(value=None, time=datetime.now(), stale=False, _processing=True),
             separate_file_key=key,
         )
 
@@ -253,12 +231,7 @@ class _PickleCore(_BaseCore):
             if key in cache:
                 cache[key]._processing = True
             else:
-                cache[key] = CacheEntry(
-                    value=None,
-                    time=datetime.now(),
-                    stale=False,
-                    _processing=True,
-                )
+                cache[key] = CacheEntry(value=None, time=datetime.now(), stale=False, _processing=True)
             self._save_cache(cache)
 
     def mark_entry_not_calculated(self, key: str) -> None:
@@ -319,9 +292,7 @@ class _PickleCore(_BaseCore):
 
     def _wait_with_inotify(self, key: str, filename: str) -> Any:  # type: ignore[valid-type]
         """Wait for calculation using inotify with proper cleanup."""
-        event_handler = _PickleCore.CacheChangeHandler(
-            filename=filename, core=self, key=key
-        )
+        event_handler = _PickleCore.CacheChangeHandler(filename=filename, core=self, key=key)
 
         observer = self._create_observer()
         event_handler.inject_observer(observer)
@@ -394,9 +365,7 @@ class _PickleCore(_BaseCore):
             for subpath in os.listdir(path):
                 if not subpath.startswith(f"{name}_"):
                     continue
-                entry = self._load_cache_by_key(
-                    hash_str=subpath.split("_")[-1]
-                )
+                entry = self._load_cache_by_key(hash_str=subpath.split("_")[-1])
                 if entry is not None and (now - entry.time > stale_after):
                     with suppress(FileNotFoundError):
                         os.remove(os.path.join(path, subpath))
@@ -404,9 +373,7 @@ class _PickleCore(_BaseCore):
 
         with self.lock:
             cache = self.get_cache_dict(reload=True)
-            keys_to_delete = [
-                k for k, v in cache.items() if now - v.time > stale_after
-            ]
+            keys_to_delete = [k for k, v in cache.items() if now - v.time > stale_after]
             for key in keys_to_delete:
                 del cache[key]
             self._save_cache(cache)

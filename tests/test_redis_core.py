@@ -50,9 +50,7 @@ def _get_test_redis_client():
         port = int(CFG.get(CfgKey.PORT, 6379))
         db = int(CFG.get(CfgKey.DB, 0))
         try:
-            client = redis.Redis(
-                host=host, port=port, db=db, decode_responses=False
-            )
+            client = redis.Redis(host=host, port=port, db=db, decode_responses=False)
             # Test connection
             client.ping()
             return client
@@ -87,14 +85,10 @@ def _test_redis_getter():
                             bytes_result[k.encode("utf-8")] = v.encode("utf-8")
                         else:
                             bytes_result[k.encode("utf-8")] = v
-                    print(
-                        f"DEBUG: hgetall({key}) = {result} -> {bytes_result}"
-                    )
+                    print(f"DEBUG: hgetall({key}) = {result} -> {bytes_result}")
                     return bytes_result
 
-                def hset(
-                    self, key, field=None, value=None, mapping=None, **kwargs
-                ):
+                def hset(self, key, field=None, value=None, mapping=None, **kwargs):
                     if key not in self.data:
                         self.data[key] = {}
 
@@ -158,9 +152,7 @@ def _test_redis_getter():
                 def execute(self):
                     for cmd, key, field, value in self.commands:
                         if cmd == "hset":
-                            self.redis_client.hset(
-                                key, field=field, value=value
-                            )
+                            self.redis_client.hset(key, field=field, value=value)
 
             _test_redis_getter._mock_client = MockRedis()
 
@@ -247,12 +239,7 @@ def test_redis_core_keywords():
 def test_redis_stale_after():
     """Testing Redis core stale_after functionality."""
 
-    @cachier(
-        backend="redis",
-        redis_client=_test_redis_getter,
-        stale_after=timedelta(seconds=3),
-        next_time=False,
-    )
+    @cachier(backend="redis", redis_client=_test_redis_getter, stale_after=timedelta(seconds=3), next_time=False)
     def _stale_after_redis(arg_1, arg_2):
         """Some function."""
         return random() + arg_1 + arg_2
@@ -272,16 +259,10 @@ def _calls_takes_time_redis(res_queue):
     @cachier(backend="redis", redis_client=_test_redis_getter)
     def _takes_time(arg_1, arg_2):
         """Some function."""
-        print(
-            f"DEBUG: _calls_takes_time_redis._takes_time({arg_1}, {arg_2})"
-            " called"
-        )
+        print(f"DEBUG: _calls_takes_time_redis._takes_time({arg_1}, {arg_2}) called")
         sleep(3)
         result = random() + arg_1 + arg_2
-        print(
-            f"DEBUG: _calls_takes_time_redis._takes_time({arg_1}, {arg_2}) "
-            f"returning {result}"
-        )
+        print(f"DEBUG: _calls_takes_time_redis._takes_time({arg_1}, {arg_2}) returning {result}")
         return result
 
     print("DEBUG: _calls_takes_time_redis calling _takes_time(34, 82.3)")
@@ -309,17 +290,9 @@ def test_redis_being_calculated():
     _takes_time.clear_cache()
     res_queue = queue.Queue()
     print("DEBUG: Starting thread1")
-    thread1 = threading.Thread(
-        target=_calls_takes_time_redis,
-        kwargs={"res_queue": res_queue},
-        daemon=True,
-    )
+    thread1 = threading.Thread(target=_calls_takes_time_redis, kwargs={"res_queue": res_queue}, daemon=True)
     print("DEBUG: Starting thread2")
-    thread2 = threading.Thread(
-        target=_calls_takes_time_redis,
-        kwargs={"res_queue": res_queue},
-        daemon=True,
-    )
+    thread2 = threading.Thread(target=_calls_takes_time_redis, kwargs={"res_queue": res_queue}, daemon=True)
     print("DEBUG: Starting thread1")
     thread1.start()
     print("DEBUG: Sleeping 1 second")
@@ -345,9 +318,7 @@ def test_redis_callable_hash_param():
     def _hash_func(args, kwargs):
         def _hash(obj):
             if isinstance(obj, pd.DataFrame):
-                return hashlib.sha256(
-                    obj.to_string().encode("utf-8")
-                ).hexdigest()
+                return hashlib.sha256(obj.to_string().encode("utf-8")).hexdigest()
             return str(obj)
 
         key_parts = []
@@ -357,14 +328,10 @@ def test_redis_callable_hash_param():
             key_parts.append(f"{key}:{_hash(value)}")
         return hashlib.sha256(":".join(key_parts).encode("utf-8")).hexdigest()
 
-    @cachier(
-        backend="redis", redis_client=_test_redis_getter, hash_func=_hash_func
-    )
+    @cachier(backend="redis", redis_client=_test_redis_getter, hash_func=_hash_func)
     def _params_with_dataframe(*args, **kwargs):
         """Function that can handle DataFrames."""
-        return sum(len(str(arg)) for arg in args) + sum(
-            len(str(val)) for val in kwargs.values()
-        )
+        return sum(len(str(arg)) for arg in args) + sum(len(str(val)) for val in kwargs.values())
 
     df1 = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
     df2 = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
@@ -392,11 +359,7 @@ def test_redis_missing_client():
 def test_redis_core_direct():
     """Test Redis core directly."""
     redis_client = _test_redis_getter()
-    core = _RedisCore(
-        hash_func=None,
-        redis_client=redis_client,
-        wait_for_calc_timeout=None,
-    )
+    core = _RedisCore(hash_func=None, redis_client=redis_client, wait_for_calc_timeout=None)
 
     def test_func(x, y):
         return x + y
@@ -449,24 +412,14 @@ def test_redis_import_warning():
     """Test that import warning is raised when redis is not available."""
     ptc = patch("cachier.cores.redis.REDIS_AVAILABLE", False)
     with ptc, pytest.warns(ImportWarning, match="`redis` was not found"):
-        _RedisCore(
-            hash_func=None,
-            redis_client=Mock(),
-            wait_for_calc_timeout=None,
-        )
+        _RedisCore(hash_func=None, redis_client=Mock(), wait_for_calc_timeout=None)
 
 
 @pytest.mark.redis
 def test_missing_redis_client():
     """Test MissingRedisClient exception when redis_client is None."""
-    with pytest.raises(
-        MissingRedisClient, match="must specify ``redis_client``"
-    ):
-        _RedisCore(
-            hash_func=None,
-            redis_client=None,
-            wait_for_calc_timeout=None,
-        )
+    with pytest.raises(MissingRedisClient, match="must specify ``redis_client``"):
+        _RedisCore(hash_func=None, redis_client=None, wait_for_calc_timeout=None)
 
 
 @pytest.mark.redis
@@ -476,18 +429,12 @@ def test_redis_core_exceptions():
     mock_client = MagicMock()
 
     # Configure all methods to raise exceptions
-    mock_client.hgetall = MagicMock(
-        side_effect=Exception("Redis connection error")
-    )
+    mock_client.hgetall = MagicMock(side_effect=Exception("Redis connection error"))
     mock_client.hset = MagicMock(side_effect=Exception("Redis write error"))
     mock_client.keys = MagicMock(side_effect=Exception("Redis keys error"))
     mock_client.delete = MagicMock(side_effect=Exception("Redis delete error"))
 
-    core = _RedisCore(
-        hash_func=None,
-        redis_client=mock_client,
-        wait_for_calc_timeout=10,
-    )
+    core = _RedisCore(hash_func=None, redis_client=mock_client, wait_for_calc_timeout=10)
 
     # Set a mock function
     def mock_func():
@@ -507,9 +454,7 @@ def test_redis_core_exceptions():
     # Test set_entry exception handling
     # Mock the client to ensure it's not callable
     test_mock_client = MagicMock()
-    test_mock_client.hset = MagicMock(
-        side_effect=Exception("Redis write error")
-    )
+    test_mock_client.hset = MagicMock(side_effect=Exception("Redis write error"))
 
     # Create a new core with this specific mock
     test_core = _RedisCore(
@@ -571,11 +516,7 @@ def test_redis_delete_stale_entries():
     """Test delete_stale_entries method with various scenarios."""
     mock_client = MagicMock()
 
-    core = _RedisCore(
-        hash_func=None,
-        redis_client=mock_client,
-        wait_for_calc_timeout=10,
-    )
+    core = _RedisCore(hash_func=None, redis_client=mock_client, wait_for_calc_timeout=10)
 
     # Set a mock function
     def mock_func():
@@ -588,9 +529,7 @@ def test_redis_delete_stale_entries():
     delete_mock_client = MagicMock()
 
     # Set up keys method
-    delete_mock_client.keys = MagicMock(
-        return_value=[b"key1", b"key2", b"key3"]
-    )
+    delete_mock_client.keys = MagicMock(return_value=[b"key1", b"key2", b"key3"])
 
     now = datetime.now()
     old_timestamp = (now - timedelta(hours=2)).isoformat()
@@ -609,11 +548,7 @@ def test_redis_delete_stale_entries():
     delete_mock_client.delete = MagicMock()
 
     # Create a new core for this test
-    delete_core = _RedisCore(
-        hash_func=None,
-        redis_client=delete_mock_client,
-        wait_for_calc_timeout=10,
-    )
+    delete_core = _RedisCore(hash_func=None, redis_client=delete_mock_client, wait_for_calc_timeout=10)
     delete_core.set_func(mock_func)
 
     # Need to mock _resolve_redis_client to return our mock
@@ -665,11 +600,7 @@ def test_redis_wait_on_entry_calc_no_entry():
     def mock_get_entry_by_key(self, key):
         return key, None
 
-    core = _RedisCore(
-        hash_func=None,
-        redis_client=mock_client,
-        wait_for_calc_timeout=10,
-    )
+    core = _RedisCore(hash_func=None, redis_client=mock_client, wait_for_calc_timeout=10)
 
     # Set a mock function
     def mock_func():
@@ -690,11 +621,7 @@ def test_redis_set_entry_should_not_store():
     """Test set_entry when value should not be stored (None not allowed)."""
     mock_client = MagicMock()
 
-    core = _RedisCore(
-        hash_func=None,
-        redis_client=mock_client,
-        wait_for_calc_timeout=10,
-    )
+    core = _RedisCore(hash_func=None, redis_client=mock_client, wait_for_calc_timeout=10)
 
     # Mock _should_store to return False
     core._should_store = Mock(return_value=False)
@@ -718,20 +645,14 @@ def test_redis_clear_being_calculated_with_pipeline():
     pipeline_mock = MagicMock()
 
     # Set up keys to return 3 keys
-    pipeline_mock_client.keys = MagicMock(
-        return_value=[b"key1", b"key2", b"key3"]
-    )
+    pipeline_mock_client.keys = MagicMock(return_value=[b"key1", b"key2", b"key3"])
 
     # Set up pipeline
     pipeline_mock_client.pipeline = MagicMock(return_value=pipeline_mock)
     pipeline_mock.hset = MagicMock()
     pipeline_mock.execute = MagicMock()
 
-    core = _RedisCore(
-        hash_func=None,
-        redis_client=pipeline_mock_client,
-        wait_for_calc_timeout=10,
-    )
+    core = _RedisCore(hash_func=None, redis_client=pipeline_mock_client, wait_for_calc_timeout=10)
 
     # Set a mock function
     def mock_func():

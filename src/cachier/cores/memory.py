@@ -30,9 +30,7 @@ class _MemoryCore(_BaseCore):
     def _hash_func_key(self, key: str) -> str:
         return f"{_get_func_str(self.func)}:{key}"
 
-    def get_entry_by_key(
-        self, key: str, reload=False
-    ) -> Tuple[str, Optional[CacheEntry]]:
+    def get_entry_by_key(self, key: str, reload=False) -> Tuple[str, Optional[CacheEntry]]:
         with self.lock:
             return key, self.cache.get(self._hash_func_key(key), None)
 
@@ -122,9 +120,7 @@ class _MemoryCore(_BaseCore):
         """Remove stale entries from the in-memory cache."""
         now = datetime.now()
         with self.lock:
-            keys_to_delete = [
-                k for k, v in self.cache.items() if now - v.time > stale_after
-            ]
+            keys_to_delete = [k for k, v in self.cache.items() if now - v.time > stale_after]
             for key in keys_to_delete:
                 del self.cache[key]
             # Update size metrics after deletion

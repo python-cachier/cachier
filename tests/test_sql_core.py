@@ -231,9 +231,7 @@ def test_sqlcore_importerror_without_sqlalchemy(monkeypatch):
 
 @pytest.mark.sql
 def test_sqlcore_invalid_sql_engine():
-    with pytest.raises(
-        ValueError, match="sql_engine must be a SQLAlchemy Engine"
-    ):
+    with pytest.raises(ValueError, match="sql_engine must be a SQLAlchemy Engine"):
         _SQLCore(hash_func=None, sql_engine=12345)
 
 

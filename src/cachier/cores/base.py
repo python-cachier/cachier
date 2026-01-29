@@ -90,9 +90,7 @@ class _BaseCore(metaclass=abc.ABCMeta):
 
     def check_calc_timeout(self, time_spent):
         """Raise an exception if a recalculation is needed."""
-        calc_timeout = _update_with_defaults(
-            self.wait_for_calc_timeout, "wait_for_calc_timeout"
-        )
+        calc_timeout = _update_with_defaults(self.wait_for_calc_timeout, "wait_for_calc_timeout")
         if calc_timeout > 0 and (time_spent >= calc_timeout):
             raise RecalculationNeeded()
 

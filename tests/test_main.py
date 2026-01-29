@@ -27,9 +27,7 @@ def test_set_max_workers_command():
     # So the command is registered with a long name
 
     # Test with the actual registered command name
-    result = runner.invoke(
-        cli, ["Limits the number of worker threads used by cachier.", "4"]
-    )
+    result = runner.invoke(cli, ["Limits the number of worker threads used by cachier.", "4"])
     assert result.exit_code == 0
 
     # Test with invalid input (non-integer)
@@ -40,9 +38,7 @@ def test_set_max_workers_command():
     assert result.exit_code != 0
 
     # Test without argument
-    result = runner.invoke(
-        cli, ["Limits the number of worker threads used by cachier."]
-    )
+    result = runner.invoke(cli, ["Limits the number of worker threads used by cachier."])
     assert result.exit_code != 0
 
 
