@@ -961,7 +961,7 @@ class TestAsyncExceptionHandling:
         # Wait for background task to complete and fail
         await asyncio.sleep(0.5)
 
-        # Check that exception was caught and printed (line 65)
+        # Check that exception was caught and printed in _function_thread_async
         captured = capsys.readouterr()
         assert "Function call failed with the following exception" in captured.out
         assert "Intentional test error in background" in captured.out
@@ -971,7 +971,7 @@ class TestAsyncExceptionHandling:
     @pytest.mark.memory
     @pytest.mark.asyncio
     async def test_entry_size_limit_exceeded_async(self, capsys):
-        """Test that exceeding entry_size_limit prints a message (line 86)."""
+        """Test that exceeding entry_size_limit prints a message."""
 
         @cachier(backend="memory", entry_size_limit=10)  # Very small limit
         async def async_func_large_result(x):
@@ -985,7 +985,7 @@ class TestAsyncExceptionHandling:
         result = await async_func_large_result(5, cachier__verbose=True)
         assert len(result) == 1000
 
-        # Check that the size limit message was printed (line 86)
+        # Check that the size limit message was printed
         captured = capsys.readouterr()
         assert "Result exceeds entry_size_limit; not cached" in captured.out
 
@@ -998,7 +998,7 @@ class TestAsyncStaleProcessing:
     @pytest.mark.memory
     @pytest.mark.asyncio
     async def test_stale_entry_being_processed_returns_stale(self):
-        """Test lines 476-478: stale entry being processed with next_time returns stale value."""
+        """Test stale entry being processed with next_time returns stale value."""
         call_count = 0
 
         @cachier(backend="memory", stale_after=timedelta(seconds=1), next_time=True)
