@@ -154,32 +154,6 @@ ______________________________________________________________________
 
 ## 9. The Code Base
 
-### General structure
-
-The repository contains a Python package called Cachier that provides persistent function caching with several backends:
-
-cachier/
-├── src/cachier/ # Main library code
-│ ├── __init__.py
-│ ├── core.py # Decorator logic, backend selection
-│ ├── cores/ # Backend implementations
-│ │ ├── pickle.py
-│ │ ├── memory.py
-│ │ ├── mongo.py
-│ │ ├── sql.py
-│ │ ├── redis.py
-│ │ └── base.py
-│ ├── config.py # Global/default config
-│ ├── \_types.py # Type definitions
-│ ├── _version.py
-│ └── __main__.py
-├── tests/ # Pytest-based tests, backend-marked
-│ ├── test_\*.py
-│ └── \*\_requirements.txt # Backend-specific test requirements
-├── examples/ # Usage examples
-├── README.rst # Main documentation
-└── ...
-
 ### Key functionality
 
 - core.py exposes the cachier decorator. It chooses a backend (pickle, mongo, memory, SQL, or Redis) and wraps the target function:
