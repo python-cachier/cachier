@@ -42,7 +42,7 @@ repos:
       - id: mdformat
         additional_dependencies:
           - mdformat-gfm
-          - mdformat-black
+          - mdformat-ruff
           - mdformat_frontmatter
         args: ["--number"]
 
@@ -61,7 +61,7 @@ repos:
       - id: ruff-format
         name: Black by Ruff
       # basic check
-      - id: ruff
+      - id: ruff-check
         name: Ruff check
         args: ["--fix"] #, "--unsafe-fixes"
 
