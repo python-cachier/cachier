@@ -154,6 +154,9 @@ ______________________________________________________________________
 
 ## 9. The Code Base
 
+### General structure
+
+For an up-to-date overview of the repository layout, see `README.rst` in the project root.
 ### Key functionality
 
 - core.py exposes the cachier decorator. It chooses a backend (pickle, mongo, memory, SQL, or Redis) and wraps the target function:
