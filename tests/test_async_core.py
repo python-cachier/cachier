@@ -72,11 +72,11 @@ class TestBasicAsyncCaching:
 # =============================================================================
 
 
+@pytest.mark.memory
+@pytest.mark.asyncio
 class TestStaleCache:
     """Tests for stale_after and next_time functionality."""
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
     async def test_recalculates_after_expiry(self):
         """Test that stale_after causes recalculation after expiry."""
         call_count = 0
@@ -110,8 +110,6 @@ class TestStaleCache:
 
         async_func.clear_cache()
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
     async def test_uses_cache_before_expiry(self):
         """Test that cache is used before stale_after expiry."""
         call_count = 0
@@ -139,8 +137,6 @@ class TestStaleCache:
 
         async_func.clear_cache()
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
     async def test_next_time_returns_stale_and_updates_background(self):
         """Test next_time=True returns stale value and updates in bg."""
         call_count = 0
@@ -186,11 +182,11 @@ class TestStaleCache:
 # =============================================================================
 
 
+@pytest.mark.memory
+@pytest.mark.asyncio
 class TestCacheControl:
     """Tests for cache control parameters - skip_cache & overwrite_cache."""
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
     async def test_skip_cache(self):
         """Test async caching with cachier__skip_cache parameter."""
         call_count = 0
@@ -219,8 +215,6 @@ class TestCacheControl:
 
         async_func.clear_cache()
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
     async def test_overwrite_cache(self):
         """Test async caching with cachier__overwrite_cache parameter."""
         call_count = 0
@@ -255,11 +249,11 @@ class TestCacheControl:
 # =============================================================================
 
 
+@pytest.mark.memory
+@pytest.mark.asyncio
 class TestAsyncMethod:
     """Tests for async caching on class methods."""
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
     async def test_caches_result(self):
         """Test async caching on class methods returns cached result."""
 
@@ -289,8 +283,6 @@ class TestAsyncMethod:
 
         obj1.async_method.clear_cache()
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
     async def test_shares_cache_across_instances(self):
         """Test that async method cache is shared across instances."""
 
@@ -392,12 +384,12 @@ class TestArgumentHandling:
 # =============================================================================
 
 
+@pytest.mark.memory
+@pytest.mark.asyncio
+@pytest.mark.maxage
 class TestMaxAge:
     """Tests for max_age parameter functionality."""
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
-    @pytest.mark.maxage
     async def test_recalculates_when_expired(self):
         """Test that max_age causes recalculation when cache is too old."""
         call_count = 0
@@ -428,9 +420,6 @@ class TestMaxAge:
 
         async_func.clear_cache()
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
-    @pytest.mark.maxage
     async def test_uses_cache_when_fresh(self):
         """Test that cache is used when within max_age."""
         call_count = 0
@@ -458,9 +447,6 @@ class TestMaxAge:
 
         async_func.clear_cache()
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
-    @pytest.mark.maxage
     async def test_negative_max_age_forces_recalculation(self):
         """Test that negative max_age forces recalculation."""
         call_count = 0
@@ -493,11 +479,11 @@ class TestMaxAge:
 # =============================================================================
 
 
+@pytest.mark.memory
+@pytest.mark.asyncio
 class TestConcurrentAccess:
     """Tests for concurrent async call behavior."""
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
     async def test_calls_execute_in_parallel(self):
         """Test that concurrent async calls execute in parallel."""
         call_count = 0
@@ -524,8 +510,6 @@ class TestConcurrentAccess:
 
         async_func.clear_cache()
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
     async def test_consequent_calls_use_cache(self):
         """Test that calls after caching use cached value."""
         call_count = 0
@@ -556,8 +540,6 @@ class TestConcurrentAccess:
 
         async_func.clear_cache()
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
     async def test_stale_entry_being_processed_with_next_time(self):
         """
         Test concurrent calls with stale cache and next_time=True return stale values.
@@ -614,11 +596,11 @@ class TestConcurrentAccess:
 # =============================================================================
 
 
+@pytest.mark.memory
+@pytest.mark.asyncio
 class TestNoneHandling:
     """Tests for allow_none parameter behavior."""
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
     async def test_not_cached_by_default(self):
         """Test that None values are not cached when allow_none=False."""
         call_count = 0
@@ -645,8 +627,6 @@ class TestNoneHandling:
 
         async_func.clear_cache()
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
     async def test_cached_when_allowed(self):
         """Test that None values are cached when allow_none=True."""
         call_count = 0
@@ -674,8 +654,6 @@ class TestNoneHandling:
 
         async_func.clear_cache()
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
     async def test_non_none_cached_with_allow_none_false(self):
         """Test that non-None values are cached even when allow_none=False."""
         call_count = 0
@@ -709,11 +687,11 @@ class TestNoneHandling:
 # =============================================================================
 
 
+@pytest.mark.memory
+@pytest.mark.asyncio
 class TestAsyncVerboseMode:
     """Tests for verbose_cache parameter with async functions."""
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
     async def test_verbose_cache_parameter(self, capsys):
         """Test verbose_cache parameter prints debug info."""
         import warnings
@@ -748,8 +726,6 @@ class TestAsyncVerboseMode:
 
         async_func.clear_cache()
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
     async def test_cachier_verbose_kwarg(self, capsys):
         """Test cachier__verbose keyword argument."""
 
@@ -865,11 +841,11 @@ class TestAsyncCleanupStale:
         async_func.clear_cache()
 
 
+@pytest.mark.memory
+@pytest.mark.asyncio
 class TestAsyncProcessingEntry:
     """Tests for entry being processed scenarios with async functions."""
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
     async def test_entry_processing_without_value(self):
         """Test async recalculation when entry is processing but has no value."""
         call_count = 0
@@ -897,8 +873,6 @@ class TestAsyncProcessingEntry:
 
         async_func.clear_cache()
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
     async def test_stale_entry_processing_recalculates(self):
         """Test that stale entry being processed causes recalculation."""
         call_count = 0
@@ -939,11 +913,11 @@ class TestAsyncProcessingEntry:
 # =============================================================================
 
 
+@pytest.mark.memory
+@pytest.mark.asyncio
 class TestAsyncExceptionHandling:
     """Tests for exception handling in async background tasks."""
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
     async def test_function_thread_async_exception_handling(self, capsys):
         """Test that exceptions in background async tasks are caught and printed."""
         exception_raised = False
@@ -983,8 +957,6 @@ class TestAsyncExceptionHandling:
 
         async_func_that_fails.clear_cache()
 
-    @pytest.mark.memory
-    @pytest.mark.asyncio
     async def test_entry_size_limit_exceeded_async(self, capsys):
         """Test that exceeding entry_size_limit prints a message."""
 
