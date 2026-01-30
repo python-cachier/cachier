@@ -541,11 +541,11 @@ class TestConcurrentAccess:
         async_func.clear_cache()
 
     async def test_stale_entry_being_processed_with_next_time(self):
-        """
-        Test concurrent calls with stale cache and next_time=True return stale values.
-        
-        When cache is stale and next_time=True, concurrent calls should return
-        the stale value while background recalculation happens.
+        """Test concurrent calls with stale cache and next_time=True return stale values.
+
+        When cache is stale and next_time=True, concurrent calls should return the stale value while background
+        recalculation happens.
+
         """
         call_count = 0
 
@@ -569,21 +569,21 @@ class TestConcurrentAccess:
 
         # Start a slow recalculation in background (don't await it yet)
         task1 = asyncio.create_task(slow_async_func(5))
-        
+
         # Give it a moment to mark entry as being processed
         await asyncio.sleep(0.1)
-        
+
         # Now make another call while first one is still processing
         # This should return the stale value because entry._processing=True and next_time=True
         result2 = await slow_async_func(5)
         assert result2 == 10  # Should return stale value
-        
+
         # Wait for background task to complete
         await task1
-        
+
         # Wait enough time for the background update to complete and cache to be updated
         await asyncio.sleep(1.5)
-        
+
         # Next call should get an updated value (could be 20 or 30 depending on background tasks)
         result3 = await slow_async_func(5)
         assert result3 > 10  # Should be updated from background
@@ -977,6 +977,3 @@ class TestAsyncExceptionHandling:
         assert "Result exceeds entry_size_limit; not cached" in captured.out
 
         async_func_large_result.clear_cache()
-
-
-
