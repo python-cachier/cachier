@@ -4,7 +4,7 @@ import pickle
 import time
 import warnings
 from datetime import datetime, timedelta
-from typing import Any, Callable, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, Union
 
 try:
     import redis
@@ -16,6 +16,9 @@ except ImportError:
 from .._types import HashFunc
 from ..config import CacheEntry
 from .base import RecalculationNeeded, _BaseCore, _get_func_str
+
+if TYPE_CHECKING:
+    from ..metrics import CacheMetrics
 
 REDIS_SLEEP_DURATION_IN_SEC = 1
 
@@ -34,6 +37,7 @@ class _RedisCore(_BaseCore):
         wait_for_calc_timeout: Optional[int] = None,
         key_prefix: str = "cachier",
         entry_size_limit: Optional[int] = None,
+        metrics: Optional["CacheMetrics"] = None,
     ):
         if not REDIS_AVAILABLE:
             warnings.warn(
@@ -43,7 +47,10 @@ class _RedisCore(_BaseCore):
             )
 
         super().__init__(
-            hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout, entry_size_limit=entry_size_limit
+            hash_func=hash_func,
+            wait_for_calc_timeout=wait_for_calc_timeout,
+            entry_size_limit=entry_size_limit,
+            metrics=metrics,
         )
         if redis_client is None:
             raise MissingRedisClient("must specify ``redis_client`` when using the redis core")

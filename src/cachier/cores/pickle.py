@@ -12,7 +12,7 @@ import pickle  # for local caching
 import time
 from contextlib import suppress
 from datetime import datetime, timedelta
-from typing import IO, Any, Dict, Optional, Tuple, Union, cast
+from typing import IO, TYPE_CHECKING, Any, Dict, Optional, Tuple, Union, cast
 
 import portalocker  # to lock on pickle cache IO
 from watchdog.events import PatternMatchingEventHandler
@@ -23,6 +23,9 @@ from ..config import CacheEntry, _update_with_defaults
 
 # Alternative:  https://github.com/WoLpH/portalocker
 from .base import _BaseCore
+
+if TYPE_CHECKING:
+    from ..metrics import CacheMetrics
 
 
 class _PickleCore(_BaseCore):
@@ -79,8 +82,9 @@ class _PickleCore(_BaseCore):
         separate_files: Optional[bool],
         wait_for_calc_timeout: Optional[int],
         entry_size_limit: Optional[int] = None,
+        metrics: Optional["CacheMetrics"] = None,
     ):
-        super().__init__(hash_func, wait_for_calc_timeout, entry_size_limit)
+        super().__init__(hash_func, wait_for_calc_timeout, entry_size_limit, metrics)
         self._cache_dict: Dict[str, CacheEntry] = {}
         self.reload = _update_with_defaults(pickle_reload, "pickle_reload")
         self.cache_dir = os.path.expanduser(_update_with_defaults(cache_dir, "cache_dir"))

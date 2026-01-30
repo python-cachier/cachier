@@ -12,12 +12,15 @@ import inspect
 import sys
 import threading
 from datetime import timedelta
-from typing import Any, Callable, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple
 
 from pympler import asizeof  # type: ignore
 
-from .._types import HashFunc
-from ..config import CacheEntry, _update_with_defaults
+from cachier._types import HashFunc
+from cachier.config import CacheEntry, _update_with_defaults
+
+if TYPE_CHECKING:
+    from cachier.metrics import CacheMetrics
 
 
 class RecalculationNeeded(Exception):
@@ -42,11 +45,13 @@ class _BaseCore(metaclass=abc.ABCMeta):
         hash_func: Optional[HashFunc],
         wait_for_calc_timeout: Optional[int],
         entry_size_limit: Optional[int] = None,
+        metrics: Optional["CacheMetrics"] = None,
     ):
         self.hash_func = _update_with_defaults(hash_func, "hash_func")
         self.wait_for_calc_timeout = wait_for_calc_timeout
         self.lock = threading.RLock()
         self.entry_size_limit = entry_size_limit
+        self.metrics = metrics
 
     def set_func(self, func):
         """Set the function this core will use.
@@ -108,6 +113,49 @@ class _BaseCore(metaclass=abc.ABCMeta):
             return self._estimate_size(value) <= self.entry_size_limit
         except Exception:
             return True
+
+    def _update_size_metrics(self) -> None:
+        """Update cache size metrics if metrics are enabled.
+
+        Subclasses should call this after cache modifications.
+
+        """
+        if self.metrics is None:
+            return
+        from contextlib import suppress
+
+        # Get cache size - subclasses should override if they can provide this
+        # Suppress errors if subclass doesn't implement size tracking
+        with suppress(AttributeError, NotImplementedError):
+            entry_count = self._get_entry_count()
+            total_size = self._get_total_size()
+            self.metrics.update_size_metrics(entry_count, total_size)
+
+    def _get_entry_count(self) -> int:
+        """Get the number of entries in the cache.
+
+        Subclasses should override this to provide accurate counts.
+
+        Returns
+        -------
+        int
+            Number of entries in cache
+
+        """
+        return 0
+
+    def _get_total_size(self) -> int:
+        """Get the total size of the cache in bytes.
+
+        Subclasses should override this to provide accurate sizes.
+
+        Returns
+        -------
+        int
+            Total size in bytes
+
+        """
+        return 0
 
     @abc.abstractmethod
     def set_entry(self, key: str, func_res: Any) -> bool:

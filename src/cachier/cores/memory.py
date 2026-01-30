@@ -2,11 +2,14 @@
 
 import threading
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
 from .._types import HashFunc
 from ..config import CacheEntry
 from .base import _BaseCore, _get_func_str
+
+if TYPE_CHECKING:
+    from ..metrics import CacheMetrics
 
 
 class _MemoryCore(_BaseCore):
@@ -17,8 +20,9 @@ class _MemoryCore(_BaseCore):
         hash_func: Optional[HashFunc],
         wait_for_calc_timeout: Optional[int],
         entry_size_limit: Optional[int] = None,
+        metrics: Optional["CacheMetrics"] = None,
     ):
-        super().__init__(hash_func, wait_for_calc_timeout, entry_size_limit)
+        super().__init__(hash_func, wait_for_calc_timeout, entry_size_limit, metrics)
         self.cache: Dict[str, CacheEntry] = {}
 
     def _hash_func_key(self, key: str) -> str:
@@ -48,6 +52,8 @@ class _MemoryCore(_BaseCore):
                 _condition=cond,
                 _completed=True,
             )
+            # Update size metrics after modifying cache
+            self._update_size_metrics()
         return True
 
     def mark_entry_being_calculated(self, key: str) -> None:
@@ -99,6 +105,8 @@ class _MemoryCore(_BaseCore):
     def clear_cache(self) -> None:
         with self.lock:
             self.cache.clear()
+            # Update size metrics after clearing
+            self._update_size_metrics()
 
     def clear_being_calculated(self) -> None:
         with self.lock:
@@ -113,3 +121,24 @@ class _MemoryCore(_BaseCore):
             keys_to_delete = [k for k, v in self.cache.items() if now - v.time > stale_after]
             for key in keys_to_delete:
                 del self.cache[key]
+            # Update size metrics after deletion
+            if keys_to_delete:
+                self._update_size_metrics()
+
+    def _get_entry_count(self) -> int:
+        """Get the number of entries in the memory cache."""
+        with self.lock:
+            return len(self.cache)
+
+    def _get_total_size(self) -> int:
+        """Get the total size of cached values in bytes."""
+        with self.lock:
+            total = 0
+            for entry in self.cache.values():
+                try:
+                    total += self._estimate_size(entry.value)
+                except Exception:
+                    # Size estimation is best-effort; skip entries that cannot be sized
+                    # to avoid breaking cache functionality or metrics collection.
+                    continue
+            return total

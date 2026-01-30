@@ -3,7 +3,7 @@
 import pickle
 import threading
 from datetime import datetime, timedelta
-from typing import Any, Callable, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, Union, cast
 
 try:
     from sqlalchemy import (
@@ -27,9 +27,13 @@ try:
 except ImportError:
     SQLALCHEMY_AVAILABLE = False
 
-from .._types import HashFunc
-from ..config import CacheEntry
+from cachier._types import HashFunc
+from cachier.config import CacheEntry
+
 from .base import RecalculationNeeded, _BaseCore, _get_func_str
+
+if TYPE_CHECKING:
+    from ..metrics import CacheMetrics
 
 if SQLALCHEMY_AVAILABLE:
     Base = declarative_base()
@@ -62,6 +66,7 @@ class _SQLCore(_BaseCore):
         sql_engine: Optional[Union[str, "Engine", Callable[[], "Engine"]]],
         wait_for_calc_timeout: Optional[int] = None,
         entry_size_limit: Optional[int] = None,
+        metrics: Optional["CacheMetrics"] = None,
     ):
         if not SQLALCHEMY_AVAILABLE:
             raise ImportError("SQLAlchemy is required for the SQL core. Install with `pip install SQLAlchemy`.")
@@ -69,6 +74,7 @@ class _SQLCore(_BaseCore):
             hash_func=hash_func,
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=entry_size_limit,
+            metrics=metrics,
         )
         self._engine = self._resolve_engine(sql_engine)
         self._Session = sessionmaker(bind=self._engine)
