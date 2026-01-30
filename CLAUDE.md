@@ -158,6 +158,7 @@ ______________________________________________________________________
 
 The repository contains a Python package called Cachier that provides persistent function caching with several backends:
 
+```
 cachier/
 ├── src/cachier/ # Main library code
 │ ├── __init__.py
@@ -179,6 +180,7 @@ cachier/
 ├── examples/ # Usage examples
 ├── README.rst # Main documentation
 └── ...
+```
 
 ### Key functionality
 
