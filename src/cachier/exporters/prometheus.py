@@ -75,8 +75,6 @@ class PrometheusExporter(MetricsExporter):
         self._server: Optional[Any] = None
         self._server_thread: Optional[threading.Thread] = None
 
-        # Track last-seen values for delta calculation
-        self._last_seen: Dict[str, Dict[str, int]] = {}
 
         # Try to import prometheus_client if requested
         self._prom_client = None
@@ -111,14 +109,14 @@ class PrometheusExporter(MetricsExporter):
                 with self.exporter._lock:
                     # Collect hits
                     hits = CounterMetricFamily(
-                        "cachier_cache_hits",
+                        "cachier_cache_hits_total",
                         "Total cache hits",
                         labels=["function"],
                     )
 
                     # Collect misses
                     misses = CounterMetricFamily(
-                        "cachier_cache_misses",
+                        "cachier_cache_misses_total",
                         "Total cache misses",
                         labels=["function"],
                     )

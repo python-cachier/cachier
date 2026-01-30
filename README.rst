@@ -351,7 +351,7 @@ The metrics system tracks:
 * **Recalculations**: Count of cache recalculations triggered
 * **Wait timeouts**: Timeouts during concurrent calculation waits
 * **Size limit rejections**: Entries rejected due to ``entry_size_limit``
-* **Cache size**: Number of entries and total size in bytes
+* **Cache size (memory backend only)**: Number of entries and total size in bytes for the in-memory cache core
 
 Sampling Rate
 -------------
@@ -379,14 +379,16 @@ Export metrics to Prometheus for monitoring and alerting:
       return x ** 2
 
   # Set up Prometheus exporter
-  # Note: use_prometheus_client=False ensures live metrics are exposed for registered functions.
-  exporter = PrometheusExporter(port=9090, use_prometheus_client=False)
+  # use_prometheus_client controls whether metrics are exposed via the prometheus_client
+  # registry (True) or via Cachier's own HTTP handler (False). In both modes, metrics for
+  # registered functions are collected live at scrape time.
+  exporter = PrometheusExporter(port=9090, use_prometheus_client=True)
   exporter.register_function(my_operation)
   exporter.start()
 
   # Metrics available at http://localhost:9090/metrics
 
-The exporter provides metrics in Prometheus text format, compatible with standard Prometheus scraping, when used with ``use_prometheus_client=False`` as shown above. A ``prometheus_client``-based mode is also available via ``use_prometheus_client=True``, but in the current release it may not expose live values for registered functions.
+The exporter provides metrics in Prometheus text format, compatible with standard Prometheus scraping, in both ``use_prometheus_client=True`` and ``use_prometheus_client=False`` modes. When ``use_prometheus_client=True``, Cachier registers a custom collector with ``prometheus_client`` that pulls live statistics from registered functions at scrape time, so scraped values reflect the current state of the cache. When ``use_prometheus_client=False``, Cachier serves the same metrics directly without requiring the ``prometheus_client`` dependency.
 
 Programmatic Access
 -------------------

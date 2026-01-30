@@ -432,6 +432,7 @@ def cachier(
                 _print("But it is stale... :(")
                 if cache_metrics:
                     cache_metrics.record_stale_hit()
+                    cache_metrics.record_miss()
                 if entry._processing:
                     if _next_time:
                         _print("Returning stale.")

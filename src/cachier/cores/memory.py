@@ -138,5 +138,7 @@ class _MemoryCore(_BaseCore):
                 try:
                     total += self._estimate_size(entry.value)
                 except Exception:
-                    pass
+                    # Size estimation is best-effort; skip entries that cannot be sized
+                    # to avoid breaking cache functionality or metrics collection.
+                    continue
             return total
