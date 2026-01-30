@@ -32,9 +32,8 @@ class RecalculationNeeded(Exception):
 def _get_func_str(func: Callable) -> str:
     """Return a string identifier for the function (module + name).
 
-    We accept Any here because static analysis can't always prove that the
-    runtime object will have __module__ and __name__, but at runtime the
-    decorated functions always do.
+    We accept Any here because static analysis can't always prove that the runtime object will have __module__ and
+    __name__, but at runtime the decorated functions always do.
 
     """
     return f".{func.__module__}.{func.__name__}"
@@ -57,8 +56,7 @@ class _BaseCore(metaclass=abc.ABCMeta):
     def set_func(self, func):
         """Set the function this core will use.
 
-        This has to be set before any method is called. Also determine if the
-        function is an object method.
+        This has to be set before any method is called. Also determine if the function is an object method.
 
         """
         # unwrap if the function is functools.partial
@@ -75,8 +73,7 @@ class _BaseCore(metaclass=abc.ABCMeta):
     def get_entry(self, args, kwds) -> Tuple[str, Optional[CacheEntry]]:
         """Get entry based on given arguments.
 
-        Return the result mapped to the given arguments in this core's cache,
-        if such a mapping exists.
+        Return the result mapped to the given arguments in this core's cache, if such a mapping exists.
 
         """
         key = self.get_key(args, kwds)

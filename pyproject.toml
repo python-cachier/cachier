@@ -147,8 +147,8 @@ lint.mccabe.max-complexity = 10
 [tool.docformatter]
 recursive = true
 # some docstring start with r"""
-wrap-summaries = 79
-wrap-descriptions = 79
+wrap-summaries = 120
+wrap-descriptions = 120
 blank = true
 
 # === Testing ===
@@ -178,6 +178,7 @@ markers = [
   "redis: test the Redis core",
   "sql: test the SQL core",
   "maxage: test the max_age functionality",
+  "asyncio: marks tests as async",
 ]
 
 # --- coverage ---
