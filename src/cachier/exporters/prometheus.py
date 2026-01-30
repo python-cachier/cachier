@@ -75,7 +75,6 @@ class PrometheusExporter(MetricsExporter):
         self._server: Optional[Any] = None
         self._server_thread: Optional[threading.Thread] = None
 
-
         # Try to import prometheus_client if requested
         self._prom_client = None
         if use_prometheus_client and PROMETHEUS_CLIENT_AVAILABLE:
