@@ -1,7 +1,7 @@
 """Demonstration of Prometheus metrics exporter for cachier.
 
-This example shows how to export cachier metrics to Prometheus for monitoring.
-The exporter can work with or without the prometheus_client library.
+This example shows how to export cachier metrics to Prometheus for monitoring. The exporter can work with or without the
+prometheus_client library.
 
 """
 

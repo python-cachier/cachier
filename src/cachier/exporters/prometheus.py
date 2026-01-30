@@ -86,9 +86,7 @@ class PrometheusExporter(MetricsExporter):
             self._setup_collector()
 
     def _setup_collector(self) -> None:
-        """Set up a custom collector to pull metrics from registered
-        functions.
-        """
+        """Set up a custom collector to pull metrics from registered functions."""
         if not self._prom_client:
             return
 
@@ -103,9 +101,7 @@ class PrometheusExporter(MetricsExporter):
             return
 
         class CachierCollector:
-            """Custom Prometheus collector that pulls metrics from registered
-            functions.
-            """
+            """Custom Prometheus collector that pulls metrics from registered functions."""
 
             def __init__(self, exporter):
                 self.exporter = exporter
@@ -371,8 +367,8 @@ class PrometheusExporter(MetricsExporter):
     def start(self) -> None:
         """Start the Prometheus exporter.
 
-        If prometheus_client is available, starts the HTTP server. Otherwise,
-        provides a simple HTTP server for text format metrics.
+        If prometheus_client is available, starts the HTTP server. Otherwise, provides a simple HTTP server for text
+        format metrics.
 
         """
         if self._prom_client:

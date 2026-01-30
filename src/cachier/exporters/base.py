@@ -13,8 +13,8 @@ from typing import Any, Callable
 class MetricsExporter(metaclass=abc.ABCMeta):
     """Abstract base class for metrics exporters.
 
-    Exporters collect metrics from cached functions and export them to
-    monitoring systems like Prometheus, StatsD, CloudWatch, etc.
+    Exporters collect metrics from cached functions and export them to monitoring systems like Prometheus, StatsD,
+    CloudWatch, etc.
 
     """
 

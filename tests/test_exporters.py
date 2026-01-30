@@ -121,9 +121,7 @@ def test_metrics_exporter_interface():
 
 @pytest.mark.memory
 def test_prometheus_exporter_with_prometheus_client_fallback():
-    """Test PrometheusExporter with use_prometheus_client=True falls back
-    gracefully.
-    """
+    """Test PrometheusExporter with use_prometheus_client=True falls back gracefully."""
 
     # When prometheus_client is not available, it should fall back to text mode
     @cachier(backend="memory", enable_metrics=True)
