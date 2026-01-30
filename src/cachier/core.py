@@ -472,15 +472,6 @@ def cachier(
                     _print("And it is fresh!")
                     return entry.value
                 _print("But it is stale... :(")
-                if entry._processing:
-                    if _next_time:
-                        _print("Returning stale.")
-                        return entry.value  # return stale val
-                    _print("Already calc. Recalculating (async - no wait).")
-                    # For async, don't wait - just recalculate
-                    # This avoids blocking the event loop
-                    result = await _calc_entry_async(core, key, func, args, kwds, _print)
-                    return result
                 if _next_time:
                     _print("Async calc and return stale")
                     # Mark entry as being calculated then immediately unmark

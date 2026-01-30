@@ -560,10 +560,10 @@ class TestConcurrentAccess:
     @pytest.mark.asyncio
     async def test_stale_entry_being_processed_with_next_time(self):
         """
-        Test stale entry being processed returns stale value with next_time=True.
+        Test concurrent calls with stale cache and next_time=True return stale values.
         
-        This tests the code path where entry._processing is True and next_time=True,
-        causing the function to return the stale cached value instead of waiting.
+        When cache is stale and next_time=True, concurrent calls should return
+        the stale value while background recalculation happens.
         """
         call_count = 0
 
