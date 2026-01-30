@@ -60,12 +60,15 @@ class MetricSnapshot:
 
 @dataclass
 class _TimestampedMetric:
-    """Internal metric with timestamp for time-windowed aggregation.
+    """Internal metric with monotonic timestamp for time-windowed aggregation.
+
+    Uses time.perf_counter() for monotonic timestamps that are immune to
+    system clock adjustments.
 
     Parameters
     ----------
     timestamp : float
-        Unix timestamp when the metric was recorded
+        Monotonic timestamp when the metric was recorded (from time.perf_counter())
     value : float
         The metric value
 
@@ -144,6 +147,10 @@ class CacheMetrics:
         # Assuming ~1000 ops/sec max, keep 1 day of data = 86.4M points
         # Limit to 100K points for memory efficiency
         max_latency_points = 100000
+        # Use monotonic clock for latency tracking to avoid clock adjustment issues
+        # Store a reference point to convert between monotonic and wall clock time
+        self._monotonic_start = time.perf_counter()
+        self._wall_start = time.time()
         self._latencies: Deque[_TimestampedMetric] = deque(maxlen=max_latency_points)
 
         # Size tracking
@@ -246,7 +253,8 @@ class CacheMetrics:
         if not self._should_sample():
             return
         with self._lock:
-            timestamp = time.time()
+            # Use monotonic timestamp for immune-to-clock-adjustment windowing
+            timestamp = time.perf_counter()
             self._latencies.append(_TimestampedMetric(timestamp=timestamp, value=latency_seconds))
 
     def update_size_metrics(self, entry_count: int, total_size_bytes: int) -> None:
@@ -278,7 +286,8 @@ class CacheMetrics:
             Average latency in milliseconds
 
         """
-        now = time.time()
+        # Use monotonic clock for cutoff calculation
+        now = time.perf_counter()
         cutoff = now - window.total_seconds() if window else 0
 
         latencies = [metric.value for metric in self._latencies if metric.timestamp >= cutoff]

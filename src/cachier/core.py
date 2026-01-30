@@ -302,7 +302,7 @@ def cachier(
             hash_func=hash_func,
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=size_limit_bytes,
-            metrics=cache_metrics,
+            metrics=cache_metrics
         )
     elif backend == "sql":
         core = _SQLCore(

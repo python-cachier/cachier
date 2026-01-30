@@ -16,11 +16,11 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple
 
 from pympler import asizeof  # type: ignore
 
-from .._types import HashFunc
-from ..config import CacheEntry, _update_with_defaults
+from cachier._types import HashFunc
+from cachier.config import CacheEntry, _update_with_defaults
 
 if TYPE_CHECKING:
-    from ..metrics import CacheMetrics
+    from cachier.metrics import CacheMetrics
 
 
 class RecalculationNeeded(Exception):
@@ -122,14 +122,14 @@ class _BaseCore(metaclass=abc.ABCMeta):
         """
         if self.metrics is None:
             return
-        try:
-            # Get cache size - subclasses should override if they can provide this
+        from contextlib import suppress
+
+        # Get cache size - subclasses should override if they can provide this
+        # Suppress errors if subclass doesn't implement size tracking
+        with suppress(AttributeError, NotImplementedError):
             entry_count = self._get_entry_count()
             total_size = self._get_total_size()
             self.metrics.update_size_metrics(entry_count, total_size)
-        except (AttributeError, NotImplementedError):
-            # Silently skip if subclass doesn't implement size tracking
-            pass
 
     def _get_entry_count(self) -> int:
         """Get the number of entries in the cache.

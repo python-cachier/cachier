@@ -110,49 +110,49 @@ class PrometheusExporter(MetricsExporter):
                     hits = CounterMetricFamily(
                         "cachier_cache_hits_total",
                         "Total cache hits",
-                        labels=["function"],
+                        labels=["function"]
                     )
 
                     # Collect misses
                     misses = CounterMetricFamily(
                         "cachier_cache_misses_total",
                         "Total cache misses",
-                        labels=["function"],
+                        labels=["function"]
                     )
 
                     # Collect hit rate
                     hit_rate = GaugeMetricFamily(
                         "cachier_cache_hit_rate",
                         "Cache hit rate percentage",
-                        labels=["function"],
+                        labels=["function"]
                     )
 
                     # Collect stale hits
                     stale_hits = CounterMetricFamily(
-                        "cachier_stale_hits",
+                        "cachier_stale_hits_total",
                         "Total stale cache hits",
-                        labels=["function"],
+                        labels=["function"]
                     )
 
                     # Collect recalculations
                     recalculations = CounterMetricFamily(
-                        "cachier_recalculations",
+                        "cachier_recalculations_total",
                         "Total cache recalculations",
-                        labels=["function"],
+                        labels=["function"]
                     )
 
                     # Collect entry count
                     entry_count = GaugeMetricFamily(
                         "cachier_entry_count",
                         "Current number of cache entries",
-                        labels=["function"],
+                        labels=["function"]
                     )
 
                     # Collect cache size
                     cache_size = GaugeMetricFamily(
                         "cachier_cache_size_bytes",
                         "Total cache size in bytes",
-                        labels=["function"],
+                        labels=["function"]
                     )
 
                     for (
@@ -172,6 +172,7 @@ class PrometheusExporter(MetricsExporter):
                         entry_count.add_metric([func_name], stats.entry_count)
                         cache_size.add_metric([func_name], stats.total_size_bytes)
 
+                    # Yield metrics one by one as required by Prometheus collector protocol
                     yield hits
                     yield misses
                     yield hit_rate
@@ -181,11 +182,10 @@ class PrometheusExporter(MetricsExporter):
                     yield cache_size
 
         # Register the custom collector
-        try:
-            REGISTRY.register(CachierCollector(self))
-        except Exception:
+        from contextlib import suppress
+        with suppress(Exception):
             # If registration fails, continue without collector
-            pass
+            REGISTRY.register(CachierCollector(self))
 
     def _init_prometheus_metrics(self) -> None:
         """Initialize Prometheus metrics using prometheus_client.
@@ -370,13 +370,18 @@ class PrometheusExporter(MetricsExporter):
         """
         if self._prom_client:
             # Use prometheus_client's built-in HTTP server
-            try:
-                from prometheus_client import start_http_server
+            from prometheus_client import start_http_server
 
-                start_http_server(self.port)
-            except Exception:  # noqa: S110
-                # Silently fail if server can't start
-                pass
+            # Try to bind to the configured host; fall back gracefully for
+            # prometheus_client versions that don't support addr/host.
+            try:
+                start_http_server(self.port, addr=self.host)
+            except TypeError:
+                try:
+                    start_http_server(self.port, host=self.host)  # type: ignore[call-arg]
+                except TypeError:
+                    # Old version doesn't support host parameter
+                    start_http_server(self.port)
         else:
             # Provide simple HTTP server for text format
             self._start_simple_server()
