@@ -152,18 +152,20 @@ comprehensive_operation(10)  # Miss + recalculation
 comprehensive_operation(2000)  # Size limit rejection
 
 stats = comprehensive_operation.metrics.get_stats()
-print("\nComplete metrics snapshot:")
-print(f"  Hits: {stats.hits}")
-print(f"  Misses: {stats.misses}")
-print(f"  Hit rate: {stats.hit_rate:.1f}%")
-print(f"  Total calls: {stats.total_calls}")
-print(f"  Avg latency: {stats.avg_latency_ms:.2f}ms")
-print(f"  Stale hits: {stats.stale_hits}")
-print(f"  Recalculations: {stats.recalculations}")
-print(f"  Wait timeouts: {stats.wait_timeouts}")
-print(f"  Size limit rejections: {stats.size_limit_rejections}")
-print(f"  Entry count: {stats.entry_count}")
-print(f"  Total size (bytes): {stats.total_size_bytes}")
+print(
+    f"\nComplete metrics snapshot:\n"
+    f"  Hits: {stats.hits}\n"
+    f"  Misses: {stats.misses}\n"
+    f"  Hit rate: {stats.hit_rate:.1f}%\n"
+    f"  Total calls: {stats.total_calls}\n"
+    f"  Avg latency: {stats.avg_latency_ms:.2f}ms\n"
+    f"  Stale hits: {stats.stale_hits}\n"
+    f"  Recalculations: {stats.recalculations}\n"
+    f"  Wait timeouts: {stats.wait_timeouts}\n"
+    f"  Size limit rejections: {stats.size_limit_rejections}\n"
+    f"  Entry count: {stats.entry_count}\n"
+    f"  Total size (bytes): {stats.total_size_bytes}"
+)
 
 # Example 5: Programmatic access for monitoring
 print("\n" + "=" * 60)
