@@ -262,9 +262,10 @@ class PrometheusExporter(MetricsExporter):
                 lines.append(f'cachier_cache_hits_total{{function="{func_name}"}} {stats.hits}')
 
         # Misses
-        lines.append("")
-        lines.append("# HELP cachier_cache_misses_total Total cache misses")
-        lines.append("# TYPE cachier_cache_misses_total counter")
+        lines.append(
+            "\n# HELP cachier_cache_misses_total Total cache misses\n"
+            "# TYPE cachier_cache_misses_total counter"
+        )
 
         with self._lock:
             for func_name, func in self._registered_functions.items():
@@ -274,9 +275,10 @@ class PrometheusExporter(MetricsExporter):
                 lines.append(f'cachier_cache_misses_total{{function="{func_name}"}} {stats.misses}')
 
         # Hit rate
-        lines.append("")
-        lines.append("# HELP cachier_cache_hit_rate Cache hit rate percentage")
-        lines.append("# TYPE cachier_cache_hit_rate gauge")
+        lines.append(
+            "\n# HELP cachier_cache_hit_rate Cache hit rate percentage\n"
+            "# TYPE cachier_cache_hit_rate gauge"
+        )
 
         with self._lock:
             for func_name, func in self._registered_functions.items():
@@ -286,9 +288,10 @@ class PrometheusExporter(MetricsExporter):
                 lines.append(f'cachier_cache_hit_rate{{function="{func_name}"}} {stats.hit_rate:.2f}')
 
         # Average latency
-        lines.append("")
-        lines.append("# HELP cachier_avg_latency_ms Average cache operation latency in milliseconds")
-        lines.append("# TYPE cachier_avg_latency_ms gauge")
+        lines.append(
+            "\n# HELP cachier_avg_latency_ms Average cache operation latency in milliseconds\n"
+            "# TYPE cachier_avg_latency_ms gauge"
+        )
 
         with self._lock:
             for func_name, func in self._registered_functions.items():
@@ -298,9 +301,10 @@ class PrometheusExporter(MetricsExporter):
                 lines.append(f'cachier_avg_latency_ms{{function="{func_name}"}} {stats.avg_latency_ms:.4f}')
 
         # Stale hits
-        lines.append("")
-        lines.append("# HELP cachier_stale_hits_total Total stale cache hits")
-        lines.append("# TYPE cachier_stale_hits_total counter")
+        lines.append(
+            "\n# HELP cachier_stale_hits_total Total stale cache hits\n"
+            "# TYPE cachier_stale_hits_total counter"
+        )
 
         with self._lock:
             for func_name, func in self._registered_functions.items():
@@ -310,9 +314,10 @@ class PrometheusExporter(MetricsExporter):
                 lines.append(f'cachier_stale_hits_total{{function="{func_name}"}} {stats.stale_hits}')
 
         # Recalculations
-        lines.append("")
-        lines.append("# HELP cachier_recalculations_total Total cache recalculations")
-        lines.append("# TYPE cachier_recalculations_total counter")
+        lines.append(
+            "\n# HELP cachier_recalculations_total Total cache recalculations\n"
+            "# TYPE cachier_recalculations_total counter"
+        )
 
         with self._lock:
             for func_name, func in self._registered_functions.items():
@@ -322,9 +327,10 @@ class PrometheusExporter(MetricsExporter):
                 lines.append(f'cachier_recalculations_total{{function="{func_name}"}} {stats.recalculations}')
 
         # Entry count
-        lines.append("")
-        lines.append("# HELP cachier_entry_count Current cache entries")
-        lines.append("# TYPE cachier_entry_count gauge")
+        lines.append(
+            "\n# HELP cachier_entry_count Current cache entries\n"
+            "# TYPE cachier_entry_count gauge"
+        )
 
         with self._lock:
             for func_name, func in self._registered_functions.items():
@@ -334,9 +340,10 @@ class PrometheusExporter(MetricsExporter):
                 lines.append(f'cachier_entry_count{{function="{func_name}"}} {stats.entry_count}')
 
         # Cache size
-        lines.append("")
-        lines.append("# HELP cachier_cache_size_bytes Total cache size in bytes")
-        lines.append("# TYPE cachier_cache_size_bytes gauge")
+        lines.append(
+            "\n# HELP cachier_cache_size_bytes Total cache size in bytes\n"
+            "# TYPE cachier_cache_size_bytes gauge"
+        )
 
         with self._lock:
             for func_name, func in self._registered_functions.items():
@@ -346,9 +353,10 @@ class PrometheusExporter(MetricsExporter):
                 lines.append(f'cachier_cache_size_bytes{{function="{func_name}"}} {stats.total_size_bytes}')
 
         # Size limit rejections
-        lines.append("")
-        lines.append("# HELP cachier_size_limit_rejections_total Entries rejected due to size limit")
-        lines.append("# TYPE cachier_size_limit_rejections_total counter")
+        lines.append(
+            "\n# HELP cachier_size_limit_rejections_total Entries rejected due to size limit\n"
+            "# TYPE cachier_size_limit_rejections_total counter"
+        )
 
         with self._lock:
             for func_name, func in self._registered_functions.items():

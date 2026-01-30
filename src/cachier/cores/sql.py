@@ -27,8 +27,9 @@ try:
 except ImportError:
     SQLALCHEMY_AVAILABLE = False
 
-from .._types import HashFunc
-from ..config import CacheEntry
+from cachier._types import HashFunc
+from cachier.config import CacheEntry
+
 from .base import RecalculationNeeded, _BaseCore, _get_func_str
 
 if TYPE_CHECKING:
