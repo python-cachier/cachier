@@ -181,6 +181,14 @@ markers = [
   "asyncio: marks tests as async",
 ]
 
+[tool.coverage.report]
+show_missing = true
+# Regexes for lines to exclude from consideration
+exclude_lines = [
+  "pragma: no cover",          # Have to re-enable the standard pragma
+  "raise NotImplementedError", # Don't complain if tests don't hit defensive assertion code:
+  "if TYPE_CHECKING:",         # Is only true when running mypy, not tests
+]
 # --- coverage ---
 
 [tool.coverage.run]
@@ -191,12 +199,4 @@ omit = [
   "src/cachier/_version.py",
   "src/cachier/__init__.py",
   "**/scripts/**",
-]
-[tool.coverage.report]
-show_missing = true
-# Regexes for lines to exclude from consideration
-exclude_lines = [
-  "pragma: no cover",          # Have to re-enable the standard pragma
-  "raise NotImplementedError", # Don't complain if tests don't hit defensive assertion code:
-  "if TYPE_CHECKING:",         # Is only true when running mypy, not tests
 ]

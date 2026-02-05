@@ -112,7 +112,7 @@ ______________________________________________________________________
 - **Others:** Memory, MongoDB, SQL, Redis
 - **Adding a backend:** Implement in `src/cachier/cores/`, subclass `BaseCore`, add tests with appropriate markers, update docs, and CI matrix if needed.
 - **Optional dependencies:** Code/tests must gracefully skip if backend deps are missing. Install backend-specific deps via `tests/requirements_*.txt`.
-- **Requirements files:** `tests/sql_requirements.txt`, `tests/redis_requirements.txt` for backend-specific dependencies.
+- **Requirements files:** `tests/requirements_mongodb.txt`, `tests/requirements_postgres.txt`, `tests/requirements_redis.txt` for backend-specific dependencies.
 
 ### 3. **Decorator Usage**
 
@@ -191,7 +191,15 @@ backend = _update_with_defaults(backend, "backend")
 mongetter = _update_with_defaults(mongetter, "mongetter")
 if callable(mongetter):
     backend = "mongo"
-...
+
+if backend == "pickle":
+    core = _PickleCore(...)
+elif backend == "mongo":
+    core = _MongoCore(...)
+elif backend == "memory":
+    core = _MemoryCore(...)
+elif backend == "sql":
+    core = _SQLCore(...)
 elif backend == "redis":
     core = _RedisCore(
         hash_func=hash_func,
@@ -423,7 +431,7 @@ ______________________________________________________________________
 - **Build package:** `python -m build`
 - **Check docs:** `python setup.py checkdocs`
 - **Run example:** `python examples/redis_example.py`
-- **Update requirements:** Edit `tests/requirements_*.txt` as needed (sql_requirements.txt, redis_requirements.txt).
+- **Update requirements:** Edit `tests/requirements_*.txt` as needed (`requirements_mongodb.txt`, `requirements_postgres.txt`, `requirements_redis.txt`).
 
 ### Local Testing with Docker
 
@@ -552,25 +560,25 @@ ______________________________________________________________________
 
 ## 🧭 Quick Reference
 
-| Task                       | Command/Location                   |
-| -------------------------- | ---------------------------------- |
-| Run all tests              | `pytest`                           |
-| Run backend-specific tests | `pytest -m <backend>`              |
-| Test multiple backends     | `pytest -m "redis or sql"`         |
-| Exclude backends           | `pytest -m "not mongo"`            |
-| Lint                       | `ruff check .`                     |
-| Type check                 | `mypy src/cachier/`                |
-| Format code                | `ruff format .`                    |
-| Build package              | `python -m build`                  |
-| Check docs                 | `python setup.py checkdocs`        |
-| Backend requirements       | `tests/sql_requirements.txt`, etc. |
-| Main decorator             | `src/cachier/core.py`              |
-| Backends                   | `src/cachier/cores/`               |
-| Global config              | `src/cachier/config.py`            |
-| Tests                      | `tests/`                           |
-| Examples                   | `examples/`                        |
-| Documentation              | `README.rst`                       |
-| Contributor guidelines     | `.github/copilot-instructions.md`  |
+| Task                       | Command/Location                  |
+| -------------------------- | --------------------------------- |
+| Run all tests              | `pytest`                          |
+| Run backend-specific tests | `pytest -m <backend>`             |
+| Test multiple backends     | `pytest -m "redis or sql"`        |
+| Exclude backends           | `pytest -m "not mongo"`           |
+| Lint                       | `ruff check .`                    |
+| Type check                 | `mypy src/cachier/`               |
+| Format code                | `ruff format .`                   |
+| Build package              | `python -m build`                 |
+| Check docs                 | `python setup.py checkdocs`       |
+| Backend requirements       | `tests/requirements_*.txt`        |
+| Main decorator             | `src/cachier/core.py`             |
+| Backends                   | `src/cachier/cores/`              |
+| Global config              | `src/cachier/config.py`           |
+| Tests                      | `tests/`                          |
+| Examples                   | `examples/`                       |
+| Documentation              | `README.rst`                      |
+| Contributor guidelines     | `.github/copilot-instructions.md` |
 
 ______________________________________________________________________
 

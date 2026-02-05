@@ -60,7 +60,7 @@ def _function_thread(core, key, func, args, kwds):
 async def _function_thread_async(core, key, func, args, kwds):
     try:
         func_res = await func(*args, **kwds)
-        core.set_entry(key, func_res)
+        await core.aset_entry(key, func_res)
     except BaseException as exc:
         print(f"Function call failed with the following exception:\n{exc}")
 
@@ -78,15 +78,15 @@ def _calc_entry(core, key, func, args, kwds, printer=lambda *_: None) -> Optiona
 
 
 async def _calc_entry_async(core, key, func, args, kwds, printer=lambda *_: None) -> Optional[Any]:
-    core.mark_entry_being_calculated(key)
+    await core.amark_entry_being_calculated(key)
     try:
         func_res = await func(*args, **kwds)
-        stored = core.set_entry(key, func_res)
+        stored = await core.aset_entry(key, func_res)
         if not stored:
             printer("Result exceeds entry_size_limit; not cached")
         return func_res
     finally:
-        core.mark_entry_not_calculated(key)
+        await core.amark_entry_not_calculated(key)
 
 
 def _convert_args_kwargs(func, _is_method: bool, args: tuple, kwds: dict) -> dict:
@@ -446,7 +446,7 @@ def cachier(
 
             if ignore_cache or not _global_params.caching_enabled:
                 return await func(args[0], **kwargs) if core.func_is_method else await func(**kwargs)
-            key, entry = core.get_entry((), kwargs)
+            key, entry = await core.aget_entry((), kwargs)
             if overwrite_cache:
                 result = await _calc_entry_async(core, key, func, args, kwds, _print)
                 return result
@@ -477,10 +477,10 @@ def cachier(
                     # Mark entry as being calculated then immediately unmark
                     # This matches sync behavior and ensures entry exists
                     # Background task will update cache when complete
-                    core.mark_entry_being_calculated(key)
+                    await core.amark_entry_being_calculated(key)
                     # Use asyncio.create_task for background execution
                     asyncio.create_task(_function_thread_async(core, key, func, args, kwds))
-                    core.mark_entry_not_calculated(key)
+                    await core.amark_entry_not_calculated(key)
                     return entry.value
                 _print("Calling decorated function and waiting")
                 result = await _calc_entry_async(core, key, func, args, kwds, _print)
