@@ -295,10 +295,8 @@ def _bad_cache(arg_1, arg_2):
 
 
 # _BAD_CACHE_FNAME = '.__main__._bad_cache'
-_BAD_CACHE_FNAME = ".tests.test_pickle_core._bad_cache"
-_BAD_CACHE_FNAME_SEPARATE_FILES = (
-    f".tests.test_pickle_core._bad_cache_{hashlib.sha256(pickle.dumps((0.13, 0.02))).hexdigest()}"
-)
+_BAD_CACHE_FNAME = f".{__name__}._bad_cache"
+_BAD_CACHE_FNAME_SEPARATE_FILES = f".{__name__}._bad_cache_{hashlib.sha256(pickle.dumps((0.13, 0.02))).hexdigest()}"
 EXPANDED_CACHIER_DIR = os.path.expanduser(_global_params.cache_dir)
 _BAD_CACHE_FPATH = os.path.join(EXPANDED_CACHIER_DIR, _BAD_CACHE_FNAME)
 _BAD_CACHE_FPATH_SEPARATE_FILES = os.path.join(EXPANDED_CACHIER_DIR, _BAD_CACHE_FNAME_SEPARATE_FILES)
@@ -381,10 +379,8 @@ def _delete_cache(arg_1, arg_2):
 
 
 # _DEL_CACHE_FNAME = '.__main__._delete_cache'
-_DEL_CACHE_FNAME = ".tests.test_pickle_core._delete_cache"
-_DEL_CACHE_FNAME_SEPARATE_FILES = (
-    f".tests.test_pickle_core._delete_cache_{hashlib.sha256(pickle.dumps((0.13, 0.02))).hexdigest()}"
-)
+_DEL_CACHE_FNAME = f".{__name__}._delete_cache"
+_DEL_CACHE_FNAME_SEPARATE_FILES = f".{__name__}._delete_cache_{hashlib.sha256(pickle.dumps((0.13, 0.02))).hexdigest()}"
 _DEL_CACHE_FPATH = os.path.join(EXPANDED_CACHIER_DIR, _DEL_CACHE_FNAME)
 _DEL_CACHE_FPATH_SEPARATE_FILES = os.path.join(EXPANDED_CACHIER_DIR, _DEL_CACHE_FNAME_SEPARATE_FILES)
 _DEL_CACHE_FPATHS = {

@@ -49,7 +49,7 @@ def _get_executor(reset=False):
     return _get_executor.executor
 
 
-def _function_thread(core, key, func, args, kwds):
+def _function_thread(core: _BaseCore, key, func, args, kwds):
     try:
         func_res = func(*args, **kwds)
         core.set_entry(key, func_res)
@@ -57,7 +57,7 @@ def _function_thread(core, key, func, args, kwds):
         print(f"Function call failed with the following exception:\n{exc}")
 
 
-async def _function_thread_async(core, key, func, args, kwds):
+async def _function_thread_async(core: _BaseCore, key, func, args, kwds):
     try:
         func_res = await func(*args, **kwds)
         await core.aset_entry(key, func_res)
@@ -65,7 +65,7 @@ async def _function_thread_async(core, key, func, args, kwds):
         print(f"Function call failed with the following exception:\n{exc}")
 
 
-def _calc_entry(core, key, func, args, kwds, printer=lambda *_: None) -> Optional[Any]:
+def _calc_entry(core: _BaseCore, key, func, args, kwds, printer=lambda *_: None) -> Optional[Any]:
     core.mark_entry_being_calculated(key)
     try:
         func_res = func(*args, **kwds)
@@ -77,7 +77,7 @@ def _calc_entry(core, key, func, args, kwds, printer=lambda *_: None) -> Optiona
         core.mark_entry_not_calculated(key)
 
 
-async def _calc_entry_async(core, key, func, args, kwds, printer=lambda *_: None) -> Optional[Any]:
+async def _calc_entry_async(core: _BaseCore, key, func, args, kwds, printer=lambda *_: None) -> Optional[Any]:
     await core.amark_entry_being_calculated(key)
     try:
         func_res = await func(*args, **kwds)

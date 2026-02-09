@@ -20,7 +20,7 @@ from cachier.core import (
     _max_workers,
     _set_max_workers,
 )
-from tests.test_mongo_core import (
+from tests.mongo_tests.test_mongo_core import (
     _test_mongetter,
 )
 
