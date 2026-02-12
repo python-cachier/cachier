@@ -1,4 +1,0 @@
--r requirements.txt
-# for SQL core tests
-SQLAlchemy
-psycopg[binary] # Psycopg3

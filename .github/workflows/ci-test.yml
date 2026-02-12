@@ -47,16 +47,17 @@ jobs:
       CACHIER_TEST_VS_DOCKERIZED_REDIS: "true"
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "pip"
 
-      - name: Install package & dependencies
-        run: python -m pip install -e . -r tests/requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . -r tests/requirements.txt
 
       - name: Lower inotify instance limit (Linux only, for Issue #24 test)
         if: runner.os == 'Linux' && matrix.backend == 'local'
@@ -65,7 +66,18 @@ jobs:
 
       - name: Unit tests (local)
         if: matrix.backend == 'local'
-        run: pytest -m "not mongo and not sql and not redis" --cov=cachier --cov-report=term --cov-report=xml:cov.xml
+        run: |
+          # Run all local tests in parallel (pickle tests have isolation via conftest.py)
+          pytest -m "not mongo and not sql and not redis and not seriallocal" -n auto --cov=cachier --cov-report=term --cov-report=xml:cov.xml
+          # Run seriallocal tests in serial (no parallelization), and append to the same .coverage file
+          pytest -m "seriallocal" -n0 --cov=cachier --cov-report=term --cov-report=xml:cov.xml --cov-append
+
+          # Generate coverage reports (pytest-cov already combined the data
+          # from different workers into a single .coverage file for the first
+          # pytest command, and --cov-append used the same .coverage file for
+          # the second one)
+          coverage report
+          coverage xml -o cov.xml
 
       - name: Setup docker (missing on MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'mongodb'
@@ -75,10 +87,6 @@ jobs:
           # For testcontainers to find the Colima socket
           sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
 
-      - name: Install other test dependencies
-        if: matrix.backend != 'local'
-        run: python -m pip install -e . -r tests/requirements_${{ matrix.backend }}.txt
-
       # ToDo: find a way to cache docker images
       #- name: Cache Container Images
       #  if: matrix.backend == 'mongodb'
@@ -86,6 +94,7 @@ jobs:
       #  with:
       #    prefix-key: "mongo-db"
       #    images: mongo:latest
+
       - name: Start MongoDB in docker
         if: matrix.backend == 'mongodb'
         run: |
@@ -96,9 +105,14 @@ jobs:
           # show running containers
           docker ps -a
 
+      - name: Install MongoDB core test dependencies
+        if: matrix.backend == 'mongodb'
+        run: |
+          python -m pip install -e . -r tests/mongodb_requirements.txt
+
       - name: Unit tests (DB)
         if: matrix.backend == 'mongodb'
-        run: pytest -m "mongo" --cov=cachier --cov-report=term --cov-report=xml:cov.xml
+        run: pytest -m "mongo" -n auto --cov=cachier --cov-report=term --cov-report=xml:cov.xml
       - name: Speed eval
         run: python tests/speed_eval.py
 
@@ -115,11 +129,16 @@ jobs:
           sleep 10
           docker ps -a
 
+      - name: Install SQL core test dependencies (SQL/Postgres)
+        if: matrix.backend == 'postgres'
+        run: |
+          python -m pip install -e . -r tests/sql_requirements.txt
+
       - name: Unit tests (SQL/Postgres)
         if: matrix.backend == 'postgres'
         env:
-          SQLALCHEMY_DATABASE_URL: postgresql+psycopg://testuser:testpass@localhost:5432/testdb
-        run: pytest -m sql --cov=cachier --cov-report=term --cov-report=xml:cov.xml
+          SQLALCHEMY_DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
+        run: pytest -m sql -n auto --cov=cachier --cov-report=term --cov-report=xml:cov.xml
 
       - name: Start Redis in docker
         if: matrix.backend == 'redis'
@@ -131,9 +150,14 @@ jobs:
           sleep 5
           docker ps -a
 
+      - name: Install Redis core test dependencies
+        if: matrix.backend == 'redis'
+        run: |
+          python -m pip install -e . -r tests/redis_requirements.txt
+
       - name: Unit tests (Redis)
         if: matrix.backend == 'redis'
-        run: pytest -m redis --cov=cachier --cov-report=term --cov-report=xml:cov.xml
+        run: pytest -m redis -n auto --cov=cachier --cov-report=term --cov-report=xml:cov.xml
 
       - name: Upload coverage to Codecov (non PRs)
         continue-on-error: true
