@@ -179,6 +179,7 @@ markers = [
   "sql: test the SQL core",
   "maxage: test the max_age functionality",
   "asyncio: marks tests as async",
+  "seriallocal: tests that must run serially for local backends",
 ]
 
 [tool.coverage.report]
