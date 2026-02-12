@@ -415,6 +415,31 @@ def test_redis_import_warning():
         _RedisCore(hash_func=None, redis_client=Mock(), wait_for_calc_timeout=None)
 
 
+def test_redis_module_sets_availability_false_when_import_fails(monkeypatch):
+    import builtins
+    import importlib
+    import sys
+
+    module_name = "cachier.cores.redis"
+    original_module = sys.modules.get(module_name)
+    original_import = builtins.__import__
+
+    def mock_import(name, *args, **kwargs):
+        if name == "redis" or name.startswith("redis."):
+            raise ImportError("No module named redis")
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", mock_import)
+    sys.modules.pop(module_name, None)
+    try:
+        reloaded_module = importlib.import_module(module_name)
+        assert reloaded_module.REDIS_AVAILABLE is False
+    finally:
+        sys.modules.pop(module_name, None)
+        if original_module is not None:
+            sys.modules[module_name] = original_module
+
+
 @pytest.mark.redis
 def test_missing_redis_client():
     """Test MissingRedisClient exception when redis_client is None."""
@@ -672,3 +697,23 @@ def test_redis_clear_being_calculated_with_pipeline():
     pipeline_mock.hset.assert_any_call(b"key2", "processing", "false")
     pipeline_mock.hset.assert_any_call(b"key3", "processing", "false")
     pipeline_mock.execute.assert_called_once()
+
+
+@pytest.mark.redis
+def test_redis_clear_being_calculated_without_keys():
+    """Test clear_being_calculated when no keys are returned."""
+    mock_client = MagicMock()
+    mock_client.keys = MagicMock(return_value=[])
+    mock_client.pipeline = MagicMock()
+
+    core = _RedisCore(hash_func=None, redis_client=mock_client, wait_for_calc_timeout=10)
+
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+    core._resolve_redis_client = lambda: mock_client
+
+    core.clear_being_calculated()
+
+    mock_client.pipeline.assert_not_called()

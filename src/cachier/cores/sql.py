@@ -2,6 +2,7 @@
 
 import pickle
 import threading
+from contextlib import suppress
 from datetime import datetime, timedelta
 from typing import Any, Callable, Optional, Tuple, Union, cast
 
@@ -22,6 +23,7 @@ try:
     )
     from sqlalchemy.engine import Engine
     from sqlalchemy.orm import declarative_base, sessionmaker
+    from sqlalchemy.pool import StaticPool
 
     SQLALCHEMY_AVAILABLE = True
 except ImportError:
@@ -76,10 +78,24 @@ class _SQLCore(_BaseCore):
         self._lock = threading.RLock()
         self._func_str = None
 
+    def __del__(self) -> None:
+        engine = getattr(self, "_engine", None)
+        if engine is None:
+            return
+        with suppress(Exception):
+            engine.dispose()
+
     def _resolve_engine(self, sql_engine):
         if isinstance(sql_engine, Engine):
             return sql_engine
         if isinstance(sql_engine, str):
+            if sql_engine.startswith("sqlite:///:memory:"):
+                return create_engine(
+                    sql_engine,
+                    future=True,
+                    connect_args={"check_same_thread": False},
+                    poolclass=StaticPool,
+                )
             return create_engine(sql_engine, future=True)
         if callable(sql_engine):
             return sql_engine()

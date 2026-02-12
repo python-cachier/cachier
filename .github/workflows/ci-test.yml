@@ -118,7 +118,7 @@ jobs:
       - name: Unit tests (SQL/Postgres)
         if: matrix.backend == 'postgres'
         env:
-          SQLALCHEMY_DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
+          SQLALCHEMY_DATABASE_URL: postgresql+psycopg://testuser:testpass@localhost:5432/testdb
         run: pytest -m sql --cov=cachier --cov-report=term --cov-report=xml:cov.xml
 
       - name: Start Redis in docker

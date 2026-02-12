@@ -295,10 +295,8 @@ def _bad_cache(arg_1, arg_2):
 
 
 # _BAD_CACHE_FNAME = '.__main__._bad_cache'
-_BAD_CACHE_FNAME = ".tests.test_pickle_core._bad_cache"
-_BAD_CACHE_FNAME_SEPARATE_FILES = (
-    f".tests.test_pickle_core._bad_cache_{hashlib.sha256(pickle.dumps((0.13, 0.02))).hexdigest()}"
-)
+_BAD_CACHE_FNAME = f".{__name__}._bad_cache"
+_BAD_CACHE_FNAME_SEPARATE_FILES = f".{__name__}._bad_cache_{hashlib.sha256(pickle.dumps((0.13, 0.02))).hexdigest()}"
 EXPANDED_CACHIER_DIR = os.path.expanduser(_global_params.cache_dir)
 _BAD_CACHE_FPATH = os.path.join(EXPANDED_CACHIER_DIR, _BAD_CACHE_FNAME)
 _BAD_CACHE_FPATH_SEPARATE_FILES = os.path.join(EXPANDED_CACHIER_DIR, _BAD_CACHE_FNAME_SEPARATE_FILES)
@@ -381,10 +379,8 @@ def _delete_cache(arg_1, arg_2):
 
 
 # _DEL_CACHE_FNAME = '.__main__._delete_cache'
-_DEL_CACHE_FNAME = ".tests.test_pickle_core._delete_cache"
-_DEL_CACHE_FNAME_SEPARATE_FILES = (
-    f".tests.test_pickle_core._delete_cache_{hashlib.sha256(pickle.dumps((0.13, 0.02))).hexdigest()}"
-)
+_DEL_CACHE_FNAME = f".{__name__}._delete_cache"
+_DEL_CACHE_FNAME_SEPARATE_FILES = f".{__name__}._delete_cache_{hashlib.sha256(pickle.dumps((0.13, 0.02))).hexdigest()}"
 _DEL_CACHE_FPATH = os.path.join(EXPANDED_CACHIER_DIR, _DEL_CACHE_FNAME)
 _DEL_CACHE_FPATH_SEPARATE_FILES = os.path.join(EXPANDED_CACHIER_DIR, _DEL_CACHE_FNAME_SEPARATE_FILES)
 _DEL_CACHE_FPATHS = {
@@ -769,6 +765,59 @@ def test_cleanup_observer_exception():
 
 
 @pytest.mark.pickle
+def test_cache_change_handler_check_calculation_without_observer_ready_value():
+    core = Mock()
+    core.get_entry_by_key.return_value = (
+        "test_key",
+        CacheEntry(
+            value="ready",
+            time=datetime.now(),
+            stale=False,
+            _processing=False,
+        ),
+    )
+
+    handler = _PickleCore.CacheChangeHandler("cache_file", core, "test_key")
+    handler._check_calculation()
+
+    assert handler.value == "ready"
+    assert handler.observer is None
+
+
+@pytest.mark.pickle
+def test_cache_change_handler_check_calculation_without_observer_missing_entry():
+    core = Mock()
+    core.get_entry_by_key.return_value = ("test_key", None)
+
+    handler = _PickleCore.CacheChangeHandler("cache_file", core, "test_key")
+    handler._check_calculation()
+
+    assert handler.value is None
+    assert handler.observer is None
+
+
+@pytest.mark.pickle
+def test_cache_change_handler_check_calculation_processing_entry_no_change():
+    core = Mock()
+    core.get_entry_by_key.return_value = (
+        "test_key",
+        CacheEntry(
+            value="processing",
+            time=datetime.now(),
+            stale=False,
+            _processing=True,
+        ),
+    )
+
+    handler = _PickleCore.CacheChangeHandler("cache_file", core, "test_key")
+    handler.value = "unchanged"
+    handler._check_calculation()
+
+    assert handler.value == "unchanged"
+    assert handler.observer is None
+
+
+@pytest.mark.pickle
 def test_wait_on_entry_calc_inotify_limit(tmp_path):
     """Test wait_on_entry_calc fallback when inotify limit is reached."""
     # Test lines 298-302: OSError handling for inotify limit
@@ -807,6 +856,35 @@ def test_wait_on_entry_calc_inotify_limit(tmp_path):
     result = core.wait_on_entry_calc("test_key")
     assert result == "polling_result"
     core._wait_with_polling.assert_called_once_with("test_key")
+
+
+@pytest.mark.pickle
+def test_wait_on_entry_calc_returns_cached_value_when_not_processing(tmp_path):
+    """Test wait_on_entry_calc immediate return when entry is done."""
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=10,
+        separate_files=False,
+    )
+
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+    core._save_cache(
+        {
+            "test_key": CacheEntry(
+                value="ready",
+                time=datetime.now(),
+                stale=False,
+                _processing=False,
+            )
+        }
+    )
+
+    assert core.wait_on_entry_calc("test_key") == "ready"
 
 
 @pytest.mark.pickle
@@ -950,6 +1028,39 @@ def test_wait_with_polling_file_errors(tmp_path):
     with patch("time.sleep", return_value=None):  # Speed up test
         result = core._wait_with_polling("test_key")
         assert result == "result"
+
+
+@pytest.mark.pickle
+def test_wait_with_polling_calls_timeout_check_when_processing(tmp_path):
+    """Test _wait_with_polling checks timeout while entry is processing."""
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=10,
+        separate_files=False,
+    )
+
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+    core.get_cache_dict = Mock(
+        return_value={
+            "test_key": CacheEntry(
+                value=None,
+                time=datetime.now(),
+                stale=False,
+                _processing=True,
+            )
+        }
+    )
+    core.check_calc_timeout = Mock(side_effect=RuntimeError("timeout-checked"))
+
+    with patch("time.sleep", return_value=None), pytest.raises(RuntimeError, match="timeout-checked"):
+        core._wait_with_polling("test_key")
+
+    core.check_calc_timeout.assert_called_once_with(1)
 
 
 @pytest.mark.pickle

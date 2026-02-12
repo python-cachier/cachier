@@ -91,7 +91,15 @@ backend = _update_with_defaults(backend, "backend")
 mongetter = _update_with_defaults(mongetter, "mongetter")
 if callable(mongetter):
     backend = "mongo"
-...
+
+if backend == "pickle":
+    core = _PickleCore(...)
+elif backend == "mongo":
+    core = _MongoCore(...)
+elif backend == "memory":
+    core = _MemoryCore(...)
+elif backend == "sql":
+    core = _SQLCore(...)
 elif backend == "redis":
     core = _RedisCore(
         hash_func=hash_func,

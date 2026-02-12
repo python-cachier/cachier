@@ -107,7 +107,7 @@ make services-start
 # Run tests manually
 CACHIER_TEST_HOST=localhost CACHIER_TEST_PORT=27017 CACHIER_TEST_VS_DOCKERIZED_MONGO=true \
 CACHIER_TEST_REDIS_HOST=localhost CACHIER_TEST_REDIS_PORT=6379 CACHIER_TEST_VS_DOCKERIZED_REDIS=true \
-SQLALCHEMY_DATABASE_URL="postgresql://testuser:testpass@localhost:5432/testdb" \
+SQLALCHEMY_DATABASE_URL="postgresql+psycopg://testuser:testpass@localhost:5432/testdb" \
 pytest -m "mongo or redis or sql"
 
 # Stop all services
@@ -146,7 +146,7 @@ The script automatically sets the required environment variables:
 
 ### SQL/PostgreSQL
 
-- `SQLALCHEMY_DATABASE_URL=postgresql://testuser:testpass@localhost:5432/testdb`
+- `SQLALCHEMY_DATABASE_URL=postgresql+psycopg://testuser:testpass@localhost:5432/testdb`
 
 ## Prerequisites
 

@@ -182,6 +182,13 @@ class _PickleCore(_BaseCore):
             return key, self._load_cache_by_key(key)
         return key, self.get_cache_dict(reload).get(key)
 
+    async def aget_entry(self, args: tuple[Any, ...], kwds: dict[str, Any]) -> Tuple[str, Optional[CacheEntry]]:
+        key = self.get_key(args, kwds)
+        return await self.aget_entry_by_key(key)
+
+    async def aget_entry_by_key(self, key: str) -> Tuple[str, Optional[CacheEntry]]:
+        return self.get_entry_by_key(key)
+
     def set_entry(self, key: str, func_res: Any) -> bool:
         if not self._should_store(func_res):
             return False
@@ -201,6 +208,9 @@ class _PickleCore(_BaseCore):
             cache[key] = key_data
             self._save_cache(cache)
         return True
+
+    async def aset_entry(self, key: str, func_res: Any) -> bool:
+        return self.set_entry(key, func_res)
 
     def mark_entry_being_calculated_separate_files(self, key: str) -> None:
         self._save_cache(
@@ -228,6 +238,9 @@ class _PickleCore(_BaseCore):
                 cache[key] = CacheEntry(value=None, time=datetime.now(), stale=False, _processing=True)
             self._save_cache(cache)
 
+    async def amark_entry_being_calculated(self, key: str) -> None:
+        self.mark_entry_being_calculated(key)
+
     def mark_entry_not_calculated(self, key: str) -> None:
         if self.separate_files:
             self._mark_entry_not_calculated_separate_files(key)
@@ -237,6 +250,9 @@ class _PickleCore(_BaseCore):
             if isinstance(cache, dict) and key in cache:
                 cache[key]._processing = False
                 self._save_cache(cache)
+
+    async def amark_entry_not_calculated(self, key: str) -> None:
+        self.mark_entry_not_calculated(key)
 
     def _create_observer(self) -> Observer:  # type: ignore[valid-type]
         """Create a new observer instance."""

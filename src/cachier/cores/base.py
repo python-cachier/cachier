@@ -8,6 +8,7 @@
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
 
 import abc  # for the _BaseCore abstract base class
+import asyncio
 import inspect
 import sys
 import threading
@@ -74,10 +75,24 @@ class _BaseCore(metaclass=abc.ABCMeta):
         key = self.get_key(args, kwds)
         return self.get_entry_by_key(key)
 
+    async def aget_entry(self, args, kwds) -> Tuple[str, Optional[CacheEntry]]:
+        """Async-compatible variant of :meth:`get_entry`.
+
+        Subclasses may override this to support async backends (e.g. async client factories).
+
+        """
+        return self.get_entry(args, kwds)
+
     def precache_value(self, args, kwds, value_to_cache):
         """Write a precomputed value into the cache."""
         key = self.get_key(args, kwds)
         self.set_entry(key, value_to_cache)
+        return value_to_cache
+
+    async def aprecache_value(self, args, kwds, value_to_cache):
+        """Async-compatible variant of :meth:`precache_value`."""
+        key = self.get_key(args, kwds)
+        await self.aset_entry(key, value_to_cache)
         return value_to_cache
 
     def check_calc_timeout(self, time_spent):
@@ -94,6 +109,10 @@ class _BaseCore(metaclass=abc.ABCMeta):
         to the given key in this core's cache, if such a mapping exists.
 
         """
+
+    async def aget_entry_by_key(self, key: str) -> Tuple[str, Optional[CacheEntry]]:
+        """Async-compatible variant of :meth:`get_entry_by_key`."""
+        return self.get_entry_by_key(key)
 
     def _estimate_size(self, value: Any) -> int:
         try:
@@ -113,26 +132,70 @@ class _BaseCore(metaclass=abc.ABCMeta):
     def set_entry(self, key: str, func_res: Any) -> bool:
         """Map the given result to the given key in this core's cache."""
 
+    async def aset_entry(self, key: str, func_res: Any) -> bool:
+        """Async-compatible variant of :meth:`set_entry`."""
+        return self.set_entry(key, func_res)
+
     @abc.abstractmethod
     def mark_entry_being_calculated(self, key: str) -> None:
         """Mark the entry mapped by the given key as being calculated."""
+
+    async def amark_entry_being_calculated(self, key: str) -> None:
+        """Async-compatible variant of :meth:`mark_entry_being_calculated`."""
+        self.mark_entry_being_calculated(key)
 
     @abc.abstractmethod
     def mark_entry_not_calculated(self, key: str) -> None:
         """Mark the entry mapped by the given key as not being calculated."""
 
+    async def amark_entry_not_calculated(self, key: str) -> None:
+        """Async-compatible variant of :meth:`mark_entry_not_calculated`."""
+        self.mark_entry_not_calculated(key)
+
     @abc.abstractmethod
     def wait_on_entry_calc(self, key: str) -> None:
         """Wait on the entry with keys being calculated and returns result."""
+
+    async def await_on_entry_calc(self, key: str) -> Any:
+        """Async-compatible variant of :meth:`wait_on_entry_calc`.
+
+        By default this runs in a thread to avoid blocking the event loop.
+
+        """
+        return await asyncio.to_thread(self.wait_on_entry_calc, key)
 
     @abc.abstractmethod
     def clear_cache(self) -> None:
         """Clear the cache of this core."""
 
+    async def aclear_cache(self) -> None:
+        """Async-compatible variant of :meth:`clear_cache`.
+
+        By default this runs in a thread to avoid blocking the event loop.
+
+        """
+        await asyncio.to_thread(self.clear_cache)
+
     @abc.abstractmethod
     def clear_being_calculated(self) -> None:
         """Mark all entries in this cache as not being calculated."""
 
+    async def aclear_being_calculated(self) -> None:
+        """Async-compatible variant of :meth:`clear_being_calculated`.
+
+        By default this runs in a thread to avoid blocking the event loop.
+
+        """
+        await asyncio.to_thread(self.clear_being_calculated)
+
     @abc.abstractmethod
     def delete_stale_entries(self, stale_after: timedelta) -> None:
         """Delete cache entries older than ``stale_after``."""
+
+    async def adelete_stale_entries(self, stale_after: timedelta) -> None:
+        """Async-compatible variant of :meth:`delete_stale_entries`.
+
+        By default this runs in a thread to avoid blocking the event loop.
+
+        """
+        await asyncio.to_thread(self.delete_stale_entries, stale_after)

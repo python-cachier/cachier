@@ -418,7 +418,7 @@ Cachier supports a generic SQL backend via SQLAlchemy, allowing you to use SQLit
 
 .. code-block:: python
 
-    @cachier(backend="sql", sql_engine="postgresql://user:pass@localhost/dbname")
+    @cachier(backend="sql", sql_engine="postgresql+psycopg://user:pass@localhost/dbname")
     def my_func(x):
         return x * 2
 
@@ -530,9 +530,9 @@ Each additional core (MongoDB, Redis, SQL) requires additional dependencies. To 
 
 .. code-block:: bash
 
-  pip install -r tests/mongodb_requirements.txt
-  pip install -r tests/redis_requirements.txt
-  pip install -r tests/sql_requirements.txt
+  pip install -r tests/requirements_mongodb.txt
+  pip install -r tests/requirements_redis.txt
+  pip install -r tests/requirements_postgres.txt
 
 Running the tests
 -----------------
@@ -661,8 +661,8 @@ Adding documentation
 
 This project is documented using the `numpy docstring conventions`_, which were chosen as they are perhaps the most widely-spread conventions that are both supported by common tools such as Sphinx and result in human-readable docstrings (in my personal opinion, of course). When documenting code you add to this project, please follow `these conventions`_.
 
-.. _`numpy docstring conventions`: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
-.. _`these conventions`: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
+.. _`numpy docstring conventions`: https://numpydoc.readthedocs.io/en/latest/format.html
+.. _`these conventions`: https://numpydoc.readthedocs.io/en/latest/format.html
 
 Additionally, if you update this ``README.rst`` file, use ``python setup.py checkdocs`` to validate it compiles.
 

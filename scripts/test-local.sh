@@ -236,7 +236,7 @@ check_dependencies() {
     if echo "$SELECTED_CORES" | grep -qw "mongo"; then
         if ! python -c "import pymongo" 2>/dev/null; then
             print_message $YELLOW "Installing MongoDB test requirements..."
-            pip install -r tests/mongodb_requirements.txt || {
+            pip install -r tests/requirements_mongodb.txt || {
                 print_message $RED "Failed to install MongoDB requirements"
                 exit 1
             }
@@ -247,7 +247,7 @@ check_dependencies() {
     if echo "$SELECTED_CORES" | grep -qw "redis"; then
         if ! python -c "import redis" 2>/dev/null; then
             print_message $YELLOW "Installing Redis test requirements..."
-            pip install -r tests/redis_requirements.txt || {
+            pip install -r tests/requirements_redis.txt || {
                 print_message $RED "Failed to install Redis requirements"
                 exit 1
             }
@@ -258,7 +258,7 @@ check_dependencies() {
     if echo "$SELECTED_CORES" | grep -qw "sql"; then
         if ! python -c "import sqlalchemy" 2>/dev/null; then
             print_message $YELLOW "Installing SQL test requirements..."
-            pip install -r tests/sql_requirements.txt || {
+            pip install -r tests/requirements_postgres.txt || {
                 print_message $RED "Failed to install SQL requirements"
                 exit 1
             }
@@ -399,7 +399,7 @@ stop_postgres() {
 }
 
 test_sql() {
-    export SQLALCHEMY_DATABASE_URL="postgresql://testuser:testpass@localhost:5432/testdb"
+    export SQLALCHEMY_DATABASE_URL="postgresql+psycopg://testuser:testpass@localhost:5432/testdb"
 }
 
 # Main execution
