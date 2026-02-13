@@ -4,6 +4,7 @@ import asyncio
 import os
 import platform
 import sys
+import warnings
 from datetime import datetime, timedelta
 from inspect import isawaitable
 from random import random
@@ -143,7 +144,17 @@ def _get_async_mongo_test_uri() -> str:
         pytest.skip("pymongo_inmemory is required for async mongo tests when not using dockerized MongoDB")
 
     if not hasattr(_get_async_mongo_test_uri, "client"):
-        _get_async_mongo_test_uri.client = InMemoryMongoClient()
+        tar_extract_deprecation_regex = (
+            r"Python 3\.14 will, by default, filter extracted tar archives "
+            r"and reject files or modify their metadata\."
+        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message=tar_extract_deprecation_regex,
+                category=DeprecationWarning,
+            )
+            _get_async_mongo_test_uri.client = InMemoryMongoClient()
 
     host, port = _get_async_mongo_test_uri.client.address
     return f"mongodb://{quote_plus(str(host))}:{quote_plus(str(port))}?retrywrites=true&w=majority"
