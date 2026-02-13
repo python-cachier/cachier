@@ -1,18 +1,14 @@
 """Tests for async Mongo client with async functions."""
 
 import asyncio
-import os
-import platform
-import sys
 from datetime import datetime, timedelta
-from inspect import isawaitable
 from random import random
-from urllib.parse import quote_plus
 
 import pytest
 
 from cachier import cachier
 from cachier.cores.mongo import _MongoCore
+from tests.mongo_tests.test_mongo_core import _test_mongetter
 
 
 class _AsyncInMemoryMongoCollection:
@@ -127,104 +123,55 @@ def _build_mongo_core(mongetter):
     return core
 
 
-_COLLECTION_NAME = f"cachier_async_test_{platform.system()}_{'.'.join(map(str, sys.version_info[:3]))}"
-
-
-def _get_async_mongo_test_uri() -> str:
-    """Get URI for async Mongo tests (dockerized or in-memory)."""
-    if str(os.environ.get("TEST_VS_DOCKERIZED_MONGO", "false")).lower() == "true":
-        host = quote_plus(os.environ.get("TEST_HOST", "localhost"))
-        port = quote_plus(str(os.environ.get("TEST_PORT", "27017")))
-        return f"mongodb://{host}:{port}?retrywrites=true&w=majority"
-
-    try:
-        from pymongo_inmemory import MongoClient as InMemoryMongoClient
-    except ImportError:
-        pytest.skip("pymongo_inmemory is required for async mongo tests when not using dockerized MongoDB")
-
-    if not hasattr(_get_async_mongo_test_uri, "client"):
-        _get_async_mongo_test_uri.client = InMemoryMongoClient()
-
-    host, port = _get_async_mongo_test_uri.client.address
-    return f"mongodb://{quote_plus(str(host))}:{quote_plus(str(port))}?retrywrites=true&w=majority"
-
-
-def _get_async_mongo_client():
-    """Build an AsyncMongoClient connected to the async test MongoDB instance."""
-    async_client_module = pytest.importorskip(
-        "pymongo.asynchronous.mongo_client", reason="pymongo with async support is required for async mongo tests"
-    )
-    return async_client_module.AsyncMongoClient(_get_async_mongo_test_uri())
-
-
-async def _maybe_await(value):
-    """Await value if needed, otherwise return as-is."""
-    if isawaitable(value):
-        return await value
-    return value
-
-
 @pytest.mark.mongo
 @pytest.mark.asyncio
 async def test_async_mongo_mongetter():
-    client = _get_async_mongo_client()
-    collection = client["cachier_test"][f"{_COLLECTION_NAME}_mongetter"]
-    await collection.delete_many({})
+    base_collection = _test_mongetter()
+    collection = base_collection.database["cachier_async_mongetter"]
+    collection.delete_many({})
 
-    try:
+    async def async_mongetter():
+        return collection
 
-        async def async_mongetter():
-            return collection
+    @cachier(mongetter=async_mongetter)
+    async def async_cached_mongo(x: int) -> float:
+        await asyncio.sleep(0.01)
+        return random() + x
 
-        @cachier(mongetter=async_mongetter)
-        async def async_cached_mongo(x: int) -> float:
-            await asyncio.sleep(0.01)
-            return random() + x
+    val1 = await async_cached_mongo(7)
+    val2 = await async_cached_mongo(7)
+    assert val1 == val2
 
-        val1 = await async_cached_mongo(7)
-        val2 = await async_cached_mongo(7)
-        assert val1 == val2
-
-        index_info = await _maybe_await(collection.index_information())
-        assert _MongoCore._INDEX_NAME in index_info
-    finally:
-        await collection.delete_many({})
-        await client.close()
+    assert _MongoCore._INDEX_NAME in collection.index_information()
 
 
 @pytest.mark.mongo
 @pytest.mark.asyncio
 async def test_async_mongo_mongetter_method_args_and_kwargs():
-    client = _get_async_mongo_client()
-    collection = client["cachier_test"][f"{_COLLECTION_NAME}_mongetter_methods"]
-    await collection.delete_many({})
+    base_collection = _test_mongetter()
+    collection = base_collection.database["cachier_async_mongetter_methods"]
+    collection.delete_many({})
 
-    try:
+    async def async_mongetter():
+        return collection
 
-        async def async_mongetter():
-            return collection
+    call_count = 0
 
-        call_count = 0
+    class _MongoMethods:
+        @cachier(mongetter=async_mongetter)
+        async def async_cached_mongo_method_args_kwargs(self, x: int, y: int) -> int:
+            nonlocal call_count
+            call_count += 1
+            await asyncio.sleep(0.01)
+            return call_count
 
-        class _MongoMethods:
-            @cachier(mongetter=async_mongetter)
-            async def async_cached_mongo_method_args_kwargs(self, x: int, y: int) -> int:
-                nonlocal call_count
-                call_count += 1
-                await asyncio.sleep(0.01)
-                return call_count
+    obj = _MongoMethods()
+    val1 = await obj.async_cached_mongo_method_args_kwargs(4, 5)
+    val2 = await obj.async_cached_mongo_method_args_kwargs(y=5, x=4)
+    assert val1 == val2 == 1
+    assert call_count == 1
 
-        obj = _MongoMethods()
-        val1 = await obj.async_cached_mongo_method_args_kwargs(4, 5)
-        val2 = await obj.async_cached_mongo_method_args_kwargs(y=5, x=4)
-        assert val1 == val2 == 1
-        assert call_count == 1
-
-        index_info = await _maybe_await(collection.index_information())
-        assert _MongoCore._INDEX_NAME in index_info
-    finally:
-        await collection.delete_many({})
-        await client.close()
+    assert _MongoCore._INDEX_NAME in collection.index_information()
 
 
 @pytest.mark.mongo
