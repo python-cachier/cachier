@@ -44,7 +44,7 @@ Features
 ========
 
 Current features
----------------
+----------------
 
 * Pure Python.
 * Compatible with Python 3.9+ (Python 2.7 was discontinued in version 1.2.8).
