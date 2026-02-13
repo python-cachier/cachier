@@ -4,7 +4,6 @@ import asyncio
 import os
 import platform
 import sys
-import warnings
 from datetime import datetime, timedelta
 from inspect import isawaitable
 from random import random
@@ -144,17 +143,7 @@ def _get_async_mongo_test_uri() -> str:
         pytest.skip("pymongo_inmemory is required for async mongo tests when not using dockerized MongoDB")
 
     if not hasattr(_get_async_mongo_test_uri, "client"):
-        tar_extract_deprecation_regex = (
-            r"Python 3\.14 will, by default, filter extracted tar archives "
-            r"and reject files or modify their metadata\."
-        )
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                message=tar_extract_deprecation_regex,
-                category=DeprecationWarning,
-            )
-            _get_async_mongo_test_uri.client = InMemoryMongoClient()
+        _get_async_mongo_test_uri.client = InMemoryMongoClient()
 
     host, port = _get_async_mongo_test_uri.client.address
     return f"mongodb://{quote_plus(str(host))}:{quote_plus(str(port))}?retrywrites=true&w=majority"
@@ -162,12 +151,10 @@ def _get_async_mongo_test_uri() -> str:
 
 def _get_async_mongo_client():
     """Build an AsyncMongoClient connected to the async test MongoDB instance."""
-    pytest.importorskip(
+    async_client_module = pytest.importorskip(
         "pymongo.asynchronous.mongo_client", reason="pymongo with async support is required for async mongo tests"
     )
-    from pymongo.asynchronous.mongo_client import AsyncMongoClient
-
-    return AsyncMongoClient(_get_async_mongo_test_uri())
+    return async_client_module.AsyncMongoClient(_get_async_mongo_test_uri())
 
 
 async def _maybe_await(value):
