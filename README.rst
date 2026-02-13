@@ -391,13 +391,13 @@ You can set a MongoDB-based cache by assigning ``mongetter`` with a callable tha
 .. code-block:: python
 
     import asyncio
-    from pymongo import MongoClient
+    from pymongo.asynchronous.mongo_client import AsyncMongoClient
     from cachier import cachier
 
+    client = AsyncMongoClient("mongodb://localhost:27017")
+
     async def my_async_mongetter():
-        client = MongoClient("mongodb://localhost:27017")
-        db_obj = client["cachier_db"]
-        return db_obj["someapp_cachier_db"]
+        return client["cachier_db"]["someapp_cachier_db"]
 
     @cachier(mongetter=my_async_mongetter)
     async def my_async_func(x: int) -> int:
