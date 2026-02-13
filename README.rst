@@ -43,14 +43,23 @@ For the latest version supporting Python 2.7 please use:
 Features
 ========
 
+Current features
+---------------
+
 * Pure Python.
 * Compatible with Python 3.9+ (Python 2.7 was discontinued in version 1.2.8).
 * Supported and `tested on Linux, OS X and Windows <https://travis-ci.org/shaypal5/cachier>`_.
 * A simple interface.
 * Defining "shelf life" for cached values.
-* Local caching using pickle files.
-* Cross-machine caching using MongoDB.
-* Redis-based caching for high-performance scenarios.
+* Async and sync functions support.
+* Multiple caching backends (cores):
+
+  * Local caching using pickle files.
+  * In-memory caching using the memory core.
+  * Cross-machine caching using MongoDB.
+  * SQL-based caching using SQLAlchemy-supported databases.
+  * Redis-based caching for high-performance scenarios.
+
 * Thread-safety.
 * **Per-call max age:** Specify a maximum age for cached values per call.
 
@@ -362,6 +371,8 @@ MongoDB Core
 ------------
 You can set a MongoDB-based cache by assigning ``mongetter`` with a callable that returns a ``pymongo.Collection`` object with writing permissions:
 
+**Usage Example (MongoDB sync):**
+
 .. code-block:: python
 
     from pymongo import MongoClient
@@ -374,6 +385,26 @@ You can set a MongoDB-based cache by assigning ``mongetter`` with a callable tha
         return db_obj['someapp_cachier_db']
 
   @cachier(mongetter=my_mongetter)
+
+**Usage Example (MongoDB async):**
+
+.. code-block:: python
+
+    import asyncio
+    from pymongo import MongoClient
+    from cachier import cachier
+
+    async def my_async_mongetter():
+        client = MongoClient("mongodb://localhost:27017")
+        db_obj = client["cachier_db"]
+        return db_obj["someapp_cachier_db"]
+
+    @cachier(mongetter=my_async_mongetter)
+    async def my_async_func(x: int) -> int:
+        await asyncio.sleep(0.01)
+        return x * 2
+
+**Note:** An async ``mongetter`` callable is supported only for async cached functions.
 
 This allows you to have a cross-machine, albeit slower, cache. This functionality requires that the installation of the ``pymongo`` python package.
 
@@ -404,7 +435,7 @@ SQLAlchemy (SQL) Core
 
 Cachier supports a generic SQL backend via SQLAlchemy, allowing you to use SQLite, PostgreSQL, MySQL, and other databases.
 
-**Usage Example (SQLite in-memory):**
+**Usage Example (SQLite in-memory sync):**
 
 .. code-block:: python
 
@@ -414,7 +445,7 @@ Cachier supports a generic SQL backend via SQLAlchemy, allowing you to use SQLit
     def my_func(x):
         return x * 2
 
-**Usage Example (PostgreSQL):**
+**Usage Example (PostgreSQL sync):**
 
 .. code-block:: python
 
@@ -422,7 +453,19 @@ Cachier supports a generic SQL backend via SQLAlchemy, allowing you to use SQLit
     def my_func(x):
         return x * 2
 
-**Usage Example (MySQL):**
+**Usage Example (PostgreSQL async):**
+
+.. code-block:: python
+
+    import asyncio
+    from cachier import cachier
+
+    @cachier(backend="sql", sql_engine="postgresql+psycopg://user:pass@localhost/dbname")
+    async def my_async_func(x: int) -> int:
+        await asyncio.sleep(0.01)
+        return x * 2
+
+**Usage Example (MySQL sync):**
 
 .. code-block:: python
 
@@ -479,6 +522,31 @@ Cachier supports Redis-based caching for high-performance scenarios. Redis provi
     @cachier(backend="redis", redis_client=get_redis_client)
     def my_func(x):
         return x * 2
+
+**Usage Example (Async Redis client with async function):**
+
+.. code-block:: python
+
+    import asyncio
+    import redis.asyncio as redis
+    from cachier import cachier
+
+    async def get_redis_client():
+        return redis.Redis(host="localhost", port=6379, db=0)
+
+    @cachier(backend="redis", redis_client=get_redis_client)
+    async def my_async_func(x: int) -> int:
+        await asyncio.sleep(0.01)
+        return x * 2
+
+    async def main():
+        val1 = await my_async_func(3)
+        val2 = await my_async_func(3)
+        assert val1 == val2
+
+    asyncio.run(main())
+
+**Note:** An async ``redis_client`` callable is supported only for async cached functions.
 
 **Configuration Options:**
 
