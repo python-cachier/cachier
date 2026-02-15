@@ -101,10 +101,9 @@ class _SQLCore(_BaseCore):
         if engine is not None:
             with suppress(Exception):
                 engine.dispose()
-        async_engine = getattr(self, "_async_engine", None)
-        if async_engine is not None:
-            with suppress(Exception):
-                async_engine.sync_engine.dispose()
+        # AsyncEngine disposal is intentionally not handled here because
+        # it requires awaiting ``engine.dispose()`` and the engine may be
+        # externally owned (e.g. by caller-managed fixtures).
 
     def has_async_engine(self) -> bool:
         """Return whether this core was configured with an AsyncEngine."""
