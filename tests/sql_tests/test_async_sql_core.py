@@ -290,3 +290,16 @@ async def test_async_sql_set_entry_fallback_without_on_conflict(async_sql_engine
     assert entry.value == "val2"
 
     await core.aclear_cache()
+
+
+@pytest.mark.sql
+@pytest.mark.asyncio
+async def test_async_sql_aclear_being_calculated_on_wrapper(async_sql_engine):
+    """func_wrapper.aclear_being_calculated() delegates to core.aclear_being_calculated()."""
+
+    @cachier(backend="sql", sql_engine=async_sql_engine)
+    async def _cached(x: int) -> int:
+        return x
+
+    await _cached.aclear_being_calculated()
+    await _cached.aclear_cache()
