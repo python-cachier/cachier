@@ -33,7 +33,7 @@ from cachier import cachier
 from cachier.config import CacheEntry
 from cachier.cores.base import RecalculationNeeded
 from cachier.cores.mongo import _MongoCore
-from tests.mongo_tests.conftest import _test_mongetter
+from tests.mongo_tests.helpers import _test_mongetter
 
 # === Enables testing vs a real MongoDB instance ===
 

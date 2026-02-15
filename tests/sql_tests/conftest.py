@@ -5,8 +5,6 @@ import os
 import pytest
 import pytest_asyncio
 
-SQL_CONN_STR = os.environ.get("SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:")
-
 
 def _get_async_sql_conn_str() -> str:
     conn_str = os.environ.get("SQLALCHEMY_DATABASE_URL")
@@ -21,6 +19,7 @@ def _get_async_sql_conn_str() -> str:
 
 @pytest_asyncio.fixture
 async def async_sql_engine():
+    """Yield a fresh async SQL engine for each test, disposed after use."""
     pytest.importorskip("sqlalchemy.ext.asyncio")
     pytest.importorskip("greenlet")
     from sqlalchemy.ext.asyncio import create_async_engine

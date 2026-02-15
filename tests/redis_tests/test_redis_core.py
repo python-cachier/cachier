@@ -16,7 +16,7 @@ from cachier import cachier
 from cachier.core import _is_async_redis_client
 from cachier.cores.redis import MissingRedisClient, _RedisCore
 from tests.redis_tests.clients import _SyncInMemoryRedis
-from tests.redis_tests.conftest import REDIS_AVAILABLE, _get_test_redis_client, _test_redis_getter, redis
+from tests.redis_tests.helpers import REDIS_AVAILABLE, _get_test_redis_client, _test_redis_getter, redis
 
 # === Redis core tests ===
 
