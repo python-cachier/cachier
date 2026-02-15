@@ -63,86 +63,37 @@ class _AsyncInMemoryRedis:
         return self._data.get(key, {}).get(field)
 
 
-class _SyncInMemoryRedis:
-    """Minimal sync Redis-like client exposing required hash operations."""
-
-    def hgetall(self, key: str) -> dict[bytes, object]:
-        return {}
-
-    def hset(self, key: str, field=None, value=None, mapping=None, **kwargs):
-        return None
-
-    def keys(self, pattern: str) -> list[str]:
-        return []
-
-    def delete(self, *keys: str):
-        return None
-
-    def hget(self, key: str, field: str):
-        return None
-
-
 @pytest.mark.redis
-@pytest.mark.asyncio
-async def test_async_redis_requires_async_client_callable():
-    pytest.importorskip("redis")
-
-    def get_sync_client():
-        return _AsyncInMemoryRedis()
-
-    with pytest.raises(
-        TypeError,
-        match="Async cached functions with Redis backend require an async redis_client callable.",
-    ):
-
-        @cachier(backend="redis", redis_client=get_sync_client)
-        async def async_cached_redis_requires_async_callable(_: int) -> int:
-            return 1
-
-
-@pytest.mark.redis
-@pytest.mark.asyncio
-async def test_async_redis_requires_async_client_instance():
-    pytest.importorskip("redis")
-
-    with pytest.raises(
-        TypeError,
-        match="Async cached functions with Redis backend require an async Redis client.",
-    ):
-
-        @cachier(backend="redis", redis_client=_SyncInMemoryRedis())
-        async def async_cached_redis_requires_async_client(_: int) -> int:
-            return 1
-
-
-@pytest.mark.redis
-def test_async_redis_rejects_async_client_callable_for_sync_function():
+def test_async_client_over_sync_async_functions():
     pytest.importorskip("redis")
 
     async def get_async_client():
         return _AsyncInMemoryRedis()
 
-    with pytest.raises(
-        TypeError,
-        match="Async redis_client callable requires an async cached function.",
-    ):
+    @cachier(backend="redis", redis_client=get_async_client)
+    async def async_cached_redis_with_async_client(_: int) -> int:
+        return 1
+
+    assert callable(async_cached_redis_with_async_client)
+
+    with pytest.raises(TypeError, match="Async redis_client callable requires an async cached function."):
 
         @cachier(backend="redis", redis_client=get_async_client)
-        def sync_cached_redis_requires_sync_callable(_: int) -> int:
+        def sync_cached_redis_with_async_client(_: int) -> int:
             return 1
 
+    async_client_instance = _AsyncInMemoryRedis()
 
-@pytest.mark.redis
-def test_async_redis_rejects_async_client_instance_for_sync_function():
-    pytest.importorskip("redis")
+    @cachier(backend="redis", redis_client=async_client_instance)
+    async def async_cached_redis_with_async_client_instance(_: int) -> int:
+        return 1
 
-    with pytest.raises(
-        TypeError,
-        match="Async Redis client requires an async cached function.",
-    ):
+    assert callable(async_cached_redis_with_async_client_instance)
 
-        @cachier(backend="redis", redis_client=_AsyncInMemoryRedis())
-        def sync_cached_redis_requires_sync_client(_: int) -> int:
+    with pytest.raises(TypeError, match="Async Redis client requires an async cached function."):
+
+        @cachier(backend="redis", redis_client=async_client_instance)
+        def sync_cached_redis_with_async_client_instance(_: int) -> int:
             return 1
 
 

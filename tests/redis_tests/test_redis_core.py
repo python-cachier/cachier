@@ -14,6 +14,7 @@ import pytest
 from birch import Birch  # type: ignore[import-not-found]
 
 from cachier import cachier
+from cachier.core import _is_async_redis_client
 from cachier.cores.redis import MissingRedisClient, _RedisCore
 
 # === Enables testing vs a real Redis instance ===
@@ -187,6 +188,59 @@ def test_redis_connection():
         print("✓ Redis connection and basic operations working")
     except Exception as e:
         pytest.fail(f"Redis connection test failed: {e}")
+
+
+@pytest.mark.redis
+def test_sync_client_over_sync_async_functions():
+    assert _is_async_redis_client(None) is False
+
+    @cachier(backend="redis", redis_client=_test_redis_getter)
+    def sync_cached_redis_with_sync_client(_: int) -> int:
+        return 1
+
+    assert callable(sync_cached_redis_with_sync_client)
+
+    with pytest.raises(
+        TypeError,
+        match="Async cached functions with Redis backend require an async redis_client callable.",
+    ):
+
+        @cachier(backend="redis", redis_client=_test_redis_getter)
+        async def async_cached_redis_with_sync_client(_: int) -> int:
+            return 1
+
+    class _SyncInMemoryRedis:
+        def hgetall(self, key):
+            return {}
+
+        def hset(self, key, field=None, value=None, mapping=None, **kwargs):
+            return None
+
+        def keys(self, pattern):
+            return []
+
+        def delete(self, *keys):
+            return None
+
+        def hget(self, key, field):
+            return None
+
+    sync_client_instance = _SyncInMemoryRedis()
+
+    @cachier(backend="redis", redis_client=sync_client_instance)
+    def sync_cached_redis_with_sync_client_instance(_: int) -> int:
+        return 1
+
+    assert callable(sync_cached_redis_with_sync_client_instance)
+
+    with pytest.raises(
+        TypeError,
+        match="Async cached functions with Redis backend require an async Redis client.",
+    ):
+
+        @cachier(backend="redis", redis_client=sync_client_instance)
+        async def async_cached_redis_with_sync_client_instance(_: int) -> int:
+            return 1
 
 
 @pytest.mark.redis

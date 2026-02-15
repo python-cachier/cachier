@@ -10,43 +10,6 @@ from cachier import cachier
 
 @pytest.mark.memory
 @pytest.mark.asyncio
-async def test_async_memory_core_allows_sync_and_async_functions():
-    """Ensure memory core can decorate both sync and async functions."""
-    sync_call_count = 0
-    async_call_count = 0
-
-    @cachier(backend="memory")
-    def sync_memory_cached(x: int) -> int:
-        nonlocal sync_call_count
-        sync_call_count += 1
-        return x + sync_call_count
-
-    @cachier(backend="memory")
-    async def async_memory_cached(x: int) -> int:
-        nonlocal async_call_count
-        async_call_count += 1
-        await asyncio.sleep(0.01)
-        return x + async_call_count
-
-    sync_memory_cached.clear_cache()
-    async_memory_cached.clear_cache()
-    try:
-        sync_val1 = sync_memory_cached(2)
-        sync_val2 = sync_memory_cached(2)
-        assert sync_val1 == sync_val2 == 3
-        assert sync_call_count == 1
-
-        async_val1 = await async_memory_cached(2)
-        async_val2 = await async_memory_cached(2)
-        assert async_val1 == async_val2 == 3
-        assert async_call_count == 1
-    finally:
-        sync_memory_cached.clear_cache()
-        async_memory_cached.clear_cache()
-
-
-@pytest.mark.memory
-@pytest.mark.asyncio
 async def test_async_memory_basic_caching():
     """Ensure async functions are cached by the memory backend."""
     call_count = 0
