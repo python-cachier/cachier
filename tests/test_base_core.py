@@ -118,3 +118,28 @@ async def test_base_core_async_default_wrappers():
     stale_after = timedelta(seconds=5)
     await core.adelete_stale_entries(stale_after)
     assert core.last_deleted_stale_after == stale_after
+
+
+@pytest.mark.asyncio
+async def test_base_core_aget_entry_fallback():
+    """_BaseCore.aget_entry falls back to get_entry when not overridden."""
+    core = ConcreteCachingCore(hash_func=None, wait_for_calc_timeout=None)
+    core.set_func(lambda x: x)
+
+    sync_result = core.get_entry((1,), {})
+    async_result = await core.aget_entry((1,), {})
+
+    assert async_result == sync_result
+
+
+@pytest.mark.asyncio
+async def test_base_core_aset_entry_fallback():
+    """_BaseCore.aset_entry falls back to set_entry when not overridden."""
+    core = ConcreteCachingCore(hash_func=None, wait_for_calc_timeout=None)
+    core.set_func(lambda x: x)
+
+    key = core.get_key((7,), {})
+    result = await core.aset_entry(key, 99)
+
+    assert result is True
+    assert core.last_set == (key, 99)
