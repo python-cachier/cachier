@@ -1,7 +1,5 @@
 """Pytest configuration and shared fixtures for cachier tests."""
 
-from contextlib import suppress
-
 import pytest
 
 
@@ -17,18 +15,8 @@ def cleanup_mongo_clients():
 
     # Cleanup after all tests
     try:
-        from tests.mongo_tests.test_mongo_core import _test_mongetter
+        from tests.mongo_tests.conftest import _cleanup_mongo_client
     except ImportError:
         return
 
-    client = getattr(_test_mongetter, "client", None)
-    if client is None:
-        return
-
-    # pymongo_inmemory leaves an internal health-check client open.
-    with suppress(Exception):
-        client._mongod._client.close()  # type: ignore[attr-defined]
-    client.close()
-
-    # Remove the client attribute so future test runs start fresh
-    delattr(_test_mongetter, "client")
+    _cleanup_mongo_client()
