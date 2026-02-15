@@ -342,6 +342,37 @@ def test_callable_hash_param():
 
 
 @pytest.mark.mongo
+def test_mongo_core_ensure_collection_collection_set_not_verified():
+    """Cover line 69 False branch: collection already set when entering lock."""
+    core = _MongoCore(hash_func=None, mongetter=_test_mongetter, wait_for_calc_timeout=10)
+    core.set_func(lambda x: x)
+
+    # Set mongo_collection manually so it is not None, but leave _index_verified as False.
+    # Outer guard: mongo_collection is not None AND _index_verified is False → enters lock.
+    # Line 69: False (collection already set) → skips fetching collection.
+    # Line 72: True (not verified) → verifies index.
+    core.mongo_collection = _test_mongetter()
+    collection = core._ensure_collection()
+    assert collection is not None
+    assert core._index_verified is True
+
+
+@pytest.mark.mongo
+def test_mongo_core_ensure_collection_index_verified_inside_lock():
+    """Cover line 72 False branch: _index_verified is True when inside lock."""
+    core = _MongoCore(hash_func=None, mongetter=_test_mongetter, wait_for_calc_timeout=10)
+    core.set_func(lambda x: x)
+
+    # Set _index_verified = True, but leave mongo_collection as None.
+    # Outer guard: mongo_collection is None → enters lock.
+    # Line 69: True (collection is None) → fetches collection.
+    # Line 72: False (_index_verified is already True) → skips index check.
+    core._index_verified = True
+    collection = core._ensure_collection()
+    assert collection is not None
+
+
+@pytest.mark.mongo
 def test_mongo_core_set_entry_should_not_store():
     core = _MongoCore(hash_func=None, mongetter=_test_mongetter, wait_for_calc_timeout=10)
     core.set_func(lambda x: x)
