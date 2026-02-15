@@ -8,52 +8,32 @@ import pytest
 
 from cachier import cachier
 from cachier.cores.mongo import _MongoCore
-from tests.mongo_tests.test_mongo_core import _test_mongetter
 
 
 class _AsyncInMemoryMongoCollection:
-    """Minimal in-memory Mongo-like collection for async and sync path tests."""
+    """Minimal in-memory Mongo-like collection with async methods only."""
 
     def __init__(self):
         self._docs: dict[tuple[str, str], dict[str, object]] = {}
         self._indexes: dict[str, dict[str, object]] = {}
-        self.await_index_information = False
-        self.await_create_indexes = False
-        self.await_find_one = False
-        self.await_update_one = False
-        self.await_update_many = False
-        self.await_delete_many = False
 
-    @staticmethod
-    async def _awaitable(value):
-        return value
+    async def index_information(self):
+        return dict(self._indexes)
 
-    def index_information(self):
-        result = dict(self._indexes)
-        if self.await_index_information:
-            return _AsyncInMemoryMongoCollection._awaitable(result)
-        return result
-
-    def create_indexes(self, indexes):
+    async def create_indexes(self, indexes):
         for index in indexes:
             document = getattr(index, "document", {})
             name = document.get("name", "index") if isinstance(document, dict) else "index"
             self._indexes[name] = {"name": name}
-        result = list(self._indexes)
-        if self.await_create_indexes:
-            return _AsyncInMemoryMongoCollection._awaitable(result)
-        return result
+        return list(self._indexes)
 
-    def find_one(self, query=None, **kwargs):
+    async def find_one(self, query=None, **kwargs):
         if query is None:
             query = kwargs.get("filter", {})
         doc = self._docs.get((query.get("func"), query.get("key")))
-        result = None if doc is None else dict(doc)
-        if self.await_find_one:
-            return _AsyncInMemoryMongoCollection._awaitable(result)
-        return result
+        return None if doc is None else dict(doc)
 
-    def update_one(self, query=None, update=None, upsert=False, **kwargs):
+    async def update_one(self, query=None, update=None, upsert=False, **kwargs):
         if query is None:
             query = kwargs.get("filter", {})
         if update is None:
@@ -62,19 +42,13 @@ class _AsyncInMemoryMongoCollection:
         doc = self._docs.get(key)
         if doc is None:
             if not upsert:
-                result = {"matched_count": 0}
-                if self.await_update_one:
-                    return _AsyncInMemoryMongoCollection._awaitable(result)
-                return result
+                return {"matched_count": 0}
             doc = {"func": query.get("func"), "key": query.get("key")}
         doc.update(update.get("$set", {}))
         self._docs[key] = doc
-        result = {"matched_count": 1}
-        if self.await_update_one:
-            return _AsyncInMemoryMongoCollection._awaitable(result)
-        return result
+        return {"matched_count": 1}
 
-    def update_many(self, query=None, update=None, **kwargs):
+    async def update_many(self, query=None, update=None, **kwargs):
         if query is None:
             query = kwargs.get("filter", {})
         if update is None:
@@ -87,12 +61,9 @@ class _AsyncInMemoryMongoCollection:
                 continue
             doc.update(update.get("$set", {}))
             changed += 1
-        result = {"matched_count": changed}
-        if self.await_update_many:
-            return _AsyncInMemoryMongoCollection._awaitable(result)
-        return result
+        return {"matched_count": changed}
 
-    def delete_many(self, query=None, **kwargs):
+    async def delete_many(self, query=None, **kwargs):
         if query is None:
             query = kwargs.get("filter", {})
         deleted = 0
@@ -106,14 +77,15 @@ class _AsyncInMemoryMongoCollection:
                     continue
             del self._docs[key]
             deleted += 1
-        result = {"deleted_count": deleted}
-        if self.await_delete_many:
-            return _AsyncInMemoryMongoCollection._awaitable(result)
-        return result
+        return {"deleted_count": deleted}
 
 
-def _build_mongo_core(mongetter):
-    """Build a Mongo core configured for direct core tests."""
+def _build_async_mongo_core(collection: _AsyncInMemoryMongoCollection) -> _MongoCore:
+    """Build a Mongo core configured for async core tests."""
+
+    async def mongetter():
+        return collection
+
     core = _MongoCore(hash_func=None, mongetter=mongetter, wait_for_calc_timeout=10)
 
     def _func(x: int) -> int:
@@ -125,10 +97,39 @@ def _build_mongo_core(mongetter):
 
 @pytest.mark.mongo
 @pytest.mark.asyncio
+async def test_async_mongo_requires_async_mongetter():
+    def sync_mongetter():
+        return object()
+
+    with pytest.raises(
+        TypeError,
+        match="Async cached functions with Mongo backend require an async mongetter.",
+    ):
+
+        @cachier(mongetter=sync_mongetter)
+        async def async_cached_mongo_requires_async_mongetter(_: int) -> int:
+            return 1
+
+
+@pytest.mark.mongo
+def test_async_mongo_rejects_async_mongetter_for_sync_function():
+    async def async_mongetter():
+        return _AsyncInMemoryMongoCollection()
+
+    with pytest.raises(
+        TypeError,
+        match="Async mongetter requires an async cached function.",
+    ):
+
+        @cachier(mongetter=async_mongetter)
+        def sync_cached_mongo_requires_sync_mongetter(_: int) -> int:
+            return 1
+
+
+@pytest.mark.mongo
+@pytest.mark.asyncio
 async def test_async_mongo_mongetter():
-    base_collection = _test_mongetter()
-    collection = base_collection.database["cachier_async_mongetter"]
-    collection.delete_many({})
+    collection = _AsyncInMemoryMongoCollection()
 
     async def async_mongetter():
         return collection
@@ -142,15 +143,14 @@ async def test_async_mongo_mongetter():
     val2 = await async_cached_mongo(7)
     assert val1 == val2
 
-    assert _MongoCore._INDEX_NAME in collection.index_information()
+    index_info = await collection.index_information()
+    assert _MongoCore._INDEX_NAME in index_info
 
 
 @pytest.mark.mongo
 @pytest.mark.asyncio
 async def test_async_mongo_mongetter_method_args_and_kwargs():
-    base_collection = _test_mongetter()
-    collection = base_collection.database["cachier_async_mongetter_methods"]
-    collection.delete_many({})
+    collection = _AsyncInMemoryMongoCollection()
 
     async def async_mongetter():
         return collection
@@ -171,100 +171,29 @@ async def test_async_mongo_mongetter_method_args_and_kwargs():
     assert val1 == val2 == 1
     assert call_count == 1
 
-    assert _MongoCore._INDEX_NAME in collection.index_information()
-
-
-@pytest.mark.mongo
-def test_sync_mongo_core_ensure_collection_state_branches():
-    collection = _AsyncInMemoryMongoCollection()
-    mongetter_calls = 0
-
-    def mongetter():
-        nonlocal mongetter_calls
-        mongetter_calls += 1
-        return collection
-
-    core = _build_mongo_core(mongetter)
-    assert core._ensure_collection() is collection
-    assert mongetter_calls == 1
-    assert _MongoCore._INDEX_NAME in collection.index_information()
-
-    core._index_verified = False
-    core.mongo_collection = collection
-    assert core._ensure_collection() is collection
-    assert mongetter_calls == 1
-
-    core._index_verified = True
-    core.mongo_collection = None
-    assert core._ensure_collection() is collection
-    assert mongetter_calls == 2
-
-
-@pytest.mark.mongo
-def test_sync_mongo_core_rejects_async_mongetter():
-    async def async_mongetter():
-        return _AsyncInMemoryMongoCollection()
-
-    core = _build_mongo_core(async_mongetter)
-    with pytest.raises(TypeError, match="async mongetter is only supported for async cached functions"):
-        core._ensure_collection()
-
-
-@pytest.mark.mongo
-def test_sync_mongo_core_rejects_awaitable_without_close():
-    class _AwaitableNoClose:
-        def __await__(self):
-            async def _resolve():
-                return _AsyncInMemoryMongoCollection()
-
-            return _resolve().__await__()
-
-    def mongetter():
-        return _AwaitableNoClose()
-
-    core = _build_mongo_core(mongetter)
-    with pytest.raises(TypeError, match="async mongetter is only supported for async cached functions"):
-        core._ensure_collection()
-
-
-@pytest.mark.mongo
-def test_mongo_core_set_entry_should_not_store():
-    core = _build_mongo_core(lambda: _AsyncInMemoryMongoCollection())
-    core._should_store = lambda _value: False
-    assert core.set_entry("ignored", None) is False
+    index_info = await collection.index_information()
+    assert _MongoCore._INDEX_NAME in index_info
 
 
 @pytest.mark.mongo
 @pytest.mark.asyncio
 async def test_async_mongo_core_collection_resolution_and_index_branches():
-    sync_collection = _AsyncInMemoryMongoCollection()
-    sync_collection._indexes[_MongoCore._INDEX_NAME] = {"name": _MongoCore._INDEX_NAME}
-    sync_core = _build_mongo_core(lambda: sync_collection)
+    collection = _AsyncInMemoryMongoCollection()
+    core = _build_async_mongo_core(collection)
 
-    assert await sync_core._ensure_collection_async() is sync_collection
-    sync_core.mongo_collection = None
-    sync_core._index_verified = True
-    assert await sync_core._ensure_collection_async() is sync_collection
+    assert await core._ensure_collection_async() is collection
+    assert _MongoCore._INDEX_NAME in collection._indexes
 
-    async_collection = _AsyncInMemoryMongoCollection()
-    async_collection.await_index_information = True
-    async_collection.await_create_indexes = True
-
-    async def async_mongetter():
-        return async_collection
-
-    async_core = _build_mongo_core(async_mongetter)
-    assert await async_core._ensure_collection_async() is async_collection
-    assert _MongoCore._INDEX_NAME in async_collection._indexes
+    core.mongo_collection = None
+    core._index_verified = True
+    assert await core._ensure_collection_async() is collection
 
 
 @pytest.mark.mongo
 @pytest.mark.asyncio
 async def test_async_mongo_core_entry_read_write_paths():
     collection = _AsyncInMemoryMongoCollection()
-    collection.await_find_one = True
-    collection.await_update_one = True
-    core = _build_mongo_core(lambda: collection)
+    core = _build_async_mongo_core(collection)
 
     assert await core.aset_entry("k1", {"value": 1}) is True
     _, entry = await core.aget_entry_by_key("k1")
@@ -290,10 +219,7 @@ async def test_async_mongo_core_entry_read_write_paths():
 @pytest.mark.asyncio
 async def test_async_mongo_core_mark_clear_and_stale_paths():
     collection = _AsyncInMemoryMongoCollection()
-    collection.await_update_one = True
-    collection.await_update_many = True
-    collection.await_delete_many = True
-    core = _build_mongo_core(lambda: collection)
+    core = _build_async_mongo_core(collection)
 
     await core.aset_entry("stale", 1)
     await core.aset_entry("fresh", 2)
@@ -310,39 +236,3 @@ async def test_async_mongo_core_mark_clear_and_stale_paths():
 
     await core.aclear_cache()
     assert (core._func_str, "fresh") not in collection._docs
-
-
-@pytest.mark.mongo
-@pytest.mark.asyncio
-async def test_async_mongo_core_mark_clear_and_stale_paths_non_awaitable_results():
-    collection = _AsyncInMemoryMongoCollection()
-    core = _build_mongo_core(lambda: collection)
-
-    await core.aset_entry("old", 1)
-    await core.aset_entry("new", 2)
-    collection._docs[(core._func_str, "old")]["time"] = datetime.now() - timedelta(hours=2)
-    collection._docs[(core._func_str, "new")]["time"] = datetime.now()
-
-    await core.amark_entry_being_calculated("new")
-    await core.amark_entry_not_calculated("new")
-    await core.aclear_being_calculated()
-    await core.adelete_stale_entries(timedelta(hours=1))
-    await core.aclear_cache()
-
-    assert collection._docs == {}
-
-
-@pytest.mark.mongo
-def test_mongo_core_delete_stale_entries_sync_path():
-    collection = _AsyncInMemoryMongoCollection()
-    core = _build_mongo_core(lambda: collection)
-
-    assert core.set_entry("stale", 1) is True
-    assert core.set_entry("fresh", 2) is True
-    collection._docs[(core._func_str, "stale")]["time"] = datetime.now() - timedelta(hours=2)
-    collection._docs[(core._func_str, "fresh")]["time"] = datetime.now()
-
-    core.delete_stale_entries(timedelta(hours=1))
-
-    assert (core._func_str, "stale") not in collection._docs
-    assert (core._func_str, "fresh") in collection._docs

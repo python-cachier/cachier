@@ -6,25 +6,74 @@ from datetime import timedelta
 from random import random
 
 import pytest
+import pytest_asyncio
 
 from cachier import cachier
 
-SQL_CONN_STR = os.environ.get("SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:")
+
+def _get_async_sql_conn_str() -> str:
+    conn_str = os.environ.get("SQLALCHEMY_DATABASE_URL")
+    if conn_str is None:
+        pytest.importorskip("aiosqlite")
+        return "sqlite+aiosqlite:///:memory:"
+    if conn_str.startswith("sqlite://") and not conn_str.startswith("sqlite+aiosqlite://"):
+        pytest.importorskip("aiosqlite")
+        return conn_str.replace("sqlite://", "sqlite+aiosqlite://", 1)
+    return conn_str
+
+
+@pytest_asyncio.fixture
+async def async_sql_engine():
+    pytest.importorskip("sqlalchemy.ext.asyncio")
+    pytest.importorskip("greenlet")
+    from sqlalchemy.ext.asyncio import create_async_engine
+
+    engine = create_async_engine(_get_async_sql_conn_str(), future=True)
+    try:
+        yield engine
+    finally:
+        await engine.dispose()
 
 
 @pytest.mark.sql
 @pytest.mark.asyncio
-async def test_async_sql_basic_caching():
+async def test_async_sql_requires_async_engine():
+    with pytest.raises(
+        TypeError,
+        match="Async cached functions with SQL backend require an AsyncEngine sql_engine.",
+    ):
+
+        @cachier(backend="sql", sql_engine="sqlite:///:memory:")
+        async def async_sql_requires_async_engine(_: int) -> int:
+            return 1
+
+
+@pytest.mark.sql
+@pytest.mark.asyncio
+async def test_async_sql_rejects_async_engine_for_sync_function(async_sql_engine):
+    with pytest.raises(
+        TypeError,
+        match="Async SQL engines require an async cached function.",
+    ):
+
+        @cachier(backend="sql", sql_engine=async_sql_engine)
+        def sync_sql_rejects_async_engine(_: int) -> int:
+            return 1
+
+
+@pytest.mark.sql
+@pytest.mark.asyncio
+async def test_async_sql_basic_caching(async_sql_engine):
     call_count = 0
 
-    @cachier(backend="sql", sql_engine=SQL_CONN_STR)
+    @cachier(backend="sql", sql_engine=async_sql_engine)
     async def async_sql_basic(x: int) -> float:
         nonlocal call_count
         call_count += 1
         await asyncio.sleep(0.01)
         return random() + x
 
-    async_sql_basic.clear_cache()
+    await async_sql_basic.aclear_cache()
     call_count = 0
 
     val1 = await async_sql_basic(5)
@@ -32,17 +81,17 @@ async def test_async_sql_basic_caching():
     assert val1 == val2
     assert call_count == 1
 
-    async_sql_basic.clear_cache()
+    await async_sql_basic.aclear_cache()
 
 
 @pytest.mark.sql
 @pytest.mark.asyncio
-async def test_async_sql_next_time_returns_stale_then_updates():
+async def test_async_sql_next_time_returns_stale_then_updates(async_sql_engine):
     call_count = 0
 
     @cachier(
         backend="sql",
-        sql_engine=SQL_CONN_STR,
+        sql_engine=async_sql_engine,
         stale_after=timedelta(seconds=0.5),
         next_time=True,
     )
@@ -52,7 +101,7 @@ async def test_async_sql_next_time_returns_stale_then_updates():
         await asyncio.sleep(0.05)
         return call_count
 
-    async_sql_next_time.clear_cache()
+    await async_sql_next_time.aclear_cache()
     call_count = 0
 
     val1 = await async_sql_next_time(1)
@@ -61,27 +110,26 @@ async def test_async_sql_next_time_returns_stale_then_updates():
     await asyncio.sleep(0.6)
 
     val2 = await async_sql_next_time(1)
-    assert val2 == 1  # stale value returned immediately
+    assert val2 == 1
 
-    # Give the background calculation time to complete and persist.
     await asyncio.sleep(0.2)
     assert call_count >= 2
 
     val3 = await async_sql_next_time(1)
     assert val3 == 2
-    assert call_count == 2  # cached value used, no extra call
+    assert call_count == 2
 
-    async_sql_next_time.clear_cache()
+    await async_sql_next_time.aclear_cache()
 
 
 @pytest.mark.sql
 @pytest.mark.asyncio
-async def test_async_sql_recalculates_after_expiry():
+async def test_async_sql_recalculates_after_expiry(async_sql_engine):
     call_count = 0
 
     @cachier(
         backend="sql",
-        sql_engine=SQL_CONN_STR,
+        sql_engine=async_sql_engine,
         stale_after=timedelta(seconds=0.2),
         next_time=False,
     )
@@ -91,7 +139,7 @@ async def test_async_sql_recalculates_after_expiry():
         await asyncio.sleep(0.01)
         return call_count
 
-    async_sql_expiry.clear_cache()
+    await async_sql_expiry.aclear_cache()
     call_count = 0
 
     val1 = await async_sql_expiry(1)
@@ -105,4 +153,4 @@ async def test_async_sql_recalculates_after_expiry():
     assert val3 == 2
     assert call_count == 2
 
-    async_sql_expiry.clear_cache()
+    await async_sql_expiry.aclear_cache()

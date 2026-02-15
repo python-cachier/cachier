@@ -11,6 +11,52 @@ from cachier import cachier
 @pytest.mark.pickle
 @pytest.mark.asyncio
 @pytest.mark.parametrize("separate_files", [False, True])
+async def test_async_pickle_core_allows_sync_and_async_functions(tmp_path, separate_files):
+    """Ensure pickle core can decorate both sync and async functions."""
+    sync_call_count = 0
+    async_call_count = 0
+
+    @cachier(
+        backend="pickle",
+        cache_dir=tmp_path,
+        separate_files=separate_files,
+    )
+    def sync_pickle_cached(x: int) -> int:
+        nonlocal sync_call_count
+        sync_call_count += 1
+        return x + sync_call_count
+
+    @cachier(
+        backend="pickle",
+        cache_dir=tmp_path,
+        separate_files=separate_files,
+    )
+    async def async_pickle_cached(x: int) -> int:
+        nonlocal async_call_count
+        async_call_count += 1
+        await asyncio.sleep(0.01)
+        return x + async_call_count
+
+    sync_pickle_cached.clear_cache()
+    async_pickle_cached.clear_cache()
+    try:
+        sync_val1 = sync_pickle_cached(4)
+        sync_val2 = sync_pickle_cached(4)
+        assert sync_val1 == sync_val2 == 5
+        assert sync_call_count == 1
+
+        async_val1 = await async_pickle_cached(4)
+        async_val2 = await async_pickle_cached(4)
+        assert async_val1 == async_val2 == 5
+        assert async_call_count == 1
+    finally:
+        sync_pickle_cached.clear_cache()
+        async_pickle_cached.clear_cache()
+
+
+@pytest.mark.pickle
+@pytest.mark.asyncio
+@pytest.mark.parametrize("separate_files", [False, True])
 async def test_async_pickle_basic_caching(tmp_path, separate_files):
     """Ensure async functions are cached by the pickle backend."""
     call_count = 0

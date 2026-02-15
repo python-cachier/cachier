@@ -156,6 +156,13 @@ def _pop_kwds_with_deprecation(kwds, name: str, default_value: bool):
     return kwds.pop(name, default_value)
 
 
+def _is_async_redis_client(client: Any) -> bool:
+    if client is None:
+        return False
+    method_names = ("hgetall", "hset", "keys", "delete", "hget")
+    return all(inspect.iscoroutinefunction(getattr(client, name, None)) for name in method_names)
+
+
 def cachier(
     hash_func: Optional[HashFunc] = None,
     hash_params: Optional[HashFunc] = None,
@@ -300,6 +307,42 @@ def cachier(
 
     def _cachier_decorator(func):
         core.set_func(func)
+        is_coroutine = inspect.iscoroutinefunction(func)
+
+        if backend == "mongo":
+            if is_coroutine and not inspect.iscoroutinefunction(mongetter):
+                msg = "Async cached functions with Mongo backend require an async mongetter."
+                raise TypeError(msg)
+            if (not is_coroutine) and inspect.iscoroutinefunction(mongetter):
+                msg = "Async mongetter requires an async cached function."
+                raise TypeError(msg)
+
+        if backend == "redis":
+            if is_coroutine:
+                if callable(redis_client):
+                    if not inspect.iscoroutinefunction(redis_client):
+                        msg = "Async cached functions with Redis backend require an async redis_client callable."
+                        raise TypeError(msg)
+                elif not _is_async_redis_client(redis_client):
+                    msg = "Async cached functions with Redis backend require an async Redis client."
+                    raise TypeError(msg)
+            else:
+                if callable(redis_client) and inspect.iscoroutinefunction(redis_client):
+                    msg = "Async redis_client callable requires an async cached function."
+                    raise TypeError(msg)
+                if _is_async_redis_client(redis_client):
+                    msg = "Async Redis client requires an async cached function."
+                    raise TypeError(msg)
+
+        if backend == "sql":
+            sql_core = core
+            assert isinstance(sql_core, _SQLCore)  # noqa: S101
+            if is_coroutine and not sql_core.has_async_engine():
+                msg = "Async cached functions with SQL backend require an AsyncEngine sql_engine."
+                raise TypeError(msg)
+            if (not is_coroutine) and sql_core.has_async_engine():
+                msg = "Async SQL engines require an async cached function."
+                raise TypeError(msg)
 
         last_cleanup = datetime.min
         cleanup_lock = threading.Lock()
@@ -501,8 +544,6 @@ def cachier(
         # argument.
         # For async functions, we create an async wrapper that calls
         # _call_async.
-        is_coroutine = inspect.iscoroutinefunction(func)
-
         if is_coroutine:
 
             @wraps(func)
@@ -521,6 +562,14 @@ def cachier(
         def _clear_being_calculated():
             """Mark all entries in this cache as not being calculated."""
             core.clear_being_calculated()
+
+        async def _aclear_cache():
+            """Clear the cache asynchronously."""
+            await core.aclear_cache()
+
+        async def _aclear_being_calculated():
+            """Mark all entries in this cache as not being calculated asynchronously."""
+            await core.aclear_being_calculated()
 
         def _cache_dpath():
             """Return the path to the cache dir, if exists; None if not."""
@@ -541,6 +590,8 @@ def cachier(
 
         func_wrapper.clear_cache = _clear_cache
         func_wrapper.clear_being_calculated = _clear_being_calculated
+        func_wrapper.aclear_cache = _aclear_cache
+        func_wrapper.aclear_being_calculated = _aclear_being_calculated
         func_wrapper.cache_dpath = _cache_dpath
         func_wrapper.precache_value = _precache_value
         return func_wrapper
