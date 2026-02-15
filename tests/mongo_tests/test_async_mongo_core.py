@@ -106,6 +106,12 @@ async def test_async_mongo_core_collection_resolution_and_index_branches():
     core._index_verified = True
     assert await core._ensure_collection_async() is collection
 
+    # Reset _index_verified to force re-entry into the index-check block.
+    # The index already exists in the collection → covers the False branch at line 94.
+    core._index_verified = False
+    assert await core._ensure_collection_async() is collection
+    assert core._index_verified is True
+
 
 @pytest.mark.mongo
 @pytest.mark.asyncio
