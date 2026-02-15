@@ -7,6 +7,7 @@ from random import random
 import pytest
 
 from cachier import cachier
+from cachier.cores.sql import _SQLCore
 
 
 @pytest.mark.sql
@@ -118,3 +119,46 @@ async def test_async_sql_recalculates_after_expiry(async_sql_engine):
     assert call_count == 2
 
     await async_sql_expiry.aclear_cache()
+
+
+@pytest.mark.sql
+@pytest.mark.asyncio
+async def test_sqlcore_sync_session_requires_sync_engine(async_sql_engine):
+    core = _SQLCore(hash_func=None, sql_engine=async_sql_engine)
+    with pytest.raises(TypeError, match="Sync SQL operations require a sync SQLAlchemy Engine."):
+        core._get_sync_session()
+
+
+@pytest.mark.sql
+@pytest.mark.asyncio
+async def test_sqlcore_async_session_requires_async_engine():
+    core = _SQLCore(hash_func=None, sql_engine="sqlite:///:memory:")
+    core.set_func(lambda x: x)
+    with pytest.raises(TypeError, match="Async SQL operations require an AsyncEngine sql_engine."):
+        await core._get_async_session()
+
+
+@pytest.mark.sql
+@pytest.mark.asyncio
+async def test_sqlcore_async_session_creates_tables_once(async_sql_engine):
+    core = _SQLCore(hash_func=None, sql_engine=async_sql_engine)
+    core.set_func(lambda x: x)
+
+    class _CountingAsyncEngine:
+        def __init__(self, engine):
+            self._engine = engine
+            self.begin_calls = 0
+
+        def begin(self):
+            self.begin_calls += 1
+            return self._engine.begin()
+
+    counting_engine = _CountingAsyncEngine(async_sql_engine)
+    core._async_engine = counting_engine  # type: ignore[assignment]
+
+    assert core._async_tables_created is False
+    first_session = await core._get_async_session()
+    assert core._async_tables_created is True
+    second_session = await core._get_async_session()
+    assert first_session is second_session
+    assert counting_engine.begin_calls == 1

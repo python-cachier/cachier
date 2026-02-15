@@ -10,12 +10,10 @@ def cleanup_mongo_clients():
     This fixture runs automatically after all tests complete.
 
     """
-    # Let tests run
     yield
 
-    # Cleanup after all tests
     try:
-        from tests.mongo_tests.conftest import _cleanup_mongo_client
+        from tests.mongo_tests.helpers import _cleanup_mongo_client
     except ImportError:
         return
 

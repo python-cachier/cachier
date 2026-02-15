@@ -1,3 +1,4 @@
+import os
 import queue
 import sys
 import threading
@@ -11,7 +12,8 @@ import pytest
 from cachier import cachier
 from cachier.cores.base import RecalculationNeeded
 from cachier.cores.sql import _SQLCore
-from tests.sql_tests.conftest import SQL_CONN_STR
+
+SQL_CONN_STR = os.environ.get("SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:")
 
 
 @pytest.mark.sql
@@ -257,6 +259,12 @@ def test_sqlcore_importerror_without_sqlalchemy(monkeypatch):
 def test_sqlcore_invalid_sql_engine():
     with pytest.raises(ValueError, match="sql_engine must be a SQLAlchemy Engine"):
         _SQLCore(hash_func=None, sql_engine=12345)
+
+
+@pytest.mark.sql
+def test_sqlcore_callable_must_return_engine():
+    with pytest.raises(ValueError, match="sql_engine must be a SQLAlchemy Engine"):
+        _SQLCore(hash_func=None, sql_engine=lambda: "not-an-engine")
 
 
 @pytest.mark.sql
