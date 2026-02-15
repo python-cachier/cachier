@@ -2,65 +2,13 @@
 
 import asyncio
 from datetime import datetime, timedelta
-from fnmatch import fnmatch
 from random import random
 
 import pytest
 
 from cachier import cachier
 from cachier.cores.redis import _RedisCore
-
-
-class _AsyncInMemoryRedis:
-    """Minimal async Redis-like client implementing required hash operations."""
-
-    def __init__(self):
-        self._data: dict[str, dict[str, object]] = {}
-        self.fail_hgetall = False
-        self.fail_hset = False
-        self.fail_keys = False
-        self.fail_delete = False
-        self.fail_hget = False
-
-    async def hgetall(self, key: str) -> dict[bytes, object]:
-        if self.fail_hgetall:
-            raise Exception("hgetall failed")
-        raw = self._data.get(key, {})
-        res: dict[bytes, object] = {}
-        for k, v in raw.items():
-            res[k.encode("utf-8")] = v.encode("utf-8") if isinstance(v, str) else v
-        return res
-
-    async def hset(self, key: str, field=None, value=None, mapping=None, **kwargs):
-        if self.fail_hset:
-            raise Exception("hset failed")
-        if key not in self._data:
-            self._data[key] = {}
-
-        if mapping is not None:
-            self._data[key].update(mapping)
-            return
-        if field is not None and value is not None:
-            self._data[key][field] = value
-            return
-        if kwargs:
-            self._data[key].update(kwargs)
-
-    async def keys(self, pattern: str) -> list[str]:
-        if self.fail_keys:
-            raise Exception("keys failed")
-        return [key for key in self._data if fnmatch(key, pattern)]
-
-    async def delete(self, *keys: str):
-        if self.fail_delete:
-            raise Exception("delete failed")
-        for key in keys:
-            self._data.pop(key, None)
-
-    async def hget(self, key: str, field: str):
-        if self.fail_hget:
-            raise Exception("hget failed")
-        return self._data.get(key, {}).get(field)
+from tests.redis_tests.clients import _AsyncInMemoryRedis
 
 
 @pytest.mark.redis

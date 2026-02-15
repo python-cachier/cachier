@@ -3,17 +3,13 @@
 # standard library imports
 import datetime
 import hashlib
-import platform
 import queue
-import sys
 import threading
 from random import random
 from time import sleep
-from urllib.parse import quote_plus
 
 # third-party imports
 import pytest
-from birch import Birch  # type: ignore[import-not-found]
 
 try:
     import pandas as pd
@@ -24,7 +20,6 @@ except (ImportError, ModuleNotFoundError):
 try:
     import pymongo
     from pymongo.errors import OperationFailure
-    from pymongo.mongo_client import MongoClient
 
     from cachier.cores.mongo import MissingMongetter
 except (ImportError, ModuleNotFoundError):
@@ -33,83 +28,14 @@ except (ImportError, ModuleNotFoundError):
     OperationFailure = None
     MissingMongetter = None
 
-    # define a mock MongoClient class that will raise an exception
-    # on init, warning that pymongo is not installed
-    class MongoClient:
-        """Mock MongoClient class raising ImportError on missing pymongo."""
-
-        def __init__(self, *args, **kwargs):
-            """Initialize the mock MongoClient."""
-            raise ImportError("pymongo is not installed!")
-
-
-try:
-    from pymongo_inmemory import MongoClient as InMemoryMongoClient
-except (ImportError, ModuleNotFoundError):
-
-    class InMemoryMongoClient:
-        """Mock InMemoryMongoClient class.
-
-        Raises an ImportError on missing pymongo_inmemory.
-
-        """
-
-        def __init__(self, *args, **kwargs):
-            """Initialize the mock InMemoryMongoClient."""
-            raise ImportError("pymongo_inmemory is not installed!")
-
-    print("pymongo_inmemory is not installed; in-memory MongoDB tests will fail!")
-
 # local imports
 from cachier import cachier
 from cachier.config import CacheEntry
 from cachier.cores.base import RecalculationNeeded
 from cachier.cores.mongo import _MongoCore
+from tests.mongo_tests.conftest import _test_mongetter
 
 # === Enables testing vs a real MongoDB instance ===
-
-
-class CfgKey:
-    HOST = "TEST_HOST"
-    PORT = "TEST_PORT"
-    # UNAME = "TEST_USERNAME"
-    # PWD = "TEST_PASSWORD"
-    # DB = "TEST_DB"
-    TEST_VS_DOCKERIZED_MONGO = "TEST_VS_DOCKERIZED_MONGO"
-
-
-CFG = Birch(namespace="cachier", defaults={CfgKey.TEST_VS_DOCKERIZED_MONGO: False})
-
-
-# URI_TEMPLATE = "mongodb://myUser:myPassword@localhost:27017/"
-URI_TEMPLATE = "mongodb://{host}:{port}?retrywrites=true&w=majority"
-
-
-def _get_cachier_db_mongo_client():
-    host = quote_plus(CFG[CfgKey.HOST])
-    port = quote_plus(CFG[CfgKey.PORT])
-    # uname = quote_plus(CFG[CfgKey.UNAME])
-    # pwd = quote_plus(CFG[CfgKey.PWD])
-    # db = quote_plus(CFG[CfgKey.DB])
-    uri = f"mongodb://{host}:{port}?retrywrites=true&w=majority"
-    return MongoClient(uri)
-
-
-_COLLECTION_NAME = f"cachier_test_{platform.system()}_{'.'.join(map(str, sys.version_info[:3]))}"
-
-
-def _test_mongetter():
-    if not hasattr(_test_mongetter, "client"):
-        if str(CFG.mget(CfgKey.TEST_VS_DOCKERIZED_MONGO)).lower() == "true":
-            print("Using live MongoDB instance for testing.")
-            _test_mongetter.client = _get_cachier_db_mongo_client()
-        else:
-            print("Using in-memory MongoDB instance for testing.")
-            _test_mongetter.client = InMemoryMongoClient()
-    db_obj = _test_mongetter.client["cachier_test"]
-    if _COLLECTION_NAME not in db_obj.list_collection_names():
-        db_obj.create_collection(_COLLECTION_NAME)
-    return db_obj[_COLLECTION_NAME]
 
 
 # === Mongo core tests ===

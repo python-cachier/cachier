@@ -1,4 +1,3 @@
-import os
 import queue
 import sys
 import threading
@@ -12,8 +11,7 @@ import pytest
 from cachier import cachier
 from cachier.cores.base import RecalculationNeeded
 from cachier.cores.sql import _SQLCore
-
-SQL_CONN_STR = os.environ.get("SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:")
+from tests.sql_tests.conftest import SQL_CONN_STR
 
 
 @pytest.mark.sql
