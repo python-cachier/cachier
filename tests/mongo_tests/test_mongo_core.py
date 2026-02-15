@@ -133,6 +133,24 @@ def test_information():
 
 
 @pytest.mark.mongo
+def test_sync_client_over_sync_async_functions():
+    @cachier(mongetter=_test_mongetter)
+    def sync_cached_mongo_with_sync_client(_: int) -> int:
+        return 1
+
+    assert callable(sync_cached_mongo_with_sync_client)
+
+    with pytest.raises(
+        TypeError,
+        match="Async cached functions with Mongo backend require an async mongetter.",
+    ):
+
+        @cachier(mongetter=_test_mongetter)
+        async def async_cached_mongo_with_sync_client(_: int) -> int:
+            return 1
+
+
+@pytest.mark.mongo
 def test_mongo_index_creation():
     """Basic Mongo core functionality."""
 
@@ -395,3 +413,41 @@ def test_callable_hash_param():
     value_b = _params_with_dataframe(1, df=df_b)
 
     assert value_a == value_b  # same content --> same key
+
+
+@pytest.mark.mongo
+def test_mongo_core_set_entry_should_not_store():
+    core = _MongoCore(hash_func=None, mongetter=_test_mongetter, wait_for_calc_timeout=10)
+    core.set_func(lambda x: x)
+    core._should_store = lambda _value: False
+    assert core.set_entry("ignored", None) is False
+
+
+@pytest.mark.mongo
+def test_mongo_core_delete_stale_entries():
+    core = _MongoCore(hash_func=None, mongetter=_test_mongetter, wait_for_calc_timeout=10)
+    core.set_func(lambda x: x)
+    core.clear_cache()
+    try:
+        assert core.set_entry("stale", 1) is True
+        assert core.set_entry("fresh", 2) is True
+
+        collection = _test_mongetter()
+        collection.update_one(
+            {"func": core._func_str, "key": "stale"},
+            {"$set": {"time": datetime.datetime.now() - datetime.timedelta(hours=2)}},
+            upsert=False,
+        )
+        collection.update_one(
+            {"func": core._func_str, "key": "fresh"},
+            {"$set": {"time": datetime.datetime.now()}},
+            upsert=False,
+        )
+
+        core.delete_stale_entries(datetime.timedelta(hours=1))
+        _, stale_entry = core.get_entry_by_key("stale")
+        _, fresh_entry = core.get_entry_by_key("fresh")
+        assert stale_entry is None
+        assert fresh_entry is not None
+    finally:
+        core.clear_cache()

@@ -37,27 +37,17 @@ async def async_sql_engine():
 
 @pytest.mark.sql
 @pytest.mark.asyncio
-async def test_async_sql_requires_async_engine():
-    with pytest.raises(
-        TypeError,
-        match="Async cached functions with SQL backend require an AsyncEngine sql_engine.",
-    ):
+async def test_async_client_over_sync_async_functions(async_sql_engine):
+    @cachier(backend="sql", sql_engine=async_sql_engine)
+    async def async_sql_with_async_engine(_: int) -> int:
+        return 1
 
-        @cachier(backend="sql", sql_engine="sqlite:///:memory:")
-        async def async_sql_requires_async_engine(_: int) -> int:
-            return 1
+    assert callable(async_sql_with_async_engine)
 
-
-@pytest.mark.sql
-@pytest.mark.asyncio
-async def test_async_sql_rejects_async_engine_for_sync_function(async_sql_engine):
-    with pytest.raises(
-        TypeError,
-        match="Async SQL engines require an async cached function.",
-    ):
+    with pytest.raises(TypeError, match="Async SQL engines require an async cached function."):
 
         @cachier(backend="sql", sql_engine=async_sql_engine)
-        def sync_sql_rejects_async_engine(_: int) -> int:
+        def sync_sql_with_async_engine(_: int) -> int:
             return 1
 
 

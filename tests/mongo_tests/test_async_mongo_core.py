@@ -96,30 +96,17 @@ def _build_async_mongo_core(collection: _AsyncInMemoryMongoCollection) -> _Mongo
 
 
 @pytest.mark.mongo
-@pytest.mark.asyncio
-async def test_async_mongo_requires_async_mongetter():
-    def sync_mongetter():
-        return object()
-
-    with pytest.raises(
-        TypeError,
-        match="Async cached functions with Mongo backend require an async mongetter.",
-    ):
-
-        @cachier(mongetter=sync_mongetter)
-        async def async_cached_mongo_requires_async_mongetter(_: int) -> int:
-            return 1
-
-
-@pytest.mark.mongo
-def test_async_mongo_rejects_async_mongetter_for_sync_function():
+def test_async_client_over_sync_async_functions():
     async def async_mongetter():
         return _AsyncInMemoryMongoCollection()
 
-    with pytest.raises(
-        TypeError,
-        match="Async mongetter requires an async cached function.",
-    ):
+    @cachier(mongetter=async_mongetter)
+    async def async_cached_mongo_with_async_client(_: int) -> int:
+        return 1
+
+    assert callable(async_cached_mongo_with_async_client)
+
+    with pytest.raises(TypeError, match="Async mongetter requires an async cached function."):
 
         @cachier(mongetter=async_mongetter)
         def sync_cached_mongo_requires_sync_mongetter(_: int) -> int:

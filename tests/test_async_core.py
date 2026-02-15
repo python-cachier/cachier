@@ -344,6 +344,19 @@ class TestSyncCompatibility:
 
         sync_func.clear_cache()
 
+    @pytest.mark.memory
+    @pytest.mark.asyncio
+    async def test_sync_wrapper_exposes_async_clear_methods(self):
+        """Ensure sync wrappers expose async clear helpers."""
+
+        @cachier(backend="memory")
+        def sync_func(x):
+            return x
+
+        assert sync_func(1) == 1
+        await sync_func.aclear_being_calculated()
+        await sync_func.aclear_cache()
+
 
 # =============================================================================
 # Argument Handling Tests
