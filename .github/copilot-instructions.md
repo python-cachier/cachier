@@ -309,4 +309,44 @@ if __name__ == "__main__":
 
 ______________________________________________________________________
 
+## 10. Contributing Guidelines
+
+### Issue Reporting
+
+- Before opening a new issue, search existing issues to avoid duplicates
+- Use issue templates when available
+- Provide clear reproduction steps for bugs
+- Include environment details (OS, Python version, backend used)
+- For feature requests, explain the use case and expected behavior
+
+### Pull Request Process
+
+1. **Fork and Branch**: Fork the repository and create a feature branch from `master`
+2. **Make Changes**: Follow the code style guidelines and add tests for new features
+3. **Run Tests**: Ensure all tests pass locally before submitting
+   - Run `pytest` for all tests
+   - Run `pytest -m <backend>` for backend-specific tests
+   - Run `ruff check .` for linting
+   - Run `mypy src/cachier/` for type checking
+4. **Commit**: Use clear, descriptive commit messages
+5. **Submit PR**: Reference related issues and provide a clear description of changes
+6. **Code Review**: Address review feedback and re-run tests as needed
+7. **Merge**: Maintainers will merge once approved
+
+### Development Workflow
+
+- **Branch Naming**: Use descriptive names like `feature/add-redis-backend`, `fix/mongo-connection-issue`, `docs/update-readme`
+- **Commit Messages**: Use clear, present-tense messages (e.g., "Add Redis backend support", not "Added Redis backend support")
+- **Testing**: Always add tests for new features or bug fixes
+- **Documentation**: Update README.rst and docstrings for new features
+
+### Release Process
+
+- Releases are managed by maintainers
+- Version numbers follow semantic versioning (MAJOR.MINOR.PATCH)
+- Release notes are generated from PR titles and descriptions
+- PyPI releases are automated via GitHub Actions
+
+______________________________________________________________________
+
 Thank you for contributing to Cachier! These guidelines help ensure a robust, maintainable, and user-friendly package for everyone.
