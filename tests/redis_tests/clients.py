@@ -150,3 +150,28 @@ class _AsyncInMemoryRedis:
         if self.fail_hget:
             raise Exception("hget failed")
         return self._data.get(key, {}).get(field)
+
+
+class _PartialAsyncRedis:
+    """Invalid sync/async Redis client with only some async methods."""
+
+    async def hgetall(self, key):
+        return {}
+
+    async def hset(self, key, **kwargs):
+        pass
+
+    def keys(self, pattern):
+        return []
+
+    def delete(self, *keys):
+        pass
+
+    def hget(self, key, field):
+        return None
+
+
+class _NoMethodsObject:
+    """Plain object with no Redis methods at all."""
+
+    pass

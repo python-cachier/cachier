@@ -7,8 +7,14 @@ from random import random
 import pytest
 
 from cachier import cachier
+from cachier.core import _is_async_redis_client
 from cachier.cores.redis import _RedisCore
-from tests.redis_tests.clients import _AsyncInMemoryRedis
+from tests.redis_tests.clients import (
+    _AsyncInMemoryRedis,
+    _NoMethodsObject,
+    _PartialAsyncRedis,
+    _SyncInMemoryRedis,
+)
 
 
 @pytest.mark.redis
@@ -282,3 +288,12 @@ async def test_async_redis_core_delete_stale_entries_paths():
     client.fail_keys = True
     with pytest.warns(UserWarning, match="Redis delete_stale_entries failed"):
         await core.adelete_stale_entries(timedelta(hours=1))
+
+
+@pytest.mark.redis
+def test_is_async_redis_client_detection():
+    """_is_async_redis_client correctly identifies async vs non-async clients."""
+    assert _is_async_redis_client(_AsyncInMemoryRedis()) is True
+    assert _is_async_redis_client(_SyncInMemoryRedis()) is False
+    assert _is_async_redis_client(_PartialAsyncRedis()) is False
+    assert _is_async_redis_client(_NoMethodsObject()) is False
