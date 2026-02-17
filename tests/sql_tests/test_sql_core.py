@@ -17,7 +17,7 @@ SQL_CONN_STR = os.environ.get("SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:")
 
 
 @pytest.mark.sql
-def test_sync_client_over_sync_async_functions(monkeypatch):
+def test_sync_client_over_sync_async_functions(async_sql_engine):
     @cachier(backend="sql", sql_engine=SQL_CONN_STR)
     def sync_sql_with_sync_engine(_: int) -> int:
         return 1
@@ -33,11 +33,10 @@ def test_sync_client_over_sync_async_functions(monkeypatch):
         async def async_sql_with_sync_engine(_: int) -> int:
             return 1
 
-    monkeypatch.setattr(_SQLCore, "has_async_engine", lambda _self: True)
     with pytest.raises(TypeError, match="Async SQL engines require an async cached function."):
 
-        @cachier(backend="sql", sql_engine=SQL_CONN_STR)
-        def sync_sql_with_forced_async_engine(_: int) -> int:
+        @cachier(backend="sql", sql_engine=async_sql_engine)
+        def sync_sql_with_async_engine(_: int) -> int:
             return 1
 
 
