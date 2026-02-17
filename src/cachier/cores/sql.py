@@ -66,7 +66,7 @@ class _SQLCore(_BaseCore):
     def __init__(
         self,
         hash_func: Optional[HashFunc],
-        sql_engine: Optional[Union[str, "Engine", "AsyncEngine", Callable[[], "Engine"]]],
+        sql_engine: Optional[Union[str, "Engine", "AsyncEngine", Callable[[], "Engine"], Callable[[], "AsyncEngine"]]],
         wait_for_calc_timeout: Optional[int] = None,
         entry_size_limit: Optional[int] = None,
     ):
