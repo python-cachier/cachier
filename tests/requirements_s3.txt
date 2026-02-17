@@ -1,0 +1,4 @@
+-r requirements.txt
+
+boto3>=1.26.0
+moto[s3]>=5.0.0

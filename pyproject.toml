@@ -49,10 +49,34 @@ dependencies = [
   "pympler>=1",
   "watchdog>=2.3.1",
 ]
-urls.Source = "https://github.com/python-cachier/cachier"
+
+[project.optional-dependencies]
+mongo = [
+  "pymongo>=4.0",
+]
+redis = [
+  "redis>=4.0.0",
+]
+sql = [
+  "sqlalchemy>=2.0",
+]
+s3 = [
+  "boto3>=1.26.0",
+]
+all = [
+  "boto3>=1.26.0",
+  "pymongo>=4.0",
+  "redis>=4.0.0",
+  "sqlalchemy>=2.0",
+]
+
+[project.urls]
+Source = "https://github.com/python-cachier/cachier"
+
 # --- setuptools ---
 
-scripts.cachier = "cachier.__main__:cli"
+[project.scripts]
+cachier = "cachier.__main__:cli"
 
 [tool.setuptools]
 include-package-data = true
@@ -176,6 +200,7 @@ markers = [
   "pickle: test the pickle core",
   "redis: test the Redis core",
   "sql: test the SQL core",
+  "s3: test the S3 core",
   "maxage: test the max_age functionality",
   "asyncio: marks tests as async",
 ]
