@@ -83,6 +83,29 @@ def test_pickle_core_keywords(separate_files):
     _takes_2_seconds_decorated.clear_cache()
 
 
+@pytest.mark.pickle
+@pytest.mark.parametrize("separate_files", [True, False])
+def test_sync_client_over_sync_async_functions(tmp_path, separate_files):
+    @cachier(
+        backend="pickle",
+        cache_dir=tmp_path,
+        separate_files=separate_files,
+    )
+    def sync_pickle_with_sync_client(_: int) -> int:
+        return 1
+
+    @cachier(
+        backend="pickle",
+        cache_dir=tmp_path,
+        separate_files=separate_files,
+    )
+    async def async_pickle_with_sync_client(_: int) -> int:
+        return 1
+
+    assert callable(sync_pickle_with_sync_client)
+    assert callable(async_pickle_with_sync_client)
+
+
 SECONDS_IN_DELTA = 3
 DELTA = timedelta(seconds=SECONDS_IN_DELTA)
 

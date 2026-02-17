@@ -2,65 +2,53 @@
 
 import asyncio
 from datetime import datetime, timedelta
-from fnmatch import fnmatch
 from random import random
 
 import pytest
 
 from cachier import cachier
+from cachier.core import _is_async_redis_client
 from cachier.cores.redis import _RedisCore
+from tests.redis_tests.clients import (
+    _AsyncInMemoryRedis,
+    _NoMethodsObject,
+    _PartialAsyncRedis,
+    _SyncInMemoryRedis,
+)
 
 
-class _AsyncInMemoryRedis:
-    """Minimal async Redis-like client implementing required hash operations."""
+@pytest.mark.redis
+def test_async_client_over_sync_async_functions():
+    pytest.importorskip("redis")
 
-    def __init__(self):
-        self._data: dict[str, dict[str, object]] = {}
-        self.fail_hgetall = False
-        self.fail_hset = False
-        self.fail_keys = False
-        self.fail_delete = False
-        self.fail_hget = False
+    async def get_async_client():
+        return _AsyncInMemoryRedis()
 
-    async def hgetall(self, key: str) -> dict[bytes, object]:
-        if self.fail_hgetall:
-            raise Exception("hgetall failed")
-        raw = self._data.get(key, {})
-        res: dict[bytes, object] = {}
-        for k, v in raw.items():
-            res[k.encode("utf-8")] = v.encode("utf-8") if isinstance(v, str) else v
-        return res
+    @cachier(backend="redis", redis_client=get_async_client)
+    async def async_cached_redis_with_async_client(_: int) -> int:
+        return 1
 
-    async def hset(self, key: str, field=None, value=None, mapping=None, **kwargs):
-        if self.fail_hset:
-            raise Exception("hset failed")
-        if key not in self._data:
-            self._data[key] = {}
+    assert callable(async_cached_redis_with_async_client)
 
-        if mapping is not None:
-            self._data[key].update(mapping)
-            return
-        if field is not None and value is not None:
-            self._data[key][field] = value
-            return
-        if kwargs:
-            self._data[key].update(kwargs)
+    with pytest.raises(TypeError, match="Async redis_client callable requires an async cached function."):
 
-    async def keys(self, pattern: str) -> list[str]:
-        if self.fail_keys:
-            raise Exception("keys failed")
-        return [key for key in self._data if fnmatch(key, pattern)]
+        @cachier(backend="redis", redis_client=get_async_client)
+        def sync_cached_redis_with_async_client(_: int) -> int:
+            return 1
 
-    async def delete(self, *keys: str):
-        if self.fail_delete:
-            raise Exception("delete failed")
-        for key in keys:
-            self._data.pop(key, None)
+    async_client_instance = _AsyncInMemoryRedis()
 
-    async def hget(self, key: str, field: str):
-        if self.fail_hget:
-            raise Exception("hget failed")
-        return self._data.get(key, {}).get(field)
+    @cachier(backend="redis", redis_client=async_client_instance)
+    async def async_cached_redis_with_async_client_instance(_: int) -> int:
+        return 1
+
+    assert callable(async_cached_redis_with_async_client_instance)
+
+    with pytest.raises(TypeError, match="Async Redis client requires an async cached function."):
+
+        @cachier(backend="redis", redis_client=async_client_instance)
+        def sync_cached_redis_with_async_client_instance(_: int) -> int:
+            return 1
 
 
 @pytest.mark.redis
@@ -126,7 +114,6 @@ def _build_async_core(client: _AsyncInMemoryRedis) -> _RedisCore:
 async def test_async_redis_core_helpers_and_client_resolution():
     pytest.importorskip("redis")
 
-    assert await _RedisCore._maybe_await("plain") == "plain"
     assert _RedisCore._get_bool_field({"processing": "true"}, "processing") is True
 
     client = _AsyncInMemoryRedis()
@@ -142,8 +129,7 @@ async def test_async_redis_core_helpers_and_client_resolution():
         wait_for_calc_timeout=10,
     )
     core_with_async_factory.set_func(lambda x: x)
-    with pytest.raises(TypeError, match="async redis_client is only supported for async cached functions"):
-        core_with_async_factory._resolve_redis_client()
+    assert await core_with_async_factory._resolve_redis_client_async() is client
 
 
 @pytest.mark.redis
@@ -302,3 +288,12 @@ async def test_async_redis_core_delete_stale_entries_paths():
     client.fail_keys = True
     with pytest.warns(UserWarning, match="Redis delete_stale_entries failed"):
         await core.adelete_stale_entries(timedelta(hours=1))
+
+
+@pytest.mark.redis
+def test_is_async_redis_client_detection():
+    """_is_async_redis_client correctly identifies async vs non-async clients."""
+    assert _is_async_redis_client(_AsyncInMemoryRedis()) is True
+    assert _is_async_redis_client(_SyncInMemoryRedis()) is False
+    assert _is_async_redis_client(_PartialAsyncRedis()) is False
+    assert _is_async_redis_client(_NoMethodsObject()) is False

@@ -22,6 +22,7 @@ try:
         update,
     )
     from sqlalchemy.engine import Engine
+    from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
     from sqlalchemy.orm import declarative_base, sessionmaker
     from sqlalchemy.pool import StaticPool
 
@@ -58,10 +59,14 @@ class _SQLCore(_BaseCore):
 
     """
 
+    _ENGINE_ERROR = (
+        "sql_engine must be a SQLAlchemy Engine, AsyncEngine, connection string, or callable returning an Engine."
+    )
+
     def __init__(
         self,
         hash_func: Optional[HashFunc],
-        sql_engine: Optional[Union[str, "Engine", Callable[[], "Engine"]]],
+        sql_engine: Optional[Union[str, "Engine", "AsyncEngine", Callable[[], "Engine"], Callable[[], "AsyncEngine"]]],
         wait_for_calc_timeout: Optional[int] = None,
         entry_size_limit: Optional[int] = None,
     ):
@@ -72,18 +77,37 @@ class _SQLCore(_BaseCore):
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=entry_size_limit,
         )
-        self._engine = self._resolve_engine(sql_engine)
-        self._Session = sessionmaker(bind=self._engine)
-        Base.metadata.create_all(self._engine)
         self._lock = threading.RLock()
         self._func_str = None
 
+        self._engine: Optional[Engine] = None
+        self._Session = None
+
+        self._async_engine: Optional[AsyncEngine] = None
+        self._AsyncSession = None
+        self._async_tables_created = False
+
+        if isinstance(sql_engine, AsyncEngine):
+            self._async_engine = sql_engine
+            self._AsyncSession = sessionmaker(bind=self._async_engine, class_=AsyncSession, expire_on_commit=False)
+            return
+
+        self._engine = self._resolve_engine(sql_engine)
+        self._Session = sessionmaker(bind=self._engine)
+        Base.metadata.create_all(self._engine)
+
     def __del__(self) -> None:
         engine = getattr(self, "_engine", None)
-        if engine is None:
-            return
-        with suppress(Exception):
-            engine.dispose()
+        if engine is not None:
+            with suppress(Exception):
+                engine.dispose()
+        # AsyncEngine disposal is intentionally not handled here because
+        # it requires awaiting ``engine.dispose()`` and the engine may be
+        # externally owned (e.g. by caller-managed fixtures).
+
+    def has_async_engine(self) -> bool:
+        """Return whether this core was configured with an AsyncEngine."""
+        return self._async_engine is not None
 
     def _resolve_engine(self, sql_engine):
         if isinstance(sql_engine, Engine):
@@ -98,15 +122,35 @@ class _SQLCore(_BaseCore):
                 )
             return create_engine(sql_engine, future=True)
         if callable(sql_engine):
-            return sql_engine()
-        raise ValueError("sql_engine must be a SQLAlchemy Engine, connection string, or callable returning an Engine.")
+            resolved = sql_engine()
+            if isinstance(resolved, Engine):
+                return resolved
+            raise ValueError(_SQLCore._ENGINE_ERROR)
+        raise ValueError(_SQLCore._ENGINE_ERROR)
+
+    def _get_sync_session(self):
+        if self._Session is None:
+            msg = "Sync SQL operations require a sync SQLAlchemy Engine."
+            raise TypeError(msg)
+        return self._Session
+
+    async def _get_async_session(self):
+        if self._AsyncSession is None or self._async_engine is None:
+            msg = "Async SQL operations require an AsyncEngine sql_engine."
+            raise TypeError(msg)
+        if not self._async_tables_created:
+            async with self._async_engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            self._async_tables_created = True
+        return self._AsyncSession
 
     def set_func(self, func):
         super().set_func(func)
         self._func_str = _get_func_str(func)
 
     def get_entry_by_key(self, key: str) -> Tuple[str, Optional[CacheEntry]]:
-        with self._lock, self._Session() as session:
+        session_factory = self._get_sync_session()
+        with self._lock, session_factory() as session:
             row = session.execute(
                 select(CacheTable).where(
                     and_(
@@ -127,10 +171,40 @@ class _SQLCore(_BaseCore):
             )
             return key, entry
 
+    async def aget_entry(self, args, kwds) -> Tuple[str, Optional[CacheEntry]]:
+        key = self.get_key(args, kwds)
+        return await self.aget_entry_by_key(key)
+
+    async def aget_entry_by_key(self, key: str) -> Tuple[str, Optional[CacheEntry]]:
+        session_factory = await self._get_async_session()
+        async with session_factory() as session:
+            row = (
+                await session.execute(
+                    select(CacheTable).where(
+                        and_(
+                            CacheTable.function_id == self._func_str,
+                            CacheTable.key == key,
+                        )
+                    )
+                )
+            ).scalar_one_or_none()
+            if not row:
+                return key, None
+            value = pickle.loads(row.value) if row.value is not None else None
+            entry = CacheEntry(
+                value=value,
+                time=cast(datetime, row.timestamp),
+                stale=cast(bool, row.stale),
+                _processing=cast(bool, row.processing),
+                _completed=cast(bool, row.completed),
+            )
+            return key, entry
+
     def set_entry(self, key: str, func_res: Any) -> bool:
         if not self._should_store(func_res):
             return False
-        with self._lock, self._Session() as session:
+        session_factory = self._get_sync_session()
+        with self._lock, session_factory() as session:
             thebytes = pickle.dumps(func_res)
             now = datetime.now()
             base_insert = insert(CacheTable)
@@ -151,7 +225,6 @@ class _SQLCore(_BaseCore):
                 if hasattr(base_insert, "on_conflict_do_update")
                 else None
             )
-            # Fallback for non-SQLite/Postgres: try update, else insert
             if stmt:
                 session.execute(stmt)
             else:
@@ -185,8 +258,69 @@ class _SQLCore(_BaseCore):
             session.commit()
         return True
 
+    async def aset_entry(self, key: str, func_res: Any) -> bool:
+        if not self._should_store(func_res):
+            return False
+        session_factory = await self._get_async_session()
+        async with session_factory() as session:
+            thebytes = pickle.dumps(func_res)
+            now = datetime.now()
+            base_insert = insert(CacheTable)
+            stmt = (
+                base_insert.values(
+                    id=f"{self._func_str}:{key}",
+                    function_id=self._func_str,
+                    key=key,
+                    value=thebytes,
+                    timestamp=now,
+                    stale=False,
+                    processing=False,
+                    completed=True,
+                ).on_conflict_do_update(
+                    index_elements=[CacheTable.function_id, CacheTable.key],
+                    set_={"value": thebytes, "timestamp": now, "stale": False, "processing": False, "completed": True},
+                )
+                if hasattr(base_insert, "on_conflict_do_update")
+                else None
+            )
+            if stmt:
+                await session.execute(stmt)
+            else:
+                row = (
+                    await session.execute(
+                        select(CacheTable).where(
+                            and_(
+                                CacheTable.function_id == self._func_str,
+                                CacheTable.key == key,
+                            )
+                        )
+                    )
+                ).scalar_one_or_none()
+                if row:
+                    await session.execute(
+                        update(CacheTable)
+                        .where(and_(CacheTable.function_id == self._func_str, CacheTable.key == key))
+                        .values(value=thebytes, timestamp=now, stale=False, processing=False, completed=True)
+                    )
+                else:
+                    session.add(
+                        CacheTable(
+                            id=f"{self._func_str}:{key}",
+                            function_id=self._func_str,
+                            key=key,
+                            value=thebytes,
+                            timestamp=now,
+                            stale=False,
+                            processing=False,
+                            completed=True,
+                        )
+                    )
+            await session.commit()
+        return True
+
     def mark_entry_being_calculated(self, key: str) -> None:
-        with self._lock, self._Session() as session:
+        session_factory = self._get_sync_session()
+        with self._lock, session_factory() as session:
             row = session.execute(
                 select(CacheTable).where(
                     and_(
@@ -216,8 +350,43 @@ class _SQLCore(_BaseCore):
                 )
             session.commit()
 
+    async def amark_entry_being_calculated(self, key: str) -> None:
+        session_factory = await self._get_async_session()
+        async with session_factory() as session:
+            row = (
+                await session.execute(
+                    select(CacheTable).where(
+                        and_(
+                            CacheTable.function_id == self._func_str,
+                            CacheTable.key == key,
+                        )
+                    )
+                )
+            ).scalar_one_or_none()
+            if row:
+                await session.execute(
+                    update(CacheTable)
+                    .where(and_(CacheTable.function_id == self._func_str, CacheTable.key == key))
+                    .values(processing=True)
+                )
+            else:
+                session.add(
+                    CacheTable(
+                        id=f"{self._func_str}:{key}",
+                        function_id=self._func_str,
+                        key=key,
+                        value=None,
+                        timestamp=datetime.now(),
+                        stale=False,
+                        processing=True,
+                        completed=False,
+                    )
+                )
+            await session.commit()
+
     def mark_entry_not_calculated(self, key: str) -> None:
-        with self._lock, self._Session() as session:
+        session_factory = self._get_sync_session()
+        with self._lock, session_factory() as session:
             session.execute(
                 update(CacheTable)
                 .where(and_(CacheTable.function_id == self._func_str, CacheTable.key == key))
@@ -225,12 +394,23 @@ class _SQLCore(_BaseCore):
             )
             session.commit()
 
+    async def amark_entry_not_calculated(self, key: str) -> None:
+        session_factory = await self._get_async_session()
+        async with session_factory() as session:
+            await session.execute(
+                update(CacheTable)
+                .where(and_(CacheTable.function_id == self._func_str, CacheTable.key == key))
+                .values(processing=False)
+            )
+            await session.commit()
+
     def wait_on_entry_calc(self, key: str) -> Any:
         import time
 
         time_spent = 0
+        session_factory = self._get_sync_session()
         while True:
-            with self._lock, self._Session() as session:
+            with self._lock, session_factory() as session:
                 row = session.execute(
                     select(CacheTable).where(and_(CacheTable.function_id == self._func_str, CacheTable.key == key))
                 ).scalar_one_or_none()
@@ -243,12 +423,20 @@ class _SQLCore(_BaseCore):
             self.check_calc_timeout(time_spent)
 
     def clear_cache(self) -> None:
-        with self._lock, self._Session() as session:
+        session_factory = self._get_sync_session()
+        with self._lock, session_factory() as session:
             session.execute(delete(CacheTable).where(CacheTable.function_id == self._func_str))
             session.commit()
 
+    async def aclear_cache(self) -> None:
+        session_factory = await self._get_async_session()
+        async with session_factory() as session:
+            await session.execute(delete(CacheTable).where(CacheTable.function_id == self._func_str))
+            await session.commit()
+
     def clear_being_calculated(self) -> None:
-        with self._lock, self._Session() as session:
+        session_factory = self._get_sync_session()
+        with self._lock, session_factory() as session:
             session.execute(
                 update(CacheTable)
                 .where(and_(CacheTable.function_id == self._func_str, CacheTable.processing))
@@ -256,10 +444,21 @@ class _SQLCore(_BaseCore):
             )
             session.commit()
 
+    async def aclear_being_calculated(self) -> None:
+        session_factory = await self._get_async_session()
+        async with session_factory() as session:
+            await session.execute(
+                update(CacheTable)
+                .where(and_(CacheTable.function_id == self._func_str, CacheTable.processing))
+                .values(processing=False)
+            )
+            await session.commit()
+
     def delete_stale_entries(self, stale_after: timedelta) -> None:
         """Delete stale entries from the SQL cache."""
         threshold = datetime.now() - stale_after
-        with self._lock, self._Session() as session:
+        session_factory = self._get_sync_session()
+        with self._lock, session_factory() as session:
             session.execute(
                 delete(CacheTable).where(
                     and_(
@@ -269,3 +468,18 @@ class _SQLCore(_BaseCore):
                 )
             )
             session.commit()
+
+    async def adelete_stale_entries(self, stale_after: timedelta) -> None:
+        """Delete stale entries from the SQL cache asynchronously."""
+        threshold = datetime.now() - stale_after
+        session_factory = await self._get_async_session()
+        async with session_factory() as session:
+            await session.execute(
+                delete(CacheTable).where(
+                    and_(
+                        CacheTable.function_id == self._func_str,
+                        CacheTable.timestamp < threshold,
+                    )
+                )
+            )
+            await session.commit()

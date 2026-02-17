@@ -328,8 +328,11 @@ By default, ``cachier`` does not cache ``None`` values. You can override this be
 Cachier Cores
 =============
 
+
 Pickle Core
 -----------
+
+**Sync/Async Support:** Both sync and async functions are supported with no additional setup. Async operations are internally delegated to the sync implementation, so no async-specific configuration is needed.
 
 The default core for Cachier is pickle based, meaning each function will store its cache in a separate pickle file in the ``~/.cachier`` directory. Naturally, this kind of cache is both machine-specific and user-specific.
 
@@ -369,6 +372,12 @@ You can get the fully qualified path to the directory of cache files used by ``c
 
 MongoDB Core
 ------------
+
+**Sync/Async Support:** Both sync and async functions are supported, but the ``mongetter`` callable type must match the decorated function:
+
+- **Sync functions** require a sync ``mongetter`` (a regular callable returning a ``pymongo.Collection``).
+- **Async functions** require an async ``mongetter`` (a coroutine callable returning an async collection, e.g. via ``motor`` or ``pymongo.asynchronous``). Passing a sync ``mongetter`` to an async function raises ``TypeError``.
+
 You can set a MongoDB-based cache by assigning ``mongetter`` with a callable that returns a ``pymongo.Collection`` object with writing permissions:
 
 **Usage Example (MongoDB sync):**
@@ -404,8 +413,6 @@ You can set a MongoDB-based cache by assigning ``mongetter`` with a callable tha
         await asyncio.sleep(0.01)
         return x * 2
 
-**Note:** An async ``mongetter`` callable is supported only for async cached functions.
-
 This allows you to have a cross-machine, albeit slower, cache. This functionality requires that the installation of the ``pymongo`` python package.
 
 In certain cases the MongoDB backend might leave a deadlock behind, blocking all subsequent requests from being processed. If you encounter this issue, supply the ``wait_for_calc_timeout`` with a reasonable number of seconds; calls will then wait at most this number of seconds before triggering a recalculation.
@@ -418,6 +425,8 @@ In certain cases the MongoDB backend might leave a deadlock behind, blocking all
 Memory Core
 -----------
 
+**Sync/Async Support:** Both sync and async functions are supported with no additional setup. Async operations are internally delegated to the sync implementation, so no async-specific configuration is needed.
+
 You can set an in-memory cache by assigning the ``backend`` parameter with ``'memory'``:
 
 .. code-block:: python
@@ -428,6 +437,11 @@ Note, however, that ``cachier``'s in-memory core is simple, and has no monitorin
 
 SQLAlchemy (SQL) Core
 ---------------------
+
+**Sync/Async Support:** Both sync and async functions are supported, but the ``sql_engine`` type must match the decorated function:
+
+- **Sync functions** require a sync ``Engine`` (or a connection string / callable that resolves to one).
+- **Async functions** require a SQLAlchemy ``AsyncEngine`` (e.g. created with ``create_async_engine``). Passing a sync engine to an async function raises ``TypeError``, and passing an async engine to a sync function also raises ``TypeError``.
 
 **Note:** The SQL core requires SQLAlchemy to be installed. It is not installed by default with cachier. To use the SQL backend, run::
 
@@ -475,6 +489,11 @@ Cachier supports a generic SQL backend via SQLAlchemy, allowing you to use SQLit
 
 Redis Core
 ----------
+
+**Sync/Async Support:** Both sync and async functions are supported, but the ``redis_client`` callable type must match the decorated function:
+
+- **Sync functions** require a sync ``redis.Redis`` client or a sync callable returning one.
+- **Async functions** require an async callable returning a ``redis.asyncio.Redis`` client. Passing a sync callable to an async function raises ``TypeError``.
 
 **Note:** The Redis core requires the redis package to be installed. It is not installed by default with cachier. To use the Redis backend, run::
 
@@ -546,8 +565,6 @@ Cachier supports Redis-based caching for high-performance scenarios. Redis provi
 
     asyncio.run(main())
 
-**Note:** An async ``redis_client`` callable is supported only for async cached functions.
-
 **Configuration Options:**
 
 - ``sql_engine``: SQLAlchemy connection string, Engine, or callable returning an Engine.
@@ -570,6 +587,50 @@ Cachier supports Redis-based caching for high-performance scenarios. Redis provi
 - Thread/process safety is handled via transactions and row-level locks
 - Value serialization uses ``pickle``. **Warning:** `pickle` can execute arbitrary code during deserialization if the cache database is compromised. Ensure the cache is stored securely and consider using safer serialization methods like `json` if security is a concern.
 - For best performance, ensure your DB supports row-level locking
+
+
+Core Sync/Async Compatibility
+------------------------------
+
+The table below summarises sync and async function support across all cachier cores.
+Cores marked as *delegated* run async operations on top of the sync implementation
+(no event loop or async driver is required). Cores marked as *native* use dedicated
+async drivers and require the client or engine type to match the decorated function.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 12 12 50
+
+   * - Core
+     - Sync
+     - Async
+     - Constraint
+   * - **Pickle**
+     - Yes
+     - Yes (delegated)
+     - None. No special configuration needed for async functions.
+   * - **Memory**
+     - Yes
+     - Yes (delegated)
+     - None. No special configuration needed for async functions.
+   * - **MongoDB**
+     - Yes
+     - Yes (native)
+     - ``mongetter`` must be a sync callable for sync functions and an async callable
+       for async functions. Passing a sync ``mongetter`` to an async function raises
+       ``TypeError``.
+   * - **SQL**
+     - Yes
+     - Yes (native)
+     - ``sql_engine`` must be a sync ``Engine`` (or connection string) for sync
+       functions and a SQLAlchemy ``AsyncEngine`` for async functions. A type mismatch
+       in either direction raises ``TypeError``.
+   * - **Redis**
+     - Yes
+     - Yes (native)
+     - ``redis_client`` must be a sync client or sync callable for sync functions and
+       an async callable returning a ``redis.asyncio.Redis`` client for async
+       functions. Passing a sync callable to an async function raises ``TypeError``.
 
 
 Contributing

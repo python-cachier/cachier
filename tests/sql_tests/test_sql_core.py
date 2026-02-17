@@ -17,6 +17,30 @@ SQL_CONN_STR = os.environ.get("SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:")
 
 
 @pytest.mark.sql
+def test_sync_client_over_sync_async_functions(async_sql_engine):
+    @cachier(backend="sql", sql_engine=SQL_CONN_STR)
+    def sync_sql_with_sync_engine(_: int) -> int:
+        return 1
+
+    assert callable(sync_sql_with_sync_engine)
+
+    with pytest.raises(
+        TypeError,
+        match="Async cached functions with SQL backend require an AsyncEngine sql_engine.",
+    ):
+
+        @cachier(backend="sql", sql_engine=SQL_CONN_STR)
+        async def async_sql_with_sync_engine(_: int) -> int:
+            return 1
+
+    with pytest.raises(TypeError, match="Async SQL engines require an async cached function."):
+
+        @cachier(backend="sql", sql_engine=async_sql_engine)
+        def sync_sql_with_async_engine(_: int) -> int:
+            return 1
+
+
+@pytest.mark.sql
 def test_sql_core_basic():
     @cachier(backend="sql", sql_engine=SQL_CONN_STR)
     def f(x, y):
@@ -234,6 +258,12 @@ def test_sqlcore_importerror_without_sqlalchemy(monkeypatch):
 def test_sqlcore_invalid_sql_engine():
     with pytest.raises(ValueError, match="sql_engine must be a SQLAlchemy Engine"):
         _SQLCore(hash_func=None, sql_engine=12345)
+
+
+@pytest.mark.sql
+def test_sqlcore_callable_must_return_engine():
+    with pytest.raises(ValueError, match="sql_engine must be a SQLAlchemy Engine"):
+        _SQLCore(hash_func=None, sql_engine=lambda: "not-an-engine")
 
 
 @pytest.mark.sql

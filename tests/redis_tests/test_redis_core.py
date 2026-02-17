@@ -11,154 +11,12 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pandas as pd
 import pytest
-from birch import Birch  # type: ignore[import-not-found]
 
 from cachier import cachier
+from cachier.core import _is_async_redis_client
 from cachier.cores.redis import MissingRedisClient, _RedisCore
-
-# === Enables testing vs a real Redis instance ===
-
-try:
-    import redis
-
-    REDIS_AVAILABLE = True
-except ImportError:
-    REDIS_AVAILABLE = False
-
-
-class CfgKey:
-    HOST = "TEST_REDIS_HOST"
-    PORT = "TEST_REDIS_PORT"
-    DB = "TEST_REDIS_DB"
-    TEST_VS_DOCKERIZED_REDIS = "TEST_VS_DOCKERIZED_REDIS"
-
-
-CFG = Birch(
-    namespace="cachier",
-    defaults={CfgKey.TEST_VS_DOCKERIZED_REDIS: False},
-)
-
-
-def _get_test_redis_client():
-    """Get a Redis client for testing."""
-    if not REDIS_AVAILABLE:
-        pytest.skip("Redis not available")
-
-    if str(CFG.mget(CfgKey.TEST_VS_DOCKERIZED_REDIS)).lower() == "true":
-        print("Using live Redis instance for testing.")
-        host = CFG.get(CfgKey.HOST, "localhost")
-        port = int(CFG.get(CfgKey.PORT, 6379))
-        db = int(CFG.get(CfgKey.DB, 0))
-        try:
-            client = redis.Redis(host=host, port=port, db=db, decode_responses=False)
-            # Test connection
-            client.ping()
-            return client
-        except redis.ConnectionError as e:
-            print(f"Failed to connect to Redis: {e}")
-            pytest.skip("Redis not available")
-    else:
-        print("Using mock Redis for testing.")
-        # For testing without Redis, we'll use a mock
-        return None
-
-
-def _test_redis_getter():
-    """Get Redis client for testing."""
-    client = _get_test_redis_client()
-    if client is None:
-        # Create a mock Redis client for testing
-        # Use a singleton pattern to ensure the same instance is returned
-        if not hasattr(_test_redis_getter, "_mock_client"):
-
-            class MockRedis:
-                def __init__(self):
-                    self.data = {}
-                    print("DEBUG: MockRedis initialized")
-
-                def hgetall(self, key):
-                    result = self.data.get(key, {})
-                    # Convert string values to bytes to match Redis behavior
-                    bytes_result = {}
-                    for k, v in result.items():
-                        if isinstance(v, str):
-                            bytes_result[k.encode("utf-8")] = v.encode("utf-8")
-                        else:
-                            bytes_result[k.encode("utf-8")] = v
-                    print(f"DEBUG: hgetall({key}) = {result} -> {bytes_result}")
-                    return bytes_result
-
-                def hset(self, key, field=None, value=None, mapping=None, **kwargs):
-                    if key not in self.data:
-                        self.data[key] = {}
-
-                    # Handle different calling patterns
-                    if mapping is not None:
-                        # Called with mapping dict
-                        self.data[key].update(mapping)
-                    elif field is not None and value is not None:
-                        # Called with field, value arguments
-                        self.data[key][field] = value
-                    elif kwargs:
-                        # Called with keyword arguments
-                        self.data[key].update(kwargs)
-
-                    print(
-                        f"DEBUG: hset({key}, field={field}, value={value}, "
-                        f"mapping={mapping}, kwargs={kwargs}) -> "
-                        f"{self.data[key]}"
-                    )
-
-                def keys(self, pattern):
-                    import re
-
-                    pattern = pattern.replace("*", ".*")
-                    # Fix: keys are strings, not bytes, so no need to decode
-                    result = [k for k in self.data if re.match(pattern, k)]
-                    print(f"DEBUG: keys({pattern}) = {result}")
-                    return result
-
-                def delete(self, *keys):
-                    for key in keys:
-                        self.data.pop(key, None)
-                    print(f"DEBUG: delete({keys})")
-
-                def pipeline(self):
-                    return MockPipeline(self)
-
-                def ping(self):
-                    return True
-
-                def set(self, key, value):
-                    self.data[key] = value
-                    print(f"DEBUG: set({key}, {value})")
-
-                def get(self, key):
-                    result = self.data.get(key)
-                    if isinstance(result, str):
-                        result = result.encode("utf-8")
-                    print(f"DEBUG: get({key}) = {result}")
-                    return result
-
-            class MockPipeline:
-                def __init__(self, redis_client):
-                    self.redis_client = redis_client
-                    self.commands = []
-
-                def hset(self, key, field, value):
-                    self.commands.append(("hset", key, field, value))
-                    return self
-
-                def execute(self):
-                    for cmd, key, field, value in self.commands:
-                        if cmd == "hset":
-                            self.redis_client.hset(key, field=field, value=value)
-
-            _test_redis_getter._mock_client = MockRedis()
-
-        return _test_redis_getter._mock_client
-    return client
-
+from tests.redis_tests.clients import _SyncInMemoryRedis
+from tests.redis_tests.helpers import REDIS_AVAILABLE, _get_test_redis_client, _test_redis_getter, redis
 
 # === Redis core tests ===
 
@@ -187,6 +45,43 @@ def test_redis_connection():
         print("✓ Redis connection and basic operations working")
     except Exception as e:
         pytest.fail(f"Redis connection test failed: {e}")
+
+
+@pytest.mark.redis
+def test_sync_client_over_sync_async_functions():
+    assert _is_async_redis_client(None) is False
+
+    @cachier(backend="redis", redis_client=_test_redis_getter)
+    def sync_cached_redis_with_sync_client(_: int) -> int:
+        return 1
+
+    assert callable(sync_cached_redis_with_sync_client)
+
+    with pytest.raises(
+        TypeError,
+        match="Async cached functions with Redis backend require an async redis_client callable.",
+    ):
+
+        @cachier(backend="redis", redis_client=_test_redis_getter)
+        async def async_cached_redis_with_sync_client(_: int) -> int:
+            return 1
+
+    sync_client_instance = _SyncInMemoryRedis()
+
+    @cachier(backend="redis", redis_client=sync_client_instance)
+    def sync_cached_redis_with_sync_client_instance(_: int) -> int:
+        return 1
+
+    assert callable(sync_cached_redis_with_sync_client_instance)
+
+    with pytest.raises(
+        TypeError,
+        match="Async cached functions with Redis backend require an async Redis client.",
+    ):
+
+        @cachier(backend="redis", redis_client=sync_client_instance)
+        async def async_cached_redis_with_sync_client_instance(_: int) -> int:
+            return 1
 
 
 @pytest.mark.redis
