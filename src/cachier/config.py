@@ -9,13 +9,99 @@ from typing import Any, Optional, Union
 from ._types import Backend, HashFunc, Mongetter
 
 
+def _is_numpy_array(value: Any) -> bool:
+    """Check whether a value is a NumPy ndarray without importing NumPy eagerly.
+
+    Parameters
+    ----------
+    value : Any
+        The value to inspect.
+
+    Returns
+    -------
+    bool
+        True when ``value`` is a NumPy ndarray instance.
+
+    """
+    return type(value).__module__ == "numpy" and type(value).__name__ == "ndarray"
+
+
+def _hash_numpy_array(hasher: "hashlib._Hash", value: Any) -> None:
+    """Update hasher with NumPy array metadata and buffer content.
+
+    Parameters
+    ----------
+    hasher : hashlib._Hash
+        The hasher to update.
+    value : Any
+        A NumPy ndarray instance.
+
+    """
+    hasher.update(b"numpy.ndarray")
+    hasher.update(value.dtype.str.encode("utf-8"))
+    hasher.update(str(value.shape).encode("utf-8"))
+    hasher.update(value.tobytes(order="C"))
+
+
+def _update_hash_for_value(hasher: "hashlib._Hash", value: Any) -> None:
+    """Update hasher with a stable representation of a Python value.
+
+    Parameters
+    ----------
+    hasher : hashlib._Hash
+        The hasher to update.
+    value : Any
+        Value to encode.
+
+    """
+    if _is_numpy_array(value):
+        _hash_numpy_array(hasher, value)
+        return
+
+    if isinstance(value, tuple):
+        hasher.update(b"tuple")
+        for item in value:
+            _update_hash_for_value(hasher, item)
+        return
+
+    if isinstance(value, list):
+        hasher.update(b"list")
+        for item in value:
+            _update_hash_for_value(hasher, item)
+        return
+
+    if isinstance(value, dict):
+        hasher.update(b"dict")
+        for dict_key in sorted(value):
+            _update_hash_for_value(hasher, dict_key)
+            _update_hash_for_value(hasher, value[dict_key])
+        return
+
+    hasher.update(pickle.dumps(value, protocol=pickle.HIGHEST_PROTOCOL))
+
+
 def _default_hash_func(args, kwds):
-    # Sort the kwargs to ensure consistent ordering
-    sorted_kwargs = sorted(kwds.items())
-    # Serialize args and sorted_kwargs using pickle or similar
-    serialized = pickle.dumps((args, sorted_kwargs))
-    # Create a hash of the serialized data
-    return hashlib.sha256(serialized).hexdigest()
+    """Compute a stable hash key for function arguments.
+
+    Parameters
+    ----------
+    args : tuple
+        Positional arguments.
+    kwds : dict
+        Keyword arguments.
+
+    Returns
+    -------
+    str
+        A hex digest representing the call arguments.
+
+    """
+    hasher = hashlib.blake2b(digest_size=32)
+    hasher.update(b"args")
+    _update_hash_for_value(hasher, args)
+    hasher.update(b"kwds")
+    _update_hash_for_value(hasher, dict(sorted(kwds.items())))
+    return hasher.hexdigest()
 
 
 def _default_cache_dir():
