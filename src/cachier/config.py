@@ -77,6 +77,18 @@ def _update_hash_for_value(hasher: "hashlib._Hash", value: Any) -> None:
             _update_hash_for_value(hasher, value[dict_key])
         return
 
+    if isinstance(value, (set, frozenset)):
+        # Use a deterministic ordering of elements for hashing.
+        hasher.update(b"frozenset" if isinstance(value, frozenset) else b"set")
+        try:
+            # Fast path: works for homogeneous, orderable element types.
+            iterable = sorted(value)
+        except TypeError:
+            # Fallback: impose a deterministic order based on type name and repr.
+            iterable = sorted(value, key=lambda item: (type(item).__name__, repr(item)))
+        for item in iterable:
+            _update_hash_for_value(hasher, item)
+        return
     hasher.update(pickle.dumps(value, protocol=pickle.HIGHEST_PROTOCOL))
 
 
