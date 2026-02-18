@@ -56,9 +56,7 @@ def _hash_numpy_array(hasher: "hashlib._Hash", value: Any) -> None:
     hasher.update(value.tobytes(order="C"))
 
 
-def _update_hash_for_value(
-    hasher: "hashlib._Hash", value: Any, depth: int = 0, max_depth: int = 100
-) -> None:
+def _update_hash_for_value(hasher: "hashlib._Hash", value: Any, depth: int = 0, max_depth: int = 100) -> None:
     """Update hasher with a stable representation of a Python value.
 
     Parameters
