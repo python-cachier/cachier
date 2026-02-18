@@ -9,7 +9,13 @@ from cachier import cachier
 np = pytest.importorskip("numpy")
 
 
-@pytest.mark.parametrize("backend", ["memory", "pickle"])
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param("memory", marks=pytest.mark.memory),
+        pytest.param("pickle", marks=pytest.mark.pickle),
+    ],
+)
 def test_default_hash_func_uses_array_content_for_cache_keys(backend, tmp_path):
     """Verify equal arrays map to a cache hit and different arrays miss."""
     call_count = 0
