@@ -214,6 +214,23 @@ async def test_s3_core_async_cache_hit(s3_bucket):
 
 
 @pytest.mark.s3
+@pytest.mark.asyncio
+async def test_s3_core_async_get_entry_by_key_missing(s3_bucket):
+    """aget_entry_by_key delegates correctly and returns missing entries as None."""
+    skip_if_missing()
+    core = _make_core(s3_bucket=s3_bucket)
+
+    def _dummy(x):
+        return x
+
+    core.set_func(_dummy)
+    key = core.get_key((), {"x": 123})
+    returned_key, entry = await core.aget_entry_by_key(key)
+    assert returned_key == key
+    assert entry is None
+
+
+@pytest.mark.s3
 def test_s3_core_none_not_cached_without_allow_none(s3_bucket):
     """None results are NOT cached when allow_none=False (default)."""
     call_count = [0]
