@@ -43,7 +43,9 @@ def _hash_numpy_array(hasher: "hashlib._Hash", value: Any) -> None:
     hasher.update(value.tobytes(order="C"))
 
 
-def _update_hash_for_value(hasher: "hashlib._Hash", value: Any) -> None:
+def _update_hash_for_value(
+    hasher: "hashlib._Hash", value: Any, depth: int = 0, max_depth: int = 100
+) -> None:
     """Update hasher with a stable representation of a Python value.
 
     Parameters
@@ -52,8 +54,24 @@ def _update_hash_for_value(hasher: "hashlib._Hash", value: Any) -> None:
         The hasher to update.
     value : Any
         Value to encode.
+    depth : int, optional
+        Current recursion depth (internal use only).
+    max_depth : int, optional
+        Maximum allowed recursion depth to prevent stack overflow.
+
+    Raises
+    ------
+    RecursionError
+        If the recursion depth exceeds max_depth.
 
     """
+    if depth > max_depth:
+        raise RecursionError(
+            f"Maximum recursion depth ({max_depth}) exceeded while hashing nested "
+            f"data structure. Consider flattening your data or using a custom "
+            f"hash_func parameter."
+        )
+
     if _is_numpy_array(value):
         _hash_numpy_array(hasher, value)
         return
@@ -61,20 +79,20 @@ def _update_hash_for_value(hasher: "hashlib._Hash", value: Any) -> None:
     if isinstance(value, tuple):
         hasher.update(b"tuple")
         for item in value:
-            _update_hash_for_value(hasher, item)
+            _update_hash_for_value(hasher, item, depth + 1, max_depth)
         return
 
     if isinstance(value, list):
         hasher.update(b"list")
         for item in value:
-            _update_hash_for_value(hasher, item)
+            _update_hash_for_value(hasher, item, depth + 1, max_depth)
         return
 
     if isinstance(value, dict):
         hasher.update(b"dict")
         for dict_key in sorted(value):
-            _update_hash_for_value(hasher, dict_key)
-            _update_hash_for_value(hasher, value[dict_key])
+            _update_hash_for_value(hasher, dict_key, depth + 1, max_depth)
+            _update_hash_for_value(hasher, value[dict_key], depth + 1, max_depth)
         return
 
     hasher.update(pickle.dumps(value, protocol=pickle.HIGHEST_PROTOCOL))
