@@ -125,7 +125,7 @@ def _convert_args_kwargs(func, _is_method: bool, args: tuple, kwds: dict) -> dic
 
     # Map as many args as possible to regular parameters
     num_regular = len(params_to_use)
-    args_as_kw = dict(zip(params_to_use, args_to_map[:num_regular]))
+    args_as_kw = dict(zip(params_to_use, args_to_map[:num_regular], strict=False))
 
     # Handle variadic positional arguments
     # Store them with indexed keys like __varargs_0__, __varargs_1__, etc.
