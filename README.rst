@@ -59,6 +59,7 @@ Current features
   * Cross-machine caching using MongoDB.
   * SQL-based caching using SQLAlchemy-supported databases.
   * Redis-based caching for high-performance scenarios.
+  * S3-based caching for cross-machine object storage backends.
 
 * Thread-safety.
 * **Per-call max age:** Specify a maximum age for cached values per call.
@@ -71,7 +72,6 @@ Cachier is **NOT**:
 Future features
 ---------------
 
-* S3 core.
 * Multi-core caching.
 * `Cache replacement policies <https://en.wikipedia.org/wiki/Cache_replacement_policies>`_
 
@@ -580,6 +580,12 @@ Cachier supports Redis-based caching for high-performance scenarios. Redis provi
 - ``processing``: Boolean, is value being calculated
 - ``completed``: Boolean, is value calculation completed
 
+**S3 Sync/Async Support:**
+
+- Sync functions use direct boto3 calls.
+- Async functions are supported via thread-offloaded sync boto3 calls
+  (delegated mode), not a native async client.
+
 **Limitations & Notes:**
 
 - Requires SQLAlchemy (install with ``pip install SQLAlchemy``)
@@ -631,6 +637,11 @@ async drivers and require the client or engine type to match the decorated funct
      - ``redis_client`` must be a sync client or sync callable for sync functions and
        an async callable returning a ``redis.asyncio.Redis`` client for async
        functions. Passing a sync callable to an async function raises ``TypeError``.
+   * - **S3**
+     - Yes
+     - Yes (delegated)
+     - Async support is delegated via thread-offloaded sync boto3 calls
+       (``asyncio.to_thread``). No async S3 client is required.
 
 
 Contributing
@@ -655,13 +666,14 @@ Install in development mode with test dependencies for local cores (memory and p
   cd cachier
   pip install -e . -r tests/requirements.txt
 
-Each additional core (MongoDB, Redis, SQL) requires additional dependencies. To install all dependencies for all cores, run:
+Each additional core (MongoDB, Redis, SQL, S3) requires additional dependencies. To install all dependencies for all cores, run:
 
 .. code-block:: bash
 
   pip install -r tests/requirements_mongodb.txt
   pip install -r tests/requirements_redis.txt
   pip install -r tests/requirements_postgres.txt
+  pip install -r tests/requirements_s3.txt
 
 Running the tests
 -----------------

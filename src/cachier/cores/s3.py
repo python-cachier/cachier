@@ -1,5 +1,6 @@
 """An S3-based caching core for cachier."""
 
+import asyncio
 import pickle
 import time
 import warnings
@@ -27,6 +28,10 @@ class MissingS3Bucket(ValueError):
 
 class _S3Core(_BaseCore):
     """S3-based core for Cachier, supporting AWS S3 and S3-compatible backends.
+
+    Async support in this core is delegated rather than native. Since boto3 is a
+    synchronous client, async methods explicitly offload I/O work to a thread via
+    ``asyncio.to_thread``.
 
     Parameters
     ----------
@@ -367,6 +372,51 @@ class _S3Core(_BaseCore):
             warnings.warn(f"S3 delete_stale_entries failed: {exc}", stacklevel=2)
 
     # ------------------------------------------------------------------
-    # Async variants delegate to the thread-based defaults in _BaseCore
-    # since boto3 is a sync library.
+    # Async variants explicitly offload sync boto3 operations to avoid
+    # blocking the event loop thread.
     # ------------------------------------------------------------------
+
+    async def aget_entry(self, args, kwds) -> Tuple[str, Optional[CacheEntry]]:
+        """Async-compatible variant of :meth:`get_entry`.
+
+        This method delegates to the sync implementation via
+        ``asyncio.to_thread`` because boto3 is sync-only.
+
+        """
+        return await asyncio.to_thread(self.get_entry, args, kwds)
+
+    async def aget_entry_by_key(self, key: str) -> Tuple[str, Optional[CacheEntry]]:
+        """Async-compatible variant of :meth:`get_entry_by_key`.
+
+        This method delegates to the sync implementation via
+        ``asyncio.to_thread`` because boto3 is sync-only.
+
+        """
+        return await asyncio.to_thread(self.get_entry_by_key, key)
+
+    async def aset_entry(self, key: str, func_res: Any) -> bool:
+        """Async-compatible variant of :meth:`set_entry`.
+
+        This method delegates to the sync implementation via
+        ``asyncio.to_thread`` because boto3 is sync-only.
+
+        """
+        return await asyncio.to_thread(self.set_entry, key, func_res)
+
+    async def amark_entry_being_calculated(self, key: str) -> None:
+        """Async-compatible variant of :meth:`mark_entry_being_calculated`.
+
+        This method delegates to the sync implementation via
+        ``asyncio.to_thread`` because boto3 is sync-only.
+
+        """
+        await asyncio.to_thread(self.mark_entry_being_calculated, key)
+
+    async def amark_entry_not_calculated(self, key: str) -> None:
+        """Async-compatible variant of :meth:`mark_entry_not_calculated`.
+
+        This method delegates to the sync implementation via
+        ``asyncio.to_thread`` because boto3 is sync-only.
+
+        """
+        await asyncio.to_thread(self.mark_entry_not_calculated, key)
