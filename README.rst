@@ -736,7 +736,7 @@ This script automatically handles Docker container lifecycle, environment variab
 .. code-block:: bash
 
   make test-mongo-local     # Run MongoDB tests with Docker
-  make test-all-local       # Run all backends with Docker
+  make test-all-local       # Run all backends locally (Docker used for mongo/redis/sql)
   make test-mongo-inmemory  # Run with in-memory MongoDB (default)
 
 **Option 3: Manual setup**
@@ -762,18 +762,21 @@ Contributors are encouraged to test against a real MongoDB instance before submi
 Testing all backends locally
 -----------------------------
 
-To test all cachier backends (MongoDB, Redis, SQL, Memory, Pickle) locally with Docker:
+To test all cachier backends (MongoDB, Redis, SQL, S3, Memory, Pickle) locally:
 
 .. code-block:: bash
 
   # Test all backends at once
   ./scripts/test-local.sh all
 
-  # Test only external backends (MongoDB, Redis, SQL)
+  # Test only external backends that require Docker (MongoDB, Redis, SQL)
   ./scripts/test-local.sh external
 
+  # Test S3 backend only (uses moto, no Docker needed)
+  ./scripts/test-local.sh s3
+
   # Test specific combinations
-  ./scripts/test-local.sh mongo redis
+  ./scripts/test-local.sh mongo redis s3
 
   # Keep containers running for debugging
   ./scripts/test-local.sh all -k
@@ -784,7 +787,7 @@ To test all cachier backends (MongoDB, Redis, SQL, Memory, Pickle) locally with 
   # Test multiple files across all backends
   ./scripts/test-local.sh all -f tests/test_main.py -f tests/test_redis_core_coverage.py
 
-The unified test script automatically manages Docker containers, installs required dependencies, and runs the appropriate test suites. The ``-f`` / ``--files`` option allows you to run specific test files instead of the entire test suite. See ``scripts/README-local-testing.md`` for detailed documentation.
+The unified test script automatically manages Docker containers for MongoDB/Redis/SQL, installs required dependencies (including ``tests/requirements_s3.txt`` for S3), and runs the appropriate test suites. The ``-f`` / ``--files`` option allows you to run specific test files instead of the entire test suite. See ``scripts/README-local-testing.md`` for detailed documentation.
 
 
 Running pre-commit hooks locally
