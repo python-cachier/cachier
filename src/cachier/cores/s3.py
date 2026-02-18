@@ -26,6 +26,14 @@ class MissingS3Bucket(ValueError):
     """Thrown when the s3_bucket keyword argument is missing."""
 
 
+def _safe_warn(message: str, category: type[Warning] = UserWarning) -> None:
+    """Emit a warning without raising when warnings are configured as errors."""
+    try:
+        warnings.warn(message, category, stacklevel=2)
+    except Warning:
+        pass
+
+
 class _S3Core(_BaseCore):
     """S3-based core for Cachier, supporting AWS S3 and S3-compatible backends.
 
@@ -72,10 +80,9 @@ class _S3Core(_BaseCore):
         entry_size_limit: Optional[int] = None,
     ):
         if not BOTO3_AVAILABLE:
-            warnings.warn(
+            _safe_warn(
                 "`boto3` was not found. S3 cores will not function. Install with `pip install boto3`.",
                 ImportWarning,
-                stacklevel=2,
             )
 
         super().__init__(
@@ -130,7 +137,7 @@ class _S3Core(_BaseCore):
         try:
             data = pickle.loads(body)
         except Exception as exc:
-            warnings.warn(f"S3 cache entry deserialization failed: {exc}", stacklevel=2)
+            _safe_warn(f"S3 cache entry deserialization failed: {exc}")
             return None
 
         try:
@@ -145,7 +152,7 @@ class _S3Core(_BaseCore):
                 _completed=bool(data.get("_completed", False)),
             )
         except Exception as exc:
-            warnings.warn(f"S3 CacheEntry construction failed: {exc}", stacklevel=2)
+            _safe_warn(f"S3 CacheEntry construction failed: {exc}")
             return None
 
     def _dump_entry(self, entry: CacheEntry) -> bytes:
@@ -187,10 +194,10 @@ class _S3Core(_BaseCore):
         except botocore.exceptions.ClientError as exc:
             if exc.response["Error"]["Code"] in ("NoSuchKey", "404"):
                 return key, None
-            warnings.warn(f"S3 get_entry_by_key failed: {exc}", stacklevel=2)
+            _safe_warn(f"S3 get_entry_by_key failed: {exc}")
             return key, None
         except Exception as exc:
-            warnings.warn(f"S3 get_entry_by_key failed: {exc}", stacklevel=2)
+            _safe_warn(f"S3 get_entry_by_key failed: {exc}")
             return key, None
 
     def set_entry(self, key: str, func_res: Any) -> bool:
@@ -224,7 +231,7 @@ class _S3Core(_BaseCore):
             client.put_object(Bucket=self.s3_bucket, Key=s3_key, Body=self._dump_entry(entry))
             return True
         except Exception as exc:
-            warnings.warn(f"S3 set_entry failed: {exc}", stacklevel=2)
+            _safe_warn(f"S3 set_entry failed: {exc}")
             return False
 
     def mark_entry_being_calculated(self, key: str) -> None:
@@ -248,7 +255,7 @@ class _S3Core(_BaseCore):
         try:
             client.put_object(Bucket=self.s3_bucket, Key=s3_key, Body=self._dump_entry(entry))
         except Exception as exc:
-            warnings.warn(f"S3 mark_entry_being_calculated failed: {exc}", stacklevel=2)
+            _safe_warn(f"S3 mark_entry_being_calculated failed: {exc}")
 
     def mark_entry_not_calculated(self, key: str) -> None:
         """Mark the given cache entry as no longer being calculated.
@@ -270,9 +277,9 @@ class _S3Core(_BaseCore):
                 client.put_object(Bucket=self.s3_bucket, Key=s3_key, Body=self._dump_entry(entry))
         except botocore.exceptions.ClientError as exc:
             if exc.response["Error"]["Code"] not in ("NoSuchKey", "404"):
-                warnings.warn(f"S3 mark_entry_not_calculated failed: {exc}", stacklevel=2)
+                _safe_warn(f"S3 mark_entry_not_calculated failed: {exc}")
         except Exception as exc:
-            warnings.warn(f"S3 mark_entry_not_calculated failed: {exc}", stacklevel=2)
+            _safe_warn(f"S3 mark_entry_not_calculated failed: {exc}")
 
     def wait_on_entry_calc(self, key: str) -> Any:
         """Poll S3 until the entry is no longer being calculated, then return its value.
@@ -318,7 +325,7 @@ class _S3Core(_BaseCore):
                         Delete={"Objects": objects_to_delete[i : i + 1000]},
                     )
         except Exception as exc:
-            warnings.warn(f"S3 clear_cache failed: {exc}", stacklevel=2)
+            _safe_warn(f"S3 clear_cache failed: {exc}")
 
     def clear_being_calculated(self) -> None:
         """Reset the ``_processing`` flag on all entries for this function in S3."""
@@ -338,9 +345,9 @@ class _S3Core(_BaseCore):
                             entry._processing = False
                             client.put_object(Bucket=self.s3_bucket, Key=s3_key, Body=self._dump_entry(entry))
                     except Exception as exc:
-                        warnings.warn(f"S3 clear_being_calculated entry update failed: {exc}", stacklevel=2)
+                        _safe_warn(f"S3 clear_being_calculated entry update failed: {exc}")
         except Exception as exc:
-            warnings.warn(f"S3 clear_being_calculated failed: {exc}", stacklevel=2)
+            _safe_warn(f"S3 clear_being_calculated failed: {exc}")
 
     def delete_stale_entries(self, stale_after: timedelta) -> None:
         """Remove cache entries older than ``stale_after`` from S3.
@@ -367,9 +374,9 @@ class _S3Core(_BaseCore):
                         if entry is not None and entry.time < threshold:
                             client.delete_object(Bucket=self.s3_bucket, Key=s3_key)
                     except Exception as exc:
-                        warnings.warn(f"S3 delete_stale_entries entry check failed: {exc}", stacklevel=2)
+                        _safe_warn(f"S3 delete_stale_entries entry check failed: {exc}")
         except Exception as exc:
-            warnings.warn(f"S3 delete_stale_entries failed: {exc}", stacklevel=2)
+            _safe_warn(f"S3 delete_stale_entries failed: {exc}")
 
     # ------------------------------------------------------------------
     # Async variants explicitly offload sync boto3 operations to avoid
