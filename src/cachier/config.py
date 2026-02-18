@@ -29,12 +29,25 @@ def _is_numpy_array(value: Any) -> bool:
 def _hash_numpy_array(hasher: "hashlib._Hash", value: Any) -> None:
     """Update hasher with NumPy array metadata and buffer content.
 
+    The array content is converted to bytes using C-order (row-major) layout
+    to ensure consistent hashing regardless of memory layout. This operation
+    may create a copy if the array is not already C-contiguous (e.g., for
+    transposed arrays, sliced views, or Fortran-ordered arrays), which has
+    performance implications for large arrays.
+
     Parameters
     ----------
     hasher : hashlib._Hash
         The hasher to update.
     value : Any
         A NumPy ndarray instance.
+
+    Notes
+    -----
+    The ``tobytes(order="C")`` call ensures deterministic hash values by
+    normalizing the memory layout, but may incur a memory copy for
+    non-contiguous arrays. For optimal performance with large arrays,
+    consider using C-contiguous arrays when possible.
 
     """
     hasher.update(b"numpy.ndarray")
