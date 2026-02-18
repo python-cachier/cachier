@@ -65,7 +65,9 @@ async def _function_thread_async(core: _BaseCore, key, func, args, kwds):
         print(f"Function call failed with the following exception:\n{exc}")
 
 
-def _calc_entry(core: _BaseCore, key, func, args, kwds, printer=lambda *_: None) -> Optional[Any]:
+def _calc_entry(
+    core: _BaseCore, key, func, args, kwds, printer=lambda *_: None
+) -> Optional[Any]:
     core.mark_entry_being_calculated(key)
     try:
         func_res = func(*args, **kwds)
@@ -77,7 +79,9 @@ def _calc_entry(core: _BaseCore, key, func, args, kwds, printer=lambda *_: None)
         core.mark_entry_not_calculated(key)
 
 
-async def _calc_entry_async(core: _BaseCore, key, func, args, kwds, printer=lambda *_: None) -> Optional[Any]:
+async def _calc_entry_async(
+    core: _BaseCore, key, func, args, kwds, printer=lambda *_: None
+) -> Optional[Any]:
     await core.amark_entry_being_calculated(key)
     try:
         func_res = await func(*args, **kwds)
@@ -125,7 +129,7 @@ def _convert_args_kwargs(func, _is_method: bool, args: tuple, kwds: dict) -> dic
 
     # Map as many args as possible to regular parameters
     num_regular = len(params_to_use)
-    args_as_kw = dict(zip(params_to_use, args_to_map[:num_regular], strict=False))
+    args_as_kw = dict(zip(params_to_use, args_to_map[:num_regular]))
 
     # Handle variadic positional arguments
     # Store them with indexed keys like __varargs_0__, __varargs_1__, etc.
@@ -135,7 +139,11 @@ def _convert_args_kwargs(func, _is_method: bool, args: tuple, kwds: dict) -> dic
             args_as_kw[f"__varargs_{i}__"] = arg
 
     # Init with default values
-    kwargs = {k: v.default for k, v in sig.parameters.items() if v.default is not inspect.Parameter.empty}
+    kwargs = {
+        k: v.default
+        for k, v in sig.parameters.items()
+        if v.default is not inspect.Parameter.empty
+    }
 
     # Merge args expanded as kwargs and the original kwds
     kwargs.update(args_as_kw)
@@ -160,7 +168,10 @@ def _is_async_redis_client(client: Any) -> bool:
     if client is None:
         return False
     method_names = ("hgetall", "hset", "keys", "delete", "hget")
-    return all(inspect.iscoroutinefunction(getattr(client, name, None)) for name in method_names)
+    return all(
+        inspect.iscoroutinefunction(getattr(client, name, None))
+        for name in method_names
+    )
 
 
 def cachier(
@@ -263,7 +274,9 @@ def cachier(
     # Update parameters with defaults if input is None
     backend = _update_with_defaults(backend, "backend")
     mongetter = _update_with_defaults(mongetter, "mongetter")
-    size_limit_bytes = parse_bytes(_update_with_defaults(entry_size_limit, "entry_size_limit"))
+    size_limit_bytes = parse_bytes(
+        _update_with_defaults(entry_size_limit, "entry_size_limit")
+    )
     # Override the backend parameter if a mongetter is provided.
     if callable(mongetter):
         backend = "mongo"
@@ -286,7 +299,9 @@ def cachier(
         )
     elif backend == "memory":
         core = _MemoryCore(
-            hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout, entry_size_limit=size_limit_bytes
+            hash_func=hash_func,
+            wait_for_calc_timeout=wait_for_calc_timeout,
+            entry_size_limit=size_limit_bytes,
         )
     elif backend == "sql":
         core = _SQLCore(
@@ -328,7 +343,9 @@ def cachier(
                     raise TypeError(msg)
             else:
                 if callable(redis_client) and inspect.iscoroutinefunction(redis_client):
-                    msg = "Async redis_client callable requires an async cached function."
+                    msg = (
+                        "Async redis_client callable requires an async cached function."
+                    )
                     raise TypeError(msg)
                 if _is_async_redis_client(redis_client):
                     msg = "Async Redis client requires an async cached function."
@@ -384,9 +401,13 @@ def cachier(
             _stale_after = _update_with_defaults(stale_after, "stale_after", kwds)
             _next_time = _update_with_defaults(next_time, "next_time", kwds)
             _cleanup_flag = _update_with_defaults(cleanup_stale, "cleanup_stale", kwds)
-            _cleanup_interval_val = _update_with_defaults(cleanup_interval, "cleanup_interval", kwds)
+            _cleanup_interval_val = _update_with_defaults(
+                cleanup_interval, "cleanup_interval", kwds
+            )
             # merge args expanded as kwargs and the original kwds
-            kwargs = _convert_args_kwargs(func, _is_method=core.func_is_method, args=args, kwds=kwds)
+            kwargs = _convert_args_kwargs(
+                func, _is_method=core.func_is_method, args=args, kwds=kwds
+            )
 
             if _cleanup_flag:
                 now = datetime.now()
@@ -401,7 +422,9 @@ def cachier(
             from .config import _global_params
 
             if ignore_cache or not _global_params.caching_enabled:
-                return func(args[0], **kwargs) if core.func_is_method else func(**kwargs)
+                return (
+                    func(args[0], **kwargs) if core.func_is_method else func(**kwargs)
+                )
             key, entry = core.get_entry((), kwargs)
             if overwrite_cache:
                 return _calc_entry(core, key, func, args, kwds, _print)
@@ -439,7 +462,9 @@ def cachier(
                     _print("Async calc and return stale")
                     core.mark_entry_being_calculated(key)
                     try:
-                        _get_executor().submit(_function_thread, core, key, func, args, kwds)
+                        _get_executor().submit(
+                            _function_thread, core, key, func, args, kwds
+                        )
                     finally:
                         core.mark_entry_not_calculated(key)
                     return entry.value
@@ -471,9 +496,13 @@ def cachier(
             _stale_after = _update_with_defaults(stale_after, "stale_after", kwds)
             _next_time = _update_with_defaults(next_time, "next_time", kwds)
             _cleanup_flag = _update_with_defaults(cleanup_stale, "cleanup_stale", kwds)
-            _cleanup_interval_val = _update_with_defaults(cleanup_interval, "cleanup_interval", kwds)
+            _cleanup_interval_val = _update_with_defaults(
+                cleanup_interval, "cleanup_interval", kwds
+            )
             # merge args expanded as kwargs and the original kwds
-            kwargs = _convert_args_kwargs(func, _is_method=core.func_is_method, args=args, kwds=kwds)
+            kwargs = _convert_args_kwargs(
+                func, _is_method=core.func_is_method, args=args, kwds=kwds
+            )
 
             if _cleanup_flag:
                 now = datetime.now()
@@ -488,7 +517,11 @@ def cachier(
             from .config import _global_params
 
             if ignore_cache or not _global_params.caching_enabled:
-                return await func(args[0], **kwargs) if core.func_is_method else await func(**kwargs)
+                return (
+                    await func(args[0], **kwargs)
+                    if core.func_is_method
+                    else await func(**kwargs)
+                )
             key, entry = await core.aget_entry((), kwargs)
             if overwrite_cache:
                 result = await _calc_entry_async(core, key, func, args, kwds, _print)
@@ -522,7 +555,9 @@ def cachier(
                     # Background task will update cache when complete
                     await core.amark_entry_being_calculated(key)
                     # Use asyncio.create_task for background execution
-                    asyncio.create_task(_function_thread_async(core, key, func, args, kwds))
+                    asyncio.create_task(
+                        _function_thread_async(core, key, func, args, kwds)
+                    )
                     await core.amark_entry_not_calculated(key)
                     return entry.value
                 _print("Calling decorated function and waiting")
@@ -549,6 +584,7 @@ def cachier(
             @wraps(func)
             async def func_wrapper(*args, **kwargs):
                 return await _call_async(*args, **kwargs)
+
         else:
 
             @wraps(func)
@@ -585,7 +621,9 @@ def cachier(
 
             """
             # merge args expanded as kwargs and the original kwds
-            kwargs = _convert_args_kwargs(func, _is_method=core.func_is_method, args=args, kwds=kwds)
+            kwargs = _convert_args_kwargs(
+                func, _is_method=core.func_is_method, args=args, kwds=kwds
+            )
             return core.precache_value((), kwargs, value_to_cache)
 
         func_wrapper.clear_cache = _clear_cache
