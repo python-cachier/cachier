@@ -35,6 +35,18 @@ DEFAULT_MAX_WORKERS = 8
 ZERO_TIMEDELTA = timedelta(seconds=0)
 
 
+class _ImmediateAwaitable:
+    """Lightweight awaitable that yields an immediate value."""
+
+    def __init__(self, value: Any = None) -> None:
+        self._value = value
+
+    def __await__(self):
+        if False:
+            yield None
+        return self._value
+
+
 def _max_workers():
     return int(os.environ.get(MAX_WORKERS_ENVAR_NAME, DEFAULT_MAX_WORKERS))
 
@@ -596,10 +608,16 @@ def cachier(
         def _clear_cache():
             """Clear the cache."""
             core.clear_cache()
+            if is_coroutine:
+                return _ImmediateAwaitable()
+            return None
 
         def _clear_being_calculated():
             """Mark all entries in this cache as not being calculated."""
             core.clear_being_calculated()
+            if is_coroutine:
+                return _ImmediateAwaitable()
+            return None
 
         async def _aclear_cache():
             """Clear the cache asynchronously."""
