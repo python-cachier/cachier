@@ -5,7 +5,7 @@
 **Cachier** is a Python library providing persistent, stale-free, local and cross-machine caching for Python functions via a decorator API. It supports multiple backends (pickle, memory, MongoDB, SQL, Redis), is thread-safe, and is designed for extensibility and robust cross-platform support.
 
 - **Repository:** [python-cachier/cachier](https://github.com/python-cachier/cachier)
-- **Primary Language:** Python 3.9+
+- **Primary Language:** Python 3.10+
 - **Key Dependencies:** `portalocker`, `watchdog` (optional: `pymongo`, `sqlalchemy`, `redis`)
 - **Test Framework:** `pytest` with backend-specific markers
 - **Linting:** `ruff` (replaces black/flake8)
@@ -98,7 +98,7 @@ ______________________________________________________________________
 
 ### 1. **Code Style & Quality**
 
-- **Python 3.9+** only.
+- **Python 3.10+** only.
 - **Type annotations** required for all new code.
 - **Docstrings:** Use numpy style, multi-line, no single-line docstrings.
 - **Lint:** Run `ruff` before PRs. Use per-line/file ignores only for justified cases.
@@ -145,7 +145,7 @@ ______________________________________________________________________
 ### 7. **Backward Compatibility**
 
 - **Public API must remain backward compatible** unless breaking change is approved.
-- **Support for Python 3.9+ only.**
+- **Support for Python 3.10+ only.**
 
 ### 8. **Global Configuration & Compatibility**
 
@@ -565,7 +565,7 @@ ______________________________________________________________________
 - **When adding new features/backends, update all relevant docs, tests, CI, and requirements files.**
 - **If a test fails due to missing optional dependency, skip gracefully.**
 - **Never emit warnings/errors for missing optional deps at import time.**
-- **All code must be Python 3.9+ compatible.**
+- **All code must be Python 3.10+ compatible.**
 - **All new code must have full type annotations and numpy-style docstrings.**
 - **Backend consistency:** Ensure all backends (pickle, memory, mongo, sql, redis) are supported.\*\*
 - **Validation:** Test examples in this file work: `python -c "from cachier import cachier; ..."` should succeed.
