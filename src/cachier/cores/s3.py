@@ -1,6 +1,7 @@
 """An S3-based caching core for cachier."""
 
 import asyncio
+import contextlib
 import pickle
 import time
 import warnings
@@ -28,10 +29,8 @@ class MissingS3Bucket(ValueError):
 
 def _safe_warn(message: str, category: type[Warning] = UserWarning) -> None:
     """Emit a warning without raising when warnings are configured as errors."""
-    try:
+    with contextlib.suppress(Warning):
         warnings.warn(message, category, stacklevel=2)
-    except Warning:
-        pass
 
 
 class _S3Core(_BaseCore):
