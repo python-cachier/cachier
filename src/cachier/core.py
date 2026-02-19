@@ -125,7 +125,7 @@ def _convert_args_kwargs(func, _is_method: bool, args: tuple, kwds: dict) -> dic
 
     # Map as many args as possible to regular parameters
     num_regular = len(params_to_use)
-    args_as_kw = dict(zip(params_to_use, args_to_map[:num_regular]))
+    args_as_kw = dict(zip(params_to_use, args_to_map[:num_regular], strict=False))
 
     # Handle variadic positional arguments
     # Store them with indexed keys like __varargs_0__, __varargs_1__, etc.
@@ -286,7 +286,9 @@ def cachier(
         )
     elif backend == "memory":
         core = _MemoryCore(
-            hash_func=hash_func, wait_for_calc_timeout=wait_for_calc_timeout, entry_size_limit=size_limit_bytes
+            hash_func=hash_func,
+            wait_for_calc_timeout=wait_for_calc_timeout,
+            entry_size_limit=size_limit_bytes,
         )
     elif backend == "sql":
         core = _SQLCore(
@@ -549,6 +551,7 @@ def cachier(
             @wraps(func)
             async def func_wrapper(*args, **kwargs):
                 return await _call_async(*args, **kwargs)
+
         else:
 
             @wraps(func)

@@ -38,7 +38,7 @@ Welcome to the Cachier codebase! Please follow these guidelines to ensure code s
 ## 6. Backward Compatibility
 
 - Maintain backward compatibility for public APIs unless a breaking change is explicitly approved.
-- Cachier supports Python 3.9+.
+- Cachier supports Python 3.10+.
 
 ## 7. Documentation and Examples
 

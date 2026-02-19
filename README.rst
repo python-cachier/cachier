@@ -47,7 +47,7 @@ Current features
 ----------------
 
 * Pure Python.
-* Compatible with Python 3.9+ (Python 2.7 was discontinued in version 1.2.8).
+* Compatible with Python 3.10+ (Python 2.7 was discontinued in version 1.2.8).
 * Supported and `tested on Linux, OS X and Windows <https://travis-ci.org/shaypal5/cachier>`_.
 * A simple interface.
 * Defining "shelf life" for cached values.
