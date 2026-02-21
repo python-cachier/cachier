@@ -59,6 +59,7 @@ Current features
   * Cross-machine caching using MongoDB.
   * SQL-based caching using SQLAlchemy-supported databases.
   * Redis-based caching for high-performance scenarios.
+  * S3-based caching for cross-machine object storage backends.
 
 * Thread-safety.
 * **Per-call max age:** Specify a maximum age for cached values per call.
@@ -71,7 +72,6 @@ Cachier is **NOT**:
 Future features
 ---------------
 
-* S3 core.
 * Multi-core caching.
 * `Cache replacement policies <https://en.wikipedia.org/wiki/Cache_replacement_policies>`_
 
@@ -580,6 +580,12 @@ Cachier supports Redis-based caching for high-performance scenarios. Redis provi
 - ``processing``: Boolean, is value being calculated
 - ``completed``: Boolean, is value calculation completed
 
+**S3 Sync/Async Support:**
+
+- Sync functions use direct boto3 calls.
+- Async functions are supported via thread-offloaded sync boto3 calls
+  (delegated mode), not a native async client.
+
 **Limitations & Notes:**
 
 - Requires SQLAlchemy (install with ``pip install SQLAlchemy``)
@@ -631,6 +637,11 @@ async drivers and require the client or engine type to match the decorated funct
      - ``redis_client`` must be a sync client or sync callable for sync functions and
        an async callable returning a ``redis.asyncio.Redis`` client for async
        functions. Passing a sync callable to an async function raises ``TypeError``.
+   * - **S3**
+     - Yes
+     - Yes (delegated)
+     - Async support is delegated via thread-offloaded sync boto3 calls
+       (``asyncio.to_thread``). No async S3 client is required.
 
 
 Contributing
@@ -655,13 +666,14 @@ Install in development mode with test dependencies for local cores (memory and p
   cd cachier
   pip install -e . -r tests/requirements.txt
 
-Each additional core (MongoDB, Redis, SQL) requires additional dependencies. To install all dependencies for all cores, run:
+Each additional core (MongoDB, Redis, SQL, S3) requires additional dependencies. To install all dependencies for all cores, run:
 
 .. code-block:: bash
 
   pip install -r tests/requirements_mongodb.txt
   pip install -r tests/requirements_redis.txt
   pip install -r tests/requirements_postgres.txt
+  pip install -r tests/requirements_s3.txt
 
 Running the tests
 -----------------
@@ -724,7 +736,7 @@ This script automatically handles Docker container lifecycle, environment variab
 .. code-block:: bash
 
   make test-mongo-local     # Run MongoDB tests with Docker
-  make test-all-local       # Run all backends with Docker
+  make test-all-local       # Run all backends locally (Docker used for mongo/redis/sql)
   make test-mongo-inmemory  # Run with in-memory MongoDB (default)
 
 **Option 3: Manual setup**
@@ -750,18 +762,21 @@ Contributors are encouraged to test against a real MongoDB instance before submi
 Testing all backends locally
 -----------------------------
 
-To test all cachier backends (MongoDB, Redis, SQL, Memory, Pickle) locally with Docker:
+To test all cachier backends (MongoDB, Redis, SQL, S3, Memory, Pickle) locally:
 
 .. code-block:: bash
 
   # Test all backends at once
   ./scripts/test-local.sh all
 
-  # Test only external backends (MongoDB, Redis, SQL)
+  # Test only external backends that require Docker (MongoDB, Redis, SQL)
   ./scripts/test-local.sh external
 
+  # Test S3 backend only (uses moto, no Docker needed)
+  ./scripts/test-local.sh s3
+
   # Test specific combinations
-  ./scripts/test-local.sh mongo redis
+  ./scripts/test-local.sh mongo redis s3
 
   # Keep containers running for debugging
   ./scripts/test-local.sh all -k
@@ -772,7 +787,7 @@ To test all cachier backends (MongoDB, Redis, SQL, Memory, Pickle) locally with 
   # Test multiple files across all backends
   ./scripts/test-local.sh all -f tests/test_main.py -f tests/test_redis_core_coverage.py
 
-The unified test script automatically manages Docker containers, installs required dependencies, and runs the appropriate test suites. The ``-f`` / ``--files`` option allows you to run specific test files instead of the entire test suite. See ``scripts/README-local-testing.md`` for detailed documentation.
+The unified test script automatically manages Docker containers for MongoDB/Redis/SQL, installs required dependencies (including ``tests/requirements_s3.txt`` for S3), and runs the appropriate test suites. The ``-f`` / ``--files`` option allows you to run specific test files instead of the entire test suite. See ``scripts/README-local-testing.md`` for detailed documentation.
 
 
 Running pre-commit hooks locally

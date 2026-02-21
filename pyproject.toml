@@ -49,6 +49,25 @@ dependencies = [
   "pympler>=1",
   "watchdog>=2.3.1",
 ]
+
+optional-dependencies.all = [
+  "boto3>=1.26",
+  "pymongo>=4",
+  "redis>=4",
+  "sqlalchemy>=2",
+]
+optional-dependencies.mongo = [
+  "pymongo>=4",
+]
+optional-dependencies.redis = [
+  "redis>=4",
+]
+optional-dependencies.s3 = [
+  "boto3>=1.26",
+]
+optional-dependencies.sql = [
+  "sqlalchemy>=2",
+]
 urls.Source = "https://github.com/python-cachier/cachier"
 # --- setuptools ---
 
@@ -176,6 +195,7 @@ markers = [
   "pickle: test the pickle core",
   "redis: test the Redis core",
   "sql: test the SQL core",
+  "s3: test the S3 core",
   "maxage: test the max_age functionality",
   "asyncio: marks tests as async",
 ]

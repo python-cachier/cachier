@@ -45,9 +45,10 @@ CORES:
     mongo       MongoDB backend tests
     redis       Redis backend tests
     sql         SQL (PostgreSQL) backend tests
+    s3          S3 backend tests (no Docker needed)
     memory      Memory backend tests (no Docker needed)
     pickle      Pickle backend tests (no Docker needed)
-    all         All backends (equivalent to: mongo redis sql memory pickle)
+    all         All backends (equivalent to: mongo redis sql s3 memory pickle)
     external    All external backends (mongo redis sql)
     local       All local backends (memory pickle)
 
@@ -133,7 +134,7 @@ expand_cores() {
     for core in $1; do
         case $core in
             all)
-                cores="$cores mongo redis sql memory pickle"
+                cores="$cores mongo redis sql s3 memory pickle"
                 ;;
             external)
                 cores="$cores mongo redis sql"
@@ -158,6 +159,7 @@ get_markers_for_core() {
         mongo) echo "mongo" ;;
         redis) echo "redis" ;;
         sql) echo "sql" ;;
+        s3) echo "s3" ;;
         memory) echo "memory" ;;
         pickle) echo "pickle or maxage" ;;
         *) echo "$1" ;;  # Default to core name
@@ -166,11 +168,11 @@ get_markers_for_core() {
 
 # Validate cores
 validate_cores() {
-    local valid_cores="mongo redis sql memory pickle"
+    local valid_cores="mongo redis sql s3 memory pickle"
     for core in $1; do
         if ! echo "$valid_cores" | grep -qw "$core"; then
             print_message $RED "Error: Invalid core '$core'"
-            print_message $YELLOW "Valid cores: mongo, redis, sql, memory, pickle"
+            print_message $YELLOW "Valid cores: mongo, redis, sql, s3, memory, pickle"
             exit 1
         fi
     done
@@ -260,6 +262,17 @@ check_dependencies() {
             print_message $YELLOW "Installing SQL test requirements..."
             pip install -r tests/requirements_postgres.txt || {
                 print_message $RED "Failed to install SQL requirements"
+                exit 1
+            }
+        fi
+    fi
+
+    # Check S3 dependencies if testing S3
+    if echo "$SELECTED_CORES" | grep -qw "s3"; then
+        if ! python -c "import boto3; import moto" 2>/dev/null; then
+            print_message $YELLOW "Installing S3 test requirements..."
+            pip install -r tests/requirements_s3.txt || {
+                print_message $RED "Failed to install S3 requirements"
                 exit 1
             }
         fi
@@ -498,7 +511,7 @@ main() {
     # Add markers if needed (only if no specific test files were given)
     if [ -z "$TEST_FILES" ]; then
         # Check if we selected all cores - if so, run all tests without marker filtering
-        all_cores="memory mongo pickle redis sql"
+        all_cores="memory mongo pickle redis s3 sql"
         selected_sorted=$(echo "$SELECTED_CORES" | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)
         all_sorted=$(echo "$all_cores" | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)
 
@@ -507,7 +520,7 @@ main() {
         fi
     else
         # When test files are specified, still apply markers if not running all cores
-        all_cores="memory mongo pickle redis sql"
+        all_cores="memory mongo pickle redis s3 sql"
         selected_sorted=$(echo "$SELECTED_CORES" | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)
         all_sorted=$(echo "$all_cores" | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)
 

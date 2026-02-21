@@ -358,6 +358,27 @@ class TestSyncCompatibility:
         await sync_func.aclear_cache()
 
 
+@pytest.mark.memory
+@pytest.mark.asyncio
+class TestAsyncWrapperMaintenanceMethods:
+    """Tests for clear helpers exposed on async wrappers."""
+
+    async def test_clear_methods_are_await_safe(self):
+        """Async wrappers support both sync and awaited clear_cache usage."""
+
+        @cachier(backend="memory")
+        async def async_func(x):
+            return x
+
+        # Legacy sync usage should keep working.
+        async_func.clear_cache()
+        async_func.clear_being_calculated()
+
+        # Awaiting these methods should also work.
+        await async_func.clear_cache()
+        await async_func.clear_being_calculated()
+
+
 # =============================================================================
 # Argument Handling Tests
 # =============================================================================

@@ -19,19 +19,32 @@ from functools import wraps
 from typing import Any, Callable, Optional, Union
 from warnings import warn
 
-from ._types import RedisClient
+from ._types import RedisClient, S3Client
 from .config import Backend, HashFunc, Mongetter, _update_with_defaults
 from .cores.base import RecalculationNeeded, _BaseCore
 from .cores.memory import _MemoryCore
 from .cores.mongo import _MongoCore
 from .cores.pickle import _PickleCore
 from .cores.redis import _RedisCore
+from .cores.s3 import _S3Core
 from .cores.sql import _SQLCore
 from .util import parse_bytes
 
 MAX_WORKERS_ENVAR_NAME = "CACHIER_MAX_WORKERS"
 DEFAULT_MAX_WORKERS = 8
 ZERO_TIMEDELTA = timedelta(seconds=0)
+
+
+class _ImmediateAwaitable:
+    """Lightweight awaitable that yields an immediate value."""
+
+    def __init__(self, value: Any = None) -> None:
+        self._value = value
+
+    def __await__(self):
+        if False:
+            yield None
+        return self._value
 
 
 def _max_workers():
@@ -170,6 +183,13 @@ def cachier(
     mongetter: Optional[Mongetter] = None,
     sql_engine: Optional[Union[str, Any, Callable[[], Any]]] = None,
     redis_client: Optional["RedisClient"] = None,
+    s3_bucket: Optional[str] = None,
+    s3_prefix: str = "cachier",
+    s3_client: Optional["S3Client"] = None,
+    s3_client_factory: Optional[Callable[[], Any]] = None,
+    s3_region: Optional[str] = None,
+    s3_endpoint_url: Optional[str] = None,
+    s3_config: Optional[Any] = None,
     stale_after: Optional[timedelta] = None,
     next_time: Optional[bool] = None,
     cache_dir: Optional[Union[str, os.PathLike]] = None,
@@ -201,9 +221,9 @@ def cachier(
         Deprecated, use :func:`~cachier.core.cachier.hash_func` instead.
     backend : str, optional
         The name of the backend to use. Valid options currently include
-        'pickle', 'mongo', 'memory', 'sql', and 'redis'. If not provided,
-        defaults to 'pickle', unless a core-associated parameter is provided
-
+        'pickle', 'mongo', 'memory', 'sql', 'redis', and 's3'. If not
+        provided, defaults to 'pickle', unless a core-associated parameter
+        is provided.
     mongetter : callable, optional
         A callable that takes no arguments and returns a pymongo.Collection
         object with writing permissions. If provided, the backend is set to
@@ -214,6 +234,20 @@ def cachier(
     redis_client : redis.Redis or callable, optional
         Redis client instance or callable returning a Redis client.
         Used for the Redis backend.
+    s3_bucket : str, optional
+        The S3 bucket name for cache storage. Required when using the S3 backend.
+    s3_prefix : str, optional
+        Key prefix applied to all S3 cache objects. Defaults to ``"cachier"``.
+    s3_client : boto3 S3 client, optional
+        A pre-configured boto3 S3 client instance.
+    s3_client_factory : callable, optional
+        A callable that returns a boto3 S3 client, allowing lazy initialization.
+    s3_region : str, optional
+        AWS region name used when auto-creating the boto3 S3 client.
+    s3_endpoint_url : str, optional
+        Custom endpoint URL for S3-compatible services such as MinIO or localstack.
+    s3_config : botocore.config.Config, optional
+        Optional botocore Config object passed when auto-creating the client.
     stale_after : datetime.timedelta, optional
         The time delta after which a cached result is considered stale. Calls
         made after the result goes stale will trigger a recalculation of the
@@ -302,6 +336,19 @@ def cachier(
             hash_func=hash_func,
             redis_client=redis_client,
             wait_for_calc_timeout=wait_for_calc_timeout,
+            entry_size_limit=size_limit_bytes,
+        )
+    elif backend == "s3":
+        core = _S3Core(
+            hash_func=hash_func,
+            s3_bucket=s3_bucket,
+            wait_for_calc_timeout=wait_for_calc_timeout,
+            s3_prefix=s3_prefix,
+            s3_client=s3_client,
+            s3_client_factory=s3_client_factory,
+            s3_region=s3_region,
+            s3_endpoint_url=s3_endpoint_url,
+            s3_config=s3_config,
             entry_size_limit=size_limit_bytes,
         )
     else:
@@ -561,10 +608,16 @@ def cachier(
         def _clear_cache():
             """Clear the cache."""
             core.clear_cache()
+            if is_coroutine:
+                return _ImmediateAwaitable()
+            return None
 
         def _clear_being_calculated():
             """Mark all entries in this cache as not being calculated."""
             core.clear_being_calculated()
+            if is_coroutine:
+                return _ImmediateAwaitable()
+            return None
 
         async def _aclear_cache():
             """Clear the cache asynchronously."""
