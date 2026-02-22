@@ -198,6 +198,7 @@ markers = [
   "s3: test the S3 core",
   "maxage: test the max_age functionality",
   "asyncio: marks tests as async",
+  "smoke: fast smoke tests with no external service dependencies",
 ]
 
 [tool.coverage.report]
