@@ -14,19 +14,26 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-${{ github.head_ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
+env:
+  DEFAULT_PYTHON_VERSION: "3.12"
+
 jobs:
   smoke-test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: read
     if: github.event_name == 'push' || github.event_name == 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest", "macOS-latest", "windows-latest"]
     steps:
       - uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: ${{ env.DEFAULT_PYTHON_VERSION }}
           cache: "pip"
 
       - name: Install package & dependencies
@@ -46,7 +53,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: ${{ env.DEFAULT_PYTHON_VERSION }}
           cache: "pip"
 
       - name: Install pre-commit
