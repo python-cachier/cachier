@@ -150,12 +150,7 @@ def isolated_cache_directory(tmp_path, monkeypatch, request, worker_id):
     """
     if "pickle" in request.node.keywords:
         # Create a unique cache directory for this test
-        if worker_id == "master":
-            # Not running in parallel mode
-            cache_dir = tmp_path / "cachier_cache"
-        else:
-            # Running with pytest-xdist - use worker-specific directory
-            cache_dir = tmp_path / f"cachier_cache_{worker_id}"
+        cache_dir = tmp_path / "cachier_cache" if worker_id == "master" else tmp_path / f"cachier_cache_{worker_id}"
 
         cache_dir.mkdir(exist_ok=True, parents=True)
 
