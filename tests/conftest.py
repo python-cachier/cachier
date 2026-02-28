@@ -13,9 +13,8 @@ logger = logging.getLogger(__name__)
 def inject_worker_schema_for_sql_tests(monkeypatch, request):
     """Automatically inject worker-specific schema into SQL connection string.
 
-    This fixture enables parallel SQL test execution by giving each pytest-
-    xdist worker its own PostgreSQL schema, preventing table creation
-    conflicts.
+    This fixture enables parallel SQL test execution by giving each pytest- xdist worker its own PostgreSQL schema,
+    preventing table creation conflicts.
 
     """
     # Only apply to SQL tests
@@ -31,9 +30,7 @@ def inject_worker_schema_for_sql_tests(monkeypatch, request):
         return
 
     # Get the original SQL connection string
-    original_url = os.environ.get(
-        "SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:"
-    )
+    original_url = os.environ.get("SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:")
 
     if "postgresql" in original_url:
         # Create worker-specific schema name
@@ -84,9 +81,7 @@ def inject_worker_schema_for_sql_tests(monkeypatch, request):
             # Use original URL to create schema (without search_path)
             engine = create_engine(original_url)
             with engine.connect() as conn:
-                conn.execute(
-                    text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}")
-                )
+                conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}"))
                 conn.commit()
             engine.dispose()
         except Exception as e:
@@ -149,8 +144,8 @@ def worker_id(request):
 def isolated_cache_directory(tmp_path, monkeypatch, request, worker_id):
     """Ensure each test gets an isolated cache directory.
 
-    This is especially important for pickle tests when running in parallel.
-    Each pytest-xdist worker gets its own cache directory to avoid conflicts.
+    This is especially important for pickle tests when running in parallel. Each pytest-xdist worker gets its own cache
+    directory to avoid conflicts.
 
     """
     if "pickle" in request.node.keywords:
@@ -167,9 +162,7 @@ def isolated_cache_directory(tmp_path, monkeypatch, request, worker_id):
         # Monkeypatch the global cache directory for this test
         import cachier.config
 
-        monkeypatch.setattr(
-            cachier.config._global_params, "cache_dir", str(cache_dir)
-        )
+        monkeypatch.setattr(cachier.config._global_params, "cache_dir", str(cache_dir))
 
         # Also set environment variable as a backup
         monkeypatch.setenv("CACHIER_TEST_CACHE_DIR", str(cache_dir))
@@ -179,8 +172,8 @@ def isolated_cache_directory(tmp_path, monkeypatch, request, worker_id):
 def cleanup_test_schemas(request):
     """Clean up test schemas after all tests complete.
 
-    This fixture ensures that worker-specific PostgreSQL schemas created during
-    parallel test execution are properly cleaned up.
+    This fixture ensures that worker-specific PostgreSQL schemas created during parallel test execution are properly
+    cleaned up.
 
     """
     yield  # Let all tests run first
@@ -206,9 +199,7 @@ def cleanup_test_schemas(request):
                 query_params.pop("options", None)
 
                 # Rebuild clean URL
-                clean_query = (
-                    urlencode(query_params, doseq=True) if query_params else ""
-                )
+                clean_query = urlencode(query_params, doseq=True) if query_params else ""
                 clean_url = urlunparse(
                     (
                         parsed.scheme,
@@ -223,9 +214,7 @@ def cleanup_test_schemas(request):
                 engine = create_engine(clean_url)
                 with engine.connect() as conn:
                     # Drop the schema and all its contents
-                    conn.execute(
-                        text(f"DROP SCHEMA IF EXISTS {schema_name} CASCADE")
-                    )
+                    conn.execute(text(f"DROP SCHEMA IF EXISTS {schema_name} CASCADE"))
                     conn.commit()
                 engine.dispose()
             except Exception as e:
