@@ -145,7 +145,19 @@ class _PickleCore(_BaseCore):
         path, name = os.path.split(self.cache_fpath)
         for subpath in os.listdir(path):
             if subpath.startswith(f"{name}_"):
-                os.remove(os.path.join(path, subpath))
+                fpath = os.path.join(path, subpath)
+                # Retry loop to handle Windows mandatory file-locking (WinError 32):
+                # portalocker holds an exclusive lock while a thread is computing,
+                # so os.remove() may fail transiently until the lock is released.
+                for attempt in range(3):  # pragma: no branch
+                    try:
+                        os.remove(fpath)
+                        break
+                    except PermissionError:
+                        if attempt < 2:
+                            time.sleep(0.1 * (attempt + 1))
+                        else:
+                            raise
 
     def _clear_being_calculated_all_cache_files(self) -> None:
         path, name = os.path.split(self.cache_fpath)
