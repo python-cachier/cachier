@@ -1245,9 +1245,10 @@ def test_clear_all_cache_files_retries_on_permission_error(tmp_path):
             raise PermissionError("locked")
         real_remove(path)
 
-    with patch("cachier.cores.pickle.os.remove", side_effect=flaky_remove), patch(
-        "cachier.cores.pickle.time.sleep"
-    ) as mock_sleep:
+    with (
+        patch("cachier.cores.pickle.os.remove", side_effect=flaky_remove),
+        patch("cachier.cores.pickle.time.sleep") as mock_sleep,
+    ):
         core._clear_all_cache_files()
         assert mock_sleep.call_count == 2
         mock_sleep.assert_any_call(0.1)
@@ -1278,9 +1279,11 @@ def test_clear_all_cache_files_raises_on_persistent_permission_error(tmp_path):
     with open(dummy_file, "wb") as f:
         f.write(b"")
 
-    with patch("cachier.cores.pickle.os.remove", side_effect=PermissionError("locked")), patch(
-        "cachier.cores.pickle.time.sleep"
-    ), pytest.raises(PermissionError):
+    with (
+        patch("cachier.cores.pickle.os.remove", side_effect=PermissionError("locked")),
+        patch("cachier.cores.pickle.time.sleep"),
+        pytest.raises(PermissionError),
+    ):
         core._clear_all_cache_files()
 
 
