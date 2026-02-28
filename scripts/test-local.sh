@@ -443,7 +443,7 @@ stop_postgres() {
 }
 
 test_sql() {
-    export SQLALCHEMY_DATABASE_URL="postgresql://testuser:testpass@localhost:5432/testdb"
+    export SQLALCHEMY_DATABASE_URL="postgresql+psycopg://testuser:testpass@localhost:5432/testdb"
 }
 
 # Main execution
