@@ -540,7 +540,14 @@ main() {
     # Build pytest command
     PYTEST_CMD="pytest"
     # and the specific pytest command for running serial pickle tests
-    SERIAL_PYTEST_CMD="pytest -m seriallocal -n0"
+    SERIAL_PYTEST_CMD="pytest -m seriallocal"
+    # Only add -n0 if pytest-xdist is available; otherwise, plain pytest is already serial
+    if python - << 'EOF' >/dev/null 2>&1
+import xdist  # noqa: F401
+EOF
+    then
+        SERIAL_PYTEST_CMD="$SERIAL_PYTEST_CMD -n0"
+    fi
 
     # Add test files if specified
     if [ -n "$TEST_FILES" ]; then
