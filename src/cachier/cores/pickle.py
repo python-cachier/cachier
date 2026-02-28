@@ -149,7 +149,7 @@ class _PickleCore(_BaseCore):
                 # Retry loop to handle Windows mandatory file-locking (WinError 32):
                 # portalocker holds an exclusive lock while a thread is computing,
                 # so os.remove() may fail transiently until the lock is released.
-                for attempt in range(3):
+                for attempt in range(3):  # pragma: no branch
                     try:
                         os.remove(fpath)
                         break
