@@ -335,17 +335,28 @@ pytest -n auto
 
 ### GitHub Actions
 
-The CI pipeline tests all backends:
+The CI pipeline runs a matrix job per backend. Each backend uses the commands below:
 
-```yaml
-# Local backends run in parallel
-pytest -m "memory or pickle" -n auto
+```bash
+# Local backends (memory, pickle, and other non-external tests)
+pytest -m "not mongo and not sql and not redis and not s3"
 
-# External backends run sequentially for stability
+# MongoDB backend
 pytest -m mongo
-pytest -m redis
+
+# PostgreSQL/SQL backend
 pytest -m sql
+
+# Redis backend
+pytest -m redis
+
+# S3 backend
+pytest -m s3
 ```
+
+Note: local tests do not use `pytest-xdist` (`-n`) in CI. External backends
+(MongoDB, PostgreSQL, Redis, S3) each run in their own isolated matrix job with
+the corresponding Docker service started beforehand.
 
 ### Environment Variables
 
