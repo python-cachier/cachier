@@ -204,6 +204,7 @@ markers = [
   "maxage: test the max_age functionality",
   "asyncio: marks tests as async",
   "smoke: fast smoke tests with no external service dependencies",
+  "flaky: tests that are known to be flaky and should be retried",
   "seriallocal: local core tests that should run serially",
 ]
 
