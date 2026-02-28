@@ -269,7 +269,7 @@ check_dependencies() {
     if echo "$SELECTED_CORES" | grep -qw "mongo"; then
         if ! python -c "import pymongo" 2>/dev/null; then
             print_message $YELLOW "Installing MongoDB test requirements..."
-            pip install -r tests/mongodb_requirements.txt || {
+            pip install -r tests/requirements_mongodb.txt || {
                 print_message $RED "Failed to install MongoDB requirements"
                 exit 1
             }
