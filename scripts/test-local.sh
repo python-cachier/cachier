@@ -280,7 +280,7 @@ check_dependencies() {
     if echo "$SELECTED_CORES" | grep -qw "redis"; then
         if ! python -c "import redis" 2>/dev/null; then
             print_message $YELLOW "Installing Redis test requirements..."
-            pip install -r tests/redis_requirements.txt || {
+            pip install -r tests/requirements_redis.txt || {
                 print_message $RED "Failed to install Redis requirements"
                 exit 1
             }
