@@ -70,9 +70,9 @@ def inject_worker_schema_for_sql_tests(monkeypatch, request):
         monkeypatch.setenv("SQLALCHEMY_DATABASE_URL", new_url)
 
         # Also patch the SQL_CONN_STR constant used in tests
-        import tests.test_sql_core
+        import tests.sql_tests.test_sql_core
 
-        monkeypatch.setattr(tests.test_sql_core, "SQL_CONN_STR", new_url)
+        monkeypatch.setattr(tests.sql_tests.test_sql_core, "SQL_CONN_STR", new_url)
 
         # Ensure schema creation by creating it before tests run
         try:
