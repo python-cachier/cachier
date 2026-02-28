@@ -291,7 +291,7 @@ check_dependencies() {
     if echo "$SELECTED_CORES" | grep -qw "sql"; then
         if ! python -c "import sqlalchemy" 2>/dev/null; then
             print_message $YELLOW "Installing SQL test requirements..."
-            pip install -r tests/sql_requirements.txt || {
+            pip install -r tests/requirements_postgres.txt || {
                 print_message $RED "Failed to install SQL requirements"
                 exit 1
             }
