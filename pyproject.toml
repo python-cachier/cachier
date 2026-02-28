@@ -90,7 +90,7 @@ namespaces = false # to disable scanning PEP 420 namespaces (true by default)
 # === Linting & Formatting ===
 
 [tool.black]
-line-length = 79
+line-length = 120
 
 # --- ruff ---
 
@@ -168,8 +168,8 @@ lint.mccabe.max-complexity = 10
 [tool.docformatter]
 recursive = true
 # some docstring start with r"""
-wrap-summaries = 79
-wrap-descriptions = 79
+wrap-summaries = 120
+wrap-descriptions = 120
 blank = true
 
 # === Testing ===
@@ -201,12 +201,9 @@ markers = [
   "sql: test the SQL core",
   "s3: test the S3 core",
   "maxage: test the max_age functionality",
-<<<<<<< HEAD
   "asyncio: marks tests as async",
   "smoke: fast smoke tests with no external service dependencies",
-=======
   "seriallocal: local core tests that should run serially",
->>>>>>> 5116bb0 (Improve test infrastructure for parallel execution and better isolation)
 ]
 
 # Parallel test execution configuration
