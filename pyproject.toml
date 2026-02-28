@@ -192,7 +192,7 @@ addopts = [
   "-v",
   "-s",
   "-W error",
-  # Note: parallel execution is opt-in via --parallel flag or -n option
+  # Note: parallel execution is opt-in via -n/--numprocesses (pytest-xdist)
 ]
 markers = [
   "mongo: test the MongoDB core",
