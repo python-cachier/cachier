@@ -101,11 +101,11 @@ def worker_id(request):
 def isolated_cache_directory(tmp_path, monkeypatch, request, worker_id):
     """Ensure each test gets an isolated cache directory.
 
-    This is especially important for pickle tests when running in parallel. Each pytest-xdist worker gets its own cache
-    directory to avoid conflicts.
+    This is especially important for pickle and maxage tests when running in parallel. Each pytest-xdist worker gets its
+    own cache directory to avoid conflicts.
 
     """
-    if "pickle" in request.node.keywords:
+    if "pickle" in request.node.keywords or "maxage" in request.node.keywords:
         # Create a unique cache directory for this test
         cache_dir = tmp_path / "cachier_cache" if worker_id == "master" else tmp_path / f"cachier_cache_{worker_id}"
 
