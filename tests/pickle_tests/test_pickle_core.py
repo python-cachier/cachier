@@ -1212,6 +1212,78 @@ def test_delete_stale_entries_file_not_found(tmp_path):
         core.delete_stale_entries(timedelta(hours=1))
 
 
+@pytest.mark.pickle
+def test_clear_all_cache_files_retries_on_permission_error(tmp_path):
+    """Test _clear_all_cache_files retries on PermissionError then succeeds."""
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=10,
+        separate_files=True,
+    )
+
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+
+    # Create a cache file that matches the name pattern
+    cache_fpath = core.cache_fpath
+    dummy_file = cache_fpath + "_dummykey"
+    with open(dummy_file, "wb") as f:
+        f.write(b"")
+
+    # os.remove fails twice then succeeds on the third call
+    real_remove = os.remove
+    call_count = 0
+
+    def flaky_remove(path):
+        nonlocal call_count
+        call_count += 1
+        if call_count < 3:
+            raise PermissionError("locked")
+        real_remove(path)
+
+    with patch("cachier.cores.pickle.os.remove", side_effect=flaky_remove), patch(
+        "cachier.cores.pickle.time.sleep"
+    ) as mock_sleep:
+        core._clear_all_cache_files()
+        assert mock_sleep.call_count == 2
+        mock_sleep.assert_any_call(0.1)
+        mock_sleep.assert_any_call(0.2)
+
+    assert not os.path.exists(dummy_file)
+
+
+@pytest.mark.pickle
+def test_clear_all_cache_files_raises_on_persistent_permission_error(tmp_path):
+    """Test _clear_all_cache_files re-raises PermissionError after all retries."""
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=10,
+        separate_files=True,
+    )
+
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+
+    # Create a cache file that matches the name pattern
+    cache_fpath = core.cache_fpath
+    dummy_file = cache_fpath + "_dummykey"
+    with open(dummy_file, "wb") as f:
+        f.write(b"")
+
+    with patch("cachier.cores.pickle.os.remove", side_effect=PermissionError("locked")), patch(
+        "cachier.cores.pickle.time.sleep"
+    ), pytest.raises(PermissionError):
+        core._clear_all_cache_files()
+
+
 # Redis core static method tests
 @pytest.mark.parametrize(
     ("test_input", "expected"),
