@@ -534,7 +534,11 @@ main() {
             sql) test_sql ;;
         esac
     done
-    pytest_markers="$pytest_markers and not seriallocal"
+    if [ -n "$pytest_markers" ]; then
+        pytest_markers="($pytest_markers) and not seriallocal"
+    else
+        pytest_markers="not seriallocal"
+    fi
 
     # Run pytest
     # Build pytest command
