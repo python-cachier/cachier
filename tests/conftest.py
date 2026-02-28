@@ -105,9 +105,11 @@ def isolated_cache_directory(tmp_path, monkeypatch, request, worker_id):
     own cache directory to avoid conflicts.
 
     """
-    if "pickle" in request.node.keywords or "maxage" in request.node.keywords:
-        # Create a unique cache directory for this test
-        cache_dir = tmp_path / "cachier_cache" if worker_id == "master" else tmp_path / f"cachier_cache_{worker_id}"
+    if worker_id != "master" and (
+        "pickle" in request.node.keywords or "maxage" in request.node.keywords
+    ):
+        # Create a unique cache directory for this worker
+        cache_dir = tmp_path / f"cachier_cache_{worker_id}"
 
         cache_dir.mkdir(exist_ok=True, parents=True)
 
