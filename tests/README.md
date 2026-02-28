@@ -41,17 +41,19 @@ The Cachier test suite is designed to comprehensively test all caching backends 
 tests/
 ├── conftest.py                    # Shared fixtures and configuration
 ├── requirements.txt               # Base test dependencies (includes pytest-rerunfailures)
-├── mongodb_requirements.txt       # MongoDB-specific dependencies
-├── redis_requirements.txt         # Redis-specific dependencies
-├── sql_requirements.txt           # SQL-specific dependencies
+├── requirements_mongodb.txt       # MongoDB-specific test dependencies
+├── requirements_redis.txt         # Redis-specific test dependencies
+├── requirements_postgres.txt      # PostgreSQL/SQL-specific test dependencies
 │
-├── test_*.py                      # Test modules
-├── test_mongo_core.py            # MongoDB-specific tests
-├── test_redis_core.py            # Redis-specific tests
-├── test_sql_core.py              # SQL-specific tests
-├── test_memory_core.py           # Memory backend tests
-├── test_pickle_core.py           # Pickle backend tests
-├── test_general.py               # Cross-backend tests
+├── test_*.py                      # Backend-agnostic test modules
+├── mongo_tests/                   # MongoDB-specific tests
+│   └── test_mongo_core.py
+├── sql_tests/                     # SQL-specific tests
+│   └── test_sql_core.py
+├── test_redis_core.py             # Redis backend tests
+├── test_memory_core.py            # Memory backend tests
+├── test_pickle_core.py            # Pickle backend tests
+├── test_general.py                # Cross-backend tests
 └── ...
 ```
 
