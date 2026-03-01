@@ -108,9 +108,7 @@ def isolated_cache_directory(tmp_path, monkeypatch, request, worker_id):
     constants computed from the default cache directory at import time.
 
     """
-    if worker_id != "master" and (
-        "pickle" in request.node.keywords or "maxage" in request.node.keywords
-    ):
+    if worker_id != "master" and ("pickle" in request.node.keywords or "maxage" in request.node.keywords):
         cache_dir = tmp_path / f"cachier_cache_{worker_id}"
 
         cache_dir.mkdir(exist_ok=True, parents=True)
