@@ -107,10 +107,18 @@ class _PickleCore(_BaseCore):
 
     @property
     def _shared_lock_fpath(self) -> str:
-        lock_dir = os.path.join(tempfile.gettempdir(), "cachier-locks")
-        os.makedirs(lock_dir, exist_ok=True)
         cache_hash = hashlib.sha256(self.cache_fpath.encode("utf-8")).hexdigest()
-        return os.path.join(lock_dir, f"{cache_hash}{self._SHARED_LOCK_SUFFIX}")
+        candidate_dirs = (
+            os.path.join(tempfile.gettempdir(), "cachier-locks"),
+            os.path.join(os.path.dirname(self.cache_fpath), ".cachier-locks"),
+        )
+        for lock_dir in candidate_dirs:
+            try:
+                os.makedirs(lock_dir, exist_ok=True)
+                return os.path.join(lock_dir, f"{cache_hash}{self._SHARED_LOCK_SUFFIX}")
+            except OSError:
+                continue
+        return os.path.join(os.path.dirname(self.cache_fpath), f".{cache_hash}{self._SHARED_LOCK_SUFFIX}")
 
     @staticmethod
     def _convert_legacy_cache_entry(
@@ -203,20 +211,22 @@ class _PickleCore(_BaseCore):
                     pickle.dump(cache, cast(IO[bytes], cache_file), protocol=4)
             else:
                 with portalocker.Lock(self._shared_lock_fpath, mode="a+b"):
-                    with tempfile.NamedTemporaryFile(
-                        mode="wb",
-                        dir=parent_dir,
-                        delete=False,
-                    ) as temp_file:
-                        temp_path = temp_file.name
-                        pickle.dump(cache, cast(IO[bytes], temp_file), protocol=4)
-                        temp_file.flush()
-                        os.fsync(temp_file.fileno())
+                    temp_path = ""
                     try:
+                        with tempfile.NamedTemporaryFile(
+                            mode="wb",
+                            dir=parent_dir,
+                            delete=False,
+                        ) as temp_file:
+                            temp_path = temp_file.name
+                            pickle.dump(cache, cast(IO[bytes], temp_file), protocol=4)
+                            temp_file.flush()
+                            os.fsync(temp_file.fileno())
                         os.replace(temp_path, fpath)
                     finally:
-                        with suppress(FileNotFoundError):
-                            os.remove(temp_path)
+                        if temp_path:
+                            with suppress(FileNotFoundError):
+                                os.remove(temp_path)
             # the same as check for separate_file, but changed for typing
             if isinstance(cache, dict):
                 self._cache_dict = cache

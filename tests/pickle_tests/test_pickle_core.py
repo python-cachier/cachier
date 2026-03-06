@@ -710,6 +710,130 @@ def test_save_cache_with_invalid_separate_file_key(tmp_path):
 
 
 @pytest.mark.pickle
+def test_save_cache_removes_temp_file_when_fsync_fails(tmp_path):
+    """Test _save_cache removes the temp file when fsync fails."""
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=10,
+        separate_files=False,
+    )
+
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+
+    with patch("cachier.cores.pickle.os.fsync", side_effect=OSError("fsync failed")), pytest.raises(
+        OSError, match="fsync failed"
+    ):
+        core._save_cache(
+            {"key": CacheEntry(value="value", time=datetime.now(), stale=False, _processing=False)}
+        )
+
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.pickle
+def test_save_cache_propagates_tempfile_creation_failure_without_cleanup_error(tmp_path):
+    """Test _save_cache handles temp-file creation failures before temp_path exists."""
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=10,
+        separate_files=False,
+    )
+
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+
+    with patch("cachier.cores.pickle.tempfile.NamedTemporaryFile", side_effect=OSError("tempfile failed")), patch(
+        "cachier.cores.pickle.os.replace"
+    ) as mock_replace, patch("cachier.cores.pickle.os.remove") as mock_remove, pytest.raises(
+        OSError, match="tempfile failed"
+    ):
+        core._save_cache(
+            {"key": CacheEntry(value="value", time=datetime.now(), stale=False, _processing=False)}
+        )
+
+    mock_replace.assert_not_called()
+    mock_remove.assert_not_called()
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.pickle
+def test_shared_lock_fpath_falls_back_to_cache_dir_when_temp_dir_unwritable(tmp_path):
+    """Test _shared_lock_fpath falls back when the system temp dir is not writable."""
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=10,
+        separate_files=False,
+    )
+
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+
+    temp_lock_dir = os.path.join("/non-writable-temp", "cachier-locks")
+    fallback_lock_dir = os.path.join(core.cache_dir, ".cachier-locks")
+
+    def mock_makedirs(path, exist_ok=False):
+        if path in (core.cache_dir, fallback_lock_dir):
+            return None
+        if path == temp_lock_dir:
+            raise PermissionError("temp dir not writable")
+        raise AssertionError(f"Unexpected os.makedirs path: {path}")
+
+    with patch("cachier.cores.pickle.tempfile.gettempdir", return_value="/non-writable-temp"), patch(
+        "cachier.cores.pickle.os.makedirs", side_effect=mock_makedirs
+    ):
+        assert core._shared_lock_fpath == os.path.join(
+            fallback_lock_dir,
+            f"{hashlib.sha256(core.cache_fpath.encode('utf-8')).hexdigest()}{core._SHARED_LOCK_SUFFIX}",
+        )
+
+
+@pytest.mark.pickle
+def test_shared_lock_fpath_uses_cache_dir_file_when_lock_dirs_unwritable(tmp_path):
+    """Test _shared_lock_fpath falls back to a lockfile in the cache dir."""
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=10,
+        separate_files=False,
+    )
+
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+
+    temp_lock_dir = os.path.join("/non-writable-temp", "cachier-locks")
+    fallback_lock_dir = os.path.join(core.cache_dir, ".cachier-locks")
+    cache_hash = hashlib.sha256(core.cache_fpath.encode("utf-8")).hexdigest()
+
+    def mock_makedirs(path, exist_ok=False):
+        if path == core.cache_dir:
+            return None
+        if path in (temp_lock_dir, fallback_lock_dir):
+            raise PermissionError("lock dir not writable")
+        raise AssertionError(f"Unexpected os.makedirs path: {path}")
+
+    with patch("cachier.cores.pickle.tempfile.gettempdir", return_value="/non-writable-temp"), patch(
+        "cachier.cores.pickle.os.makedirs", side_effect=mock_makedirs
+    ):
+        assert core._shared_lock_fpath == os.path.join(core.cache_dir, f".{cache_hash}{core._SHARED_LOCK_SUFFIX}")
+
+
+@pytest.mark.pickle
 def test_set_entry_should_not_store(tmp_path):
     """Test set_entry when value should not be stored."""
     # Test line 204: early return when _should_store returns False
