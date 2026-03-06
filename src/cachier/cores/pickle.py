@@ -6,6 +6,7 @@
 # Licensed under the MIT license:
 # http://www.opensource.org/licenses/MIT-license
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
+import hashlib
 import logging
 import os
 import pickle  # for local caching
@@ -106,7 +107,10 @@ class _PickleCore(_BaseCore):
 
     @property
     def _shared_lock_fpath(self) -> str:
-        return f"{self.cache_fpath}{self._SHARED_LOCK_SUFFIX}"
+        lock_dir = os.path.join(tempfile.gettempdir(), "cachier-locks")
+        os.makedirs(lock_dir, exist_ok=True)
+        cache_hash = hashlib.sha256(self.cache_fpath.encode("utf-8")).hexdigest()
+        return os.path.join(lock_dir, f"{cache_hash}{self._SHARED_LOCK_SUFFIX}")
 
     @staticmethod
     def _convert_legacy_cache_entry(
@@ -285,6 +289,7 @@ class _PickleCore(_BaseCore):
     def mark_entry_not_calculated(self, key: str) -> None:
         if self.separate_files:
             self._mark_entry_not_calculated_separate_files(key)
+            return  # pragma: no cover
         with self.lock:
             cache = self.get_cache_dict()
             # that's ok, we don't need an entry in that case
