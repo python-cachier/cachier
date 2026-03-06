@@ -107,52 +107,36 @@ class PrometheusExporter(MetricsExporter):
                 """Collect metrics from all registered functions."""
                 with self.exporter._lock:
                     # Collect hits
-                    hits = CounterMetricFamily(
-                        "cachier_cache_hits_total",
-                        "Total cache hits",
-                        labels=["function"]
-                    )
+                    hits = CounterMetricFamily("cachier_cache_hits_total", "Total cache hits", labels=["function"])
 
                     # Collect misses
                     misses = CounterMetricFamily(
-                        "cachier_cache_misses_total",
-                        "Total cache misses",
-                        labels=["function"]
+                        "cachier_cache_misses_total", "Total cache misses", labels=["function"]
                     )
 
                     # Collect hit rate
                     hit_rate = GaugeMetricFamily(
-                        "cachier_cache_hit_rate",
-                        "Cache hit rate percentage",
-                        labels=["function"]
+                        "cachier_cache_hit_rate", "Cache hit rate percentage", labels=["function"]
                     )
 
                     # Collect stale hits
                     stale_hits = CounterMetricFamily(
-                        "cachier_stale_hits_total",
-                        "Total stale cache hits",
-                        labels=["function"]
+                        "cachier_stale_hits_total", "Total stale cache hits", labels=["function"]
                     )
 
                     # Collect recalculations
                     recalculations = CounterMetricFamily(
-                        "cachier_recalculations_total",
-                        "Total cache recalculations",
-                        labels=["function"]
+                        "cachier_recalculations_total", "Total cache recalculations", labels=["function"]
                     )
 
                     # Collect entry count
                     entry_count = GaugeMetricFamily(
-                        "cachier_entry_count",
-                        "Current number of cache entries",
-                        labels=["function"]
+                        "cachier_entry_count", "Current number of cache entries", labels=["function"]
                     )
 
                     # Collect cache size
                     cache_size = GaugeMetricFamily(
-                        "cachier_cache_size_bytes",
-                        "Total cache size in bytes",
-                        labels=["function"]
+                        "cachier_cache_size_bytes", "Total cache size in bytes", labels=["function"]
                     )
 
                     for (
@@ -183,6 +167,7 @@ class PrometheusExporter(MetricsExporter):
 
         # Register the custom collector
         from contextlib import suppress
+
         with suppress(Exception):
             # If registration fails, continue without collector
             REGISTRY.register(CachierCollector(self))
@@ -263,8 +248,7 @@ class PrometheusExporter(MetricsExporter):
 
         # Misses
         lines.append(
-            "\n# HELP cachier_cache_misses_total Total cache misses\n"
-            "# TYPE cachier_cache_misses_total counter"
+            "\n# HELP cachier_cache_misses_total Total cache misses\n# TYPE cachier_cache_misses_total counter"
         )
 
         with self._lock:
@@ -275,10 +259,7 @@ class PrometheusExporter(MetricsExporter):
                 lines.append(f'cachier_cache_misses_total{{function="{func_name}"}} {stats.misses}')
 
         # Hit rate
-        lines.append(
-            "\n# HELP cachier_cache_hit_rate Cache hit rate percentage\n"
-            "# TYPE cachier_cache_hit_rate gauge"
-        )
+        lines.append("\n# HELP cachier_cache_hit_rate Cache hit rate percentage\n# TYPE cachier_cache_hit_rate gauge")
 
         with self._lock:
             for func_name, func in self._registered_functions.items():
@@ -302,8 +283,7 @@ class PrometheusExporter(MetricsExporter):
 
         # Stale hits
         lines.append(
-            "\n# HELP cachier_stale_hits_total Total stale cache hits\n"
-            "# TYPE cachier_stale_hits_total counter"
+            "\n# HELP cachier_stale_hits_total Total stale cache hits\n# TYPE cachier_stale_hits_total counter"
         )
 
         with self._lock:
@@ -327,10 +307,7 @@ class PrometheusExporter(MetricsExporter):
                 lines.append(f'cachier_recalculations_total{{function="{func_name}"}} {stats.recalculations}')
 
         # Entry count
-        lines.append(
-            "\n# HELP cachier_entry_count Current cache entries\n"
-            "# TYPE cachier_entry_count gauge"
-        )
+        lines.append("\n# HELP cachier_entry_count Current cache entries\n# TYPE cachier_entry_count gauge")
 
         with self._lock:
             for func_name, func in self._registered_functions.items():
@@ -341,8 +318,7 @@ class PrometheusExporter(MetricsExporter):
 
         # Cache size
         lines.append(
-            "\n# HELP cachier_cache_size_bytes Total cache size in bytes\n"
-            "# TYPE cachier_cache_size_bytes gauge"
+            "\n# HELP cachier_cache_size_bytes Total cache size in bytes\n# TYPE cachier_cache_size_bytes gauge"
         )
 
         with self._lock:
