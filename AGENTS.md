@@ -6,7 +6,7 @@
 
 - **Repository:** [python-cachier/cachier](https://github.com/python-cachier/cachier)
 - **Primary Language:** Python 3.10+
-- **Key Dependencies:** `portalocker`, `watchdog` (optional: `pymongo`, `sqlalchemy`, `redis`)
+- **Key Dependencies:** `portalocker`, `watchdog` (optional: `boto3`, `pymongo`, `sqlalchemy`, `redis`)
 - **Test Framework:** `pytest` with backend-specific markers
 - **Linting:** `ruff` (replaces black/flake8)
 - **Type Checking:** `mypy`
@@ -29,6 +29,7 @@ cachier/
 │   │   ├── mongo.py
 │   │   ├── sql.py
 │   │   ├── redis.py
+│   │   ├── s3.py
 │   │   └── base.py
 │   ├── config.py          # Global/default config
 │   ├── _types.py          # Type definitions
@@ -62,7 +63,7 @@ ______________________________________________________________________
    ```bash
    pytest                           # All tests
    pytest -m "pickle or memory"     # Basic backends only
-   pytest -m "not (mongo or sql)"  # Exclude external service backends
+   pytest -m "not (mongo or redis or sql)"  # Exclude external service backends
    ```
 
 3. **Lint and type-check:**
@@ -109,10 +110,10 @@ ______________________________________________________________________
 ### 2. **Backends**
 
 - **Default:** Pickle (local file cache, `~/.cachier/`)
-- **Others:** Memory, MongoDB, SQL, Redis
+- **Others:** Memory, MongoDB, SQL, Redis, S3
 - **Adding a backend:** Implement in `src/cachier/cores/`, subclass `BaseCore`, add tests with appropriate markers, update docs, and CI matrix if needed.
 - **Optional dependencies:** Code/tests must gracefully skip if backend deps are missing. Install backend-specific deps via `tests/requirements_*.txt`.
-- **Requirements files:** `tests/requirements_mongodb.txt`, `tests/requirements_postgres.txt`, `tests/requirements_redis.txt` for backend-specific dependencies.
+- **Requirements files:** `tests/requirements_mongodb.txt`, `tests/requirements_postgres.txt`, `tests/requirements_redis.txt`, `tests/requirements_s3.txt` for backend-specific dependencies.
 
 ### 3. **Decorator Usage**
 
@@ -123,8 +124,8 @@ ______________________________________________________________________
 ### 4. **Testing**
 
 - **Run all tests:** `pytest`
-- **Backend-specific:** Use markers, e.g. `pytest -m mongo`, `pytest -m redis`, `pytest -m sql`
-- **Available markers:** `mongo`, `memory`, `pickle`, `redis`, `sql`, `maxage` (see `pyproject.toml`)
+- **Backend-specific:** Use markers, e.g. `pytest -m mongo`, `pytest -m redis`, `pytest -m sql`, `pytest -m s3`
+- **Available markers:** `mongo`, `memory`, `pickle`, `redis`, `sql`, `s3`, `maxage` (see `pyproject.toml`)
 - **Requirements:** See `tests/requirements_*.txt` for backend test deps.
 - **CI:** Matrix covers OS/backend combinations. Mongo/SQL/Redis require Dockerized services.
 - **Missing deps:** Tests gracefully skip if optional backend dependencies are missing.
@@ -160,7 +161,7 @@ For an up-to-date overview of the repository layout, see `README.rst` in the pro
 
 ### Key functionality
 
-- core.py exposes the cachier decorator. It chooses a backend (pickle, mongo, memory, SQL, or Redis) and wraps the target function:
+- core.py exposes the cachier decorator. It chooses a backend (pickle, mongo, memory, SQL, Redis, or S3) and wraps the target function:
 
 ```python
 backend = _update_with_defaults(backend, "backend")
@@ -182,6 +183,8 @@ elif backend == "redis":
         redis_client=redis_client,
         wait_for_calc_timeout=wait_for_calc_timeout,
     )
+elif backend == "s3":
+    core = _S3Core(...)
 else:
     raise ValueError("specified an invalid core: %s" % backend)
 ```
@@ -204,7 +207,7 @@ class Params:
     allow_none: bool = False
 ```
 
-- The project supports multiple backends; each resides under src/cachier/cores/ (e.g., redis.py, mongo.py, etc.). The Redis example demonstrates how to use one backend:
+- The project supports multiple backends; each resides under src/cachier/cores/ (e.g., redis.py, mongo.py, s3.py). The Redis example demonstrates how to use one backend:
 
 ```python
 import time
@@ -395,9 +398,10 @@ ______________________________________________________________________
   pip install -r tests/requirements_mongodb.txt
   pip install -r tests/requirements_redis.txt
   pip install -r tests/requirements_postgres.txt
+  pip install -r tests/requirements_s3.txt
   ```
 - **Run all tests:** `pytest`
-- **Run backend-specific tests:** `pytest -m <backend>` (mongo, redis, sql, memory, pickle, maxage)
+- **Run backend-specific tests:** `pytest -m <backend>` (mongo, redis, sql, s3, memory, pickle, maxage)
 - **Run multiple backends:** `pytest -m "redis or sql"`
 - **Exclude backends:** `pytest -m "not mongo"`
 - **Lint:** `ruff check .`
@@ -407,7 +411,7 @@ ______________________________________________________________________
 - **Build package:** `python -m build`
 - **Check docs:** `python setup.py checkdocs`
 - **Run example:** `python examples/redis_example.py`
-- **Update requirements:** Edit `tests/requirements_*.txt` as needed (`requirements_mongodb.txt`, `requirements_postgres.txt`, `requirements_redis.txt`).
+- **Update requirements:** Edit `tests/requirements_*.txt` as needed (`requirements_mongodb.txt`, `requirements_postgres.txt`, `requirements_redis.txt`, `requirements_s3.txt`).
 
 ### Local Testing with Docker
 
@@ -418,6 +422,7 @@ ______________________________________________________________________
 ./scripts/test-local.sh mongo
 ./scripts/test-local.sh redis
 ./scripts/test-local.sh sql
+./scripts/test-local.sh s3
 
 # Test multiple backends
 ./scripts/test-local.sh mongo redis
@@ -444,6 +449,7 @@ ______________________________________________________________________
 - `mongo` - MongoDB backend
 - `redis` - Redis backend
 - `sql` - PostgreSQL backend
+- `s3` - S3 backend (no Docker)
 - `memory` - Memory backend (no Docker)
 - `pickle` - Pickle backend (no Docker)
 - `all` - All backends
@@ -455,8 +461,9 @@ ______________________________________________________________________
 - `-v, --verbose` - Verbose pytest output
 - `-k, --keep-running` - Keep containers running after tests
 - `-h, --html-coverage` - Generate HTML coverage report
+- `-f, --files` - Run only specific test files
 
-**Note:** External backends (MongoDB, Redis, SQL) require Docker. Memory and pickle backends work without Docker.
+**Note:** External backends (MongoDB, Redis, SQL) require Docker. S3, memory, and pickle backends work without Docker.
 
 ______________________________________________________________________
 
@@ -498,7 +505,7 @@ ______________________________________________________________________
 
 ## 🧪 Testing Matrix & Markers
 
-- **Markers:** `@pytest.mark.<backend>` (mongo, memory, pickle, redis, sql, maxage)
+- **Markers:** `@pytest.mark.<backend>` (mongo, memory, pickle, redis, sql, s3, maxage)
 - **Backend services:** Mongo/SQL/Redis require Dockerized services for CI.
 - **Tests must not break if optional backend deps are missing.**
 - **CI matrix:** See `.github/workflows/` for details on OS/backend combinations.
@@ -567,7 +574,7 @@ ______________________________________________________________________
 - **Never emit warnings/errors for missing optional deps at import time.**
 - **All code must be Python 3.10+ compatible.**
 - **All new code must have full type annotations and numpy-style docstrings.**
-- **Backend consistency:** Ensure all backends (pickle, memory, mongo, sql, redis) are supported.\*\*
+- **Backend consistency:** Ensure all backends (pickle, memory, mongo, sql, redis, s3) are supported.\*\*
 - **Validation:** Test examples in this file work: `python -c "from cachier import cachier; ..."` should succeed.
 - **If you are unsure about a pattern, check the README and this file first.**
 - **If you are stuck, suggest opening a new chat with the latest context.**
