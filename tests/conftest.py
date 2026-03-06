@@ -62,7 +62,7 @@ def inject_worker_schema_for_sql_tests(monkeypatch, request):
                 parsed.path,
                 parsed.params,
                 new_query,
-                parsed.fragment,
+                parsed.fragment
             )
         )
 
@@ -161,7 +161,7 @@ def cleanup_test_schemas(request):
                         parsed.path,
                         parsed.params,
                         clean_query,
-                        parsed.fragment,
+                        parsed.fragment
                     )
                 )
 
