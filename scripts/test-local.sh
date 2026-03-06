@@ -25,7 +25,9 @@ COVERAGE_REPORT="term"
 KEEP_RUNNING=false
 SELECTED_CORES=""
 INCLUDE_LOCAL_CORES=false
-TEST_FILES=""
+TEST_FILES=()
+PARALLEL=false
+PARALLEL_WORKERS="auto"
 
 # Function to print colored messages
 print_message() {
@@ -57,6 +59,8 @@ OPTIONS:
     -k, --keep-running  Keep containers running after tests
     -h, --html-coverage Generate HTML coverage report
     -f, --files         Specify test files to run (can be used multiple times)
+    -p, --parallel      Run tests in parallel using pytest-xdist
+    -w, --workers       Number of parallel workers (default: auto)
     --help              Show this help message
 
 EXAMPLES:
@@ -66,6 +70,8 @@ EXAMPLES:
     $0 external -k              # Run external backends, keep containers
     $0 mongo memory -v          # Run MongoDB and memory tests verbosely
     $0 all -f tests/test_main.py -f tests/test_redis_core_coverage.py  # Run specific test files
+    $0 memory pickle -p         # Run local tests in parallel
+    $0 all -p -w 4             # Run all tests with 4 parallel workers
 
 ENVIRONMENT:
     You can also set cores via CACHIER_TEST_CORES environment variable:
@@ -96,12 +102,26 @@ while [[ $# -gt 0 ]]; do
                 usage
                 exit 1
             fi
-            TEST_FILES="$TEST_FILES $1"
+            TEST_FILES+=("$1")
             shift
             ;;
         --help)
             usage
             exit 0
+            ;;
+        -p|--parallel)
+            PARALLEL=true
+            shift
+            ;;
+        -w|--workers)
+            shift
+            if [[ $# -eq 0 ]] || [[ "$1" == -* ]]; then
+                print_message $RED "Error: -w/--workers requires a number argument"
+                usage
+                exit 1
+            fi
+            PARALLEL_WORKERS="$1"
+            shift
             ;;
         -*)
             print_message $RED "Unknown option: $1"
@@ -232,6 +252,17 @@ check_dependencies() {
             print_message $RED "Failed to install base test requirements"
             exit 1
         }
+    fi
+
+    # Check for pytest-xdist if parallel testing is requested
+    if [ "$PARALLEL" = true ]; then
+        if ! python -c "import xdist" 2>/dev/null; then
+            print_message $YELLOW "Installing pytest-xdist for parallel testing..."
+            pip install pytest-xdist || {
+                print_message $RED "Failed to install pytest-xdist"
+                exit 1
+            }
+        fi
     fi
 
     # Check MongoDB dependencies if testing MongoDB
@@ -423,12 +454,18 @@ main() {
     # Check and install dependencies
     check_dependencies
 
-    # Check if we need Docker
+    # Check if we need Docker, and if we should run serial pickle tests
     needs_docker=false
+    run_serial_local_tests=false
     for core in $SELECTED_CORES; do
         case $core in
             mongo|redis|sql)
                 needs_docker=true
+                ;;
+        esac
+        case $core in
+            pickle|all)
+                run_serial_local_tests=true
                 ;;
         esac
     done
@@ -497,26 +534,46 @@ main() {
             sql) test_sql ;;
         esac
     done
+    if [ -n "$pytest_markers" ]; then
+        pytest_markers="($pytest_markers) and not seriallocal"
+    else
+        pytest_markers="not seriallocal"
+    fi
 
     # Run pytest
     # Build pytest command
-    PYTEST_CMD="pytest"
+    PYTEST_ARGS=(pytest)
+    # and the specific pytest command for running serial pickle tests
+    SERIAL_PYTEST_ARGS=(pytest -m seriallocal)
+    # Only add -n0 if pytest-xdist is available; otherwise, plain pytest is already serial
+    if python - << 'EOF' >/dev/null 2>&1
+import xdist  # noqa: F401
+EOF
+    then
+        SERIAL_PYTEST_ARGS+=(-n0)
+    fi
 
     # Add test files if specified
-    if [ -n "$TEST_FILES" ]; then
-        PYTEST_CMD="$PYTEST_CMD $TEST_FILES"
-        print_message $BLUE "Test files specified: $TEST_FILES"
+    if [ ${#TEST_FILES[@]} -gt 0 ]; then
+        PYTEST_ARGS+=("${TEST_FILES[@]}")
+        print_message $BLUE "Test files specified: ${TEST_FILES[*]}"
+        # and turn off serial local tests, so we run only selected files
+        run_serial_local_tests=false
     fi
 
     # Add markers if needed (only if no specific test files were given)
-    if [ -z "$TEST_FILES" ]; then
+    if [ ${#TEST_FILES[@]} -eq 0 ]; then
         # Check if we selected all cores - if so, run all tests without marker filtering
         all_cores="memory mongo pickle redis s3 sql"
         selected_sorted=$(echo "$SELECTED_CORES" | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)
         all_sorted=$(echo "$all_cores" | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)
 
         if [ "$selected_sorted" != "$all_sorted" ]; then
-            PYTEST_CMD="$PYTEST_CMD -m \"$pytest_markers\""
+            PYTEST_ARGS+=(-m "$pytest_markers")
+        else
+            print_message $BLUE "Running all tests without markers since all cores are selected"
+            PYTEST_ARGS+=(-m "not seriallocal")
+            run_serial_local_tests=true
         fi
     else
         # When test files are specified, still apply markers if not running all cores
@@ -525,21 +582,47 @@ main() {
         all_sorted=$(echo "$all_cores" | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)
 
         if [ "$selected_sorted" != "$all_sorted" ]; then
-            PYTEST_CMD="$PYTEST_CMD -m \"$pytest_markers\""
+            PYTEST_ARGS+=(-m "$pytest_markers")
         fi
     fi
 
     # Add verbose flag if needed
     if [ "$VERBOSE" = true ]; then
-        PYTEST_CMD="$PYTEST_CMD -v"
+        PYTEST_ARGS+=(-v)
+        SERIAL_PYTEST_ARGS+=(-v)
+    fi
+
+    # Add parallel testing options if requested
+    if [ "$PARALLEL" = true ]; then
+        PYTEST_ARGS+=(-n "$PARALLEL_WORKERS")
+
+        # Show parallel testing info
+        if [ "$PARALLEL_WORKERS" = "auto" ]; then
+            print_message $BLUE "Running tests in parallel with automatic worker detection"
+        else
+            print_message $BLUE "Running tests in parallel with $PARALLEL_WORKERS workers"
+        fi
+
+        # Special note for pickle tests
+        if echo "$SELECTED_CORES" | grep -qw "pickle"; then
+            print_message $YELLOW "Note: Pickle tests will use isolated cache directories for parallel safety"
+        fi
     fi
 
     # Add coverage options
-    PYTEST_CMD="$PYTEST_CMD --cov=cachier --cov-report=$COVERAGE_REPORT"
+    PYTEST_ARGS+=(--cov=cachier --cov-report="$COVERAGE_REPORT")
+    SERIAL_PYTEST_ARGS+=(--cov=cachier --cov-report="$COVERAGE_REPORT" --cov-append)
 
     # Print and run the command
-    print_message $BLUE "Running: $PYTEST_CMD"
-    eval $PYTEST_CMD
+    print_message $BLUE "Running: $(printf '%q ' "${PYTEST_ARGS[@]}")"
+    "${PYTEST_ARGS[@]}"
+
+    if [ "$run_serial_local_tests" = true ]; then
+        print_message $BLUE "Running serial local tests (pickle, memory) with: $(printf '%q ' "${SERIAL_PYTEST_ARGS[@]}")"
+        "${SERIAL_PYTEST_ARGS[@]}"
+    else
+        print_message $BLUE "Skipping serial local tests (pickle, memory) since not requested"
+    fi
 
     TEST_EXIT_CODE=$?
 
