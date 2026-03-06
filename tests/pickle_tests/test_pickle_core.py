@@ -1054,6 +1054,70 @@ def test_wait_with_polling_file_errors(tmp_path):
 
 
 @pytest.mark.pickle
+def test_save_cache_keeps_existing_file_readable_during_write(tmp_path, monkeypatch):
+    """Test that cache rewrites do not expose a truncated file to plain readers."""
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=10,
+        separate_files=False,
+    )
+
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+
+    initial_cache = {
+        "key1": CacheEntry(
+            value="result-1",
+            time=datetime.now(),
+            stale=False,
+            _processing=False,
+        )
+    }
+    updated_cache = {
+        **initial_cache,
+        "key2": CacheEntry(
+            value="result-2",
+            time=datetime.now(),
+            stale=False,
+            _processing=False,
+        ),
+    }
+    core._save_cache(initial_cache)
+
+    dump_started = threading.Event()
+    allow_dump = threading.Event()
+    real_pickle_dump = pickle.dump
+
+    def blocking_dump(obj, fh, protocol):
+        if obj is updated_cache:
+            dump_started.set()
+            assert allow_dump.wait(timeout=5)
+        return real_pickle_dump(obj, fh, protocol=protocol)
+
+    monkeypatch.setattr("cachier.cores.pickle.pickle.dump", blocking_dump)
+
+    writer = threading.Thread(target=core._save_cache, args=(updated_cache,), daemon=True)
+    writer.start()
+
+    assert dump_started.wait(timeout=5)
+    with open(core.cache_fpath, "rb") as cache_file:
+        visible_cache = pickle.load(cache_file)
+    assert visible_cache == initial_cache
+
+    allow_dump.set()
+    writer.join(timeout=5)
+    assert not writer.is_alive()
+
+    with open(core.cache_fpath, "rb") as cache_file:
+        visible_cache = pickle.load(cache_file)
+    assert visible_cache == updated_cache
+
+
+@pytest.mark.pickle
 def test_wait_with_polling_calls_timeout_check_when_processing(tmp_path):
     """Test _wait_with_polling checks timeout while entry is processing."""
     core = _PickleCore(

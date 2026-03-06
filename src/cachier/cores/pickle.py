@@ -9,6 +9,7 @@
 import logging
 import os
 import pickle  # for local caching
+import tempfile
 import time
 from contextlib import suppress
 from datetime import datetime, timedelta
@@ -68,6 +69,10 @@ class _PickleCore(_BaseCore):
             self._check_calculation()  # pragma: no cover
 
         def on_modified(self, event) -> None:
+            """A Watchdog Event Handler method."""  # noqa: D401
+            self._check_calculation()
+
+        def on_moved(self, event) -> None:
             """A Watchdog Event Handler method."""  # noqa: D401
             self._check_calculation()
 
@@ -181,9 +186,27 @@ class _PickleCore(_BaseCore):
             fpath += f"_{separate_file_key}"
         elif hash_str is not None:
             fpath += f"_{hash_str}"
+        parent_dir = os.path.dirname(fpath)
         with self.lock:
-            with portalocker.Lock(fpath, mode="wb") as cf:
-                pickle.dump(cache, cast(IO[bytes], cf), protocol=4)
+            if isinstance(cache, CacheEntry):
+                with portalocker.Lock(fpath, mode="wb") as cache_file:
+                    pickle.dump(cache, cast(IO[bytes], cache_file), protocol=4)
+            else:
+                with portalocker.Lock(fpath, mode="ab"):
+                    with tempfile.NamedTemporaryFile(
+                        mode="wb",
+                        dir=parent_dir,
+                        delete=False,
+                    ) as temp_file:
+                        temp_path = temp_file.name
+                        pickle.dump(cache, cast(IO[bytes], temp_file), protocol=4)
+                        temp_file.flush()
+                        os.fsync(temp_file.fileno())
+                    try:
+                        os.replace(temp_path, fpath)
+                    finally:
+                        with suppress(FileNotFoundError):
+                            os.remove(temp_path)
             # the same as check for separate_file, but changed for typing
             if isinstance(cache, dict):
                 self._cache_dict = cache
