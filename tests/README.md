@@ -339,24 +339,26 @@ The CI pipeline runs a matrix job per backend. Each backend uses the commands be
 
 ```bash
 # Local backends (memory, pickle, and other non-external tests)
-pytest -m "not mongo and not sql and not redis and not s3"
+pytest -m "not mongo and not sql and not redis and not s3" -n auto
 
 # MongoDB backend
-pytest -m mongo
+pytest -m mongo -n auto
 
 # PostgreSQL/SQL backend
-pytest -m sql
+pytest -m sql -n auto
 
 # Redis backend
-pytest -m redis
+pytest -m redis -n auto
 
 # S3 backend
-pytest -m s3
+pytest -m s3 -n auto
 ```
 
-Note: local tests do not use `pytest-xdist` (`-n`) in CI. External backends
-(MongoDB, PostgreSQL, Redis, S3) each run in their own isolated matrix job with
-the corresponding Docker service started beforehand.
+All backends use `pytest-xdist` (`-n auto`) in CI for parallel test execution.
+Each backend runs in its own isolated matrix job with the corresponding Docker
+service started beforehand. Per-worker isolation is handled automatically by
+the fixtures in `conftest.py` (separate cache directories for pickle/maxage
+tests, separate PostgreSQL schemas for SQL tests).
 
 ### Environment Variables
 
