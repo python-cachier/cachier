@@ -24,14 +24,13 @@ license = { file = "LICENSE" }
 authors = [
   { name = "Shay Palachy Affek", email = 'shay.palachy@gmail.com' },
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -49,6 +48,25 @@ dependencies = [
   "portalocker>=2.3.2",
   "pympler>=1",
   "watchdog>=2.3.1",
+]
+
+optional-dependencies.all = [
+  "boto3>=1.26",
+  "pymongo>=4",
+  "redis>=4",
+  "sqlalchemy>=2",
+]
+optional-dependencies.mongo = [
+  "pymongo>=4",
+]
+optional-dependencies.redis = [
+  "redis>=4",
+]
+optional-dependencies.s3 = [
+  "boto3>=1.26",
+]
+optional-dependencies.sql = [
+  "sqlalchemy>=2",
 ]
 urls.Source = "https://github.com/python-cachier/cachier"
 # --- setuptools ---
@@ -75,7 +93,7 @@ namespaces = false # to disable scanning PEP 420 namespaces (true by default)
 # --- ruff ---
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 line-length = 120
 # Exclude a variety of commonly ignored directories.
 exclude = [
@@ -177,10 +195,20 @@ markers = [
   "pickle: test the pickle core",
   "redis: test the Redis core",
   "sql: test the SQL core",
+  "s3: test the S3 core",
   "maxage: test the max_age functionality",
   "asyncio: marks tests as async",
+  "smoke: fast smoke tests with no external service dependencies",
 ]
 
+[tool.coverage.report]
+show_missing = true
+# Regexes for lines to exclude from consideration
+exclude_lines = [
+  "pragma: no cover",          # Have to re-enable the standard pragma
+  "raise NotImplementedError", # Don't complain if tests don't hit defensive assertion code:
+  "if TYPE_CHECKING:",         # Is only true when running mypy, not tests
+]
 # --- coverage ---
 
 [tool.coverage.run]
@@ -191,12 +219,4 @@ omit = [
   "src/cachier/_version.py",
   "src/cachier/__init__.py",
   "**/scripts/**",
-]
-[tool.coverage.report]
-show_missing = true
-# Regexes for lines to exclude from consideration
-exclude_lines = [
-  "pragma: no cover",          # Have to re-enable the standard pragma
-  "raise NotImplementedError", # Don't complain if tests don't hit defensive assertion code:
-  "if TYPE_CHECKING:",         # Is only true when running mypy, not tests
 ]

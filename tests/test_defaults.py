@@ -9,7 +9,7 @@ from dataclasses import replace
 import pytest
 
 import cachier
-from tests.test_mongo_core import _test_mongetter
+from tests.mongo_tests.test_mongo_core import _test_mongetter
 
 MONGO_DELTA = datetime.timedelta(seconds=3)
 _copied_defaults = replace(cachier.get_global_params())

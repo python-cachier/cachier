@@ -62,21 +62,78 @@ class _MongoCore(_BaseCore):
         if mongetter is None:
             raise MissingMongetter("must specify ``mongetter`` when using the mongo core")
         self.mongetter = mongetter
-        self.mongo_collection = self.mongetter()
-        index_inf = self.mongo_collection.index_information()
-        if _MongoCore._INDEX_NAME not in index_inf:
-            func1key1 = IndexModel(
-                keys=[("func", ASCENDING), ("key", ASCENDING)],
-                name=_MongoCore._INDEX_NAME,
-            )
-            self.mongo_collection.create_indexes([func1key1])
+        self.mongo_collection: Any = None
+        self._index_verified = False
+
+    def _ensure_collection(self) -> Any:
+        """Ensure we have a resolved Mongo collection for sync operations."""
+        if self.mongo_collection is not None and self._index_verified:
+            return self.mongo_collection
+
+        with self.lock:
+            if self.mongo_collection is None:
+                self.mongo_collection = self.mongetter()
+
+            if not self._index_verified:
+                index_inf = self.mongo_collection.index_information()
+                if _MongoCore._INDEX_NAME not in index_inf:
+                    func1key1 = IndexModel(
+                        keys=[("func", ASCENDING), ("key", ASCENDING)],
+                        name=_MongoCore._INDEX_NAME,
+                    )
+                    self.mongo_collection.create_indexes([func1key1])
+                self._index_verified = True
+
+        return self.mongo_collection
+
+    async def _ensure_collection_async(self) -> Any:
+        """Ensure we have a resolved Mongo collection for async operations."""
+        if self.mongo_collection is not None and self._index_verified:
+            return self.mongo_collection
+
+        coll = await self.mongetter()
+        self.mongo_collection = coll
+
+        if not self._index_verified:
+            index_inf = await self.mongo_collection.index_information()
+            if _MongoCore._INDEX_NAME not in index_inf:
+                func1key1 = IndexModel(
+                    keys=[("func", ASCENDING), ("key", ASCENDING)],
+                    name=_MongoCore._INDEX_NAME,
+                )
+                await self.mongo_collection.create_indexes([func1key1])
+            self._index_verified = True
+
+        return self.mongo_collection
 
     @property
     def _func_str(self) -> str:
         return _get_func_str(self.func)
 
     def get_entry_by_key(self, key: str) -> Tuple[str, Optional[CacheEntry]]:
-        res = self.mongo_collection.find_one({"func": self._func_str, "key": key})
+        mongo_collection = self._ensure_collection()
+        res = mongo_collection.find_one({"func": self._func_str, "key": key})
+        if not res:
+            return key, None
+        val = None
+        if "value" in res:
+            val = pickle.loads(res["value"])
+        entry = CacheEntry(
+            value=val,
+            time=res.get("time", None),
+            stale=res.get("stale", False),
+            _processing=res.get("processing", False),
+            _completed=res.get("completed", False),
+        )
+        return key, entry
+
+    async def aget_entry(self, args, kwds) -> Tuple[str, Optional[CacheEntry]]:
+        key = self.get_key(args, kwds)
+        return await self.aget_entry_by_key(key)
+
+    async def aget_entry_by_key(self, key: str) -> Tuple[str, Optional[CacheEntry]]:
+        mongo_collection = await self._ensure_collection_async()
+        res = await mongo_collection.find_one({"func": self._func_str, "key": key})
         if not res:
             return key, None
         val = None
@@ -94,8 +151,31 @@ class _MongoCore(_BaseCore):
     def set_entry(self, key: str, func_res: Any) -> bool:
         if not self._should_store(func_res):
             return False
+        mongo_collection = self._ensure_collection()
         thebytes = pickle.dumps(func_res)
-        self.mongo_collection.update_one(
+        mongo_collection.update_one(
+            filter={"func": self._func_str, "key": key},
+            update={
+                "$set": {
+                    "func": self._func_str,
+                    "key": key,
+                    "value": Binary(thebytes),
+                    "time": datetime.now(),
+                    "stale": False,
+                    "processing": False,
+                    "completed": True,
+                }
+            },
+            upsert=True,
+        )
+        return True
+
+    async def aset_entry(self, key: str, func_res: Any) -> bool:
+        if not self._should_store(func_res):
+            return False
+        mongo_collection = await self._ensure_collection_async()
+        thebytes = pickle.dumps(func_res)
+        await mongo_collection.update_one(
             filter={"func": self._func_str, "key": key},
             update={
                 "$set": {
@@ -113,21 +193,40 @@ class _MongoCore(_BaseCore):
         return True
 
     def mark_entry_being_calculated(self, key: str) -> None:
-        self.mongo_collection.update_one(
+        mongo_collection = self._ensure_collection()
+        mongo_collection.update_one(
+            filter={"func": self._func_str, "key": key},
+            update={"$set": {"processing": True}},
+            upsert=True,
+        )
+
+    async def amark_entry_being_calculated(self, key: str) -> None:
+        mongo_collection = await self._ensure_collection_async()
+        await mongo_collection.update_one(
             filter={"func": self._func_str, "key": key},
             update={"$set": {"processing": True}},
             upsert=True,
         )
 
     def mark_entry_not_calculated(self, key: str) -> None:
+        mongo_collection = self._ensure_collection()
         with suppress(OperationFailure):  # don't care in this case
-            self.mongo_collection.update_one(
+            mongo_collection.update_one(
                 filter={
                     "func": self._func_str,
                     "key": key,
                 },
                 update={"$set": {"processing": False}},
                 upsert=False,  # should not insert in this case
+            )
+
+    async def amark_entry_not_calculated(self, key: str) -> None:
+        mongo_collection = await self._ensure_collection_async()
+        with suppress(OperationFailure):
+            await mongo_collection.update_one(
+                filter={"func": self._func_str, "key": key},
+                update={"$set": {"processing": False}},
+                upsert=False,
             )
 
     def wait_on_entry_calc(self, key: str) -> Any:
@@ -143,15 +242,35 @@ class _MongoCore(_BaseCore):
             self.check_calc_timeout(time_spent)
 
     def clear_cache(self) -> None:
-        self.mongo_collection.delete_many(filter={"func": self._func_str})
+        mongo_collection = self._ensure_collection()
+        mongo_collection.delete_many(filter={"func": self._func_str})
+
+    async def aclear_cache(self) -> None:
+        mongo_collection = await self._ensure_collection_async()
+        await mongo_collection.delete_many(filter={"func": self._func_str})
 
     def clear_being_calculated(self) -> None:
-        self.mongo_collection.update_many(
+        mongo_collection = self._ensure_collection()
+        mongo_collection.update_many(
+            filter={"func": self._func_str, "processing": True},
+            update={"$set": {"processing": False}},
+        )
+
+    async def aclear_being_calculated(self) -> None:
+        mongo_collection = await self._ensure_collection_async()
+        await mongo_collection.update_many(
             filter={"func": self._func_str, "processing": True},
             update={"$set": {"processing": False}},
         )
 
     def delete_stale_entries(self, stale_after: timedelta) -> None:
         """Delete stale entries from the MongoDB cache."""
+        mongo_collection = self._ensure_collection()
         threshold = datetime.now() - stale_after
-        self.mongo_collection.delete_many(filter={"func": self._func_str, "time": {"$lt": threshold}})
+        mongo_collection.delete_many(filter={"func": self._func_str, "time": {"$lt": threshold}})
+
+    async def adelete_stale_entries(self, stale_after: timedelta) -> None:
+        """Delete stale entries from the MongoDB cache."""
+        mongo_collection = await self._ensure_collection_async()
+        threshold = datetime.now() - stale_after
+        await mongo_collection.delete_many(filter={"func": self._func_str, "time": {"$lt": threshold}})

@@ -344,6 +344,40 @@ class TestSyncCompatibility:
 
         sync_func.clear_cache()
 
+    @pytest.mark.memory
+    @pytest.mark.asyncio
+    async def test_sync_wrapper_exposes_async_clear_methods(self):
+        """Ensure sync wrappers expose async clear helpers."""
+
+        @cachier(backend="memory")
+        def sync_func(x):
+            return x
+
+        assert sync_func(1) == 1
+        await sync_func.aclear_being_calculated()
+        await sync_func.aclear_cache()
+
+
+@pytest.mark.memory
+@pytest.mark.asyncio
+class TestAsyncWrapperMaintenanceMethods:
+    """Tests for clear helpers exposed on async wrappers."""
+
+    async def test_clear_methods_are_await_safe(self):
+        """Async wrappers support both sync and awaited clear_cache usage."""
+
+        @cachier(backend="memory")
+        async def async_func(x):
+            return x
+
+        # Legacy sync usage should keep working.
+        async_func.clear_cache()
+        async_func.clear_being_calculated()
+
+        # Awaiting these methods should also work.
+        await async_func.clear_cache()
+        await async_func.clear_being_calculated()
+
 
 # =============================================================================
 # Argument Handling Tests
@@ -838,6 +872,37 @@ class TestAsyncCleanupStale:
         # Give cleanup time to run
         await asyncio.sleep(0.5)
 
+        async_func.clear_cache()
+
+    @pytest.mark.memory
+    @pytest.mark.asyncio
+    async def test_cleanup_interval_skips_submit_when_not_elapsed(self, monkeypatch):
+        """Test async cleanup interval throttles background cleanup submits."""
+
+        class _DummyExecutor:
+            def __init__(self):
+                self.submits = 0
+
+            def submit(self, *args, **kwargs):
+                self.submits += 1
+
+        dummy = _DummyExecutor()
+        monkeypatch.setattr("cachier.core._get_executor", lambda: dummy)
+
+        @cachier(
+            backend="memory",
+            stale_after=timedelta(seconds=1),
+            cleanup_stale=True,
+            cleanup_interval=timedelta(hours=1),
+        )
+        async def async_func(x):
+            await asyncio.sleep(0.01)
+            return x * 2
+
+        async_func.clear_cache()
+        await async_func(5)
+        await async_func(5)
+        assert dummy.submits == 1
         async_func.clear_cache()
 
 

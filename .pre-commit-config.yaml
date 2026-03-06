@@ -23,7 +23,7 @@ repos:
       - id: detect-private-key
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1
+    rev: v1.43.1
     hooks:
       - id: typos
         # empty to do not write fixes
@@ -55,7 +55,7 @@ repos:
         args: ["--print-width=79"]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.10
+    rev: v0.15.0
     hooks:
       # use black formatting
       - id: ruff-format
@@ -73,11 +73,11 @@ repos:
         files: "src/.*"
 
   - repo: https://github.com/tox-dev/pyproject-fmt
-    rev: v2.11.1
+    rev: v2.12.1
     hooks:
       - id: pyproject-fmt
         additional_dependencies: [tox]
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.24.1
+    rev: v0.25
     hooks:
       - id: validate-pyproject

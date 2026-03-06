@@ -4,7 +4,7 @@ import pickle
 import time
 import warnings
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Tuple, Union
 
 try:
     import redis
@@ -33,7 +33,12 @@ class _RedisCore(_BaseCore):
     def __init__(
         self,
         hash_func: Optional[HashFunc],
-        redis_client: Optional[Union["redis.Redis", Callable[[], "redis.Redis"]]],
+        redis_client: Optional[
+            Union[
+                "redis.Redis",
+                Callable[[], Union["redis.Redis", Awaitable["redis.Redis"]]],
+            ]
+        ],
         wait_for_calc_timeout: Optional[int] = None,
         key_prefix: str = "cachier",
         entry_size_limit: Optional[int] = None,
@@ -62,6 +67,12 @@ class _RedisCore(_BaseCore):
         """Resolve the Redis client from the provided parameter."""
         if callable(self.redis_client):
             return self.redis_client()
+        return self.redis_client
+
+    async def _resolve_redis_client_async(self):
+        """Resolve Redis client for async operations."""
+        if callable(self.redis_client):
+            return await self.redis_client()
         return self.redis_client
 
     def _get_redis_key(self, key: str) -> str:
@@ -165,6 +176,51 @@ class _RedisCore(_BaseCore):
             warnings.warn(f"Redis get_entry_by_key failed: {e}", stacklevel=2)
             return key, None
 
+    async def aget_entry(self, args, kwds) -> Tuple[str, Optional[CacheEntry]]:
+        key = self.get_key(args, kwds)
+        return await self.aget_entry_by_key(key)
+
+    async def aget_entry_by_key(self, key: str) -> Tuple[str, Optional[CacheEntry]]:
+        """Get entry based on given key from Redis using async operations."""
+        redis_client = await self._resolve_redis_client_async()
+        redis_key = self._get_redis_key(key)
+
+        try:
+            cached_data = await redis_client.hgetall(redis_key)
+            if not cached_data:
+                return key, None
+
+            value = None
+            raw_value = _RedisCore._get_raw_field(cached_data, "value")
+            if raw_value is not None:
+                value = self._loading_pickle(raw_value)
+
+            raw_ts = _RedisCore._get_raw_field(cached_data, "timestamp") or b""
+            if isinstance(raw_ts, bytes):
+                try:
+                    timestamp_str = raw_ts.decode("utf-8")
+                except UnicodeDecodeError:
+                    timestamp_str = raw_ts.decode("latin-1", errors="ignore")
+            else:
+                timestamp_str = str(raw_ts)
+            timestamp = datetime.fromisoformat(timestamp_str) if timestamp_str else datetime.now()
+
+            stale = _RedisCore._get_bool_field(cached_data, "stale")
+            processing = _RedisCore._get_bool_field(cached_data, "processing")
+            completed = _RedisCore._get_bool_field(cached_data, "completed")
+
+            entry = CacheEntry(
+                value=value,
+                time=timestamp,
+                stale=stale,
+                _processing=processing,
+                _completed=completed,
+            )
+            return key, entry
+        except Exception as e:
+            warnings.warn(f"Redis get_entry_by_key failed: {e}", stacklevel=2)
+            return key, None
+
     def set_entry(self, key: str, func_res: Any) -> bool:
         """Map the given result to the given key in Redis."""
         if not self._should_store(func_res):
@@ -193,6 +249,31 @@ class _RedisCore(_BaseCore):
             warnings.warn(f"Redis set_entry failed: {e}", stacklevel=2)
         return False
 
+    async def aset_entry(self, key: str, func_res: Any) -> bool:
+        """Map the given result to the given key in Redis using async operations."""
+        if not self._should_store(func_res):
+            return False
+        redis_client = await self._resolve_redis_client_async()
+        redis_key = self._get_redis_key(key)
+
+        try:
+            value_bytes = pickle.dumps(func_res)
+            now = datetime.now()
+            await redis_client.hset(
+                redis_key,
+                mapping={
+                    "value": value_bytes,
+                    "timestamp": now.isoformat(),
+                    "stale": "false",
+                    "processing": "false",
+                    "completed": "true",
+                },
+            )
+            return True
+        except Exception as e:
+            warnings.warn(f"Redis set_entry failed: {e}", stacklevel=2)
+        return False
+
     def mark_entry_being_calculated(self, key: str) -> None:
         """Mark the entry mapped by the given key as being calculated."""
         redis_client = self._resolve_redis_client()
@@ -207,6 +288,25 @@ class _RedisCore(_BaseCore):
         except Exception as e:
             warnings.warn(f"Redis mark_entry_being_calculated failed: {e}", stacklevel=2)
 
+    async def amark_entry_being_calculated(self, key: str) -> None:
+        """Mark the entry mapped by the given key as being calculated asynchronously."""
+        redis_client = await self._resolve_redis_client_async()
+        redis_key = self._get_redis_key(key)
+
+        try:
+            now = datetime.now()
+            await redis_client.hset(
+                redis_key,
+                mapping={
+                    "timestamp": now.isoformat(),
+                    "stale": "false",
+                    "processing": "true",
+                    "completed": "false",
+                },
+            )
+        except Exception as e:
+            warnings.warn(f"Redis mark_entry_being_calculated failed: {e}", stacklevel=2)
+
     def mark_entry_not_calculated(self, key: str) -> None:
         """Mark the entry mapped by the given key as not being calculated."""
         redis_client = self._resolve_redis_client()
@@ -214,6 +314,16 @@ class _RedisCore(_BaseCore):
 
         try:
             redis_client.hset(redis_key, "processing", "false")
+        except Exception as e:
+            warnings.warn(f"Redis mark_entry_not_calculated failed: {e}", stacklevel=2)
+
+    async def amark_entry_not_calculated(self, key: str) -> None:
+        """Mark the entry mapped by the given key as not being calculated asynchronously."""
+        redis_client = await self._resolve_redis_client_async()
+        redis_key = self._get_redis_key(key)
+
+        try:
+            await redis_client.hset(redis_key, "processing", "false")
         except Exception as e:
             warnings.warn(f"Redis mark_entry_not_calculated failed: {e}", stacklevel=2)
 
@@ -243,6 +353,18 @@ class _RedisCore(_BaseCore):
         except Exception as e:
             warnings.warn(f"Redis clear_cache failed: {e}", stacklevel=2)
 
+    async def aclear_cache(self) -> None:
+        """Clear the cache of this core asynchronously."""
+        redis_client = await self._resolve_redis_client_async()
+        pattern = f"{self.key_prefix}:{self._func_str}:*"
+
+        try:
+            keys = await redis_client.keys(pattern)
+            if keys:
+                await redis_client.delete(*keys)
+        except Exception as e:
+            warnings.warn(f"Redis clear_cache failed: {e}", stacklevel=2)
+
     def clear_being_calculated(self) -> None:
         """Mark all entries in this cache as not being calculated."""
         redis_client = self._resolve_redis_client()
@@ -257,6 +379,18 @@ class _RedisCore(_BaseCore):
                 for key in keys:
                     pipe.hset(key, "processing", "false")
                 pipe.execute()
+        except Exception as e:
+            warnings.warn(f"Redis clear_being_calculated failed: {e}", stacklevel=2)
+
+    async def aclear_being_calculated(self) -> None:
+        """Mark all entries in this cache as not being calculated asynchronously."""
+        redis_client = await self._resolve_redis_client_async()
+        pattern = f"{self.key_prefix}:{self._func_str}:*"
+
+        try:
+            keys = await redis_client.keys(pattern)
+            for key in keys or []:
+                await redis_client.hset(key, "processing", "false")
         except Exception as e:
             warnings.warn(f"Redis clear_being_calculated failed: {e}", stacklevel=2)
 
@@ -286,5 +420,33 @@ class _RedisCore(_BaseCore):
                     continue
                 if ts_val < threshold:
                     redis_client.delete(key)
+        except Exception as e:
+            warnings.warn(f"Redis delete_stale_entries failed: {e}", stacklevel=2)
+
+    async def adelete_stale_entries(self, stale_after: timedelta) -> None:
+        """Remove stale entries from the Redis cache asynchronously."""
+        redis_client = await self._resolve_redis_client_async()
+        pattern = f"{self.key_prefix}:{self._func_str}:*"
+        try:
+            keys = await redis_client.keys(pattern)
+            threshold = datetime.now() - stale_after
+            for key in keys or []:
+                ts = await redis_client.hget(key, "timestamp")
+                if ts is None:
+                    continue
+                if isinstance(ts, bytes):
+                    try:
+                        ts_s = ts.decode("utf-8")
+                    except Exception:
+                        ts_s = ts.decode("latin-1", errors="ignore")
+                else:
+                    ts_s = str(ts)
+                try:
+                    ts_val = datetime.fromisoformat(ts_s)
+                except Exception as exc:
+                    warnings.warn(f"Redis timestamp parse failed: {exc}", stacklevel=2)
+                    continue
+                if ts_val < threshold:
+                    await redis_client.delete(key)
         except Exception as e:
             warnings.warn(f"Redis delete_stale_entries failed: {e}", stacklevel=2)

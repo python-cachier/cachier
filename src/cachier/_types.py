@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, Literal, Union
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Literal, Union
 
 if TYPE_CHECKING:
     import pymongo.collection
@@ -6,6 +6,7 @@ if TYPE_CHECKING:
 
 
 HashFunc = Callable[..., str]
-Mongetter = Callable[[], "pymongo.collection.Collection"]
-RedisClient = Union["redis.Redis", Callable[[], "redis.Redis"]]
-Backend = Literal["pickle", "mongo", "memory", "redis"]
+Mongetter = Callable[[], Union["pymongo.collection.Collection", Awaitable["pymongo.collection.Collection"]]]
+RedisClient = Union["redis.Redis", Callable[[], Union["redis.Redis", Awaitable["redis.Redis"]]]]
+S3Client = Union[Any, Callable[[], Any]]
+Backend = Literal["pickle", "mongo", "memory", "redis", "s3"]

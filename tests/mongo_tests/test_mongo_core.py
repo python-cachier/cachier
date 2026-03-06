@@ -3,17 +3,13 @@
 # standard library imports
 import datetime
 import hashlib
-import platform
 import queue
-import sys
 import threading
 from random import random
 from time import sleep
-from urllib.parse import quote_plus
 
 # third-party imports
 import pytest
-from birch import Birch  # type: ignore[import-not-found]
 
 try:
     import pandas as pd
@@ -24,7 +20,6 @@ except (ImportError, ModuleNotFoundError):
 try:
     import pymongo
     from pymongo.errors import OperationFailure
-    from pymongo.mongo_client import MongoClient
 
     from cachier.cores.mongo import MissingMongetter
 except (ImportError, ModuleNotFoundError):
@@ -33,83 +28,14 @@ except (ImportError, ModuleNotFoundError):
     OperationFailure = None
     MissingMongetter = None
 
-    # define a mock MongoClient class that will raise an exception
-    # on init, warning that pymongo is not installed
-    class MongoClient:
-        """Mock MongoClient class raising ImportError on missing pymongo."""
-
-        def __init__(self, *args, **kwargs):
-            """Initialize the mock MongoClient."""
-            raise ImportError("pymongo is not installed!")
-
-
-try:
-    from pymongo_inmemory import MongoClient as InMemoryMongoClient
-except (ImportError, ModuleNotFoundError):
-
-    class InMemoryMongoClient:
-        """Mock InMemoryMongoClient class.
-
-        Raises an ImportError on missing pymongo_inmemory.
-
-        """
-
-        def __init__(self, *args, **kwargs):
-            """Initialize the mock InMemoryMongoClient."""
-            raise ImportError("pymongo_inmemory is not installed!")
-
-    print("pymongo_inmemory is not installed; in-memory MongoDB tests will fail!")
-
 # local imports
 from cachier import cachier
 from cachier.config import CacheEntry
 from cachier.cores.base import RecalculationNeeded
 from cachier.cores.mongo import _MongoCore
+from tests.mongo_tests.helpers import _test_mongetter
 
 # === Enables testing vs a real MongoDB instance ===
-
-
-class CfgKey:
-    HOST = "TEST_HOST"
-    PORT = "TEST_PORT"
-    # UNAME = "TEST_USERNAME"
-    # PWD = "TEST_PASSWORD"
-    # DB = "TEST_DB"
-    TEST_VS_DOCKERIZED_MONGO = "TEST_VS_DOCKERIZED_MONGO"
-
-
-CFG = Birch(namespace="cachier", defaults={CfgKey.TEST_VS_DOCKERIZED_MONGO: False})
-
-
-# URI_TEMPLATE = "mongodb://myUser:myPassword@localhost:27017/"
-URI_TEMPLATE = "mongodb://{host}:{port}?retrywrites=true&w=majority"
-
-
-def _get_cachier_db_mongo_client():
-    host = quote_plus(CFG[CfgKey.HOST])
-    port = quote_plus(CFG[CfgKey.PORT])
-    # uname = quote_plus(CFG[CfgKey.UNAME])
-    # pwd = quote_plus(CFG[CfgKey.PWD])
-    # db = quote_plus(CFG[CfgKey.DB])
-    uri = f"mongodb://{host}:{port}?retrywrites=true&w=majority"
-    return MongoClient(uri)
-
-
-_COLLECTION_NAME = f"cachier_test_{platform.system()}_{'.'.join(map(str, sys.version_info[:3]))}"
-
-
-def _test_mongetter():
-    if not hasattr(_test_mongetter, "client"):
-        if str(CFG.mget(CfgKey.TEST_VS_DOCKERIZED_MONGO)).lower() == "true":
-            print("Using live MongoDB instance for testing.")
-            _test_mongetter.client = _get_cachier_db_mongo_client()
-        else:
-            print("Using in-memory MongoDB instance for testing.")
-            _test_mongetter.client = InMemoryMongoClient()
-    db_obj = _test_mongetter.client["cachier_test"]
-    if _COLLECTION_NAME not in db_obj.list_collection_names():
-        db_obj.create_collection(_COLLECTION_NAME)
-    return db_obj[_COLLECTION_NAME]
 
 
 # === Mongo core tests ===
@@ -130,6 +56,24 @@ def test_missing_mongetter():
 def test_information():
     print("\npymongo version: ", end="")
     print(pymongo.__version__)
+
+
+@pytest.mark.mongo
+def test_sync_client_over_sync_async_functions():
+    @cachier(mongetter=_test_mongetter)
+    def sync_cached_mongo_with_sync_client(_: int) -> int:
+        return 1
+
+    assert callable(sync_cached_mongo_with_sync_client)
+
+    with pytest.raises(
+        TypeError,
+        match="Async cached functions with Mongo backend require an async mongetter.",
+    ):
+
+        @cachier(mongetter=_test_mongetter)
+        async def async_cached_mongo_with_sync_client(_: int) -> int:
+            return 1
 
 
 @pytest.mark.mongo
@@ -395,3 +339,72 @@ def test_callable_hash_param():
     value_b = _params_with_dataframe(1, df=df_b)
 
     assert value_a == value_b  # same content --> same key
+
+
+@pytest.mark.mongo
+def test_mongo_core_ensure_collection_collection_set_not_verified():
+    """Cover line 69 False branch: collection already set when entering lock."""
+    core = _MongoCore(hash_func=None, mongetter=_test_mongetter, wait_for_calc_timeout=10)
+    core.set_func(lambda x: x)
+
+    # Set mongo_collection manually so it is not None, but leave _index_verified as False.
+    # Outer guard: mongo_collection is not None AND _index_verified is False → enters lock.
+    # Line 69: False (collection already set) → skips fetching collection.
+    # Line 72: True (not verified) → verifies index.
+    core.mongo_collection = _test_mongetter()
+    collection = core._ensure_collection()
+    assert collection is not None
+    assert core._index_verified is True
+
+
+@pytest.mark.mongo
+def test_mongo_core_ensure_collection_index_verified_inside_lock():
+    """Cover line 72 False branch: _index_verified is True when inside lock."""
+    core = _MongoCore(hash_func=None, mongetter=_test_mongetter, wait_for_calc_timeout=10)
+    core.set_func(lambda x: x)
+
+    # Set _index_verified = True, but leave mongo_collection as None.
+    # Outer guard: mongo_collection is None → enters lock.
+    # Line 69: True (collection is None) → fetches collection.
+    # Line 72: False (_index_verified is already True) → skips index check.
+    core._index_verified = True
+    collection = core._ensure_collection()
+    assert collection is not None
+
+
+@pytest.mark.mongo
+def test_mongo_core_set_entry_should_not_store():
+    core = _MongoCore(hash_func=None, mongetter=_test_mongetter, wait_for_calc_timeout=10)
+    core.set_func(lambda x: x)
+    core._should_store = lambda _value: False
+    assert core.set_entry("ignored", None) is False
+
+
+@pytest.mark.mongo
+def test_mongo_core_delete_stale_entries():
+    core = _MongoCore(hash_func=None, mongetter=_test_mongetter, wait_for_calc_timeout=10)
+    core.set_func(lambda x: x)
+    core.clear_cache()
+    try:
+        assert core.set_entry("stale", 1) is True
+        assert core.set_entry("fresh", 2) is True
+
+        collection = _test_mongetter()
+        collection.update_one(
+            {"func": core._func_str, "key": "stale"},
+            {"$set": {"time": datetime.datetime.now() - datetime.timedelta(hours=2)}},
+            upsert=False,
+        )
+        collection.update_one(
+            {"func": core._func_str, "key": "fresh"},
+            {"$set": {"time": datetime.datetime.now()}},
+            upsert=False,
+        )
+
+        core.delete_stale_entries(datetime.timedelta(hours=1))
+        _, stale_entry = core.get_entry_by_key("stale")
+        _, fresh_entry = core.get_entry_by_key("fresh")
+        assert stale_entry is None
+        assert fresh_entry is not None
+    finally:
+        core.clear_cache()

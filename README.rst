@@ -43,14 +43,24 @@ For the latest version supporting Python 2.7 please use:
 Features
 ========
 
+Current features
+----------------
+
 * Pure Python.
-* Compatible with Python 3.9+ (Python 2.7 was discontinued in version 1.2.8).
+* Compatible with Python 3.10+ (Python 2.7 was discontinued in version 1.2.8).
 * Supported and `tested on Linux, OS X and Windows <https://travis-ci.org/shaypal5/cachier>`_.
 * A simple interface.
 * Defining "shelf life" for cached values.
-* Local caching using pickle files.
-* Cross-machine caching using MongoDB.
-* Redis-based caching for high-performance scenarios.
+* Async and sync functions support.
+* Multiple caching backends (cores):
+
+  * Local caching using pickle files.
+  * In-memory caching using the memory core.
+  * Cross-machine caching using MongoDB.
+  * SQL-based caching using SQLAlchemy-supported databases.
+  * Redis-based caching for high-performance scenarios.
+  * S3-based caching for cross-machine object storage backends.
+
 * Thread-safety.
 * **Per-call max age:** Specify a maximum age for cached values per call.
 * **Cache analytics and observability:** Track cache performance metrics including hit rates, latencies, and more.
@@ -63,7 +73,6 @@ Cachier is **NOT**:
 Future features
 ---------------
 
-* S3 core.
 * Multi-core caching.
 * `Cache replacement policies <https://en.wikipedia.org/wiki/Cache_replacement_policies>`_
 
@@ -416,8 +425,11 @@ Clear collected metrics:
 Cachier Cores
 =============
 
+
 Pickle Core
 -----------
+
+**Sync/Async Support:** Both sync and async functions are supported with no additional setup. Async operations are internally delegated to the sync implementation, so no async-specific configuration is needed.
 
 The default core for Cachier is pickle based, meaning each function will store its cache in a separate pickle file in the ``~/.cachier`` directory. Naturally, this kind of cache is both machine-specific and user-specific.
 
@@ -457,7 +469,15 @@ You can get the fully qualified path to the directory of cache files used by ``c
 
 MongoDB Core
 ------------
+
+**Sync/Async Support:** Both sync and async functions are supported, but the ``mongetter`` callable type must match the decorated function:
+
+- **Sync functions** require a sync ``mongetter`` (a regular callable returning a ``pymongo.Collection``).
+- **Async functions** require an async ``mongetter`` (a coroutine callable returning an async collection, e.g. via ``motor`` or ``pymongo.asynchronous``). Passing a sync ``mongetter`` to an async function raises ``TypeError``.
+
 You can set a MongoDB-based cache by assigning ``mongetter`` with a callable that returns a ``pymongo.Collection`` object with writing permissions:
+
+**Usage Example (MongoDB sync):**
 
 .. code-block:: python
 
@@ -472,6 +492,24 @@ You can set a MongoDB-based cache by assigning ``mongetter`` with a callable tha
 
   @cachier(mongetter=my_mongetter)
 
+**Usage Example (MongoDB async):**
+
+.. code-block:: python
+
+    import asyncio
+    from pymongo.asynchronous.mongo_client import AsyncMongoClient
+    from cachier import cachier
+
+    client = AsyncMongoClient("mongodb://localhost:27017")
+
+    async def my_async_mongetter():
+        return client["cachier_db"]["someapp_cachier_db"]
+
+    @cachier(mongetter=my_async_mongetter)
+    async def my_async_func(x: int) -> int:
+        await asyncio.sleep(0.01)
+        return x * 2
+
 This allows you to have a cross-machine, albeit slower, cache. This functionality requires that the installation of the ``pymongo`` python package.
 
 In certain cases the MongoDB backend might leave a deadlock behind, blocking all subsequent requests from being processed. If you encounter this issue, supply the ``wait_for_calc_timeout`` with a reasonable number of seconds; calls will then wait at most this number of seconds before triggering a recalculation.
@@ -484,6 +522,8 @@ In certain cases the MongoDB backend might leave a deadlock behind, blocking all
 Memory Core
 -----------
 
+**Sync/Async Support:** Both sync and async functions are supported with no additional setup. Async operations are internally delegated to the sync implementation, so no async-specific configuration is needed.
+
 You can set an in-memory cache by assigning the ``backend`` parameter with ``'memory'``:
 
 .. code-block:: python
@@ -495,13 +535,18 @@ Note, however, that ``cachier``'s in-memory core is simple, and has no monitorin
 SQLAlchemy (SQL) Core
 ---------------------
 
+**Sync/Async Support:** Both sync and async functions are supported, but the ``sql_engine`` type must match the decorated function:
+
+- **Sync functions** require a sync ``Engine`` (or a connection string / callable that resolves to one).
+- **Async functions** require a SQLAlchemy ``AsyncEngine`` (e.g. created with ``create_async_engine``). Passing a sync engine to an async function raises ``TypeError``, and passing an async engine to a sync function also raises ``TypeError``.
+
 **Note:** The SQL core requires SQLAlchemy to be installed. It is not installed by default with cachier. To use the SQL backend, run::
 
     pip install SQLAlchemy
 
 Cachier supports a generic SQL backend via SQLAlchemy, allowing you to use SQLite, PostgreSQL, MySQL, and other databases.
 
-**Usage Example (SQLite in-memory):**
+**Usage Example (SQLite in-memory sync):**
 
 .. code-block:: python
 
@@ -511,15 +556,27 @@ Cachier supports a generic SQL backend via SQLAlchemy, allowing you to use SQLit
     def my_func(x):
         return x * 2
 
-**Usage Example (PostgreSQL):**
+**Usage Example (PostgreSQL sync):**
 
 .. code-block:: python
 
-    @cachier(backend="sql", sql_engine="postgresql://user:pass@localhost/dbname")
+    @cachier(backend="sql", sql_engine="postgresql+psycopg://user:pass@localhost/dbname")
     def my_func(x):
         return x * 2
 
-**Usage Example (MySQL):**
+**Usage Example (PostgreSQL async):**
+
+.. code-block:: python
+
+    import asyncio
+    from cachier import cachier
+
+    @cachier(backend="sql", sql_engine="postgresql+psycopg://user:pass@localhost/dbname")
+    async def my_async_func(x: int) -> int:
+        await asyncio.sleep(0.01)
+        return x * 2
+
+**Usage Example (MySQL sync):**
 
 .. code-block:: python
 
@@ -529,6 +586,11 @@ Cachier supports a generic SQL backend via SQLAlchemy, allowing you to use SQLit
 
 Redis Core
 ----------
+
+**Sync/Async Support:** Both sync and async functions are supported, but the ``redis_client`` callable type must match the decorated function:
+
+- **Sync functions** require a sync ``redis.Redis`` client or a sync callable returning one.
+- **Async functions** require an async callable returning a ``redis.asyncio.Redis`` client. Passing a sync callable to an async function raises ``TypeError``.
 
 **Note:** The Redis core requires the redis package to be installed. It is not installed by default with cachier. To use the Redis backend, run::
 
@@ -577,6 +639,29 @@ Cachier supports Redis-based caching for high-performance scenarios. Redis provi
     def my_func(x):
         return x * 2
 
+**Usage Example (Async Redis client with async function):**
+
+.. code-block:: python
+
+    import asyncio
+    import redis.asyncio as redis
+    from cachier import cachier
+
+    async def get_redis_client():
+        return redis.Redis(host="localhost", port=6379, db=0)
+
+    @cachier(backend="redis", redis_client=get_redis_client)
+    async def my_async_func(x: int) -> int:
+        await asyncio.sleep(0.01)
+        return x * 2
+
+    async def main():
+        val1 = await my_async_func(3)
+        val2 = await my_async_func(3)
+        assert val1 == val2
+
+    asyncio.run(main())
+
 **Configuration Options:**
 
 - ``sql_engine``: SQLAlchemy connection string, Engine, or callable returning an Engine.
@@ -592,6 +677,12 @@ Cachier supports Redis-based caching for high-performance scenarios. Redis provi
 - ``processing``: Boolean, is value being calculated
 - ``completed``: Boolean, is value calculation completed
 
+**S3 Sync/Async Support:**
+
+- Sync functions use direct boto3 calls.
+- Async functions are supported via thread-offloaded sync boto3 calls
+  (delegated mode), not a native async client.
+
 **Limitations & Notes:**
 
 - Requires SQLAlchemy (install with ``pip install SQLAlchemy``)
@@ -599,6 +690,55 @@ Cachier supports Redis-based caching for high-performance scenarios. Redis provi
 - Thread/process safety is handled via transactions and row-level locks
 - Value serialization uses ``pickle``. **Warning:** `pickle` can execute arbitrary code during deserialization if the cache database is compromised. Ensure the cache is stored securely and consider using safer serialization methods like `json` if security is a concern.
 - For best performance, ensure your DB supports row-level locking
+
+
+Core Sync/Async Compatibility
+------------------------------
+
+The table below summarises sync and async function support across all cachier cores.
+Cores marked as *delegated* run async operations on top of the sync implementation
+(no event loop or async driver is required). Cores marked as *native* use dedicated
+async drivers and require the client or engine type to match the decorated function.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 12 12 50
+
+   * - Core
+     - Sync
+     - Async
+     - Constraint
+   * - **Pickle**
+     - Yes
+     - Yes (delegated)
+     - None. No special configuration needed for async functions.
+   * - **Memory**
+     - Yes
+     - Yes (delegated)
+     - None. No special configuration needed for async functions.
+   * - **MongoDB**
+     - Yes
+     - Yes (native)
+     - ``mongetter`` must be a sync callable for sync functions and an async callable
+       for async functions. Passing a sync ``mongetter`` to an async function raises
+       ``TypeError``.
+   * - **SQL**
+     - Yes
+     - Yes (native)
+     - ``sql_engine`` must be a sync ``Engine`` (or connection string) for sync
+       functions and a SQLAlchemy ``AsyncEngine`` for async functions. A type mismatch
+       in either direction raises ``TypeError``.
+   * - **Redis**
+     - Yes
+     - Yes (native)
+     - ``redis_client`` must be a sync client or sync callable for sync functions and
+       an async callable returning a ``redis.asyncio.Redis`` client for async
+       functions. Passing a sync callable to an async function raises ``TypeError``.
+   * - **S3**
+     - Yes
+     - Yes (delegated)
+     - Async support is delegated via thread-offloaded sync boto3 calls
+       (``asyncio.to_thread``). No async S3 client is required.
 
 
 Contributing
@@ -623,13 +763,14 @@ Install in development mode with test dependencies for local cores (memory and p
   cd cachier
   pip install -e . -r tests/requirements.txt
 
-Each additional core (MongoDB, Redis, SQL) requires additional dependencies. To install all dependencies for all cores, run:
+Each additional core (MongoDB, Redis, SQL, S3) requires additional dependencies. To install all dependencies for all cores, run:
 
 .. code-block:: bash
 
-  pip install -r tests/mongodb_requirements.txt
-  pip install -r tests/redis_requirements.txt
-  pip install -r tests/sql_requirements.txt
+  pip install -r tests/requirements_mongodb.txt
+  pip install -r tests/requirements_redis.txt
+  pip install -r tests/requirements_postgres.txt
+  pip install -r tests/requirements_s3.txt
 
 Running the tests
 -----------------
@@ -692,7 +833,7 @@ This script automatically handles Docker container lifecycle, environment variab
 .. code-block:: bash
 
   make test-mongo-local     # Run MongoDB tests with Docker
-  make test-all-local       # Run all backends with Docker
+  make test-all-local       # Run all backends locally (Docker used for mongo/redis/sql)
   make test-mongo-inmemory  # Run with in-memory MongoDB (default)
 
 **Option 3: Manual setup**
@@ -718,18 +859,21 @@ Contributors are encouraged to test against a real MongoDB instance before submi
 Testing all backends locally
 -----------------------------
 
-To test all cachier backends (MongoDB, Redis, SQL, Memory, Pickle) locally with Docker:
+To test all cachier backends (MongoDB, Redis, SQL, S3, Memory, Pickle) locally:
 
 .. code-block:: bash
 
   # Test all backends at once
   ./scripts/test-local.sh all
 
-  # Test only external backends (MongoDB, Redis, SQL)
+  # Test only external backends that require Docker (MongoDB, Redis, SQL)
   ./scripts/test-local.sh external
 
+  # Test S3 backend only (uses moto, no Docker needed)
+  ./scripts/test-local.sh s3
+
   # Test specific combinations
-  ./scripts/test-local.sh mongo redis
+  ./scripts/test-local.sh mongo redis s3
 
   # Keep containers running for debugging
   ./scripts/test-local.sh all -k
@@ -740,7 +884,7 @@ To test all cachier backends (MongoDB, Redis, SQL, Memory, Pickle) locally with 
   # Test multiple files across all backends
   ./scripts/test-local.sh all -f tests/test_main.py -f tests/test_redis_core_coverage.py
 
-The unified test script automatically manages Docker containers, installs required dependencies, and runs the appropriate test suites. The ``-f`` / ``--files`` option allows you to run specific test files instead of the entire test suite. See ``scripts/README-local-testing.md`` for detailed documentation.
+The unified test script automatically manages Docker containers for MongoDB/Redis/SQL, installs required dependencies (including ``tests/requirements_s3.txt`` for S3), and runs the appropriate test suites. The ``-f`` / ``--files`` option allows you to run specific test files instead of the entire test suite. See ``scripts/README-local-testing.md`` for detailed documentation.
 
 
 Running pre-commit hooks locally
@@ -758,8 +902,8 @@ Adding documentation
 
 This project is documented using the `numpy docstring conventions`_, which were chosen as they are perhaps the most widely-spread conventions that are both supported by common tools such as Sphinx and result in human-readable docstrings (in my personal opinion, of course). When documenting code you add to this project, please follow `these conventions`_.
 
-.. _`numpy docstring conventions`: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
-.. _`these conventions`: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
+.. _`numpy docstring conventions`: https://numpydoc.readthedocs.io/en/latest/format.html
+.. _`these conventions`: https://numpydoc.readthedocs.io/en/latest/format.html
 
 Additionally, if you update this ``README.rst`` file, use ``python setup.py checkdocs`` to validate it compiles.
 

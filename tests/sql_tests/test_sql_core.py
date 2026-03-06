@@ -3,6 +3,7 @@ import queue
 import sys
 import threading
 from datetime import datetime, timedelta
+from pathlib import Path
 from random import random
 from time import sleep
 
@@ -13,6 +14,30 @@ from cachier.cores.base import RecalculationNeeded
 from cachier.cores.sql import _SQLCore
 
 SQL_CONN_STR = os.environ.get("SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:")
+
+
+@pytest.mark.sql
+def test_sync_client_over_sync_async_functions(async_sql_engine):
+    @cachier(backend="sql", sql_engine=SQL_CONN_STR)
+    def sync_sql_with_sync_engine(_: int) -> int:
+        return 1
+
+    assert callable(sync_sql_with_sync_engine)
+
+    with pytest.raises(
+        TypeError,
+        match="Async cached functions with SQL backend require an AsyncEngine sql_engine.",
+    ):
+
+        @cachier(backend="sql", sql_engine=SQL_CONN_STR)
+        async def async_sql_with_sync_engine(_: int) -> int:
+            return 1
+
+    with pytest.raises(TypeError, match="Async SQL engines require an async cached function."):
+
+        @cachier(backend="sql", sql_engine=async_sql_engine)
+        def sync_sql_with_async_engine(_: int) -> int:
+            return 1
 
 
 @pytest.mark.sql
@@ -236,6 +261,12 @@ def test_sqlcore_invalid_sql_engine():
 
 
 @pytest.mark.sql
+def test_sqlcore_callable_must_return_engine():
+    with pytest.raises(ValueError, match="sql_engine must be a SQLAlchemy Engine"):
+        _SQLCore(hash_func=None, sql_engine=lambda: "not-an-engine")
+
+
+@pytest.mark.sql
 def test_sqlcore_get_entry_by_key_none_value():
     import pytest
 
@@ -345,3 +376,82 @@ def test_sqlcore_accepts_engine_callable():
     core.set_entry("callable_test", 789)
     key, entry = core.get_entry_by_key("callable_test")
     assert entry.value == 789
+
+
+@pytest.mark.sql
+def test_sqlcore_non_memory_connection_string_branch(tmp_path):
+    db_path = Path(tmp_path) / "sqlcore.sqlite3"
+    conn_str = f"sqlite:///{db_path}"
+
+    core = _SQLCore(hash_func=None, sql_engine=conn_str)
+    core.set_func(lambda x: x)
+    assert core.set_entry("k", 1) is True
+    _, entry = core.get_entry_by_key("k")
+    assert entry is not None
+    assert entry.value == 1
+
+
+@pytest.mark.sql
+def test_sqlcore_set_entry_should_not_store_due_to_size_limit():
+    core = _SQLCore(hash_func=None, sql_engine=SQL_CONN_STR, entry_size_limit=1)
+    core.set_func(lambda x: x)
+    assert core.set_entry("big", "this string is bigger than one byte") is False
+
+
+@pytest.mark.sql
+def test_sqlcore_set_entry_executes_conflict_statement(monkeypatch):
+    from sqlalchemy.orm import Session
+
+    sentinel_stmt = object()
+    seen_stmt = {"value": None}
+
+    class FakeInsert:
+        def values(self, **kwargs):
+            return self
+
+        def on_conflict_do_update(self, **kwargs):
+            return sentinel_stmt
+
+    def fake_insert(_table):
+        return FakeInsert()
+
+    def fake_execute(self, stmt, *args, **kwargs):
+        seen_stmt["value"] = stmt
+
+        class DummyResult:
+            def scalar_one_or_none(self):
+                return None
+
+        return DummyResult()
+
+    monkeypatch.setitem(_SQLCore.set_entry.__globals__, "insert", fake_insert)
+    monkeypatch.setattr(Session, "execute", fake_execute)
+
+    core = _SQLCore(hash_func=None, sql_engine=SQL_CONN_STR)
+    core.set_func(lambda x: x)
+    assert core.set_entry("upsert", 123) is True
+    assert seen_stmt["value"] is sentinel_stmt
+
+
+@pytest.mark.sql
+def test_sqlcore_delete_stale_entries():
+    core = _SQLCore(hash_func=None, sql_engine=SQL_CONN_STR)
+    core.set_func(lambda x: x)
+
+    core.set_entry("old", 1)
+    core.set_entry("fresh", 2)
+
+    with core._Session() as session:
+        from cachier.cores.sql import CacheTable
+
+        session.query(CacheTable).filter_by(function_id=core._func_str, key="old").update(
+            {"timestamp": datetime.now() - timedelta(hours=2)}
+        )
+        session.commit()
+
+    core.delete_stale_entries(timedelta(hours=1))
+
+    _, old_entry = core.get_entry_by_key("old")
+    _, fresh_entry = core.get_entry_by_key("fresh")
+    assert old_entry is None
+    assert fresh_entry is not None

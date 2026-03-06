@@ -46,6 +46,20 @@ def test_memory_core_keywords():
     _takes_2_seconds.clear_cache()
 
 
+@pytest.mark.memory
+def test_sync_client_over_sync_async_functions():
+    @cachier(backend="memory")
+    def sync_memory_with_sync_client(_: int) -> int:
+        return 1
+
+    @cachier(backend="memory")
+    async def async_memory_with_sync_client(_: int) -> int:
+        return 1
+
+    assert callable(sync_memory_with_sync_client)
+    assert callable(async_memory_with_sync_client)
+
+
 SECONDS_IN_DELTA = 3
 DELTA = timedelta(seconds=SECONDS_IN_DELTA)
 

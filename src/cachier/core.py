@@ -20,13 +20,14 @@ from functools import wraps
 from typing import Any, Callable, Optional, Union
 from warnings import warn
 
-from ._types import RedisClient
+from ._types import RedisClient, S3Client
 from .config import Backend, HashFunc, Mongetter, _update_with_defaults
 from .cores.base import RecalculationNeeded, _BaseCore
 from .cores.memory import _MemoryCore
 from .cores.mongo import _MongoCore
 from .cores.pickle import _PickleCore
 from .cores.redis import _RedisCore
+from .cores.s3 import _S3Core
 from .cores.sql import _SQLCore
 from .metrics import CacheMetrics
 from .util import parse_bytes
@@ -34,6 +35,18 @@ from .util import parse_bytes
 MAX_WORKERS_ENVAR_NAME = "CACHIER_MAX_WORKERS"
 DEFAULT_MAX_WORKERS = 8
 ZERO_TIMEDELTA = timedelta(seconds=0)
+
+
+class _ImmediateAwaitable:
+    """Lightweight awaitable that yields an immediate value."""
+
+    def __init__(self, value: Any = None) -> None:
+        self._value = value
+
+    def __await__(self):
+        if False:
+            yield None
+        return self._value
 
 
 def _max_workers():
@@ -51,7 +64,7 @@ def _get_executor(reset=False):
     return _get_executor.executor
 
 
-def _function_thread(core, key, func, args, kwds):
+def _function_thread(core: _BaseCore, key, func, args, kwds):
     try:
         func_res = func(*args, **kwds)
         core.set_entry(key, func_res)
@@ -59,15 +72,15 @@ def _function_thread(core, key, func, args, kwds):
         print(f"Function call failed with the following exception:\n{exc}")
 
 
-async def _function_thread_async(core, key, func, args, kwds):
+async def _function_thread_async(core: _BaseCore, key, func, args, kwds):
     try:
         func_res = await func(*args, **kwds)
-        core.set_entry(key, func_res)
+        await core.aset_entry(key, func_res)
     except BaseException as exc:
         print(f"Function call failed with the following exception:\n{exc}")
 
 
-def _calc_entry(core, key, func, args, kwds, printer=lambda *_: None) -> Optional[Any]:
+def _calc_entry(core: _BaseCore, key, func, args, kwds, printer=lambda *_: None) -> Optional[Any]:
     core.mark_entry_being_calculated(key)
     try:
         func_res = func(*args, **kwds)
@@ -82,16 +95,16 @@ def _calc_entry(core, key, func, args, kwds, printer=lambda *_: None) -> Optiona
         core.mark_entry_not_calculated(key)
 
 
-async def _calc_entry_async(core, key, func, args, kwds, printer=lambda *_: None) -> Optional[Any]:
-    core.mark_entry_being_calculated(key)
+async def _calc_entry_async(core: _BaseCore, key, func, args, kwds, printer=lambda *_: None) -> Optional[Any]:
+    await core.amark_entry_being_calculated(key)
     try:
         func_res = await func(*args, **kwds)
-        stored = core.set_entry(key, func_res)
+        stored = await core.aset_entry(key, func_res)
         if not stored:
             printer("Result exceeds entry_size_limit; not cached")
         return func_res
     finally:
-        core.mark_entry_not_calculated(key)
+        await core.amark_entry_not_calculated(key)
 
 
 def _convert_args_kwargs(func, _is_method: bool, args: tuple, kwds: dict) -> dict:
@@ -127,7 +140,7 @@ def _convert_args_kwargs(func, _is_method: bool, args: tuple, kwds: dict) -> dic
 
     # Map as many args as possible to regular parameters
     num_regular = len(params_to_use)
-    args_as_kw = dict(zip(params_to_use, args_to_map[:num_regular]))
+    args_as_kw = dict(zip(params_to_use, args_to_map[:num_regular], strict=False))
 
     # Handle variadic positional arguments
     # Store them with indexed keys like __varargs_0__, __varargs_1__, etc.
@@ -158,6 +171,13 @@ def _pop_kwds_with_deprecation(kwds, name: str, default_value: bool):
     return kwds.pop(name, default_value)
 
 
+def _is_async_redis_client(client: Any) -> bool:
+    if client is None:
+        return False
+    method_names = ("hgetall", "hset", "keys", "delete", "hget")
+    return all(inspect.iscoroutinefunction(getattr(client, name, None)) for name in method_names)
+
+
 def cachier(
     hash_func: Optional[HashFunc] = None,
     hash_params: Optional[HashFunc] = None,
@@ -165,6 +185,13 @@ def cachier(
     mongetter: Optional[Mongetter] = None,
     sql_engine: Optional[Union[str, Any, Callable[[], Any]]] = None,
     redis_client: Optional["RedisClient"] = None,
+    s3_bucket: Optional[str] = None,
+    s3_prefix: str = "cachier",
+    s3_client: Optional["S3Client"] = None,
+    s3_client_factory: Optional[Callable[[], Any]] = None,
+    s3_region: Optional[str] = None,
+    s3_endpoint_url: Optional[str] = None,
+    s3_config: Optional[Any] = None,
     stale_after: Optional[timedelta] = None,
     next_time: Optional[bool] = None,
     cache_dir: Optional[Union[str, os.PathLike]] = None,
@@ -198,9 +225,9 @@ def cachier(
         Deprecated, use :func:`~cachier.core.cachier.hash_func` instead.
     backend : str, optional
         The name of the backend to use. Valid options currently include
-        'pickle', 'mongo', 'memory', 'sql', and 'redis'. If not provided,
-        defaults to 'pickle', unless a core-associated parameter is provided
-
+        'pickle', 'mongo', 'memory', 'sql', 'redis', and 's3'. If not
+        provided, defaults to 'pickle', unless a core-associated parameter
+        is provided.
     mongetter : callable, optional
         A callable that takes no arguments and returns a pymongo.Collection
         object with writing permissions. If provided, the backend is set to
@@ -211,6 +238,20 @@ def cachier(
     redis_client : redis.Redis or callable, optional
         Redis client instance or callable returning a Redis client.
         Used for the Redis backend.
+    s3_bucket : str, optional
+        The S3 bucket name for cache storage. Required when using the S3 backend.
+    s3_prefix : str, optional
+        Key prefix applied to all S3 cache objects. Defaults to ``"cachier"``.
+    s3_client : boto3 S3 client, optional
+        A pre-configured boto3 S3 client instance.
+    s3_client_factory : callable, optional
+        A callable that returns a boto3 S3 client, allowing lazy initialization.
+    s3_region : str, optional
+        AWS region name used when auto-creating the boto3 S3 client.
+    s3_endpoint_url : str, optional
+        Custom endpoint URL for S3-compatible services such as MinIO or localstack.
+    s3_config : botocore.config.Config, optional
+        Optional botocore Config object passed when auto-creating the client.
     stale_after : datetime.timedelta, optional
         The time delta after which a cached result is considered stale. Calls
         made after the result goes stale will trigger a recalculation of the
@@ -320,11 +361,60 @@ def cachier(
             entry_size_limit=size_limit_bytes,
             metrics=cache_metrics,
         )
+    elif backend == "s3":
+        core = _S3Core(
+            hash_func=hash_func,
+            s3_bucket=s3_bucket,
+            wait_for_calc_timeout=wait_for_calc_timeout,
+            s3_prefix=s3_prefix,
+            s3_client=s3_client,
+            s3_client_factory=s3_client_factory,
+            s3_region=s3_region,
+            s3_endpoint_url=s3_endpoint_url,
+            s3_config=s3_config,
+            entry_size_limit=size_limit_bytes,
+        )
     else:
         raise ValueError("specified an invalid core: %s" % backend)
 
     def _cachier_decorator(func):
         core.set_func(func)
+        is_coroutine = inspect.iscoroutinefunction(func)
+
+        if backend == "mongo":
+            if is_coroutine and not inspect.iscoroutinefunction(mongetter):
+                msg = "Async cached functions with Mongo backend require an async mongetter."
+                raise TypeError(msg)
+            if (not is_coroutine) and inspect.iscoroutinefunction(mongetter):
+                msg = "Async mongetter requires an async cached function."
+                raise TypeError(msg)
+
+        if backend == "redis":
+            if is_coroutine:
+                if callable(redis_client):
+                    if not inspect.iscoroutinefunction(redis_client):
+                        msg = "Async cached functions with Redis backend require an async redis_client callable."
+                        raise TypeError(msg)
+                elif not _is_async_redis_client(redis_client):
+                    msg = "Async cached functions with Redis backend require an async Redis client."
+                    raise TypeError(msg)
+            else:
+                if callable(redis_client) and inspect.iscoroutinefunction(redis_client):
+                    msg = "Async redis_client callable requires an async cached function."
+                    raise TypeError(msg)
+                if _is_async_redis_client(redis_client):
+                    msg = "Async Redis client requires an async cached function."
+                    raise TypeError(msg)
+
+        if backend == "sql":
+            sql_core = core
+            assert isinstance(sql_core, _SQLCore)  # noqa: S101
+            if is_coroutine and not sql_core.has_async_engine():
+                msg = "Async cached functions with SQL backend require an AsyncEngine sql_engine."
+                raise TypeError(msg)
+            if (not is_coroutine) and sql_core.has_async_engine():
+                msg = "Async SQL engines require an async cached function."
+                raise TypeError(msg)
 
         last_cleanup = datetime.min
         cleanup_lock = threading.Lock()
@@ -540,7 +630,7 @@ def cachier(
 
             if ignore_cache or not _global_params.caching_enabled:
                 return await func(args[0], **kwargs) if core.func_is_method else await func(**kwargs)
-            key, entry = core.get_entry((), kwargs)
+            key, entry = await core.aget_entry((), kwargs)
             if overwrite_cache:
                 result = await _calc_entry_async(core, key, func, args, kwds, _print)
                 return result
@@ -571,10 +661,10 @@ def cachier(
                     # Mark entry as being calculated then immediately unmark
                     # This matches sync behavior and ensures entry exists
                     # Background task will update cache when complete
-                    core.mark_entry_being_calculated(key)
+                    await core.amark_entry_being_calculated(key)
                     # Use asyncio.create_task for background execution
                     asyncio.create_task(_function_thread_async(core, key, func, args, kwds))
-                    core.mark_entry_not_calculated(key)
+                    await core.amark_entry_not_calculated(key)
                     return entry.value
                 _print("Calling decorated function and waiting")
                 result = await _calc_entry_async(core, key, func, args, kwds, _print)
@@ -595,13 +685,12 @@ def cachier(
         # argument.
         # For async functions, we create an async wrapper that calls
         # _call_async.
-        is_coroutine = inspect.iscoroutinefunction(func)
-
         if is_coroutine:
 
             @wraps(func)
             async def func_wrapper(*args, **kwargs):
                 return await _call_async(*args, **kwargs)
+
         else:
 
             @wraps(func)
@@ -611,10 +700,24 @@ def cachier(
         def _clear_cache():
             """Clear the cache."""
             core.clear_cache()
+            if is_coroutine:
+                return _ImmediateAwaitable()
+            return None
 
         def _clear_being_calculated():
             """Mark all entries in this cache as not being calculated."""
             core.clear_being_calculated()
+            if is_coroutine:
+                return _ImmediateAwaitable()
+            return None
+
+        async def _aclear_cache():
+            """Clear the cache asynchronously."""
+            await core.aclear_cache()
+
+        async def _aclear_being_calculated():
+            """Mark all entries in this cache as not being calculated asynchronously."""
+            await core.aclear_being_calculated()
 
         def _cache_dpath():
             """Return the path to the cache dir, if exists; None if not."""
@@ -635,6 +738,8 @@ def cachier(
 
         func_wrapper.clear_cache = _clear_cache
         func_wrapper.clear_being_calculated = _clear_being_calculated
+        func_wrapper.aclear_cache = _aclear_cache
+        func_wrapper.aclear_being_calculated = _aclear_being_calculated
         func_wrapper.cache_dpath = _cache_dpath
         func_wrapper.precache_value = _precache_value
         func_wrapper.metrics = cache_metrics  # Expose metrics object

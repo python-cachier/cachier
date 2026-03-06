@@ -42,3 +42,31 @@ def test_cleanup_stale_entries(tmp_path):
     with open(cache_path, "rb") as fh:
         data = pickle.load(fh)
     assert len(data) == 1
+
+
+@pytest.mark.pickle
+def test_cleanup_interval_skips_submit_when_not_elapsed(monkeypatch, tmp_path):
+    class _DummyExecutor:
+        def __init__(self):
+            self.submits = 0
+
+        def submit(self, *args, **kwargs):
+            self.submits += 1
+
+    dummy = _DummyExecutor()
+    monkeypatch.setattr("cachier.core._get_executor", lambda: dummy)
+
+    @cachier_dec(
+        cache_dir=tmp_path,
+        stale_after=timedelta(seconds=1),
+        cleanup_stale=True,
+        cleanup_interval=timedelta(hours=1),
+    )
+    def add(x):
+        return x + 1
+
+    add.clear_cache()
+    add(1)
+    add(1)
+
+    assert dummy.submits == 1

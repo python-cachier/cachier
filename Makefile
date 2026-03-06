@@ -52,9 +52,9 @@ install-dev:
 install-all:
 	pip install -e .[all]
 	pip install -r tests/requirements.txt
-	pip install -r tests/mongodb_requirements.txt
-	pip install -r tests/redis_requirements.txt
-	pip install -r tests/sql_requirements.txt
+	pip install -r tests/requirements_mongodb.txt
+	pip install -r tests/requirements_redis.txt
+	pip install -r tests/requirements_postgres.txt
 
 # Testing targets
 test:
