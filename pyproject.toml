@@ -90,6 +90,9 @@ namespaces = false # to disable scanning PEP 420 namespaces (true by default)
 
 # === Linting & Formatting ===
 
+[tool.black]
+line-length = 120
+
 # --- ruff ---
 
 [tool.ruff]
@@ -146,6 +149,7 @@ lint.per-file-ignores."tests/**" = [
   "D401",
   "S101",
   "S105",
+  "S110",
   "S311",
   "S603",
 ]
@@ -188,6 +192,7 @@ addopts = [
   "-v",
   "-s",
   "-W error",
+  # Note: parallel execution is opt-in via -n/--numprocesses (pytest-xdist)
 ]
 markers = [
   "mongo: test the MongoDB core",
@@ -199,6 +204,8 @@ markers = [
   "maxage: test the max_age functionality",
   "asyncio: marks tests as async",
   "smoke: fast smoke tests with no external service dependencies",
+  "flaky: tests that are known to be flaky and should be retried",
+  "seriallocal: local core tests that should run serially",
 ]
 
 [tool.coverage.report]
@@ -209,10 +216,17 @@ exclude_lines = [
   "raise NotImplementedError", # Don't complain if tests don't hit defensive assertion code:
   "if TYPE_CHECKING:",         # Is only true when running mypy, not tests
 ]
+# Parallel test execution configuration
+# Use: pytest -n auto (for automatic worker detection)
+# Or: pytest -n 4 (for specific number of workers)
+# Memory tests are safe to run in parallel by default
+# Pickle tests require isolation (handled by conftest.py fixture)
+
 # --- coverage ---
 
 [tool.coverage.run]
 branch = true
+parallel = true
 # dynamic_context = "test_function"
 omit = [
   "tests/*",
