@@ -29,6 +29,8 @@ from .base import _BaseCore
 class _PickleCore(_BaseCore):
     """The pickle core class for cachier."""
 
+    _SHARED_LOCK_SUFFIX = ".lock"
+
     class CacheChangeHandler(PatternMatchingEventHandler):
         """Handles cache-file modification events."""
 
@@ -102,6 +104,10 @@ class _PickleCore(_BaseCore):
         os.makedirs(self.cache_dir, exist_ok=True)
         return os.path.abspath(os.path.join(os.path.realpath(self.cache_dir), self.cache_fname))
 
+    @property
+    def _shared_lock_fpath(self) -> str:
+        return f"{self.cache_fpath}{self._SHARED_LOCK_SUFFIX}"
+
     @staticmethod
     def _convert_legacy_cache_entry(
         entry: Union[dict, CacheEntry],
@@ -118,8 +124,8 @@ class _PickleCore(_BaseCore):
 
     def _load_cache_dict(self) -> Dict[str, CacheEntry]:
         try:
-            with portalocker.Lock(self.cache_fpath, mode="rb") as cf:
-                cache = pickle.load(cast(IO[bytes], cf))
+            with portalocker.Lock(self._shared_lock_fpath, mode="a+b"), open(self.cache_fpath, "rb") as cache_file:
+                cache = pickle.load(cast(IO[bytes], cache_file))
             self._cache_used_fpath = str(self.cache_fpath)
         except (FileNotFoundError, EOFError):
             cache = {}
@@ -192,7 +198,7 @@ class _PickleCore(_BaseCore):
                 with portalocker.Lock(fpath, mode="wb") as cache_file:
                     pickle.dump(cache, cast(IO[bytes], cache_file), protocol=4)
             else:
-                with portalocker.Lock(fpath, mode="ab"):
+                with portalocker.Lock(self._shared_lock_fpath, mode="a+b"):
                     with tempfile.NamedTemporaryFile(
                         mode="wb",
                         dir=parent_dir,
