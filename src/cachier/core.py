@@ -373,6 +373,7 @@ def cachier(
             s3_endpoint_url=s3_endpoint_url,
             s3_config=s3_config,
             entry_size_limit=size_limit_bytes,
+            metrics=cache_metrics,
         )
     else:
         raise ValueError("specified an invalid core: %s" % backend)

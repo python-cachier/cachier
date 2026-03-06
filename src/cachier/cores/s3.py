@@ -20,6 +20,11 @@ from .._types import HashFunc
 from ..config import CacheEntry
 from .base import RecalculationNeeded, _BaseCore, _get_func_str
 
+try:
+    from ..metrics import CacheMetrics
+except ImportError:
+    CacheMetrics = None  # type: ignore[assignment,misc]
+
 S3_SLEEP_DURATION_IN_SEC = 1
 
 
@@ -62,6 +67,8 @@ class _S3Core(_BaseCore):
         Optional ``botocore.config.Config`` object passed when creating the client.
     entry_size_limit : int, optional
         Maximum allowed size in bytes of a cached value.
+    metrics : CacheMetrics, optional
+        Metrics collector for tracking cache performance.
 
     """
 
@@ -77,6 +84,7 @@ class _S3Core(_BaseCore):
         s3_endpoint_url: Optional[str] = None,
         s3_config: Optional[Any] = None,
         entry_size_limit: Optional[int] = None,
+        metrics: Optional["CacheMetrics"] = None,
     ):
         if not BOTO3_AVAILABLE:
             _safe_warn(
@@ -88,6 +96,7 @@ class _S3Core(_BaseCore):
             hash_func=hash_func,
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=entry_size_limit,
+            metrics=metrics,
         )
 
         if not s3_bucket:
