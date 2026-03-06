@@ -55,16 +55,7 @@ def inject_worker_schema_for_sql_tests(monkeypatch, request):
 
         # Rebuild the URL with updated query parameters
         new_query = urlencode(query_params, doseq=True)
-        new_url = urlunparse(
-            (
-                parsed.scheme,
-                parsed.netloc,
-                parsed.path,
-                parsed.params,
-                new_query,
-                parsed.fragment
-            )
-        )
+        new_url = urlunparse((parsed.scheme, parsed.netloc, parsed.path, parsed.params, new_query, parsed.fragment))
 
         # Override both the environment variable and the module constant
         monkeypatch.setenv("SQLALCHEMY_DATABASE_URL", new_url)
@@ -155,14 +146,7 @@ def cleanup_test_schemas(request):
                 # Rebuild clean URL
                 clean_query = urlencode(query_params, doseq=True) if query_params else ""
                 clean_url = urlunparse(
-                    (
-                        parsed.scheme,
-                        parsed.netloc,
-                        parsed.path,
-                        parsed.params,
-                        clean_query,
-                        parsed.fragment
-                    )
+                    (parsed.scheme, parsed.netloc, parsed.path, parsed.params, clean_query, parsed.fragment)
                 )
 
                 engine = create_engine(clean_url)
