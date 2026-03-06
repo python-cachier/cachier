@@ -371,7 +371,7 @@ the corresponding Docker service started beforehand.
 1. **Import Errors**: Install backend-specific requirements
 
    ```bash
-   pip install -r tests/redis_requirements.txt
+   pip install -r tests/requirements_redis.txt
    ```
 
 2. **Docker Not Running**: Start Docker Desktop or daemon

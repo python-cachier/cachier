@@ -25,7 +25,7 @@ COVERAGE_REPORT="term"
 KEEP_RUNNING=false
 SELECTED_CORES=""
 INCLUDE_LOCAL_CORES=false
-TEST_FILES=""
+TEST_FILES=()
 PARALLEL=false
 PARALLEL_WORKERS="auto"
 
@@ -102,7 +102,7 @@ while [[ $# -gt 0 ]]; do
                 usage
                 exit 1
             fi
-            TEST_FILES="$TEST_FILES $1"
+            TEST_FILES+=("$1")
             shift
             ;;
         --help)
@@ -542,37 +542,37 @@ main() {
 
     # Run pytest
     # Build pytest command
-    PYTEST_CMD="pytest"
+    PYTEST_ARGS=(pytest)
     # and the specific pytest command for running serial pickle tests
-    SERIAL_PYTEST_CMD="pytest -m seriallocal"
+    SERIAL_PYTEST_ARGS=(pytest -m seriallocal)
     # Only add -n0 if pytest-xdist is available; otherwise, plain pytest is already serial
     if python - << 'EOF' >/dev/null 2>&1
 import xdist  # noqa: F401
 EOF
     then
-        SERIAL_PYTEST_CMD="$SERIAL_PYTEST_CMD -n0"
+        SERIAL_PYTEST_ARGS+=(-n0)
     fi
 
     # Add test files if specified
-    if [ -n "$TEST_FILES" ]; then
-        PYTEST_CMD="$PYTEST_CMD $TEST_FILES"
-        print_message $BLUE "Test files specified: $TEST_FILES"
+    if [ ${#TEST_FILES[@]} -gt 0 ]; then
+        PYTEST_ARGS+=("${TEST_FILES[@]}")
+        print_message $BLUE "Test files specified: ${TEST_FILES[*]}"
         # and turn off serial local tests, so we run only selected files
         run_serial_local_tests=false
     fi
 
     # Add markers if needed (only if no specific test files were given)
-    if [ -z "$TEST_FILES" ]; then
+    if [ ${#TEST_FILES[@]} -eq 0 ]; then
         # Check if we selected all cores - if so, run all tests without marker filtering
         all_cores="memory mongo pickle redis s3 sql"
         selected_sorted=$(echo "$SELECTED_CORES" | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)
         all_sorted=$(echo "$all_cores" | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)
 
         if [ "$selected_sorted" != "$all_sorted" ]; then
-            PYTEST_CMD="$PYTEST_CMD -m \"$pytest_markers\""
+            PYTEST_ARGS+=(-m "$pytest_markers")
         else
             print_message $BLUE "Running all tests without markers since all cores are selected"
-            PYTEST_CMD="$PYTEST_CMD -m \"not seriallocal\""
+            PYTEST_ARGS+=(-m "not seriallocal")
             run_serial_local_tests=true
         fi
     else
@@ -582,19 +582,19 @@ EOF
         all_sorted=$(echo "$all_cores" | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)
 
         if [ "$selected_sorted" != "$all_sorted" ]; then
-            PYTEST_CMD="$PYTEST_CMD -m \"$pytest_markers\""
+            PYTEST_ARGS+=(-m "$pytest_markers")
         fi
     fi
 
     # Add verbose flag if needed
     if [ "$VERBOSE" = true ]; then
-        PYTEST_CMD="$PYTEST_CMD -v"
-        SERIAL_PYTEST_CMD="$SERIAL_PYTEST_CMD -v"
+        PYTEST_ARGS+=(-v)
+        SERIAL_PYTEST_ARGS+=(-v)
     fi
 
     # Add parallel testing options if requested
     if [ "$PARALLEL" = true ]; then
-        PYTEST_CMD="$PYTEST_CMD -n $PARALLEL_WORKERS"
+        PYTEST_ARGS+=(-n "$PARALLEL_WORKERS")
 
         # Show parallel testing info
         if [ "$PARALLEL_WORKERS" = "auto" ]; then
@@ -610,16 +610,16 @@ EOF
     fi
 
     # Add coverage options
-    PYTEST_CMD="$PYTEST_CMD --cov=cachier --cov-report=$COVERAGE_REPORT"
-    SERIAL_PYTEST_CMD="$SERIAL_PYTEST_CMD --cov=cachier --cov-report=$COVERAGE_REPORT --cov-append"
+    PYTEST_ARGS+=(--cov=cachier --cov-report="$COVERAGE_REPORT")
+    SERIAL_PYTEST_ARGS+=(--cov=cachier --cov-report="$COVERAGE_REPORT" --cov-append)
 
     # Print and run the command
-    print_message $BLUE "Running: $PYTEST_CMD"
-    eval $PYTEST_CMD
+    print_message $BLUE "Running: $(printf '%q ' "${PYTEST_ARGS[@]}")"
+    "${PYTEST_ARGS[@]}"
 
     if [ "$run_serial_local_tests" = true ]; then
-        print_message $BLUE "Running serial local tests (pickle, memory) with: $SERIAL_PYTEST_CMD"
-        eval $SERIAL_PYTEST_CMD
+        print_message $BLUE "Running serial local tests (pickle, memory) with: $(printf '%q ' "${SERIAL_PYTEST_ARGS[@]}")"
+        "${SERIAL_PYTEST_ARGS[@]}"
     else
         print_message $BLUE "Skipping serial local tests (pickle, memory) since not requested"
     fi

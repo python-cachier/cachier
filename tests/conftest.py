@@ -2,6 +2,7 @@
 
 import logging
 import os
+import re
 from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse
 
 import pytest
@@ -9,11 +10,19 @@ import pytest
 logger = logging.getLogger(__name__)
 
 
+def _worker_schema_name(worker_id: str) -> str | None:
+    """Return a safe SQL schema name for an xdist worker ID."""
+    match = re.fullmatch(r"gw(\d+)", worker_id)
+    if match is None:
+        return None
+    return f"test_worker_{match.group(1)}"
+
+
 @pytest.fixture(autouse=True)
 def inject_worker_schema_for_sql_tests(monkeypatch, request):
     """Automatically inject worker-specific schema into SQL connection string.
 
-    This fixture enables parallel SQL test execution by giving each pytest- xdist worker its own PostgreSQL schema,
+    This fixture enables parallel SQL test execution by giving each pytest-xdist worker its own PostgreSQL schema,
     preventing table creation conflicts.
 
     """
@@ -34,7 +43,11 @@ def inject_worker_schema_for_sql_tests(monkeypatch, request):
 
     if "postgresql" in original_url:
         # Create worker-specific schema name
-        schema_name = f"test_worker_{worker_id.replace('gw', '')}"
+        schema_name = _worker_schema_name(worker_id)
+        if schema_name is None:
+            logger.warning("Unexpected worker ID for SQL schema isolation: %s", worker_id)
+            yield
+            return
 
         # Parse the URL
         parsed = urlparse(original_url)
@@ -118,8 +131,12 @@ def isolated_cache_directory(tmp_path, monkeypatch, request, worker_id):
 
         monkeypatch.setattr(cachier.config._global_params, "cache_dir", str(cache_dir))
 
-        # Also set environment variable as a backup
-        monkeypatch.setenv("CACHIER_TEST_CACHE_DIR", str(cache_dir))
+
+def pytest_collection_modifyitems(items):
+    """Mark local backends as serial-local for the split test runner flow."""
+    for item in items:
+        if "memory" in item.keywords or "pickle" in item.keywords:
+            item.add_marker(pytest.mark.seriallocal)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -140,7 +157,10 @@ def cleanup_test_schemas(request):
         original_url = os.environ.get("SQLALCHEMY_DATABASE_URL", "")
 
         if "postgresql" in original_url:
-            schema_name = f"test_worker_{worker_id.replace('gw', '')}"
+            schema_name = _worker_schema_name(worker_id)
+            if schema_name is None:
+                logger.warning("Unexpected worker ID for SQL schema cleanup: %s", worker_id)
+                return
 
             try:
                 from sqlalchemy import create_engine, text
@@ -174,19 +194,3 @@ def cleanup_test_schemas(request):
             except Exception as e:
                 # If cleanup fails, it's not critical
                 logger.debug(f"Failed to cleanup schema {schema_name}: {e}")
-
-
-def pytest_addoption(parser):
-    """Add custom command line options for parallel testing."""
-    parser.addoption(
-        "--parallel",
-        action="store_true",
-        default=False,
-        help="Run tests in parallel using pytest-xdist",
-    )
-    parser.addoption(
-        "--parallel-workers",
-        action="store",
-        default="auto",
-        help="Number of parallel workers (default: auto)",
-    )
