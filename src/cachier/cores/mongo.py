@@ -13,7 +13,7 @@ import time  # to sleep when waiting on Mongo cache\
 import warnings  # to warn if pymongo is missing
 from contextlib import suppress
 from datetime import datetime, timedelta
-from typing import Any, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional, Tuple
 
 from .._types import HashFunc, Mongetter
 from ..config import CacheEntry
@@ -24,6 +24,9 @@ with suppress(ImportError):
     from pymongo.errors import OperationFailure
 
 from .base import RecalculationNeeded, _BaseCore, _get_func_str
+
+if TYPE_CHECKING:
+    from ..metrics import CacheMetrics
 
 MONGO_SLEEP_DURATION_IN_SEC = 1
 
@@ -41,6 +44,7 @@ class _MongoCore(_BaseCore):
         mongetter: Optional[Mongetter],
         wait_for_calc_timeout: Optional[int],
         entry_size_limit: Optional[int] = None,
+        metrics: Optional["CacheMetrics"] = None,
     ):
         if "pymongo" not in sys.modules:
             warnings.warn(
@@ -53,6 +57,7 @@ class _MongoCore(_BaseCore):
             hash_func=hash_func,
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=entry_size_limit,
+            metrics=metrics,
         )
         if mongetter is None:
             raise MissingMongetter("must specify ``mongetter`` when using the mongo core")
