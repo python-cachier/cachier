@@ -439,10 +439,13 @@ ______________________________________________________________________
 - `make test-all-local` - Test all backends with Docker
 - `make test-external` - Test all external backends
 - `make test-mongo-local` - Test MongoDB only
+- `make test-mongo-inmemory` - Test MongoDB marker set with local/in-memory setup
+- `make test-mongo-also-local` - Test MongoDB together with local core tests
 - `make test-redis-local` - Test Redis only
 - `make test-sql-local` - Test SQL only
 - `make services-start` - Start all Docker containers
 - `make services-stop` - Stop all Docker containers
+- `make services-logs` - Tail logs for Dockerized test services
 
 **Available Cores:**
 
@@ -462,8 +465,11 @@ ______________________________________________________________________
 - `-k, --keep-running` - Keep containers running after tests
 - `-h, --html-coverage` - Generate HTML coverage report
 - `-f, --files` - Run only specific test files
+- `-p, --parallel` - Run tests with `pytest-xdist`
+- `-w, --workers` - Set number of parallel workers (default: `auto`)
 
-**Note:** External backends (MongoDB, Redis, SQL) require Docker. S3, memory, and pickle backends work without Docker.
+**Note:** Redis and SQL backends require Docker. MongoDB tests run in-memory by default (no Docker needed) when invoked directly (for example, `pytest -m mongo` or `make test-mongo-inmemory` without `CACHIER_TEST_VS_DOCKERIZED_MONGO` set). When using `./scripts/test-local.sh mongo` or including `mongo` in the core list, MongoDB is always run via a Docker container and requires Docker. S3, memory, and pickle backends work without Docker.
+You can also set cores with `CACHIER_TEST_CORES="mongo redis" ./scripts/test-local.sh`, in which case both MongoDB and Redis will run via Docker.
 
 ______________________________________________________________________
 
