@@ -468,7 +468,7 @@ ______________________________________________________________________
 - `-p, --parallel` - Run tests with `pytest-xdist`
 - `-w, --workers` - Set number of parallel workers (default: `auto`)
 
-**Note:** External backends (MongoDB, Redis, SQL) require Docker. S3, memory, and pickle backends work without Docker.
+**Note:** Redis and SQL backends require Docker. MongoDB can run either in-memory (default, no Docker needed) or against a Dockerized instance when using `make test-mongo-local` / `./scripts/test-local.sh mongo`. S3, memory, and pickle backends work without Docker.
 You can also set cores with `CACHIER_TEST_CORES="mongo redis" ./scripts/test-local.sh`.
 
 ______________________________________________________________________
