@@ -69,13 +69,13 @@ test-mongo-inmemory:
 
 test-mongo-docker:
 	@echo "Running MongoDB tests against Docker MongoDB..."
-	./scripts/test-mongo-local.sh
+	./scripts/test-local.sh mongo
 
 test-mongo-local: test-mongo-docker
 
 test-mongo-also-local:
 	@echo "Running MongoDB tests with local core tests..."
-	./scripts/test-mongo-local.sh --mode also-local
+	./scripts/test-local.sh mongo memory pickle
 
 # New unified testing targets
 test-local:
