@@ -463,8 +463,9 @@ def test_metrics_zero_sampling_rate():
 def test_metrics_get_stats_zero_window():
     """Test get_stats with zero-second window behaves like no window.
 
-    timedelta(seconds=0) is falsy in Python, so the implementation treats
-    it the same as None (all-time statistics), including all recorded data.
+    timedelta(seconds=0) is falsy in Python, so the implementation treats it the same as None (all-time statistics),
+    including all recorded data.
+
     """
     metrics = CacheMetrics()
     metrics.record_latency(0.05)

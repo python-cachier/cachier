@@ -143,12 +143,8 @@ class PrometheusExporter(MetricsExporter):
 
                 # Build metric families outside the lock using the snapshots
                 hits = CounterMetricFamily("cachier_cache_hits_total", "Total cache hits", labels=["function"])
-                misses = CounterMetricFamily(
-                    "cachier_cache_misses_total", "Total cache misses", labels=["function"]
-                )
-                hit_rate = GaugeMetricFamily(
-                    "cachier_cache_hit_rate", "Cache hit rate percentage", labels=["function"]
-                )
+                misses = CounterMetricFamily("cachier_cache_misses_total", "Total cache misses", labels=["function"])
+                hit_rate = GaugeMetricFamily("cachier_cache_hit_rate", "Cache hit rate percentage", labels=["function"])
                 stale_hits = CounterMetricFamily(
                     "cachier_stale_hits_total", "Total stale cache hits", labels=["function"]
                 )
@@ -327,18 +323,15 @@ class PrometheusExporter(MetricsExporter):
             "# TYPE cachier_size_limit_rejections_total counter"
         )
         for func_name, stats in snapshots.items():
-            lines.append(
-                f'cachier_size_limit_rejections_total{{function="{func_name}"}} {stats.size_limit_rejections}'
-            )
+            lines.append(f'cachier_size_limit_rejections_total{{function="{func_name}"}} {stats.size_limit_rejections}')
 
         return "\n".join(lines) + "\n"
 
     def start(self) -> None:
         """Start the Prometheus exporter.
 
-        If prometheus_client is available, starts the HTTP server using the
-        per-instance registry. Otherwise, provides a simple HTTP server for
-        text format metrics.
+        If prometheus_client is available, starts the HTTP server using the per-instance registry. Otherwise, provides a
+        simple HTTP server for text format metrics.
 
         """
         if self._prom_client and self._registry is not None:
