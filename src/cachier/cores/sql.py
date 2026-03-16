@@ -206,7 +206,7 @@ class _SQLCore(_BaseCore):
             )
             return key, entry
 
-    def set_entry(self, key: str, func_res: Any) -> bool:
+    def _set_entry(self, key: str, func_res: Any) -> bool:
         if not self._should_store(func_res):
             return False
         session_factory = self._get_sync_session()
@@ -264,7 +264,7 @@ class _SQLCore(_BaseCore):
             session.commit()
         return True
 
-    async def aset_entry(self, key: str, func_res: Any) -> bool:
+    async def _aset_entry(self, key: str, func_res: Any) -> bool:
         if not self._should_store(func_res):
             return False
         session_factory = await self._get_async_session()

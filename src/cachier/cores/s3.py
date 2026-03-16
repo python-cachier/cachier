@@ -208,7 +208,7 @@ class _S3Core(_BaseCore):
             _safe_warn(f"S3 get_entry_by_key failed: {exc}")
             return key, None
 
-    def set_entry(self, key: str, func_res: Any) -> bool:
+    def _set_entry(self, key: str, func_res: Any) -> bool:
         """Store a function result in S3 under the given key.
 
         Parameters
@@ -409,7 +409,7 @@ class _S3Core(_BaseCore):
         """
         return await asyncio.to_thread(self.get_entry_by_key, key)
 
-    async def aset_entry(self, key: str, func_res: Any) -> bool:
+    async def _aset_entry(self, key: str, func_res: Any) -> bool:
         """Async-compatible variant of :meth:`set_entry`.
 
         This method delegates to the sync implementation via

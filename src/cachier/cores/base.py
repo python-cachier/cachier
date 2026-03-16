@@ -177,12 +177,26 @@ class _BaseCore(metaclass=abc.ABCMeta):
         return 0
 
     @abc.abstractmethod
-    def set_entry(self, key: str, func_res: Any) -> bool:
+    def _set_entry(self, key: str, func_res: Any) -> bool:
         """Map the given result to the given key in this core's cache."""
 
+    async def _aset_entry(self, key: str, func_res: Any) -> bool:
+        """Async variant of :meth:`_set_entry`; defaults to the sync version."""
+        return self._set_entry(key, func_res)
+
+    def set_entry(self, key: str, func_res: Any) -> bool:
+        """Store entry and record a size-limit rejection metric if not stored."""
+        stored = self._set_entry(key, func_res)
+        if not stored and self.metrics:
+            self.metrics.record_size_limit_rejection()
+        return stored
+
     async def aset_entry(self, key: str, func_res: Any) -> bool:
-        """Async-compatible variant of :meth:`set_entry`."""
-        return self.set_entry(key, func_res)
+        """Async variant of :meth:`set_entry`; records metrics on rejection."""
+        stored = await self._aset_entry(key, func_res)
+        if not stored and self.metrics:
+            self.metrics.record_size_limit_rejection()
+        return stored
 
     @abc.abstractmethod
     def mark_entry_being_calculated(self, key: str) -> None:

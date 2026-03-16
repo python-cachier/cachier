@@ -40,7 +40,7 @@ class _MemoryCore(_BaseCore):
         """Get an entry by key."""
         return self.get_entry_by_key(key)
 
-    def set_entry(self, key: str, func_res: Any) -> bool:
+    def _set_entry(self, key: str, func_res: Any) -> bool:
         if not self._should_store(func_res):
             return False
         hash_key = self._hash_func_key(key)
@@ -64,7 +64,7 @@ class _MemoryCore(_BaseCore):
             self._update_size_metrics()
         return True
 
-    async def aset_entry(self, key: str, func_res: Any) -> bool:
+    async def _aset_entry(self, key: str, func_res: Any) -> bool:
         """Set an entry."""
         return self.set_entry(key, func_res)
 

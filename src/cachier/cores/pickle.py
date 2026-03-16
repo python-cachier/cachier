@@ -248,7 +248,7 @@ class _PickleCore(_BaseCore):
     async def aget_entry_by_key(self, key: str) -> Tuple[str, Optional[CacheEntry]]:
         return self.get_entry_by_key(key)
 
-    def set_entry(self, key: str, func_res: Any) -> bool:
+    def _set_entry(self, key: str, func_res: Any) -> bool:
         if not self._should_store(func_res):
             return False
         key_data = CacheEntry(
@@ -268,7 +268,7 @@ class _PickleCore(_BaseCore):
             self._save_cache(cache)
         return True
 
-    async def aset_entry(self, key: str, func_res: Any) -> bool:
+    async def _aset_entry(self, key: str, func_res: Any) -> bool:
         return self.set_entry(key, func_res)
 
     def mark_entry_being_calculated_separate_files(self, key: str) -> None:

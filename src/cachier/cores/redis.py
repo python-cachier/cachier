@@ -221,7 +221,7 @@ class _RedisCore(_BaseCore):
             warnings.warn(f"Redis get_entry_by_key failed: {e}", stacklevel=2)
             return key, None
 
-    def set_entry(self, key: str, func_res: Any) -> bool:
+    def _set_entry(self, key: str, func_res: Any) -> bool:
         """Map the given result to the given key in Redis."""
         if not self._should_store(func_res):
             return False
@@ -249,7 +249,7 @@ class _RedisCore(_BaseCore):
             warnings.warn(f"Redis set_entry failed: {e}", stacklevel=2)
         return False
 
-    async def aset_entry(self, key: str, func_res: Any) -> bool:
+    async def _aset_entry(self, key: str, func_res: Any) -> bool:
         """Map the given result to the given key in Redis using async operations."""
         if not self._should_store(func_res):
             return False

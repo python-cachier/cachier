@@ -148,7 +148,7 @@ class _MongoCore(_BaseCore):
         )
         return key, entry
 
-    def set_entry(self, key: str, func_res: Any) -> bool:
+    def _set_entry(self, key: str, func_res: Any) -> bool:
         if not self._should_store(func_res):
             return False
         mongo_collection = self._ensure_collection()
@@ -170,7 +170,7 @@ class _MongoCore(_BaseCore):
         )
         return True
 
-    async def aset_entry(self, key: str, func_res: Any) -> bool:
+    async def _aset_entry(self, key: str, func_res: Any) -> bool:
         if not self._should_store(func_res):
             return False
         mongo_collection = await self._ensure_collection_async()

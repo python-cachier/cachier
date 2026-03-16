@@ -86,9 +86,6 @@ def _calc_entry(core: _BaseCore, key, func, args, kwds, printer=lambda *_: None)
         stored = core.set_entry(key, func_res)
         if not stored:
             printer("Result exceeds entry_size_limit; not cached")
-            # Track size limit rejection in metrics if available
-            if core.metrics:
-                core.metrics.record_size_limit_rejection()
         return func_res
     finally:
         core.mark_entry_not_calculated(key)
@@ -101,9 +98,6 @@ async def _calc_entry_async(core: _BaseCore, key, func, args, kwds, printer=lamb
         stored = await core.aset_entry(key, func_res)
         if not stored:
             printer("Result exceeds entry_size_limit; not cached")
-            # Track size limit rejection in metrics if available
-            if core.metrics:
-                core.metrics.record_size_limit_rejection()
         return func_res
     finally:
         await core.amark_entry_not_calculated(key)
