@@ -517,3 +517,57 @@ def test_metrics_context_manager_none():
     """Test MetricsContext with metrics=None does not raise."""
     with MetricsContext(None):
         pass  # should not raise
+
+
+@pytest.mark.memory
+def test_metrics_entry_count_and_size_memory():
+    """Test that entry_count and total_size_bytes reflect cache state for memory backend.
+
+    _MemoryCore overrides _get_entry_count and _get_total_size; both should
+    return real values after entries are written.
+    """
+
+    @cachier(backend="memory", enable_metrics=True)
+    def test_func(x):
+        return x * 2
+
+    test_func.clear_cache()
+
+    # No entries yet
+    stats = test_func.metrics.get_stats()
+    assert stats.entry_count == 0
+    assert stats.total_size_bytes == 0
+
+    # Cache two distinct entries
+    test_func(1)
+    test_func(2)
+
+    stats = test_func.metrics.get_stats()
+    assert stats.entry_count == 2
+    assert stats.total_size_bytes > 0
+
+    test_func.clear_cache()
+
+
+@pytest.mark.pickle
+def test_metrics_entry_count_and_size_base_default():
+    """Test that entry_count and total_size_bytes are 0 for backends without override.
+
+    The base-class _get_entry_count and _get_total_size return 0. Pickle does
+    not override them, so the snapshot values must stay at the default.
+    """
+
+    @cachier(backend="pickle", enable_metrics=True)
+    def test_func(x):
+        return x * 2
+
+    test_func.clear_cache()
+
+    test_func(1)
+    test_func(2)
+
+    stats = test_func.metrics.get_stats()
+    assert stats.entry_count == 0
+    assert stats.total_size_bytes == 0
+
+    test_func.clear_cache()
