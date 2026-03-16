@@ -76,7 +76,7 @@ async def test_async_mongo_mongetter_method_args_and_kwargs():
     call_count = 0
 
     class _MongoMethods:
-        @cachier(mongetter=async_mongetter)
+        @cachier(mongetter=async_mongetter, allow_non_static_methods=True)
         async def async_cached_mongo_method_args_kwargs(self, x: int, y: int) -> int:
             nonlocal call_count
             call_count += 1

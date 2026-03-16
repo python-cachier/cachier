@@ -185,7 +185,7 @@ def test_precache_value(mongetter, backend):
 )
 def test_ignore_self_in_methods(mongetter, backend):
     class DummyClass:
-        @cachier.cachier(backend=backend, mongetter=mongetter)
+        @cachier.cachier(backend=backend, mongetter=mongetter, allow_non_static_methods=True)
         def takes_2_seconds(self, arg_1, arg_2):
             """Some function."""
             sleep(2)
@@ -257,7 +257,7 @@ def test_global_disable_function():
 
 def test_global_disable_method():
     class Test:
-        @cachier.cachier()
+        @cachier.cachier(allow_non_static_methods=True)
         def test(self):
             return True
 
@@ -270,7 +270,7 @@ def test_global_disable_method():
 
 def test_global_disable_method_with_args():
     class Test:
-        @cachier.cachier()
+        @cachier.cachier(allow_non_static_methods=True)
         def test(self, test):
             return test
 
@@ -286,7 +286,7 @@ def test_global_disable_method_with_optional_parameters():
         def __init__(self, val):
             self.val = val
 
-        @cachier.cachier()
+        @cachier.cachier(allow_non_static_methods=True)
         def test(self, test=0):
             return self.val + test
 
@@ -302,7 +302,7 @@ def test_global_disable_method_with_args_and_optional_parameters():
         def __init__(self, val):
             self.val = val
 
-        @cachier.cachier()
+        @cachier.cachier(allow_non_static_methods=True)
         def test(self, test1, test2=0):
             return self.val + test1 + test2
 

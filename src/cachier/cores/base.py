@@ -48,11 +48,22 @@ class _BaseCore(metaclass=abc.ABCMeta):
         self.wait_for_calc_timeout = wait_for_calc_timeout
         self.lock = threading.RLock()
         self.entry_size_limit = entry_size_limit
+        self.func_is_method: bool = False
 
     def set_func(self, func):
         """Set the function this core will use.
 
-        This has to be set before any method is called. Also determine if the function is an object method.
+        This must be called before any other method is invoked.  In addition
+        to storing ``func`` on the instance, this method inspects the
+        function's signature and sets ``self.func_is_method`` to ``True``
+        when the first parameter is named ``"self"``.
+
+        Notes
+        -----
+        Detection is name-based: only ``func_params[0] == "self"`` is
+        checked.  ``@classmethod`` functions whose first parameter is
+        conventionally named ``cls`` are **not** detected as methods --
+        this is a known gap.
 
         """
         # unwrap if the function is functools.partial

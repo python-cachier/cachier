@@ -261,7 +261,9 @@ class TestAsyncMethod:
             def __init__(self, value):
                 self.value = value
 
-            @cachier(backend="memory")
+            # allow_non_static_methods=True: cross-instance cache sharing
+            # is intentional in this test
+            @cachier(backend="memory", allow_non_static_methods=True)
             async def async_method(self, x):
                 await asyncio.sleep(0.1)
                 return x * self.value
@@ -290,7 +292,9 @@ class TestAsyncMethod:
             def __init__(self, value):
                 self.value = value
 
-            @cachier(backend="memory")
+            # allow_non_static_methods=True: cross-instance cache sharing
+            # is intentional in this test
+            @cachier(backend="memory", allow_non_static_methods=True)
             async def async_method(self, x):
                 await asyncio.sleep(0.1)
                 return x * self.value

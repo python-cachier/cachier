@@ -168,3 +168,67 @@ def test_cache_dpath_memory():
         return 1
 
     assert func.cache_dpath() is None
+
+
+@pytest.mark.smoke
+def test_classmethod_not_guarded():
+    """Test that @classmethod (cls) does not trigger the instance method guard.
+
+    Note: The decorator order must be @classmethod first, then @cachier,
+    so that cachier sees the underlying function (whose first param is
+    ``cls``, not ``self``) and the guard is not triggered.
+    """
+
+    # A custom hash_func is needed because the default pickle-based
+    # hash function cannot serialise the local class object passed as
+    # ``cls``.
+    def _hash_ignore_cls(args, kwds):
+        filtered = {k: v for k, v in kwds.items() if k != "cls"}
+        import hashlib
+        import pickle
+
+        return hashlib.sha256(pickle.dumps((args, sorted(filtered.items())))).hexdigest()
+
+    class Foo:
+        @classmethod
+        @cachier_decorator(backend="memory", hash_func=_hash_ignore_cls)
+        def method(cls, x):
+            return x + 1
+
+    Foo.method.clear_cache()
+    assert Foo.method(2) == 3
+    Foo.method.clear_cache()
+
+
+@pytest.mark.smoke
+def test_instance_method_global_opt_out_reset():
+    """Test that resetting allow_non_static_methods=False re-enables the guard."""
+    set_global_params(allow_non_static_methods=True)
+    set_global_params(allow_non_static_methods=False)
+    with pytest.raises(TypeError, match="instance method"):
+
+        class Foo:
+            @cachier_decorator(backend="memory")
+            def method(self, x):
+                return x
+
+
+@pytest.mark.smoke
+def test_instance_method_skip_cache():
+    """Test that cachier__skip_cache=True works for methods with allow_non_static_methods."""
+    call_count = 0
+
+    class Foo:
+        @cachier_decorator(backend="memory", allow_non_static_methods=True)
+        def method(self, x):
+            nonlocal call_count
+            call_count += 1
+            return x * 2
+
+    obj = Foo()
+    obj.method.clear_cache()
+    assert obj.method(5) == 10
+    assert call_count == 1
+    assert obj.method(5, cachier__skip_cache=True) == 10
+    assert call_count == 2  # recalculated, not from cache
+    obj.method.clear_cache()

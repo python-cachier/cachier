@@ -2,14 +2,17 @@
 
 import pytest
 
-from cachier.config import get_default_params, set_default_params
+from cachier.config import get_default_params, get_global_params, set_default_params, set_global_params
 
 
 def test_set_default_params_deprecated():
     """Test that set_default_params shows deprecation warning."""
-    # Test lines 103-111: deprecation warning
-    with pytest.warns(DeprecationWarning, match="set_default_params.*deprecated.*set_global_params"):
-        set_default_params(stale_after=60)
+    original = get_global_params().stale_after
+    try:
+        with pytest.warns(DeprecationWarning, match="set_default_params.*deprecated.*set_global_params"):
+            set_default_params(stale_after=60)
+    finally:
+        set_global_params(stale_after=original)
 
 
 def test_get_default_params_deprecated():
