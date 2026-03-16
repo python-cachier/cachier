@@ -6,9 +6,11 @@
 # Licensed under the MIT license:
 # http://www.opensource.org/licenses/MIT-license
 # Copyright (c) 2016, Shay Palachy <shaypal5@gmail.com>
+import hashlib
 import logging
 import os
 import pickle  # for local caching
+import tempfile
 import time
 from contextlib import suppress
 from datetime import datetime, timedelta
@@ -30,6 +32,8 @@ if TYPE_CHECKING:
 
 class _PickleCore(_BaseCore):
     """The pickle core class for cachier."""
+
+    _SHARED_LOCK_SUFFIX = ".lock"
 
     class CacheChangeHandler(PatternMatchingEventHandler):
         """Handles cache-file modification events."""
@@ -74,6 +78,10 @@ class _PickleCore(_BaseCore):
             """A Watchdog Event Handler method."""  # noqa: D401
             self._check_calculation()
 
+        def on_moved(self, event) -> None:
+            """A Watchdog Event Handler method."""  # noqa: D401
+            self._check_calculation()
+
     def __init__(
         self,
         hash_func: Optional[HashFunc],
@@ -101,6 +109,21 @@ class _PickleCore(_BaseCore):
         os.makedirs(self.cache_dir, exist_ok=True)
         return os.path.abspath(os.path.join(os.path.realpath(self.cache_dir), self.cache_fname))
 
+    @property
+    def _shared_lock_fpath(self) -> str:
+        cache_hash = hashlib.sha256(self.cache_fpath.encode("utf-8")).hexdigest()
+        candidate_dirs = (
+            os.path.join(tempfile.gettempdir(), "cachier-locks"),
+            os.path.join(os.path.dirname(self.cache_fpath), ".cachier-locks"),
+        )
+        for lock_dir in candidate_dirs:
+            try:
+                os.makedirs(lock_dir, exist_ok=True)
+                return os.path.join(lock_dir, f"{cache_hash}{self._SHARED_LOCK_SUFFIX}")
+            except OSError:
+                continue
+        return os.path.join(os.path.dirname(self.cache_fpath), f".{cache_hash}{self._SHARED_LOCK_SUFFIX}")
+
     @staticmethod
     def _convert_legacy_cache_entry(
         entry: Union[dict, CacheEntry],
@@ -117,8 +140,8 @@ class _PickleCore(_BaseCore):
 
     def _load_cache_dict(self) -> Dict[str, CacheEntry]:
         try:
-            with portalocker.Lock(self.cache_fpath, mode="rb") as cf:
-                cache = pickle.load(cast(IO[bytes], cf))
+            with portalocker.Lock(self._shared_lock_fpath, mode="a+b"), open(self.cache_fpath, "rb") as cache_file:
+                cache = pickle.load(cast(IO[bytes], cache_file))
             self._cache_used_fpath = str(self.cache_fpath)
         except (FileNotFoundError, EOFError):
             cache = {}
@@ -185,9 +208,29 @@ class _PickleCore(_BaseCore):
             fpath += f"_{separate_file_key}"
         elif hash_str is not None:
             fpath += f"_{hash_str}"
+        parent_dir = os.path.dirname(fpath)
         with self.lock:
-            with portalocker.Lock(fpath, mode="wb") as cf:
-                pickle.dump(cache, cast(IO[bytes], cf), protocol=4)
+            if isinstance(cache, CacheEntry):
+                with portalocker.Lock(fpath, mode="wb") as cache_file:
+                    pickle.dump(cache, cast(IO[bytes], cache_file), protocol=4)
+            else:
+                with portalocker.Lock(self._shared_lock_fpath, mode="a+b"):
+                    temp_path = ""
+                    try:
+                        with tempfile.NamedTemporaryFile(
+                            mode="wb",
+                            dir=parent_dir,
+                            delete=False,
+                        ) as temp_file:
+                            temp_path = temp_file.name
+                            pickle.dump(cache, cast(IO[bytes], temp_file), protocol=4)
+                            temp_file.flush()
+                            os.fsync(temp_file.fileno())
+                        os.replace(temp_path, fpath)
+                    finally:
+                        if temp_path:
+                            with suppress(FileNotFoundError):
+                                os.remove(temp_path)
             # the same as check for separate_file, but changed for typing
             if isinstance(cache, dict):
                 self._cache_dict = cache
@@ -260,6 +303,7 @@ class _PickleCore(_BaseCore):
     def mark_entry_not_calculated(self, key: str) -> None:
         if self.separate_files:
             self._mark_entry_not_calculated_separate_files(key)
+            return  # pragma: no cover
         with self.lock:
             cache = self.get_cache_dict()
             # that's ok, we don't need an entry in that case
