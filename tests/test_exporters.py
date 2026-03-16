@@ -245,3 +245,243 @@ def test_prometheus_text_metrics_consistency():
     assert hits + misses == stats.total_calls
 
     test_func.clear_cache()
+
+
+@pytest.mark.memory
+def test_prometheus_export_metrics_noop():
+    """Test that export_metrics is a no-op (backward-compat method)."""
+    exporter = PrometheusExporter(port=9100, use_prometheus_client=False)
+    # Should not raise
+    exporter.export_metrics("some_func", None)
+
+
+@pytest.mark.memory
+def test_prometheus_text_metrics_skips_none_metrics():
+    """Test that _generate_text_metrics skips functions whose metrics attr is None."""
+
+    @cachier(backend="memory", enable_metrics=True)
+    def test_func(x):
+        return x * 2
+
+    test_func.clear_cache()
+    test_func(5)
+
+    exporter = PrometheusExporter(port=9101, use_prometheus_client=False)
+    exporter.register_function(test_func)
+
+    # Inject a fake entry whose metrics resolve to None
+    class _NoMetrics:
+        __module__ = "test"
+        __name__ = "no_metrics"
+        metrics = None
+
+        def __call__(self, *a, **kw):
+            pass
+
+    exporter._registered_functions["test.no_metrics"] = _NoMetrics()
+
+    # Should not raise; the None-metrics entry is silently skipped
+    text = exporter._generate_text_metrics()
+    assert "cachier_cache_hits_total" in text
+    assert "no_metrics" not in text
+
+    test_func.clear_cache()
+
+
+@pytest.mark.memory
+def test_prometheus_start_stop_simple_server():
+    """Test starting and stopping the simple HTTP server."""
+    exporter = PrometheusExporter(port=19090, use_prometheus_client=False)
+    exporter.start()
+    assert exporter._server is not None
+    exporter.stop()
+    assert exporter._server is None
+
+
+@pytest.mark.memory
+def test_prometheus_start_stop_prometheus_server():
+    """Test starting and stopping the prometheus_client-backed HTTP server."""
+    prometheus_client = pytest.importorskip("prometheus_client")  # noqa: F841
+    exporter = PrometheusExporter(port=19091, use_prometheus_client=True)
+    assert exporter._registry is not None
+    exporter.start()
+    assert exporter._server is not None
+    exporter.stop()
+    assert exporter._server is None
+
+
+@pytest.mark.memory
+def test_prometheus_collector_collect():
+    """Test that the CachierCollector.collect() yields metrics correctly."""
+    pytest.importorskip("prometheus_client")
+    from prometheus_client import generate_latest
+
+    @cachier(backend="memory", enable_metrics=True)
+    def test_func(x):
+        return x * 2
+
+    test_func.clear_cache()
+    test_func(5)
+    test_func(5)
+
+    exporter = PrometheusExporter(port=19092, use_prometheus_client=True)
+    exporter.register_function(test_func)
+
+    assert exporter._registry is not None
+    output = generate_latest(exporter._registry).decode()
+    assert "cachier_cache_hits_total" in output
+    assert "cachier_cache_misses_total" in output
+
+    test_func.clear_cache()
+
+
+@pytest.mark.memory
+def test_prometheus_client_not_available(monkeypatch):
+    """Test PrometheusExporter falls back gracefully when prometheus_client is patched out."""
+    monkeypatch.setattr("cachier.exporters.prometheus.PROMETHEUS_CLIENT_AVAILABLE", False)
+    monkeypatch.setattr("cachier.exporters.prometheus.prometheus_client", None)
+
+    @cachier(backend="memory", enable_metrics=True)
+    def test_func(x):
+        return x * 2
+
+    test_func.clear_cache()
+    test_func(5)
+
+    exporter = PrometheusExporter(port=19093, use_prometheus_client=True)
+    assert exporter._prom_client is None
+    exporter.register_function(test_func)
+    text = exporter._generate_text_metrics()
+    assert "cachier_cache_hits_total" in text
+
+    test_func.clear_cache()
+
+
+@pytest.mark.memory
+def test_prometheus_stop_when_not_started():
+    """Test that stop() is a no-op when the server was never started."""
+    exporter = PrometheusExporter(port=19094, use_prometheus_client=False)
+    exporter.stop()  # Should not raise
+
+
+@pytest.mark.memory
+def test_prometheus_simple_server_404():
+    """Test that simple HTTP server returns 404 for non-metrics paths."""
+    import http.client
+
+    exporter = PrometheusExporter(port=19095, use_prometheus_client=False)
+    exporter.start()
+    try:
+        conn = http.client.HTTPConnection("127.0.0.1", 19095)
+        conn.request("GET", "/notfound")
+        response = conn.getresponse()
+        assert response.status == 404
+        conn.close()
+    finally:
+        exporter.stop()
+
+
+@pytest.mark.memory
+def test_prometheus_prometheus_server_404():
+    """Test that prometheus_client-backed server returns 404 for non-metrics paths."""
+    import http.client
+
+    pytest.importorskip("prometheus_client")
+
+    exporter = PrometheusExporter(port=19096, use_prometheus_client=True)
+    exporter.start()
+    try:
+        conn = http.client.HTTPConnection("127.0.0.1", 19096)
+        conn.request("GET", "/notfound")
+        response = conn.getresponse()
+        assert response.status == 404
+        conn.close()
+    finally:
+        exporter.stop()
+
+
+@pytest.mark.memory
+def test_prometheus_collector_collect_empty():
+    """Test CachierCollector.collect() when no functions have metrics."""
+    pytest.importorskip("prometheus_client")
+    from prometheus_client import generate_latest
+
+    exporter = PrometheusExporter(port=19097, use_prometheus_client=True)
+    assert exporter._registry is not None
+    # No functions registered — collect() should run without error and yield metric families
+    output = generate_latest(exporter._registry).decode()
+    # Output may be empty or contain only headers; no crash is the key assertion
+    assert isinstance(output, str)
+
+
+@pytest.mark.memory
+def test_prometheus_simple_server_metrics_endpoint():
+    """Test that simple HTTP server returns metrics on /metrics."""
+    import urllib.request
+
+    @cachier(backend="memory", enable_metrics=True)
+    def test_func(x):
+        return x * 2
+
+    test_func.clear_cache()
+    test_func(5)
+
+    exporter = PrometheusExporter(port=19098, use_prometheus_client=False)
+    exporter.register_function(test_func)
+    exporter.start()
+    try:
+        response = urllib.request.urlopen("http://127.0.0.1:19098/metrics")
+        body = response.read().decode()
+        assert "cachier_cache_hits_total" in body
+    finally:
+        exporter.stop()
+        test_func.clear_cache()
+
+
+@pytest.mark.memory
+def test_prometheus_prometheus_server_metrics_endpoint():
+    """Test that prometheus_client-backed server returns metrics on /metrics."""
+    import urllib.request
+
+    pytest.importorskip("prometheus_client")
+
+    @cachier(backend="memory", enable_metrics=True)
+    def test_func(x):
+        return x * 2
+
+    test_func.clear_cache()
+    test_func(5)
+
+    exporter = PrometheusExporter(port=19099, use_prometheus_client=True)
+    exporter.register_function(test_func)
+    exporter.start()
+    try:
+        response = urllib.request.urlopen("http://127.0.0.1:19099/metrics")
+        body = response.read().decode()
+        assert "cachier_cache_hits_total" in body
+    finally:
+        exporter.stop()
+        test_func.clear_cache()
+
+
+@pytest.mark.memory
+def test_prometheus_collector_collect_skips_none_metrics():
+    """Test CachierCollector.collect() skips functions where metrics is None."""
+    pytest.importorskip("prometheus_client")
+    from prometheus_client import generate_latest
+
+    exporter = PrometheusExporter(port=19200, use_prometheus_client=True)
+
+    class _NoMetrics:
+        __module__ = "test"
+        __name__ = "no_metrics"
+        metrics = None
+
+        def __call__(self, *a, **kw):
+            pass
+
+    exporter._registered_functions["test.no_metrics"] = _NoMetrics()
+
+    assert exporter._registry is not None
+    output = generate_latest(exporter._registry).decode()
+    assert isinstance(output, str)

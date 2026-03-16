@@ -36,7 +36,7 @@ try:
     import prometheus_client  # type: ignore[import-not-found]
 
     PROMETHEUS_CLIENT_AVAILABLE = True
-except ImportError:
+except ImportError:  # pragma: no cover
     PROMETHEUS_CLIENT_AVAILABLE = False
     prometheus_client = None  # type: ignore[assignment]
 
@@ -108,7 +108,7 @@ class PrometheusExporter(MetricsExporter):
 
     def _setup_collector(self) -> None:
         """Set up a custom collector to pull metrics from registered functions."""
-        if not self._prom_client:
+        if not self._prom_client:  # pragma: no cover
             return
 
         try:
@@ -117,7 +117,7 @@ class PrometheusExporter(MetricsExporter):
                 CounterMetricFamily,
                 GaugeMetricFamily,
             )
-        except (ImportError, AttributeError):
+        except (ImportError, AttributeError):  # pragma: no cover
             # If prometheus_client is not properly available, skip collector setup
             return
 
@@ -349,7 +349,7 @@ class PrometheusExporter(MetricsExporter):
 
         from prometheus_client import exposition
 
-        if self._registry is None:
+        if self._registry is None:  # pragma: no cover
             raise RuntimeError("registry must be initialized before starting server")
         registry = self._registry
 
@@ -417,5 +417,8 @@ class PrometheusExporter(MetricsExporter):
         """Stop the Prometheus exporter and clean up resources."""
         if self._server:
             self._server.shutdown()
+            self._server.server_close()
             self._server = None
+        if self._server_thread:
+            self._server_thread.join(timeout=5)
             self._server_thread = None

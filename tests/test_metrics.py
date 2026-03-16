@@ -8,7 +8,7 @@ from threading import Thread
 import pytest
 
 from cachier import cachier
-from cachier.metrics import CacheMetrics, MetricSnapshot
+from cachier.metrics import CacheMetrics, MetricsContext, MetricSnapshot
 
 
 @pytest.mark.memory
@@ -480,3 +480,40 @@ def test_metrics_empty_window_sizes():
     metrics.record_hit()
     stats = metrics.get_stats()
     assert stats.hits == 1
+
+
+def test_metrics_wait_timeout_direct():
+    """Test record_wait_timeout directly."""
+    metrics = CacheMetrics()
+    metrics.record_wait_timeout()
+    stats = metrics.get_stats()
+    assert stats.wait_timeouts == 1
+
+
+def test_metrics_sampling_rate_zero_skips_all_methods():
+    """Test that sampling_rate=0.0 causes all record_* methods to skip recording."""
+    metrics = CacheMetrics(sampling_rate=0.0)
+    metrics.record_stale_hit()
+    metrics.record_wait_timeout()
+    metrics.record_size_limit_rejection()
+    metrics.record_latency(0.1)
+    stats = metrics.get_stats()
+    assert stats.stale_hits == 0
+    assert stats.wait_timeouts == 0
+    assert stats.size_limit_rejections == 0
+    assert stats.avg_latency_ms == 0.0
+
+
+def test_metrics_context_manager():
+    """Test MetricsContext records latency when used as a context manager."""
+    metrics = CacheMetrics()
+    with MetricsContext(metrics):
+        time.sleep(0.01)
+    stats = metrics.get_stats()
+    assert stats.avg_latency_ms > 0
+
+
+def test_metrics_context_manager_none():
+    """Test MetricsContext with metrics=None does not raise."""
+    with MetricsContext(None):
+        pass  # should not raise
