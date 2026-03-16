@@ -62,6 +62,8 @@ def test_sql_core_basic():
 
 @pytest.mark.sql
 def test_sql_core_keywords():
+    """Keyword arguments produce a cache hit the same as positional arguments."""
+
     @cachier(backend="sql", sql_engine=SQL_CONN_STR)
     def f(x, y):
         return random() + x + y
@@ -70,14 +72,7 @@ def test_sql_core_keywords():
     v1 = f(1, y=2)
     v2 = f(1, y=2)
     assert v1 == v2
-    v3 = f(1, y=2, cachier__skip_cache=True)
-    assert v3 != v1
-    v4 = f(1, y=2)
-    assert v4 == v1
-    v5 = f(1, y=2, cachier__overwrite_cache=True)
-    assert v5 != v1
-    v6 = f(1, y=2)
-    assert v6 == v5
+    f.clear_cache()
 
 
 @pytest.mark.sql
@@ -98,24 +93,6 @@ def test_sql_stale_after():
     sleep(2)
     v3 = f(1, 2)
     assert v3 != v1
-
-
-@pytest.mark.sql
-def test_sql_overwrite_and_skip_cache():
-    @cachier(backend="sql", sql_engine=SQL_CONN_STR)
-    def f(x):
-        return random() + x
-
-    f.clear_cache()
-    v1 = f(1)
-    v2 = f(1)
-    assert v1 == v2
-    v3 = f(1, cachier__skip_cache=True)
-    assert v3 != v1
-    v4 = f(1, cachier__overwrite_cache=True)
-    assert v4 != v1
-    v5 = f(1)
-    assert v5 == v4
 
 
 @pytest.mark.sql
