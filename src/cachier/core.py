@@ -727,10 +727,14 @@ def cachier(
         def _precache_value(*args, value_to_cache, **kwds):
             """Add an initial value to the cache.
 
-            Arguments:
-            ---------
+            Parameters
+            ----------
+            *args : Any
+                Positional arguments used to build the cache key.
             value_to_cache : any
-                entry to be written into the cache
+                Entry to be written into the cache.
+            **kwds : Any
+                Keyword arguments used to build the cache key.
 
             """
             # merge args expanded as kwargs and the original kwds
