@@ -6,6 +6,7 @@
 # Licensed under the MIT license:
 # http://www.opensource.org/licenses/MIT-license
 
+import random
 import threading
 import time
 from collections import deque
@@ -23,9 +24,12 @@ class MetricSnapshot:
     hits : int
         Number of cache hits
     misses : int
-        Number of cache misses
+        Number of cache misses. Note: stale cache hits are also counted
+        as misses, so stale_hits and misses may overlap.
     hit_rate : float
-        Cache hit rate as percentage (0-100)
+        Cache hit rate as percentage (0-100). Note: stale cache hits are
+        counted as misses when computing the hit rate, so the rate may
+        appear lower than expected when stale entries are served.
     total_calls : int
         Total number of cache accesses
     avg_latency_ms : float
@@ -39,7 +43,8 @@ class MetricSnapshot:
     entry_count : int
         Current number of entries in cache
     total_size_bytes : int
-        Total size of cache in bytes
+        Total size of cache in bytes. Only populated for the memory
+        backend; all other backends report 0.
     size_limit_rejections : int
         Number of entries rejected due to size limit
 
@@ -147,18 +152,11 @@ class CacheMetrics:
         # Assuming ~1000 ops/sec max, keep 1 day of data = 86.4M points
         # Limit to 100K points for memory efficiency
         max_latency_points = 100000
-        # Use monotonic clock for latency tracking to avoid clock adjustment issues
-        # Store a reference point to convert between monotonic and wall clock time
-        self._monotonic_start = time.perf_counter()
-        self._wall_start = time.time()
         self._latencies: Deque[_TimestampedMetric] = deque(maxlen=max_latency_points)
 
         # Size tracking
         self._entry_count = 0
         self._total_size_bytes = 0
-
-        # Import here to avoid circular dependency
-        import random
 
         self._random = random.Random()  # noqa: S311
 

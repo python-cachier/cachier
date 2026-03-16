@@ -102,6 +102,9 @@ async def _calc_entry_async(core: _BaseCore, key, func, args, kwds, printer=lamb
         stored = await core.aset_entry(key, func_res)
         if not stored:
             printer("Result exceeds entry_size_limit; not cached")
+            # Track size limit rejection in metrics if available
+            if core.metrics:
+                core.metrics.record_size_limit_rejection()
         return func_res
     finally:
         await core.amark_entry_not_calculated(key)
@@ -631,13 +634,29 @@ def cachier(
 
             if ignore_cache or not _global_params.caching_enabled:
                 return await func(args[0], **kwargs) if core.func_is_method else await func(**kwargs)
+
+            # Start timing for metrics
+            start_time = time.perf_counter() if cache_metrics else None
+
             key, entry = await core.aget_entry((), kwargs)
             if overwrite_cache:
+                if cache_metrics:
+                    cache_metrics.record_miss()
+                    cache_metrics.record_recalculation()
                 result = await _calc_entry_async(core, key, func, args, kwds, _print)
+                if cache_metrics:
+                    assert start_time is not None  # noqa: S101
+                    cache_metrics.record_latency(time.perf_counter() - start_time)
                 return result
             if entry is None or (not entry._completed and not entry._processing):
                 _print("No entry found. No current calc. Calling like a boss.")
+                if cache_metrics:
+                    cache_metrics.record_miss()
+                    cache_metrics.record_recalculation()
                 result = await _calc_entry_async(core, key, func, args, kwds, _print)
+                if cache_metrics:
+                    assert start_time is not None  # noqa: S101
+                    cache_metrics.record_latency(time.perf_counter() - start_time)
                 return result
             _print("Entry found.")
             if _allow_none or entry.value is not None:
@@ -655,10 +674,19 @@ def cachier(
                 # note: if max_age < 0, we always consider a value stale
                 if nonneg_max_age and (now - entry.time <= max_allowed_age):
                     _print("And it is fresh!")
+                    if cache_metrics:
+                        cache_metrics.record_hit()
+                        assert start_time is not None  # noqa: S101
+                        cache_metrics.record_latency(time.perf_counter() - start_time)
                     return entry.value
                 _print("But it is stale... :(")
+                if cache_metrics:
+                    cache_metrics.record_stale_hit()
+                    cache_metrics.record_miss()
                 if _next_time:
                     _print("Async calc and return stale")
+                    if cache_metrics:
+                        cache_metrics.record_recalculation()
                     # Mark entry as being calculated then immediately unmark
                     # This matches sync behavior and ensures entry exists
                     # Background task will update cache when complete
@@ -666,19 +694,40 @@ def cachier(
                     # Use asyncio.create_task for background execution
                     asyncio.create_task(_function_thread_async(core, key, func, args, kwds))
                     await core.amark_entry_not_calculated(key)
+                    if cache_metrics:
+                        assert start_time is not None  # noqa: S101
+                        cache_metrics.record_latency(time.perf_counter() - start_time)
                     return entry.value
                 _print("Calling decorated function and waiting")
+                if cache_metrics:
+                    cache_metrics.record_recalculation()
                 result = await _calc_entry_async(core, key, func, args, kwds, _print)
+                if cache_metrics:
+                    assert start_time is not None  # noqa: S101
+                    cache_metrics.record_latency(time.perf_counter() - start_time)
                 return result
             if entry._processing:
                 msg = "No value but being calculated. Recalculating"
                 _print(f"{msg} (async - no wait).")
                 # For async, don't wait - just recalculate
                 # This avoids blocking the event loop
+                if cache_metrics:
+                    cache_metrics.record_miss()
+                    cache_metrics.record_recalculation()
                 result = await _calc_entry_async(core, key, func, args, kwds, _print)
+                if cache_metrics:
+                    assert start_time is not None  # noqa: S101
+                    cache_metrics.record_latency(time.perf_counter() - start_time)
                 return result
             _print("No entry found. No current calc. Calling like a boss.")
-            return await _calc_entry_async(core, key, func, args, kwds, _print)
+            if cache_metrics:
+                cache_metrics.record_miss()
+                cache_metrics.record_recalculation()
+            result = await _calc_entry_async(core, key, func, args, kwds, _print)
+            if cache_metrics:
+                assert start_time is not None  # noqa: S101
+                cache_metrics.record_latency(time.perf_counter() - start_time)
+            return result
 
         # MAINTAINER NOTE: The main function wrapper is now a standard function
         # that passes *args and **kwargs to _call. This ensures that user

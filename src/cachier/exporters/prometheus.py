@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Protocol, cast
 from .base import MetricsExporter
 
 if TYPE_CHECKING:
-    from ..metrics import CacheMetrics
+    from ..metrics import CacheMetrics, MetricSnapshot
 
 
 class _MetricsEnabledCallable(Protocol):
@@ -98,6 +98,9 @@ class PrometheusExporter(MetricsExporter):
 
         # Try to import prometheus_client if requested
         self._prom_client = None
+        # Per-instance registry to avoid double-registration on the global
+        # REGISTRY when multiple PrometheusExporter instances are created.
+        self._registry: Optional[Any] = None
         if use_prometheus_client and PROMETHEUS_CLIENT_AVAILABLE:
             self._prom_client = prometheus_client
             self._init_prometheus_metrics()
@@ -109,7 +112,7 @@ class PrometheusExporter(MetricsExporter):
             return
 
         try:
-            from prometheus_client import REGISTRY
+            from prometheus_client import CollectorRegistry
             from prometheus_client.core import (
                 CounterMetricFamily,
                 GaugeMetricFamily,
@@ -121,78 +124,70 @@ class PrometheusExporter(MetricsExporter):
         class CachierCollector:
             """Custom Prometheus collector that pulls metrics from registered functions."""
 
-            def __init__(self, exporter):
+            def __init__(self, exporter: "PrometheusExporter") -> None:
                 self.exporter = exporter
 
-            def collect(self):
+            def describe(self) -> list:
+                """Return an empty list; metrics are described at collect time."""
+                return []
+
+            def collect(self) -> Any:
                 """Collect metrics from all registered functions."""
+                # Snapshot all metrics in one lock acquisition for consistency
                 with self.exporter._lock:
-                    # Collect hits
-                    hits = CounterMetricFamily("cachier_cache_hits_total", "Total cache hits", labels=["function"])
+                    snapshots: Dict[str, "MetricSnapshot"] = {}
+                    for func_name, func in self.exporter._registered_functions.items():
+                        m = _get_func_metrics(func)
+                        if m is not None:
+                            snapshots[func_name] = m.get_stats()
 
-                    # Collect misses
-                    misses = CounterMetricFamily(
-                        "cachier_cache_misses_total", "Total cache misses", labels=["function"]
-                    )
+                # Build metric families outside the lock using the snapshots
+                hits = CounterMetricFamily("cachier_cache_hits_total", "Total cache hits", labels=["function"])
+                misses = CounterMetricFamily(
+                    "cachier_cache_misses_total", "Total cache misses", labels=["function"]
+                )
+                hit_rate = GaugeMetricFamily(
+                    "cachier_cache_hit_rate", "Cache hit rate percentage", labels=["function"]
+                )
+                stale_hits = CounterMetricFamily(
+                    "cachier_stale_hits_total", "Total stale cache hits", labels=["function"]
+                )
+                recalculations = CounterMetricFamily(
+                    "cachier_recalculations_total", "Total cache recalculations", labels=["function"]
+                )
+                wait_timeouts = CounterMetricFamily(
+                    "cachier_wait_timeouts_total", "Total wait timeouts", labels=["function"]
+                )
+                entry_count = GaugeMetricFamily(
+                    "cachier_entry_count", "Current number of cache entries", labels=["function"]
+                )
+                cache_size = GaugeMetricFamily(
+                    "cachier_cache_size_bytes", "Total cache size in bytes", labels=["function"]
+                )
 
-                    # Collect hit rate
-                    hit_rate = GaugeMetricFamily(
-                        "cachier_cache_hit_rate", "Cache hit rate percentage", labels=["function"]
-                    )
+                for func_name, stats in snapshots.items():
+                    hits.add_metric([func_name], stats.hits)
+                    misses.add_metric([func_name], stats.misses)
+                    hit_rate.add_metric([func_name], stats.hit_rate)
+                    stale_hits.add_metric([func_name], stats.stale_hits)
+                    recalculations.add_metric([func_name], stats.recalculations)
+                    wait_timeouts.add_metric([func_name], stats.wait_timeouts)
+                    entry_count.add_metric([func_name], stats.entry_count)
+                    cache_size.add_metric([func_name], stats.total_size_bytes)
 
-                    # Collect stale hits
-                    stale_hits = CounterMetricFamily(
-                        "cachier_stale_hits_total", "Total stale cache hits", labels=["function"]
-                    )
+                # Yield metrics one by one as required by Prometheus collector protocol
+                yield hits
+                yield misses
+                yield hit_rate
+                yield stale_hits
+                yield recalculations
+                yield wait_timeouts
+                yield entry_count
+                yield cache_size
 
-                    # Collect recalculations
-                    recalculations = CounterMetricFamily(
-                        "cachier_recalculations_total", "Total cache recalculations", labels=["function"]
-                    )
-
-                    # Collect entry count
-                    entry_count = GaugeMetricFamily(
-                        "cachier_entry_count", "Current number of cache entries", labels=["function"]
-                    )
-
-                    # Collect cache size
-                    cache_size = GaugeMetricFamily(
-                        "cachier_cache_size_bytes", "Total cache size in bytes", labels=["function"]
-                    )
-
-                    for (
-                        func_name,
-                        func,
-                    ) in self.exporter._registered_functions.items():
-                        metrics = _get_func_metrics(func)
-                        if metrics is None:
-                            continue
-
-                        stats = metrics.get_stats()
-
-                        hits.add_metric([func_name], stats.hits)
-                        misses.add_metric([func_name], stats.misses)
-                        hit_rate.add_metric([func_name], stats.hit_rate)
-                        stale_hits.add_metric([func_name], stats.stale_hits)
-                        recalculations.add_metric([func_name], stats.recalculations)
-                        entry_count.add_metric([func_name], stats.entry_count)
-                        cache_size.add_metric([func_name], stats.total_size_bytes)
-
-                    # Yield metrics one by one as required by Prometheus collector protocol
-                    yield hits
-                    yield misses
-                    yield hit_rate
-                    yield stale_hits
-                    yield recalculations
-                    yield entry_count
-                    yield cache_size
-
-        # Register the custom collector
-        from contextlib import suppress
-
-        with suppress(Exception):
-            # If registration fails, continue without collector
-            REGISTRY.register(CachierCollector(self))
+        # Use a per-instance registry so multiple exporters don't conflict
+        self._registry = CollectorRegistry()
+        self._registry.register(CachierCollector(self))
 
     def _init_prometheus_metrics(self) -> None:
         """Initialize Prometheus metrics using prometheus_client.
@@ -256,151 +251,141 @@ class PrometheusExporter(MetricsExporter):
             Metrics in Prometheus text format
 
         """
-        lines = []
+        # Snapshot all metrics in one lock acquisition for consistency
+        with self._lock:
+            snapshots: Dict[str, "MetricSnapshot"] = {}
+            for func_name, func in self._registered_functions.items():
+                m = _get_func_metrics(func)
+                if m is not None:
+                    snapshots[func_name] = m.get_stats()
 
-        # Emit HELP/TYPE headers once at the top for each metric
+        lines: list[str] = []
+
+        # Emit HELP/TYPE headers and values for each metric
         lines.append("# HELP cachier_cache_hits_total Total cache hits")
         lines.append("# TYPE cachier_cache_hits_total counter")
-
-        with self._lock:
-            for func_name, func in self._registered_functions.items():
-                metrics = _get_func_metrics(func)
-                if metrics is None:
-                    continue
-                stats = metrics.get_stats()
-                lines.append(f'cachier_cache_hits_total{{function="{func_name}"}} {stats.hits}')
+        for func_name, stats in snapshots.items():
+            lines.append(f'cachier_cache_hits_total{{function="{func_name}"}} {stats.hits}')
 
         # Misses
         lines.append(
             "\n# HELP cachier_cache_misses_total Total cache misses\n# TYPE cachier_cache_misses_total counter"
         )
-
-        with self._lock:
-            for func_name, func in self._registered_functions.items():
-                metrics = _get_func_metrics(func)
-                if metrics is None:
-                    continue
-                stats = metrics.get_stats()
-                lines.append(f'cachier_cache_misses_total{{function="{func_name}"}} {stats.misses}')
+        for func_name, stats in snapshots.items():
+            lines.append(f'cachier_cache_misses_total{{function="{func_name}"}} {stats.misses}')
 
         # Hit rate
         lines.append("\n# HELP cachier_cache_hit_rate Cache hit rate percentage\n# TYPE cachier_cache_hit_rate gauge")
-
-        with self._lock:
-            for func_name, func in self._registered_functions.items():
-                metrics = _get_func_metrics(func)
-                if metrics is None:
-                    continue
-                stats = metrics.get_stats()
-                lines.append(f'cachier_cache_hit_rate{{function="{func_name}"}} {stats.hit_rate:.2f}')
+        for func_name, stats in snapshots.items():
+            lines.append(f'cachier_cache_hit_rate{{function="{func_name}"}} {stats.hit_rate:.2f}')
 
         # Average latency
         lines.append(
             "\n# HELP cachier_avg_latency_ms Average cache operation latency in milliseconds\n"
             "# TYPE cachier_avg_latency_ms gauge"
         )
-
-        with self._lock:
-            for func_name, func in self._registered_functions.items():
-                metrics = _get_func_metrics(func)
-                if metrics is None:
-                    continue
-                stats = metrics.get_stats()
-                lines.append(f'cachier_avg_latency_ms{{function="{func_name}"}} {stats.avg_latency_ms:.4f}')
+        for func_name, stats in snapshots.items():
+            lines.append(f'cachier_avg_latency_ms{{function="{func_name}"}} {stats.avg_latency_ms:.4f}')
 
         # Stale hits
         lines.append(
             "\n# HELP cachier_stale_hits_total Total stale cache hits\n# TYPE cachier_stale_hits_total counter"
         )
-
-        with self._lock:
-            for func_name, func in self._registered_functions.items():
-                metrics = _get_func_metrics(func)
-                if metrics is None:
-                    continue
-                stats = metrics.get_stats()
-                lines.append(f'cachier_stale_hits_total{{function="{func_name}"}} {stats.stale_hits}')
+        for func_name, stats in snapshots.items():
+            lines.append(f'cachier_stale_hits_total{{function="{func_name}"}} {stats.stale_hits}')
 
         # Recalculations
         lines.append(
             "\n# HELP cachier_recalculations_total Total cache recalculations\n"
             "# TYPE cachier_recalculations_total counter"
         )
+        for func_name, stats in snapshots.items():
+            lines.append(f'cachier_recalculations_total{{function="{func_name}"}} {stats.recalculations}')
 
-        with self._lock:
-            for func_name, func in self._registered_functions.items():
-                metrics = _get_func_metrics(func)
-                if metrics is None:
-                    continue
-                stats = metrics.get_stats()
-                lines.append(f'cachier_recalculations_total{{function="{func_name}"}} {stats.recalculations}')
+        # Wait timeouts
+        lines.append(
+            "\n# HELP cachier_wait_timeouts_total Total wait timeouts\n# TYPE cachier_wait_timeouts_total counter"
+        )
+        for func_name, stats in snapshots.items():
+            lines.append(f'cachier_wait_timeouts_total{{function="{func_name}"}} {stats.wait_timeouts}')
 
         # Entry count
         lines.append("\n# HELP cachier_entry_count Current cache entries\n# TYPE cachier_entry_count gauge")
-
-        with self._lock:
-            for func_name, func in self._registered_functions.items():
-                metrics = _get_func_metrics(func)
-                if metrics is None:
-                    continue
-                stats = metrics.get_stats()
-                lines.append(f'cachier_entry_count{{function="{func_name}"}} {stats.entry_count}')
+        for func_name, stats in snapshots.items():
+            lines.append(f'cachier_entry_count{{function="{func_name}"}} {stats.entry_count}')
 
         # Cache size
         lines.append(
             "\n# HELP cachier_cache_size_bytes Total cache size in bytes\n# TYPE cachier_cache_size_bytes gauge"
         )
-
-        with self._lock:
-            for func_name, func in self._registered_functions.items():
-                metrics = _get_func_metrics(func)
-                if metrics is None:
-                    continue
-                stats = metrics.get_stats()
-                lines.append(f'cachier_cache_size_bytes{{function="{func_name}"}} {stats.total_size_bytes}')
+        for func_name, stats in snapshots.items():
+            lines.append(f'cachier_cache_size_bytes{{function="{func_name}"}} {stats.total_size_bytes}')
 
         # Size limit rejections
         lines.append(
             "\n# HELP cachier_size_limit_rejections_total Entries rejected due to size limit\n"
             "# TYPE cachier_size_limit_rejections_total counter"
         )
-
-        with self._lock:
-            for func_name, func in self._registered_functions.items():
-                metrics = _get_func_metrics(func)
-                if metrics is None:
-                    continue
-                stats = metrics.get_stats()
-                lines.append(
-                    f'cachier_size_limit_rejections_total{{function="{func_name}"}} {stats.size_limit_rejections}'
-                )
+        for func_name, stats in snapshots.items():
+            lines.append(
+                f'cachier_size_limit_rejections_total{{function="{func_name}"}} {stats.size_limit_rejections}'
+            )
 
         return "\n".join(lines) + "\n"
 
     def start(self) -> None:
         """Start the Prometheus exporter.
 
-        If prometheus_client is available, starts the HTTP server. Otherwise, provides a simple HTTP server for text
-        format metrics.
+        If prometheus_client is available, starts the HTTP server using the
+        per-instance registry. Otherwise, provides a simple HTTP server for
+        text format metrics.
 
         """
-        if self._prom_client:
-            # Use prometheus_client's built-in HTTP server
-            from prometheus_client import start_http_server
-
-            # Try to bind to the configured host; fall back gracefully for
-            # prometheus_client versions that don't support addr/host.
-            try:
-                start_http_server(self.port, addr=self.host)
-            except TypeError:
-                try:
-                    start_http_server(self.port, host=self.host)  # type: ignore[call-arg]
-                except TypeError:
-                    # Old version doesn't support host parameter
-                    start_http_server(self.port)
+        if self._prom_client and self._registry is not None:
+            # Use a simple HTTP server that serves from our per-instance registry
+            # instead of prometheus_client's start_http_server which uses the
+            # global REGISTRY.
+            self._start_prometheus_server()
         else:
             # Provide simple HTTP server for text format
             self._start_simple_server()
+
+    def _start_prometheus_server(self) -> None:
+        """Start an HTTP server that serves metrics from the per-instance registry."""
+        from http.server import BaseHTTPRequestHandler, HTTPServer
+
+        from prometheus_client import exposition
+
+        if self._registry is None:
+            raise RuntimeError("registry must be initialized before starting server")
+        registry = self._registry
+
+        class MetricsHandler(BaseHTTPRequestHandler):
+            """HTTP handler that serves Prometheus metrics from a specific registry."""
+
+            def do_GET(self) -> None:
+                """Handle GET requests for /metrics endpoint."""
+                if self.path == "/metrics":
+                    output = exposition.generate_latest(registry)
+                    self.send_response(200)
+                    self.send_header("Content-Type", exposition.CONTENT_TYPE_LATEST)
+                    self.end_headers()
+                    self.wfile.write(output)
+                else:
+                    self.send_response(404)
+                    self.end_headers()
+
+            def log_message(self, fmt: str, *args: Any) -> None:
+                """Suppress log messages."""
+
+        server = HTTPServer((self.host, self.port), MetricsHandler)
+        self._server = server
+
+        def run_server() -> None:
+            server.serve_forever()
+
+        self._server_thread = threading.Thread(target=run_server, daemon=True)
+        self._server_thread.start()
 
     def _start_simple_server(self) -> None:
         """Start a simple HTTP server for Prometheus text format."""
@@ -409,7 +394,9 @@ class PrometheusExporter(MetricsExporter):
         exporter = self
 
         class MetricsHandler(BaseHTTPRequestHandler):
-            def do_GET(self):
+            """HTTP handler that serves Prometheus text-format metrics."""
+
+            def do_GET(self) -> None:
                 """Handle GET requests for /metrics endpoint."""
                 if self.path == "/metrics":
                     self.send_response(200)
@@ -421,13 +408,14 @@ class PrometheusExporter(MetricsExporter):
                     self.send_response(404)
                     self.end_headers()
 
-            def log_message(self, fmt, *args):
+            def log_message(self, fmt: str, *args: Any) -> None:
                 """Suppress log messages."""
 
-        self._server = HTTPServer((self.host, self.port), MetricsHandler)
+        server = HTTPServer((self.host, self.port), MetricsHandler)
+        self._server = server
 
-        def run_server():
-            self._server.serve_forever()
+        def run_server() -> None:
+            server.serve_forever()
 
         self._server_thread = threading.Thread(target=run_server, daemon=True)
         self._server_thread.start()

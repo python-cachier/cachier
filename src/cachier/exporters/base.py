@@ -34,9 +34,12 @@ class MetricsExporter(metaclass=abc.ABCMeta):
 
         """
 
-    @abc.abstractmethod
-    def export_metrics(self, func_name: str, metrics: Any) -> None:
+    def export_metrics(self, func_name: str, metrics: Any) -> None:  # noqa: B027
         """Export metrics for a specific function.
+
+        Default implementation is a no-op. Subclasses may override to push
+        metrics to a specific backend, but this is not required -- pull-based
+        exporters (e.g. Prometheus custom collectors) typically do not need it.
 
         Parameters
         ----------

@@ -1,5 +1,6 @@
 """Tests for cache metrics and observability framework."""
 
+import asyncio
 import time
 from datetime import timedelta
 from threading import Thread
@@ -386,3 +387,95 @@ def test_metrics_with_max_age():
     assert stats.recalculations >= 2
 
     test_func.clear_cache()
+
+
+@pytest.mark.memory
+@pytest.mark.asyncio
+async def test_metrics_async_hit_miss():
+    """Test that metrics are correctly tracked for async cached functions."""
+
+    @cachier(backend="memory", enable_metrics=True)
+    async def async_func(x):
+        await asyncio.sleep(0)
+        return x * 2
+
+    await async_func.clear_cache()
+
+    result1 = await async_func(5)
+    assert result1 == 10
+
+    stats = async_func.metrics.get_stats()
+    assert stats.misses == 1
+    assert stats.hits == 0
+
+    result2 = await async_func(5)
+    assert result2 == 10
+
+    stats = async_func.metrics.get_stats()
+    assert stats.hits == 1
+    assert stats.misses == 1
+    assert stats.total_calls == 2
+    assert stats.hit_rate == 50.0
+
+    await async_func.clear_cache()
+
+
+@pytest.mark.memory
+@pytest.mark.asyncio
+async def test_metrics_async_stale():
+    """Test stale hit tracking for async cached functions."""
+
+    @cachier(
+        backend="memory",
+        enable_metrics=True,
+        stale_after=timedelta(milliseconds=100),
+    )
+    async def async_func(x):
+        await asyncio.sleep(0)
+        return x * 2
+
+    await async_func.clear_cache()
+
+    await async_func(5)
+
+    time.sleep(0.15)  # Let cache go stale
+
+    await async_func(5)
+
+    stats = async_func.metrics.get_stats()
+    assert stats.stale_hits >= 1
+    assert stats.recalculations >= 2
+
+    await async_func.clear_cache()
+
+
+def test_metrics_zero_sampling_rate():
+    """Test that sampling_rate=0.0 records nothing."""
+    metrics = CacheMetrics(sampling_rate=0.0)
+    for _ in range(100):
+        metrics.record_hit()
+        metrics.record_miss()
+    stats = metrics.get_stats()
+    # With 0.0 rate nothing should be sampled
+    assert stats.total_calls == 0
+
+
+def test_metrics_get_stats_zero_window():
+    """Test get_stats with zero-second window behaves like no window.
+
+    timedelta(seconds=0) is falsy in Python, so the implementation treats
+    it the same as None (all-time statistics), including all recorded data.
+    """
+    metrics = CacheMetrics()
+    metrics.record_latency(0.05)
+    stats = metrics.get_stats(window=timedelta(seconds=0))
+    # timedelta(0) is falsy, so cutoff falls back to 0 (all data included)
+    assert stats.avg_latency_ms == pytest.approx(50.0, rel=0.1)
+
+
+def test_metrics_empty_window_sizes():
+    """Test CacheMetrics with empty window_sizes list."""
+    metrics = CacheMetrics(window_sizes=[])
+    metrics.record_hit()
+    stats = metrics.get_stats()
+    assert stats.hits == 1

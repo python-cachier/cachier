@@ -1,5 +1,7 @@
 """Tests for metrics exporters."""
 
+import re
+
 import pytest
 
 from cachier import cachier
@@ -173,5 +175,73 @@ def test_prometheus_exporter_collector_metrics():
     stats = test_func.metrics.get_stats()
     assert stats.hits == 1
     assert stats.misses == 2
+
+    test_func.clear_cache()
+
+
+@pytest.mark.memory
+def test_prometheus_exporter_double_instantiation():
+    """Test that two PrometheusExporter instances both work independently."""
+
+    @cachier(backend="memory", enable_metrics=True)
+    def test_func(x):
+        return x * 2
+
+    test_func.clear_cache()
+    test_func(5)
+
+    exporter1 = PrometheusExporter(port=9097, use_prometheus_client=False)
+    exporter1.register_function(test_func)
+
+    exporter2 = PrometheusExporter(port=9098, use_prometheus_client=False)
+    exporter2.register_function(test_func)
+
+    # Both should generate valid metrics
+    text1 = exporter1._generate_text_metrics()
+    text2 = exporter2._generate_text_metrics()
+
+    assert "cachier_cache_hits_total" in text1
+    assert "cachier_cache_hits_total" in text2
+
+    test_func.clear_cache()
+
+
+@pytest.mark.memory
+def test_prometheus_text_metrics_consistency():
+    """Test that hits + misses == total_calls in generated text at one point in time."""
+
+    @cachier(backend="memory", enable_metrics=True)
+    def test_func(x):
+        return x * 2
+
+    test_func.clear_cache()
+
+    exporter = PrometheusExporter(port=9099, use_prometheus_client=False)
+    exporter.register_function(test_func)
+
+    test_func(5)  # miss
+    test_func(5)  # hit
+    test_func(10)  # miss
+
+    # Get stats and text at same time
+    stats = test_func.metrics.get_stats()
+    metrics_text = exporter._generate_text_metrics()
+
+    # Verify consistency: parse hits and misses from text
+    func_name = f"{test_func.__module__}.{test_func.__name__}"
+    hits_match = re.search(
+        rf'cachier_cache_hits_total\{{function="{re.escape(func_name)}"\}} (\d+)',
+        metrics_text,
+    )
+    misses_match = re.search(
+        rf'cachier_cache_misses_total\{{function="{re.escape(func_name)}"\}} (\d+)',
+        metrics_text,
+    )
+
+    assert hits_match
+    assert misses_match
+    hits = int(hits_match.group(1))
+    misses = int(misses_match.group(1))
+    assert hits + misses == stats.total_calls
 
     test_func.clear_cache()
