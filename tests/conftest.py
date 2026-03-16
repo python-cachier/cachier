@@ -3,6 +3,7 @@
 import logging
 import os
 import re
+from typing import Optional
 from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse
 
 import pytest
@@ -10,7 +11,7 @@ import pytest
 logger = logging.getLogger(__name__)
 
 
-def _worker_schema_name(worker_id: str) -> str | None:
+def _worker_schema_name(worker_id: str) -> Optional[str]:
     """Return a safe SQL schema name for an xdist worker ID."""
     match = re.fullmatch(r"gw(\d+)", worker_id)
     if match is None:
@@ -18,88 +19,91 @@ def _worker_schema_name(worker_id: str) -> str | None:
     return f"test_worker_{match.group(1)}"
 
 
-@pytest.fixture(autouse=True)
-def inject_worker_schema_for_sql_tests(monkeypatch, request):
-    """Automatically inject worker-specific schema into SQL connection string.
+def _build_worker_url(original_url: str, schema_name: str) -> str:
+    """Return a copy of original_url with search_path set to schema_name."""
+    parsed = urlparse(original_url)
+    query_params = parse_qs(parsed.query)
 
-    This fixture enables parallel SQL test execution by giving each pytest-xdist worker its own PostgreSQL schema,
-    preventing table creation conflicts.
+    if "options" in query_params:
+        current_options = unquote(query_params["options"][0])
+        new_options = f"{current_options} -csearch_path={schema_name}"
+    else:
+        new_options = f"-csearch_path={schema_name}"
+
+    query_params["options"] = [new_options]
+    new_query = urlencode(query_params, doseq=True)
+    return urlunparse(
+        (
+            parsed.scheme,
+            parsed.netloc,
+            parsed.path,
+            parsed.params,
+            new_query,
+            parsed.fragment,
+        )
+    )
+
+
+@pytest.fixture(scope="session")
+def worker_sql_connection() -> Optional[str]:
+    """Create the worker-specific PostgreSQL schema once per xdist worker session.
+
+    Returns the worker-specific connection URL, or None when schema isolation is not
+    needed (serial run or non-PostgreSQL backend). The schema is created with
+    ``CREATE SCHEMA IF NOT EXISTS`` so this fixture is safe to run even if the schema
+    already exists from a previous interrupted run.
 
     """
-    # Only apply to SQL tests
-    if "sql" not in request.node.keywords:
-        yield
-        return
-
     worker_id = os.environ.get("PYTEST_XDIST_WORKER", "master")
-
     if worker_id == "master":
-        # Not running in parallel, no schema isolation needed
+        return None
+
+    original_url = os.environ.get("SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:")
+    if "postgresql" not in original_url:
+        return None
+
+    schema_name = _worker_schema_name(worker_id)
+    if schema_name is None:
+        logger.warning("Unexpected worker ID for SQL schema isolation: %s", worker_id)
+        return None
+
+    new_url = _build_worker_url(original_url, schema_name)
+
+    try:
+        from sqlalchemy import create_engine, text
+
+        engine = create_engine(original_url)
+        with engine.connect() as conn:
+            conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}"))
+            conn.commit()
+        engine.dispose()
+    except Exception as e:
+        logger.debug("Failed to create schema %s: %s", schema_name, e)
+
+    return new_url
+
+
+@pytest.fixture(autouse=True)
+def inject_worker_schema_for_sql_tests(monkeypatch, request, worker_sql_connection):
+    """Automatically inject worker-specific schema into SQL connection string.
+
+    This fixture enables parallel SQL test execution by giving each pytest-xdist worker
+    its own PostgreSQL schema, preventing table creation conflicts.
+
+    Schema creation is handled once per worker session by
+    :func:`worker_sql_connection`. This fixture only performs lightweight
+    per-test monkeypatching of the environment variable and module constant.
+
+    """
+    if "sql" not in request.node.keywords or worker_sql_connection is None:
         yield
         return
 
-    # Get the original SQL connection string
-    original_url = os.environ.get("SQLALCHEMY_DATABASE_URL", "sqlite:///:memory:")
+    monkeypatch.setenv("SQLALCHEMY_DATABASE_URL", worker_sql_connection)
 
-    if "postgresql" in original_url:
-        # Create worker-specific schema name
-        schema_name = _worker_schema_name(worker_id)
-        if schema_name is None:
-            logger.warning("Unexpected worker ID for SQL schema isolation: %s", worker_id)
-            yield
-            return
+    import tests.sql_tests.test_sql_core
 
-        # Parse the URL
-        parsed = urlparse(original_url)
-
-        # Get existing query parameters
-        query_params = parse_qs(parsed.query)
-
-        # Add or update the options parameter to set search_path
-        if "options" in query_params:
-            # Append to existing options
-            current_options = unquote(query_params["options"][0])
-            new_options = f"{current_options} -csearch_path={schema_name}"
-        else:
-            # Create new options
-            new_options = f"-csearch_path={schema_name}"
-
-        query_params["options"] = [new_options]
-
-        # Rebuild the URL with updated query parameters
-        new_query = urlencode(query_params, doseq=True)
-        new_url = urlunparse(
-            (
-                parsed.scheme,
-                parsed.netloc,
-                parsed.path,
-                parsed.params,
-                new_query,
-                parsed.fragment,
-            )
-        )
-
-        # Override both the environment variable and the module constant
-        monkeypatch.setenv("SQLALCHEMY_DATABASE_URL", new_url)
-
-        # Also patch the SQL_CONN_STR constant used in tests
-        import tests.sql_tests.test_sql_core
-
-        monkeypatch.setattr(tests.sql_tests.test_sql_core, "SQL_CONN_STR", new_url)
-
-        # Ensure schema creation by creating it before tests run
-        try:
-            from sqlalchemy import create_engine, text
-
-            # Use original URL to create schema (without search_path)
-            engine = create_engine(original_url)
-            with engine.connect() as conn:
-                conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}"))
-                conn.commit()
-            engine.dispose()
-        except Exception as e:
-            # If we can't create the schema, the test will fail anyway
-            logger.debug(f"Failed to create schema {schema_name}: {e}")
+    monkeypatch.setattr(tests.sql_tests.test_sql_core, "SQL_CONN_STR", worker_sql_connection)
 
     yield
 
