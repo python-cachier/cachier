@@ -450,14 +450,20 @@ async def test_metrics_async_stale():
 
 
 def test_metrics_zero_sampling_rate():
-    """Test that sampling_rate=0.0 records nothing."""
+    """Test that sampling_rate=0.0 records nothing for all record_* methods."""
     metrics = CacheMetrics(sampling_rate=0.0)
-    for _ in range(100):
-        metrics.record_hit()
-        metrics.record_miss()
+    metrics.record_hit()
+    metrics.record_miss()
+    metrics.record_stale_hit()
+    metrics.record_wait_timeout()
+    metrics.record_size_limit_rejection()
+    metrics.record_latency(0.1)
     stats = metrics.get_stats()
-    # With 0.0 rate nothing should be sampled
     assert stats.total_calls == 0
+    assert stats.stale_hits == 0
+    assert stats.wait_timeouts == 0
+    assert stats.size_limit_rejections == 0
+    assert stats.avg_latency_ms == 0.0
 
 
 def test_metrics_get_stats_zero_window():
@@ -490,18 +496,15 @@ def test_metrics_wait_timeout_direct():
     assert stats.wait_timeouts == 1
 
 
-def test_metrics_sampling_rate_zero_skips_all_methods():
-    """Test that sampling_rate=0.0 causes all record_* methods to skip recording."""
-    metrics = CacheMetrics(sampling_rate=0.0)
-    metrics.record_stale_hit()
-    metrics.record_wait_timeout()
-    metrics.record_size_limit_rejection()
-    metrics.record_latency(0.1)
-    stats = metrics.get_stats()
-    assert stats.stale_hits == 0
-    assert stats.wait_timeouts == 0
-    assert stats.size_limit_rejections == 0
-    assert stats.avg_latency_ms == 0.0
+def test_should_sample_deterministic():
+    """Test _should_sample returns True/False deterministically via mocking."""
+    from unittest.mock import patch
+
+    metrics = CacheMetrics(sampling_rate=0.5)
+    with patch.object(metrics._random, "random", return_value=0.1):
+        assert metrics._should_sample() is True
+    with patch.object(metrics._random, "random", return_value=0.9):
+        assert metrics._should_sample() is False
 
 
 def test_metrics_context_manager():
@@ -517,6 +520,25 @@ def test_metrics_context_manager_none():
     """Test MetricsContext with metrics=None does not raise."""
     with MetricsContext(None):
         pass  # should not raise
+
+
+def test_metrics_context_record_wait_timeout():
+    """Test MetricsContext.record_wait_timeout records when metrics is set."""
+    metrics = CacheMetrics()
+    ctx = MetricsContext(metrics)
+    ctx.record_wait_timeout()
+    assert metrics.get_stats().wait_timeouts == 1
+
+
+def test_metrics_context_record_size_limit_rejection():
+    """Test MetricsContext.record_size_limit_rejection for both truthy and None metrics."""
+    metrics = CacheMetrics()
+    ctx = MetricsContext(metrics)
+    ctx.record_size_limit_rejection()
+    assert metrics.get_stats().size_limit_rejections == 1
+
+    ctx_none = MetricsContext(None)
+    ctx_none.record_size_limit_rejection()  # should be a no-op
 
 
 @pytest.mark.memory

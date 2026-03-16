@@ -358,6 +358,86 @@ def test_prometheus_client_not_available(monkeypatch):
 
 
 @pytest.mark.memory
+def test_prometheus_prom_client_available_paths():
+    """Cover prometheus_client-available code paths via module-level patching.
+
+    Exercises: __init__ branch (L157-160), _setup_collector (L168-169),
+    _init_prometheus_metrics (L179), CachierCollector.describe (L57), and
+    CachierCollector.collect() None-metrics skip (L66 False branch).
+
+    """
+    from unittest.mock import MagicMock, patch
+
+    from cachier.exporters.prometheus import CachierCollector
+
+    mock_registry = MagicMock()
+
+    with (
+        patch("cachier.exporters.prometheus.PROMETHEUS_CLIENT_AVAILABLE", True),
+        patch("cachier.exporters.prometheus.CollectorRegistry", lambda: mock_registry),
+        patch("cachier.exporters.prometheus.prometheus_client", MagicMock()),
+    ):
+        exporter = PrometheusExporter(port=0, use_prometheus_client=True)
+        assert exporter._prom_client is not None
+        assert exporter._registry is mock_registry
+
+        # L57: CachierCollector.describe() -> []
+        collector = CachierCollector(exporter)
+        assert collector.describe() == []
+
+        # L66 False branch: register a function whose metrics is None
+        class _NoMetrics:
+            __module__ = "test"
+            __name__ = "no_metrics"
+            metrics = None
+
+            def __call__(self, *a, **kw):
+                pass
+
+        exporter._registered_functions["test.no_metrics"] = _NoMetrics()
+
+        with (
+            patch("cachier.exporters.prometheus.CounterMetricFamily", lambda *a, **kw: MagicMock()),
+            patch("cachier.exporters.prometheus.GaugeMetricFamily", lambda *a, **kw: MagicMock()),
+        ):
+            results = list(collector.collect())
+            # Yields 8 families even though snapshots is empty (no non-None metrics)
+            assert len(results) == 8
+
+
+def test_prometheus_module_import_with_prom_client():
+    """Cover the try-block import lines (L37-40) via module reload with a mocked prometheus_client."""
+    import importlib
+    import sys
+    from unittest.mock import MagicMock
+
+    import cachier.exporters.prometheus as prom_mod
+
+    mock_prom = MagicMock()
+    mock_prom_core = MagicMock()
+
+    saved_prom = sys.modules.get("prometheus_client")
+    saved_core = sys.modules.get("prometheus_client.core")
+
+    sys.modules["prometheus_client"] = mock_prom
+    sys.modules["prometheus_client.core"] = mock_prom_core
+    try:
+        importlib.reload(prom_mod)
+        assert prom_mod.PROMETHEUS_CLIENT_AVAILABLE is True
+        assert prom_mod.CollectorRegistry is mock_prom.CollectorRegistry
+    finally:
+        if saved_prom is None:
+            sys.modules.pop("prometheus_client", None)
+        else:
+            sys.modules["prometheus_client"] = saved_prom
+        if saved_core is None:
+            sys.modules.pop("prometheus_client.core", None)
+        else:
+            sys.modules["prometheus_client.core"] = saved_core
+        importlib.reload(prom_mod)  # restore original state
+
+
+@pytest.mark.memory
 def test_prometheus_stop_when_not_started():
     """Test that stop() is a no-op when the server was never started."""
     exporter = PrometheusExporter(port=19094, use_prometheus_client=False)
@@ -462,6 +542,82 @@ def test_prometheus_prometheus_server_metrics_endpoint():
     finally:
         exporter.stop()
         test_func.clear_cache()
+
+
+@pytest.mark.memory
+def test_prometheus_collector_collect_mocked():
+    """Test CachierCollector.collect() loop using mocked metric family types.
+
+    Covers lines 81-99 without requiring prometheus_client to be installed.
+
+    """
+    from unittest.mock import MagicMock, patch
+
+    from cachier.exporters.prometheus import CachierCollector
+
+    @cachier(backend="memory", enable_metrics=True)
+    def test_func(x):
+        return x * 2
+
+    test_func.clear_cache()
+    test_func(5)
+    test_func(5)
+
+    exporter = PrometheusExporter(port=0, use_prometheus_client=False)
+    exporter.register_function(test_func)
+
+    with (
+        patch("cachier.exporters.prometheus.CounterMetricFamily", lambda *a, **kw: MagicMock()),
+        patch("cachier.exporters.prometheus.GaugeMetricFamily", lambda *a, **kw: MagicMock()),
+    ):
+        collector = CachierCollector(exporter)
+        results = list(collector.collect())
+        # 5 counter families + 3 gauge families
+        assert len(results) == 8
+
+    test_func.clear_cache()
+
+
+@pytest.mark.memory
+def test_prometheus_start_prometheus_server_mocked():
+    """Test _start_prometheus_server and its MetricsHandler without prometheus_client.
+
+    Covers lines 285-329 (start() prom branch, MetricsHandler.do_GET, log_message).
+
+    """
+    import sys
+    import urllib.request
+    from http.client import HTTPConnection
+    from unittest.mock import MagicMock, patch
+
+    mock_exposition = MagicMock()
+    mock_exposition.generate_latest.return_value = b"# mocked metrics"
+    mock_exposition.CONTENT_TYPE_LATEST = "text/plain"
+
+    prom_mock = MagicMock()
+    prom_mock.exposition = mock_exposition
+
+    exporter = PrometheusExporter(port=0, use_prometheus_client=False)
+    # Manually inject prometheus state to trigger _start_prometheus_server path
+    exporter._prom_client = prom_mock
+    exporter._registry = MagicMock()
+
+    with patch.dict(sys.modules, {"prometheus_client": prom_mock, "prometheus_client.exposition": mock_exposition}):
+        exporter.start()
+        actual_port = exporter._server.server_address[1]
+        assert exporter._server is not None
+        try:
+            response = urllib.request.urlopen(f"http://127.0.0.1:{actual_port}/metrics", timeout=5)
+            assert b"# mocked metrics" in response.read()
+
+            conn = HTTPConnection("127.0.0.1", actual_port)
+            conn.request("GET", "/notfound")
+            resp = conn.getresponse()
+            assert resp.status == 404
+            conn.close()
+        finally:
+            exporter.stop()
+    assert exporter._server is None
 
 
 @pytest.mark.memory
