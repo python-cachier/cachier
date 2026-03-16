@@ -369,9 +369,7 @@ def cachier(
         # explicitly opted in.  The 'self' parameter is ignored for cache-key
         # computation, so all instances share the same cache.
         if core.func_is_method:
-            _allow_methods = _update_with_defaults(
-                allow_non_static_methods, "allow_non_static_methods"
-            )
+            _allow_methods = _update_with_defaults(allow_non_static_methods, "allow_non_static_methods")
             if not _allow_methods:
                 raise TypeError(
                     f"@cachier cannot decorate instance method "

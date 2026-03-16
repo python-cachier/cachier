@@ -177,6 +177,7 @@ def test_classmethod_not_guarded():
     Note: The decorator order must be @classmethod first, then @cachier,
     so that cachier sees the underlying function (whose first param is
     ``cls``, not ``self``) and the guard is not triggered.
+
     """
 
     # A custom hash_func is needed because the default pickle-based
