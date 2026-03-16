@@ -18,7 +18,7 @@ def test_prometheus_exporter_registration():
 
     test_func.clear_cache()
 
-    exporter = PrometheusExporter(port=9091)
+    exporter = PrometheusExporter(port=0)
 
     # Should succeed with metrics-enabled function
     exporter.register_function(test_func)
@@ -35,7 +35,7 @@ def test_prometheus_exporter_requires_metrics():
     def test_func(x):
         return x * 2
 
-    exporter = PrometheusExporter(port=9092)
+    exporter = PrometheusExporter(port=0)
 
     # Should raise error for function without metrics
     with pytest.raises(ValueError, match="does not have metrics enabled"):
@@ -250,7 +250,7 @@ def test_prometheus_text_metrics_consistency():
 @pytest.mark.memory
 def test_prometheus_export_metrics_noop():
     """Test that export_metrics is a no-op (backward-compat method)."""
-    exporter = PrometheusExporter(port=9100, use_prometheus_client=False)
+    exporter = PrometheusExporter(port=0, use_prometheus_client=False)
     # Should not raise
     exporter.export_metrics("some_func", None)
 
@@ -266,7 +266,7 @@ def test_prometheus_text_metrics_skips_none_metrics():
     test_func.clear_cache()
     test_func(5)
 
-    exporter = PrometheusExporter(port=9101, use_prometheus_client=False)
+    exporter = PrometheusExporter(port=0, use_prometheus_client=False)
     exporter.register_function(test_func)
 
     # Inject a fake entry whose metrics resolve to None
@@ -291,7 +291,7 @@ def test_prometheus_text_metrics_skips_none_metrics():
 @pytest.mark.memory
 def test_prometheus_start_stop_simple_server():
     """Test starting and stopping the simple HTTP server."""
-    exporter = PrometheusExporter(port=19090, use_prometheus_client=False)
+    exporter = PrometheusExporter(port=0, use_prometheus_client=False)
     exporter.start()
     assert exporter._server is not None
     exporter.stop()
@@ -302,7 +302,7 @@ def test_prometheus_start_stop_simple_server():
 def test_prometheus_start_stop_prometheus_server():
     """Test starting and stopping the prometheus_client-backed HTTP server."""
     prometheus_client = pytest.importorskip("prometheus_client")  # noqa: F841
-    exporter = PrometheusExporter(port=19091, use_prometheus_client=True)
+    exporter = PrometheusExporter(port=0, use_prometheus_client=True)
     assert exporter._registry is not None
     exporter.start()
     assert exporter._server is not None
@@ -324,7 +324,7 @@ def test_prometheus_collector_collect():
     test_func(5)
     test_func(5)
 
-    exporter = PrometheusExporter(port=19092, use_prometheus_client=True)
+    exporter = PrometheusExporter(port=0, use_prometheus_client=True)
     exporter.register_function(test_func)
 
     assert exporter._registry is not None
@@ -430,7 +430,9 @@ def test_prometheus_simple_server_metrics_endpoint():
     exporter.register_function(test_func)
     exporter.start()
     try:
-        response = urllib.request.urlopen("http://127.0.0.1:19098/metrics")
+        response = urllib.request.urlopen(
+            "http://127.0.0.1:19098/metrics", timeout=5
+        )
         body = response.read().decode()
         assert "cachier_cache_hits_total" in body
     finally:

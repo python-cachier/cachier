@@ -438,7 +438,7 @@ async def test_metrics_async_stale():
 
     await async_func(5)
 
-    time.sleep(0.15)  # Let cache go stale
+    await asyncio.sleep(0.15)  # Let cache go stale
 
     await async_func(5)
 

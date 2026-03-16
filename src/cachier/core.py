@@ -48,6 +48,25 @@ class _ImmediateAwaitable:
         return self._value
 
 
+async def _background_recalc_async(
+    core: _BaseCore,
+    key: Any,
+    func: Callable[..., Any],
+    args: Any,
+    kwds: Any,
+) -> None:
+    """Run async recomputation in background and clear processing flag.
+
+    This helper ensures that the cache entry's "being calculated" state is
+    cleared only after the background recomputation and cache update
+    (performed by ``_function_thread_async``) have completed.
+    """
+    try:
+        await _function_thread_async(core, key, func, args, kwds)
+    finally:
+        await core.amark_entry_not_calculated(key)
+
+
 def _max_workers():
     return int(os.environ.get(MAX_WORKERS_ENVAR_NAME, DEFAULT_MAX_WORKERS))
 
@@ -517,10 +536,21 @@ def cachier(
                         _print("Async calc and return stale")
                         _mctx.record_recalculation()
                         core.mark_entry_being_calculated(key)
-                        try:
-                            _get_executor().submit(_function_thread, core, key, func, args, kwds)
-                        finally:
-                            core.mark_entry_not_calculated(key)
+
+                        def _wrapped_function_thread(
+                            core_arg: _BaseCore,
+                            key_arg: Any,
+                            func_arg: Callable[..., Any],
+                            args_arg: tuple[Any, ...],
+                            kwds_arg: dict[str, Any],
+                        ) -> None:
+                            """Run background recalculation and clear processing flag when done."""
+                            try:
+                                _function_thread(core_arg, key_arg, func_arg, args_arg, kwds_arg)
+                            finally:
+                                core_arg.mark_entry_not_calculated(key_arg)
+
+                        _get_executor().submit(_wrapped_function_thread, core, key, func, args, kwds)
                         return entry.value
                     _print("Calling decorated function and waiting")
                     _mctx.record_recalculation()
@@ -610,13 +640,15 @@ def cachier(
                     if _next_time:
                         _print("Async calc and return stale")
                         _mctx.record_recalculation()
-                        # Mark entry as being calculated then immediately unmark
-                        # This matches sync behavior and ensures entry exists
-                        # Background task will update cache when complete
+                        # Mark entry as being calculated; background task will
+                        # update cache and clear the flag when done.
                         await core.amark_entry_being_calculated(key)
-                        # Use asyncio.create_task for background execution
-                        asyncio.create_task(_function_thread_async(core, key, func, args, kwds))
-                        await core.amark_entry_not_calculated(key)
+                        # Use asyncio.create_task for background execution,
+                        # ensuring that the processing flag is only cleared
+                        # after recomputation completes.
+                        asyncio.create_task(
+                            _background_recalc_async(core, key, func, args, kwds)
+                        )
                         return entry.value
                     _print("Calling decorated function and waiting")
                     _mctx.record_recalculation()
