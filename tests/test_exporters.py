@@ -430,9 +430,7 @@ def test_prometheus_simple_server_metrics_endpoint():
     exporter.register_function(test_func)
     exporter.start()
     try:
-        response = urllib.request.urlopen(
-            "http://127.0.0.1:19098/metrics", timeout=5
-        )
+        response = urllib.request.urlopen("http://127.0.0.1:19098/metrics", timeout=5)
         body = response.read().decode()
         assert "cachier_cache_hits_total" in body
     finally:

@@ -60,6 +60,7 @@ async def _background_recalc_async(
     This helper ensures that the cache entry's "being calculated" state is
     cleared only after the background recomputation and cache update
     (performed by ``_function_thread_async``) have completed.
+
     """
     try:
         await _function_thread_async(core, key, func, args, kwds)
@@ -646,9 +647,7 @@ def cachier(
                         # Use asyncio.create_task for background execution,
                         # ensuring that the processing flag is only cleared
                         # after recomputation completes.
-                        asyncio.create_task(
-                            _background_recalc_async(core, key, func, args, kwds)
-                        )
+                        asyncio.create_task(_background_recalc_async(core, key, func, args, kwds))
                         return entry.value
                     _print("Calling decorated function and waiting")
                     _mctx.record_recalculation()
