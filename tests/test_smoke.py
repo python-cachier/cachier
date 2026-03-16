@@ -218,6 +218,7 @@ def test_instance_method_global_opt_out_reset():
     finally:
         set_global_params(allow_non_static_methods=original)
 
+
 @pytest.mark.smoke
 def test_instance_method_skip_cache():
     """Test that cachier__skip_cache=True works for methods with allow_non_static_methods."""
