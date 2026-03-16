@@ -424,7 +424,7 @@ def test_sqlcore_set_entry_executes_conflict_statement(monkeypatch):
 
         return DummyResult()
 
-    monkeypatch.setitem(_SQLCore.set_entry.__globals__, "insert", fake_insert)
+    monkeypatch.setitem(_SQLCore._set_entry.__globals__, "insert", fake_insert)
     monkeypatch.setattr(Session, "execute", fake_execute)
 
     core = _SQLCore(hash_func=None, sql_engine=SQL_CONN_STR)
