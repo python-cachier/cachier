@@ -45,7 +45,7 @@ def _build_worker_url(original_url: str, schema_name: str) -> str:
 
 
 @pytest.fixture(scope="session")
-def worker_sql_connection() -> Optional[str]:
+def worker_sql_connection(request: pytest.FixtureRequest) -> Optional[str]:
     """Create the worker-specific PostgreSQL schema once per xdist worker session.
 
     Returns the worker-specific connection URL, or None when schema isolation is not
@@ -58,6 +58,11 @@ def worker_sql_connection() -> Optional[str]:
     that depend on the schema will fail at the DB level with a diagnostic error.
 
     """
+    # Avoid touching SQL backends entirely when no SQL tests are collected.
+    has_sql_tests = any("sql" in item.keywords for item in request.session.items)
+    if not has_sql_tests:
+        return None
+
     worker_id = os.environ.get("PYTEST_XDIST_WORKER", "master")
     if worker_id == "master":
         return None
@@ -73,6 +78,7 @@ def worker_sql_connection() -> Optional[str]:
 
     new_url = _build_worker_url(original_url, schema_name)
 
+    engine = None
     try:
         from sqlalchemy import create_engine, text
 
@@ -80,9 +86,11 @@ def worker_sql_connection() -> Optional[str]:
         with engine.connect() as conn:
             conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}"))
             conn.commit()
-        engine.dispose()
     except Exception as e:
         logger.debug("Failed to create schema %s: %s", schema_name, e)
+    finally:
+        if engine is not None:
+            engine.dispose()
 
     return new_url
 

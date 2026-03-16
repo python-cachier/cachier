@@ -45,7 +45,7 @@ class TestBuildWorkerUrl:
         assert "statement_timeout" in result
 
     def test_url_encoded_roundtrip(self):
-        """Values with spaces survive encode/decode without corruption."""
+        """Preserve existing URL-encoded options while adding the worker search path."""
         url = "postgresql://user:pass@localhost/testdb?options=-cwork_mem%3D64MB"
         result = _build_worker_url(url, "test_worker_2")
         # Scheme, host, and path must be preserved
