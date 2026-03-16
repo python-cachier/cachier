@@ -11,7 +11,6 @@ import asyncio
 import inspect
 import os
 import threading
-import time
 import warnings
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
@@ -35,7 +34,6 @@ from .util import parse_bytes
 MAX_WORKERS_ENVAR_NAME = "CACHIER_MAX_WORKERS"
 DEFAULT_MAX_WORKERS = 8
 ZERO_TIMEDELTA = timedelta(seconds=0)
-
 
 
 class _ImmediateAwaitable:
@@ -144,7 +142,7 @@ def _convert_args_kwargs(func, _is_method: bool, args: tuple, kwds: dict) -> dic
 
     # Map as many args as possible to regular parameters
     num_regular = len(params_to_use)
-    args_as_kw = dict(zip(params_to_use, args_to_map[:num_regular]))
+    args_as_kw = {params_to_use[index]: arg for index, arg in enumerate(args_to_map[:num_regular])}
 
     # Handle variadic positional arguments
     # Store them with indexed keys like __varargs_0__, __varargs_1__, etc.
@@ -297,12 +295,10 @@ def cachier(
         allowed.
     enable_metrics: bool, optional
         Enable metrics collection for this cached function. When enabled,
-        cache hits, misses, latencies, and other performance metrics are
-        tracked. Defaults to False.
+        cache hits, misses, latencies, and other performance metrics are tracked. Defaults to False.
     metrics_sampling_rate: float, optional
         Sampling rate for metrics collection (0.0 to 1.0). Lower values
-        reduce overhead at the cost of accuracy. Only used when enable_metrics
-        is True. Defaults to 1.0 (100% sampling).
+        reduce overhead at the cost of accuracy. Only used when enable_metrics is True. Defaults to 1.0 (100% sampling).
 
     """
     # Check for deprecated parameters

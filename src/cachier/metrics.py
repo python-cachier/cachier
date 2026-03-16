@@ -96,8 +96,7 @@ class CacheMetrics:
         Sampling rate for metrics collection (0.0-1.0), by default 1.0
         Lower values reduce overhead at the cost of accuracy
     window_sizes : list of timedelta, optional
-        Time windows to track for aggregated metrics,
-        by default [1 minute, 1 hour, 1 day]
+        Time windows to track for aggregated metrics, by default [1 minute, 1 hour, 1 day]
 
     Examples
     --------
@@ -109,11 +108,7 @@ class CacheMetrics:
 
     """
 
-    def __init__(
-        self,
-        sampling_rate: float = 1.0,
-        window_sizes: Optional[list[timedelta]] = None,
-    ):
+    def __init__(self, sampling_rate: float = 1.0, window_sizes: Optional[list[timedelta]] = None):
         """Initialize cache metrics collector.
 
         Parameters

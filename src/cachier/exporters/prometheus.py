@@ -35,10 +35,7 @@ def _get_func_metrics(func: Callable[..., Any]) -> Optional["CacheMetrics"]:
 try:
     import prometheus_client  # type: ignore[import-not-found]
     from prometheus_client import CollectorRegistry  # type: ignore[import-not-found]
-    from prometheus_client.core import (  # type: ignore[import-not-found]
-        CounterMetricFamily,
-        GaugeMetricFamily,
-    )
+    from prometheus_client.core import CounterMetricFamily, GaugeMetricFamily  # type: ignore[import-not-found]
 
     PROMETHEUS_CLIENT_AVAILABLE = True
 except (ImportError, AttributeError):  # pragma: no cover
@@ -73,21 +70,13 @@ class CachierCollector:
         hits = CounterMetricFamily("cachier_cache_hits_total", "Total cache hits", labels=["function"])
         misses = CounterMetricFamily("cachier_cache_misses_total", "Total cache misses", labels=["function"])
         hit_rate = GaugeMetricFamily("cachier_cache_hit_rate", "Cache hit rate percentage", labels=["function"])
-        stale_hits = CounterMetricFamily(
-            "cachier_stale_hits_total", "Total stale cache hits", labels=["function"]
-        )
+        stale_hits = CounterMetricFamily("cachier_stale_hits_total", "Total stale cache hits", labels=["function"])
         recalculations = CounterMetricFamily(
             "cachier_recalculations_total", "Total cache recalculations", labels=["function"]
         )
-        wait_timeouts = CounterMetricFamily(
-            "cachier_wait_timeouts_total", "Total wait timeouts", labels=["function"]
-        )
-        entry_count = GaugeMetricFamily(
-            "cachier_entry_count", "Current number of cache entries", labels=["function"]
-        )
-        cache_size = GaugeMetricFamily(
-            "cachier_cache_size_bytes", "Total cache size in bytes", labels=["function"]
-        )
+        wait_timeouts = CounterMetricFamily("cachier_wait_timeouts_total", "Total wait timeouts", labels=["function"])
+        entry_count = GaugeMetricFamily("cachier_entry_count", "Current number of cache entries", labels=["function"])
+        cache_size = GaugeMetricFamily("cachier_cache_size_bytes", "Total cache size in bytes", labels=["function"])
 
         for func_name, stats in snapshots.items():
             hits.add_metric([func_name], stats.hits)
@@ -139,12 +128,7 @@ class PrometheusExporter(MetricsExporter):
 
     """
 
-    def __init__(
-        self,
-        port: int = 9090,
-        use_prometheus_client: bool = True,
-        host: str = "127.0.0.1",
-    ):
+    def __init__(self, port: int = 9090, use_prometheus_client: bool = True, host: str = "127.0.0.1"):
         """Initialize Prometheus exporter.
 
         Parameters
@@ -267,13 +251,7 @@ class PrometheusExporter(MetricsExporter):
                 "{:.4f}",
             ),
             ("cachier_stale_hits_total", "Total stale cache hits", "counter", lambda s: s.stale_hits, "{}"),
-            (
-                "cachier_recalculations_total",
-                "Total cache recalculations",
-                "counter",
-                lambda s: s.recalculations,
-                "{}",
-            ),
+            ("cachier_recalculations_total", "Total cache recalculations", "counter", lambda s: s.recalculations, "{}"),
             ("cachier_wait_timeouts_total", "Total wait timeouts", "counter", lambda s: s.wait_timeouts, "{}"),
             ("cachier_entry_count", "Current cache entries", "gauge", lambda s: s.entry_count, "{}"),
             ("cachier_cache_size_bytes", "Total cache size in bytes", "gauge", lambda s: s.total_size_bytes, "{}"),
