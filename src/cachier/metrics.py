@@ -252,10 +252,7 @@ class CacheMetrics:
         """
         # Use monotonic clock for cutoff calculation
         now = time.perf_counter()
-        if window is None:
-            cutoff = 0
-        else:
-            cutoff = now - window.total_seconds()
+        cutoff = 0.0 if window is None else now - window.total_seconds()
 
         latencies = [metric.value for metric in self._latencies if metric.timestamp >= cutoff]
 
