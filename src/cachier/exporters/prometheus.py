@@ -73,21 +73,13 @@ class CachierCollector:
         hits = CounterMetricFamily("cachier_cache_hits_total", "Total cache hits", labels=["function"])
         misses = CounterMetricFamily("cachier_cache_misses_total", "Total cache misses", labels=["function"])
         hit_rate = GaugeMetricFamily("cachier_cache_hit_rate", "Cache hit rate percentage", labels=["function"])
-        stale_hits = CounterMetricFamily(
-            "cachier_stale_hits_total", "Total stale cache hits", labels=["function"]
-        )
+        stale_hits = CounterMetricFamily("cachier_stale_hits_total", "Total stale cache hits", labels=["function"])
         recalculations = CounterMetricFamily(
             "cachier_recalculations_total", "Total cache recalculations", labels=["function"]
         )
-        wait_timeouts = CounterMetricFamily(
-            "cachier_wait_timeouts_total", "Total wait timeouts", labels=["function"]
-        )
-        entry_count = GaugeMetricFamily(
-            "cachier_entry_count", "Current number of cache entries", labels=["function"]
-        )
-        cache_size = GaugeMetricFamily(
-            "cachier_cache_size_bytes", "Total cache size in bytes", labels=["function"]
-        )
+        wait_timeouts = CounterMetricFamily("cachier_wait_timeouts_total", "Total wait timeouts", labels=["function"])
+        entry_count = GaugeMetricFamily("cachier_entry_count", "Current number of cache entries", labels=["function"])
+        cache_size = GaugeMetricFamily("cachier_cache_size_bytes", "Total cache size in bytes", labels=["function"])
 
         for func_name, stats in snapshots.items():
             hits.add_metric([func_name], stats.hits)

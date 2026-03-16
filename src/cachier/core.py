@@ -37,7 +37,6 @@ DEFAULT_MAX_WORKERS = 8
 ZERO_TIMEDELTA = timedelta(seconds=0)
 
 
-
 class _ImmediateAwaitable:
     """Lightweight awaitable that yields an immediate value."""
 
