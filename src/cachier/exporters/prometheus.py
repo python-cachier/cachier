@@ -34,11 +34,80 @@ def _get_func_metrics(func: Callable[..., Any]) -> Optional["CacheMetrics"]:
 
 try:
     import prometheus_client  # type: ignore[import-not-found]
+    from prometheus_client import CollectorRegistry  # type: ignore[import-not-found]
+    from prometheus_client.core import (  # type: ignore[import-not-found]
+        CounterMetricFamily,
+        GaugeMetricFamily,
+    )
 
     PROMETHEUS_CLIENT_AVAILABLE = True
-except ImportError:  # pragma: no cover
+except (ImportError, AttributeError):  # pragma: no cover
     PROMETHEUS_CLIENT_AVAILABLE = False
     prometheus_client = None  # type: ignore[assignment]
+    CollectorRegistry = None  # type: ignore[assignment]
+    CounterMetricFamily = None  # type: ignore[assignment]
+    GaugeMetricFamily = None  # type: ignore[assignment]
+
+
+class CachierCollector:
+    """Custom Prometheus collector that pulls metrics from registered functions."""
+
+    def __init__(self, exporter: "PrometheusExporter") -> None:
+        self.exporter = exporter
+
+    def describe(self) -> list:
+        """Return an empty list; metrics are described at collect time."""
+        return []
+
+    def collect(self) -> Any:
+        """Collect metrics from all registered functions."""
+        # Snapshot all metrics in one lock acquisition for consistency
+        with self.exporter._lock:
+            snapshots: Dict[str, "MetricSnapshot"] = {}
+            for func_name, func in self.exporter._registered_functions.items():
+                m = _get_func_metrics(func)
+                if m is not None:
+                    snapshots[func_name] = m.get_stats()
+
+        # Build metric families outside the lock using the snapshots
+        hits = CounterMetricFamily("cachier_cache_hits_total", "Total cache hits", labels=["function"])
+        misses = CounterMetricFamily("cachier_cache_misses_total", "Total cache misses", labels=["function"])
+        hit_rate = GaugeMetricFamily("cachier_cache_hit_rate", "Cache hit rate percentage", labels=["function"])
+        stale_hits = CounterMetricFamily(
+            "cachier_stale_hits_total", "Total stale cache hits", labels=["function"]
+        )
+        recalculations = CounterMetricFamily(
+            "cachier_recalculations_total", "Total cache recalculations", labels=["function"]
+        )
+        wait_timeouts = CounterMetricFamily(
+            "cachier_wait_timeouts_total", "Total wait timeouts", labels=["function"]
+        )
+        entry_count = GaugeMetricFamily(
+            "cachier_entry_count", "Current number of cache entries", labels=["function"]
+        )
+        cache_size = GaugeMetricFamily(
+            "cachier_cache_size_bytes", "Total cache size in bytes", labels=["function"]
+        )
+
+        for func_name, stats in snapshots.items():
+            hits.add_metric([func_name], stats.hits)
+            misses.add_metric([func_name], stats.misses)
+            hit_rate.add_metric([func_name], stats.hit_rate)
+            stale_hits.add_metric([func_name], stats.stale_hits)
+            recalculations.add_metric([func_name], stats.recalculations)
+            wait_timeouts.add_metric([func_name], stats.wait_timeouts)
+            entry_count.add_metric([func_name], stats.entry_count)
+            cache_size.add_metric([func_name], stats.total_size_bytes)
+
+        # Yield metrics one by one as required by Prometheus collector protocol
+        yield hits
+        yield misses
+        yield hit_rate
+        yield stale_hits
+        yield recalculations
+        yield wait_timeouts
+        yield entry_count
+        yield cache_size
 
 
 class PrometheusExporter(MetricsExporter):
@@ -110,76 +179,6 @@ class PrometheusExporter(MetricsExporter):
         """Set up a custom collector to pull metrics from registered functions."""
         if not self._prom_client:  # pragma: no cover
             return
-
-        try:
-            from prometheus_client import CollectorRegistry
-            from prometheus_client.core import (
-                CounterMetricFamily,
-                GaugeMetricFamily,
-            )
-        except (ImportError, AttributeError):  # pragma: no cover
-            # If prometheus_client is not properly available, skip collector setup
-            return
-
-        class CachierCollector:
-            """Custom Prometheus collector that pulls metrics from registered functions."""
-
-            def __init__(self, exporter: "PrometheusExporter") -> None:
-                self.exporter = exporter
-
-            def describe(self) -> list:
-                """Return an empty list; metrics are described at collect time."""
-                return []
-
-            def collect(self) -> Any:
-                """Collect metrics from all registered functions."""
-                # Snapshot all metrics in one lock acquisition for consistency
-                with self.exporter._lock:
-                    snapshots: Dict[str, "MetricSnapshot"] = {}
-                    for func_name, func in self.exporter._registered_functions.items():
-                        m = _get_func_metrics(func)
-                        if m is not None:
-                            snapshots[func_name] = m.get_stats()
-
-                # Build metric families outside the lock using the snapshots
-                hits = CounterMetricFamily("cachier_cache_hits_total", "Total cache hits", labels=["function"])
-                misses = CounterMetricFamily("cachier_cache_misses_total", "Total cache misses", labels=["function"])
-                hit_rate = GaugeMetricFamily("cachier_cache_hit_rate", "Cache hit rate percentage", labels=["function"])
-                stale_hits = CounterMetricFamily(
-                    "cachier_stale_hits_total", "Total stale cache hits", labels=["function"]
-                )
-                recalculations = CounterMetricFamily(
-                    "cachier_recalculations_total", "Total cache recalculations", labels=["function"]
-                )
-                wait_timeouts = CounterMetricFamily(
-                    "cachier_wait_timeouts_total", "Total wait timeouts", labels=["function"]
-                )
-                entry_count = GaugeMetricFamily(
-                    "cachier_entry_count", "Current number of cache entries", labels=["function"]
-                )
-                cache_size = GaugeMetricFamily(
-                    "cachier_cache_size_bytes", "Total cache size in bytes", labels=["function"]
-                )
-
-                for func_name, stats in snapshots.items():
-                    hits.add_metric([func_name], stats.hits)
-                    misses.add_metric([func_name], stats.misses)
-                    hit_rate.add_metric([func_name], stats.hit_rate)
-                    stale_hits.add_metric([func_name], stats.stale_hits)
-                    recalculations.add_metric([func_name], stats.recalculations)
-                    wait_timeouts.add_metric([func_name], stats.wait_timeouts)
-                    entry_count.add_metric([func_name], stats.entry_count)
-                    cache_size.add_metric([func_name], stats.total_size_bytes)
-
-                # Yield metrics one by one as required by Prometheus collector protocol
-                yield hits
-                yield misses
-                yield hit_rate
-                yield stale_hits
-                yield recalculations
-                yield wait_timeouts
-                yield entry_count
-                yield cache_size
 
         # Use a per-instance registry so multiple exporters don't conflict
         self._registry = CollectorRegistry()
@@ -255,77 +254,48 @@ class PrometheusExporter(MetricsExporter):
                 if m is not None:
                     snapshots[func_name] = m.get_stats()
 
+        # (name, help, type, getter, fmt)
+        metric_defs = [
+            ("cachier_cache_hits_total", "Total cache hits", "counter", lambda s: s.hits, "{}"),
+            ("cachier_cache_misses_total", "Total cache misses", "counter", lambda s: s.misses, "{}"),
+            ("cachier_cache_hit_rate", "Cache hit rate percentage", "gauge", lambda s: s.hit_rate, "{:.2f}"),
+            (
+                "cachier_avg_latency_ms",
+                "Average cache operation latency in milliseconds",
+                "gauge",
+                lambda s: s.avg_latency_ms,
+                "{:.4f}",
+            ),
+            ("cachier_stale_hits_total", "Total stale cache hits", "counter", lambda s: s.stale_hits, "{}"),
+            (
+                "cachier_recalculations_total",
+                "Total cache recalculations",
+                "counter",
+                lambda s: s.recalculations,
+                "{}",
+            ),
+            ("cachier_wait_timeouts_total", "Total wait timeouts", "counter", lambda s: s.wait_timeouts, "{}"),
+            ("cachier_entry_count", "Current cache entries", "gauge", lambda s: s.entry_count, "{}"),
+            ("cachier_cache_size_bytes", "Total cache size in bytes", "gauge", lambda s: s.total_size_bytes, "{}"),
+            (
+                "cachier_size_limit_rejections_total",
+                "Entries rejected due to size limit",
+                "counter",
+                lambda s: s.size_limit_rejections,
+                "{}",
+            ),
+        ]
+
         lines: list[str] = []
+        for name, help_text, metric_type, getter, fmt in metric_defs:
+            lines.append(f"# HELP {name} {help_text}")
+            lines.append(f"# TYPE {name} {metric_type}")
+            for func_name, stats in snapshots.items():
+                value = fmt.format(getter(stats))
+                lines.append(f'{name}{{function="{func_name}"}} {value}')
+            lines.append("")
 
-        # Emit HELP/TYPE headers and values for each metric
-        lines.append("# HELP cachier_cache_hits_total Total cache hits")
-        lines.append("# TYPE cachier_cache_hits_total counter")
-        for func_name, stats in snapshots.items():
-            lines.append(f'cachier_cache_hits_total{{function="{func_name}"}} {stats.hits}')
-
-        # Misses
-        lines.append(
-            "\n# HELP cachier_cache_misses_total Total cache misses\n# TYPE cachier_cache_misses_total counter"
-        )
-        for func_name, stats in snapshots.items():
-            lines.append(f'cachier_cache_misses_total{{function="{func_name}"}} {stats.misses}')
-
-        # Hit rate
-        lines.append("\n# HELP cachier_cache_hit_rate Cache hit rate percentage\n# TYPE cachier_cache_hit_rate gauge")
-        for func_name, stats in snapshots.items():
-            lines.append(f'cachier_cache_hit_rate{{function="{func_name}"}} {stats.hit_rate:.2f}')
-
-        # Average latency
-        lines.append(
-            "\n# HELP cachier_avg_latency_ms Average cache operation latency in milliseconds\n"
-            "# TYPE cachier_avg_latency_ms gauge"
-        )
-        for func_name, stats in snapshots.items():
-            lines.append(f'cachier_avg_latency_ms{{function="{func_name}"}} {stats.avg_latency_ms:.4f}')
-
-        # Stale hits
-        lines.append(
-            "\n# HELP cachier_stale_hits_total Total stale cache hits\n# TYPE cachier_stale_hits_total counter"
-        )
-        for func_name, stats in snapshots.items():
-            lines.append(f'cachier_stale_hits_total{{function="{func_name}"}} {stats.stale_hits}')
-
-        # Recalculations
-        lines.append(
-            "\n# HELP cachier_recalculations_total Total cache recalculations\n"
-            "# TYPE cachier_recalculations_total counter"
-        )
-        for func_name, stats in snapshots.items():
-            lines.append(f'cachier_recalculations_total{{function="{func_name}"}} {stats.recalculations}')
-
-        # Wait timeouts
-        lines.append(
-            "\n# HELP cachier_wait_timeouts_total Total wait timeouts\n# TYPE cachier_wait_timeouts_total counter"
-        )
-        for func_name, stats in snapshots.items():
-            lines.append(f'cachier_wait_timeouts_total{{function="{func_name}"}} {stats.wait_timeouts}')
-
-        # Entry count
-        lines.append("\n# HELP cachier_entry_count Current cache entries\n# TYPE cachier_entry_count gauge")
-        for func_name, stats in snapshots.items():
-            lines.append(f'cachier_entry_count{{function="{func_name}"}} {stats.entry_count}')
-
-        # Cache size
-        lines.append(
-            "\n# HELP cachier_cache_size_bytes Total cache size in bytes\n# TYPE cachier_cache_size_bytes gauge"
-        )
-        for func_name, stats in snapshots.items():
-            lines.append(f'cachier_cache_size_bytes{{function="{func_name}"}} {stats.total_size_bytes}')
-
-        # Size limit rejections
-        lines.append(
-            "\n# HELP cachier_size_limit_rejections_total Entries rejected due to size limit\n"
-            "# TYPE cachier_size_limit_rejections_total counter"
-        )
-        for func_name, stats in snapshots.items():
-            lines.append(f'cachier_size_limit_rejections_total{{function="{func_name}"}} {stats.size_limit_rejections}')
-
-        return "\n".join(lines) + "\n"
+        return "\n".join(lines)
 
     def start(self) -> None:
         """Start the Prometheus exporter.

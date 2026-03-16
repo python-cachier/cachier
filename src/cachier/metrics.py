@@ -173,71 +173,42 @@ class CacheMetrics:
             return True
         return self._random.random() < self._sampling_rate
 
-    def record_hit(self) -> None:
-        """Record a cache hit.
+    def _record_counter(self, attr: str) -> None:
+        """Increment a named counter if sampling allows it.
 
-        Thread-safe method to increment the cache hit counter.
+        Parameters
+        ----------
+        attr : str
+            Name of the instance attribute to increment (e.g. ``"_hits"``)
 
         """
-        if not self._should_sample():
-            return
-        with self._lock:
-            self._hits += 1
+        if self._should_sample():
+            with self._lock:
+                self.__dict__[attr] += 1
+
+    def record_hit(self) -> None:
+        """Record a cache hit."""
+        self._record_counter("_hits")
 
     def record_miss(self) -> None:
-        """Record a cache miss.
-
-        Thread-safe method to increment the cache miss counter.
-
-        """
-        if not self._should_sample():
-            return
-        with self._lock:
-            self._misses += 1
+        """Record a cache miss."""
+        self._record_counter("_misses")
 
     def record_stale_hit(self) -> None:
-        """Record a stale cache hit.
-
-        Thread-safe method to increment the stale hit counter.
-
-        """
-        if not self._should_sample():
-            return
-        with self._lock:
-            self._stale_hits += 1
+        """Record a stale cache hit."""
+        self._record_counter("_stale_hits")
 
     def record_recalculation(self) -> None:
-        """Record a cache recalculation.
-
-        Thread-safe method to increment the recalculation counter.
-
-        """
-        if not self._should_sample():
-            return
-        with self._lock:
-            self._recalculations += 1
+        """Record a cache recalculation."""
+        self._record_counter("_recalculations")
 
     def record_wait_timeout(self) -> None:
-        """Record a wait timeout event.
-
-        Thread-safe method to increment the wait timeout counter.
-
-        """
-        if not self._should_sample():
-            return
-        with self._lock:
-            self._wait_timeouts += 1
+        """Record a wait timeout."""
+        self._record_counter("_wait_timeouts")
 
     def record_size_limit_rejection(self) -> None:
-        """Record an entry rejection due to size limit.
-
-        Thread-safe method to increment the size limit rejection counter.
-
-        """
-        if not self._should_sample():
-            return
-        with self._lock:
-            self._size_limit_rejections += 1
+        """Record an entry rejection due to size limit."""
+        self._record_counter("_size_limit_rejections")
 
     def record_latency(self, latency_seconds: float) -> None:
         """Record an operation latency.
@@ -348,40 +319,66 @@ class CacheMetrics:
 
 
 class MetricsContext:
-    """Context manager for timing cache operations.
+    """Null-object context manager for cache operation instrumentation.
+
+    Wraps an optional ``CacheMetrics`` instance so call-path code can invoke
+    ``record_*`` methods unconditionally without ``if metrics:`` guards.
+    Starts the latency timer on ``__enter__`` and records it automatically on
+    ``__exit__``, covering every return path including exceptions.
+
+    Parameters
+    ----------
+    metrics : CacheMetrics, optional
+        Metrics object to record to. When ``None`` all operations are no-ops.
 
     Examples
     --------
     >>> metrics = CacheMetrics()
-    >>> with MetricsContext(metrics):
+    >>> with MetricsContext(metrics) as m:
+    ...     m.record_miss()
     ...     # Do cache operation
-    ...     pass
+    ...     m.record_recalculation()
 
     """
 
-    def __init__(self, metrics: Optional[CacheMetrics]):
-        """Initialize metrics context.
+    __slots__ = ("_m", "_start")
 
-        Parameters
-        ----------
-        metrics : CacheMetrics, optional
-            Metrics object to record to
+    def __init__(self, metrics: Optional[CacheMetrics]) -> None:
+        self._m = metrics
+        self._start: float = 0.0
 
-        """
-        self.metrics = metrics
-        self.start_time = 0.0
-
-    def __enter__(self):
+    def __enter__(self) -> "MetricsContext":
         """Start timing the operation."""
-        if self.metrics:
-            # Use a monotonic clock for measuring elapsed time to avoid
-            # issues with system clock adjustments.
-            self.start_time = time.perf_counter()
+        if self._m is not None:
+            self._start = time.perf_counter()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, *_: object) -> None:
         """Record the operation latency."""
-        if self.metrics:
-            latency = time.perf_counter() - self.start_time
-            self.metrics.record_latency(latency)
-        return False
+        if self._m is not None:
+            self._m.record_latency(time.perf_counter() - self._start)
+
+    def record_hit(self) -> None:
+        """Record a cache hit."""
+        if self._m:
+            self._m.record_hit()
+
+    def record_miss(self) -> None:
+        """Record a cache miss."""
+        if self._m:
+            self._m.record_miss()
+
+    def record_stale_hit(self) -> None:
+        """Record a stale cache hit."""
+        if self._m:
+            self._m.record_stale_hit()
+
+    def record_recalculation(self) -> None:
+        """Record a cache recalculation."""
+        if self._m:
+            self._m.record_recalculation()
+
+    def record_wait_timeout(self) -> None:
+        """Record a wait timeout."""
+        if self._m:
+            self._m.record_wait_timeout()
