@@ -174,9 +174,10 @@ def test_cache_dpath_memory():
 def test_classmethod_not_guarded():
     """Test that @classmethod (cls) does not trigger the instance method guard.
 
-    Note: The decorator order must be @classmethod first, then @cachier,
-    so that cachier sees the underlying function (whose first param is
-    ``cls``, not ``self``) and the guard is not triggered.
+    Note: Place ``@classmethod`` above ``@cachier`` so that ``@cachier``
+    decorates the underlying function before it is wrapped as a classmethod.
+    This way cachier sees ``cls`` (not ``self``) as the first parameter and
+    the instance-method guard is not triggered.
 
     """
 
@@ -204,15 +205,18 @@ def test_classmethod_not_guarded():
 @pytest.mark.smoke
 def test_instance_method_global_opt_out_reset():
     """Test that resetting allow_non_static_methods=False re-enables the guard."""
-    set_global_params(allow_non_static_methods=True)
-    set_global_params(allow_non_static_methods=False)
-    with pytest.raises(TypeError, match="instance method"):
+    original = get_global_params().allow_non_static_methods
+    try:
+        set_global_params(allow_non_static_methods=True)
+        set_global_params(allow_non_static_methods=False)
+        with pytest.raises(TypeError, match="instance method"):
 
-        class Foo:
-            @cachier_decorator(backend="memory")
-            def method(self, x):
-                return x
-
+            class Foo:
+                @cachier_decorator(backend="memory")
+                def method(self, x):
+                    return x
+    finally:
+        set_global_params(allow_non_static_methods=original)
 
 @pytest.mark.smoke
 def test_instance_method_skip_cache():
