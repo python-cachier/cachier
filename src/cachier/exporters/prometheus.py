@@ -31,6 +31,7 @@ def _get_func_metrics(func: Callable[..., Any]) -> Optional["CacheMetrics"]:
     metrics_func = cast(_MetricsEnabledCallable, func)
     return metrics_func.metrics
 
+
 try:
     import prometheus_client  # type: ignore[import-not-found]
 
