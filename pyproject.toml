@@ -108,6 +108,7 @@ exclude = [
   "build",
   "dist",
 ]
+
 # Enable Pyflakes `E` and `F` codes by default.
 lint.select = [
   "D",      # see: https://pypi.org/project/pydocstyle
@@ -128,6 +129,8 @@ lint.extend-select = [
 ]
 lint.ignore = [
   "C901",
+  "D203",
+  "D213",
   "E203",
   "S301",
 ]
@@ -156,15 +159,12 @@ lint.per-file-ignores."tests/**" = [
 lint.unfixable = [
   "F401",
 ]
-
 # --- flake8 ---
-#[tool.ruff.pydocstyle]
-## Use Google-style docstrings.
-#convention = "google"
 #[tool.ruff.pycodestyle]
 #ignore-overlong-task-comments = true
 # Unlike Flake8, default to a complexity level of 10.
 lint.mccabe.max-complexity = 10
+lint.pydocstyle.convention = "numpy"
 
 [tool.docformatter]
 recursive = true

@@ -724,7 +724,7 @@ def cachier(
             """Return the path to the cache dir, if exists; None if not."""
             return getattr(core, "cache_dir", None)
 
-        def _precache_value(*args, value_to_cache, **kwds):  # noqa: D417
+        def _precache_value(*args, value_to_cache, **kwds):
             """Add an initial value to the cache.
 
             Arguments:
