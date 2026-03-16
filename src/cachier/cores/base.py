@@ -62,7 +62,7 @@ class _BaseCore(metaclass=abc.ABCMeta):
         -----
         Detection is name-based: only ``func_params[0] == "self"`` is
         checked.  ``@classmethod`` functions whose first parameter is
-        conventionally named ``cls`` are **not** detected as methods --
+        conventionally named ``cls`` are not detected as methods --
         this is a known gap.
 
         """

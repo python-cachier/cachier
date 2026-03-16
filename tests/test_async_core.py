@@ -315,6 +315,15 @@ class TestAsyncMethod:
 
         obj1.async_method.clear_cache()
 
+    async def test_guard_raises_without_opt_in(self):
+        """Test that @cachier raises TypeError for async instance methods without opt-in."""
+        with pytest.raises(TypeError, match="allow_non_static_methods"):
+
+            class MyClass:
+                @cachier(backend="memory")
+                async def async_method(self, x):
+                    return x
+
 
 # =============================================================================
 # Sync Function Compatibility Tests

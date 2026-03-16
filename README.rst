@@ -118,7 +118,8 @@ Class and object methods can also be cached. Cachier will automatically ignore t
       return result
 
     # Instance method relies on object attribute, NOT good to cache
-    @cachier(allow_non_static_methods=True)
+    # @cachier() would raise TypeError here -- this is intentional
+    @cachier()
     def bad_usage(self, arg_1, arg_2):
       return arg_1 + arg_2 + self.arg_3
 

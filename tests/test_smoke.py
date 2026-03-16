@@ -1,6 +1,8 @@
 """Smoke tests for cachier - fast, no external service dependencies."""
 
 import datetime
+import hashlib
+import pickle
 
 import pytest
 
@@ -186,9 +188,6 @@ def test_classmethod_not_guarded():
     # ``cls``.
     def _hash_ignore_cls(args, kwds):
         filtered = {k: v for k, v in kwds.items() if k != "cls"}
-        import hashlib
-        import pickle
-
         return hashlib.sha256(pickle.dumps((args, sorted(filtered.items())))).hexdigest()
 
     class Foo:

@@ -374,11 +374,11 @@ def cachier(
                 raise TypeError(
                     f"@cachier cannot decorate instance method "
                     f"'{func.__qualname__}' because the 'self' parameter is "
-                    f"excluded from cache-key computation and all instances "
-                    f"would share a single cache. Pass allow_non_static_methods=True "
-                    f"to the decorator or call "
-                    f"set_global_params(allow_non_static_methods=True) if "
-                    f"cross-instance cache sharing is intentional."
+                    "excluded from cache-key computation and all instances "
+                    "would share a single cache. Pass allow_non_static_methods=True "
+                    "to the decorator or call "
+                    "set_global_params(allow_non_static_methods=True) if "
+                    "cross-instance cache sharing is intentional."
                 )
 
         is_coroutine = inspect.iscoroutinefunction(func)
