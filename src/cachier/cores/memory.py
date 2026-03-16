@@ -153,10 +153,5 @@ class _MemoryCore(_BaseCore):
         with self.lock:
             total = 0
             for entry in self.cache.values():
-                try:
-                    total += self._estimate_size(entry.value)
-                except Exception:
-                    # Size estimation is best-effort; skip entries that cannot be sized
-                    # to avoid breaking cache functionality or metrics collection.
-                    continue
+                total += self._estimate_size(entry.value)
             return total

@@ -7,9 +7,29 @@
 # http://www.opensource.org/licenses/MIT-license
 
 import threading
-from typing import Any, Callable, Dict, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Protocol, cast
 
 from .base import MetricsExporter
+
+if TYPE_CHECKING:
+    from ..metrics import CacheMetrics
+
+
+class _MetricsEnabledCallable(Protocol):
+    """Callable wrapper that exposes cachier metrics."""
+
+    __module__: str
+    __name__: str
+    metrics: Optional["CacheMetrics"]
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        """Invoke the wrapped callable."""
+
+
+def _get_func_metrics(func: Callable[..., Any]) -> Optional["CacheMetrics"]:
+    """Return the metrics object for a registered function, if available."""
+    metrics_func = cast(_MetricsEnabledCallable, func)
+    return metrics_func.metrics
 
 try:
     import prometheus_client  # type: ignore[import-not-found]
@@ -70,7 +90,7 @@ class PrometheusExporter(MetricsExporter):
         self.port = port
         self.host = host
         self.use_prometheus_client = use_prometheus_client
-        self._registered_functions: Dict[str, Callable] = {}
+        self._registered_functions: Dict[str, _MetricsEnabledCallable] = {}
         self._lock = threading.Lock()
         self._server: Optional[Any] = None
         self._server_thread: Optional[threading.Thread] = None
@@ -143,10 +163,11 @@ class PrometheusExporter(MetricsExporter):
                         func_name,
                         func,
                     ) in self.exporter._registered_functions.items():
-                        if not hasattr(func, "metrics") or func.metrics is None:
+                        metrics = _get_func_metrics(func)
+                        if metrics is None:
                             continue
 
-                        stats = func.metrics.get_stats()
+                        stats = metrics.get_stats()
 
                         hits.add_metric([func_name], stats.hits)
                         misses.add_metric([func_name], stats.misses)
@@ -182,7 +203,7 @@ class PrometheusExporter(MetricsExporter):
         # Metrics are now handled by the custom collector in _setup_collector()
         pass
 
-    def register_function(self, func: Callable) -> None:
+    def register_function(self, func: Callable[..., Any]) -> None:
         """Register a cached function for metrics export.
 
         Parameters
@@ -196,14 +217,15 @@ class PrometheusExporter(MetricsExporter):
             If the function doesn't have metrics enabled
 
         """
-        if not hasattr(func, "metrics") or func.metrics is None:
+        metrics = _get_func_metrics(func)
+        if metrics is None:
             raise ValueError(
                 f"Function {func.__name__} does not have metrics enabled. Use @cachier(enable_metrics=True)"
             )
 
         with self._lock:
             func_name = f"{func.__module__}.{func.__name__}"
-            self._registered_functions[func_name] = func
+            self._registered_functions[func_name] = cast(_MetricsEnabledCallable, func)
 
     def export_metrics(self, func_name: str, metrics: Any) -> None:
         """Export metrics for a specific function to Prometheus.
@@ -241,9 +263,10 @@ class PrometheusExporter(MetricsExporter):
 
         with self._lock:
             for func_name, func in self._registered_functions.items():
-                if not hasattr(func, "metrics") or func.metrics is None:
+                metrics = _get_func_metrics(func)
+                if metrics is None:
                     continue
-                stats = func.metrics.get_stats()
+                stats = metrics.get_stats()
                 lines.append(f'cachier_cache_hits_total{{function="{func_name}"}} {stats.hits}')
 
         # Misses
@@ -253,9 +276,10 @@ class PrometheusExporter(MetricsExporter):
 
         with self._lock:
             for func_name, func in self._registered_functions.items():
-                if not hasattr(func, "metrics") or func.metrics is None:
+                metrics = _get_func_metrics(func)
+                if metrics is None:
                     continue
-                stats = func.metrics.get_stats()
+                stats = metrics.get_stats()
                 lines.append(f'cachier_cache_misses_total{{function="{func_name}"}} {stats.misses}')
 
         # Hit rate
@@ -263,9 +287,10 @@ class PrometheusExporter(MetricsExporter):
 
         with self._lock:
             for func_name, func in self._registered_functions.items():
-                if not hasattr(func, "metrics") or func.metrics is None:
+                metrics = _get_func_metrics(func)
+                if metrics is None:
                     continue
-                stats = func.metrics.get_stats()
+                stats = metrics.get_stats()
                 lines.append(f'cachier_cache_hit_rate{{function="{func_name}"}} {stats.hit_rate:.2f}')
 
         # Average latency
@@ -276,9 +301,10 @@ class PrometheusExporter(MetricsExporter):
 
         with self._lock:
             for func_name, func in self._registered_functions.items():
-                if not hasattr(func, "metrics") or func.metrics is None:
+                metrics = _get_func_metrics(func)
+                if metrics is None:
                     continue
-                stats = func.metrics.get_stats()
+                stats = metrics.get_stats()
                 lines.append(f'cachier_avg_latency_ms{{function="{func_name}"}} {stats.avg_latency_ms:.4f}')
 
         # Stale hits
@@ -288,9 +314,10 @@ class PrometheusExporter(MetricsExporter):
 
         with self._lock:
             for func_name, func in self._registered_functions.items():
-                if not hasattr(func, "metrics") or func.metrics is None:
+                metrics = _get_func_metrics(func)
+                if metrics is None:
                     continue
-                stats = func.metrics.get_stats()
+                stats = metrics.get_stats()
                 lines.append(f'cachier_stale_hits_total{{function="{func_name}"}} {stats.stale_hits}')
 
         # Recalculations
@@ -301,9 +328,10 @@ class PrometheusExporter(MetricsExporter):
 
         with self._lock:
             for func_name, func in self._registered_functions.items():
-                if not hasattr(func, "metrics") or func.metrics is None:
+                metrics = _get_func_metrics(func)
+                if metrics is None:
                     continue
-                stats = func.metrics.get_stats()
+                stats = metrics.get_stats()
                 lines.append(f'cachier_recalculations_total{{function="{func_name}"}} {stats.recalculations}')
 
         # Entry count
@@ -311,9 +339,10 @@ class PrometheusExporter(MetricsExporter):
 
         with self._lock:
             for func_name, func in self._registered_functions.items():
-                if not hasattr(func, "metrics") or func.metrics is None:
+                metrics = _get_func_metrics(func)
+                if metrics is None:
                     continue
-                stats = func.metrics.get_stats()
+                stats = metrics.get_stats()
                 lines.append(f'cachier_entry_count{{function="{func_name}"}} {stats.entry_count}')
 
         # Cache size
@@ -323,9 +352,10 @@ class PrometheusExporter(MetricsExporter):
 
         with self._lock:
             for func_name, func in self._registered_functions.items():
-                if not hasattr(func, "metrics") or func.metrics is None:
+                metrics = _get_func_metrics(func)
+                if metrics is None:
                     continue
-                stats = func.metrics.get_stats()
+                stats = metrics.get_stats()
                 lines.append(f'cachier_cache_size_bytes{{function="{func_name}"}} {stats.total_size_bytes}')
 
         # Size limit rejections
@@ -336,9 +366,10 @@ class PrometheusExporter(MetricsExporter):
 
         with self._lock:
             for func_name, func in self._registered_functions.items():
-                if not hasattr(func, "metrics") or func.metrics is None:
+                metrics = _get_func_metrics(func)
+                if metrics is None:
                     continue
-                stats = func.metrics.get_stats()
+                stats = metrics.get_stats()
                 lines.append(
                     f'cachier_size_limit_rejections_total{{function="{func_name}"}} {stats.size_limit_rejections}'
                 )
