@@ -26,7 +26,7 @@ class ConcreteCachingCore(_BaseCore):
         """Retrieve an entry by its key."""
         return key, None
 
-    def set_entry(self, key, func_res):
+    def _set_entry(self, key, func_res):
         """Store an entry in the cache."""
         self.last_set = (key, func_res)
         return True

@@ -129,9 +129,12 @@ class _BaseCore(metaclass=abc.ABCMeta):
         if self.entry_size_limit is None:
             return True
         try:
-            return self._estimate_size(value) <= self.entry_size_limit
+            should_store = self._estimate_size(value) <= self.entry_size_limit
         except Exception:
             return True
+        if not should_store and self.metrics is not None:
+            self.metrics.record_size_limit_rejection()
+        return should_store
 
     def _update_size_metrics(self) -> None:
         """Update cache size metrics if metrics are enabled.

@@ -252,7 +252,7 @@ class CacheMetrics:
         """
         # Use monotonic clock for cutoff calculation
         now = time.perf_counter()
-        cutoff = 0.0 if window is None else now - window.total_seconds()
+        cutoff = 0.0 if not window else now - window.total_seconds()
 
         latencies = [metric.value for metric in self._latencies if metric.timestamp >= cutoff]
 
@@ -377,3 +377,8 @@ class MetricsContext:
         """Record a wait timeout."""
         if self._m:
             self._m.record_wait_timeout()
+
+    def record_size_limit_rejection(self) -> None:
+        """Record an entry rejection due to size limit."""
+        if self._m:
+            self._m.record_size_limit_rejection()
