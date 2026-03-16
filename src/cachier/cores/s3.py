@@ -6,7 +6,7 @@ import pickle
 import time
 import warnings
 from datetime import datetime, timedelta
-from typing import Any, Callable, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple
 
 try:
     import boto3  # type: ignore[import-untyped]
@@ -20,10 +20,8 @@ from .._types import HashFunc
 from ..config import CacheEntry
 from .base import RecalculationNeeded, _BaseCore, _get_func_str
 
-try:
+if TYPE_CHECKING:
     from ..metrics import CacheMetrics
-except ImportError:
-    CacheMetrics = None  # type: ignore[assignment,misc]
 
 S3_SLEEP_DURATION_IN_SEC = 1
 
@@ -416,7 +414,7 @@ class _S3Core(_BaseCore):
         ``asyncio.to_thread`` because boto3 is sync-only.
 
         """
-        return await asyncio.to_thread(self.set_entry, key, func_res)
+        return await asyncio.to_thread(self._set_entry, key, func_res)
 
     async def amark_entry_being_calculated(self, key: str) -> None:
         """Async-compatible variant of :meth:`mark_entry_being_calculated`.

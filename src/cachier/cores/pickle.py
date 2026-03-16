@@ -269,7 +269,7 @@ class _PickleCore(_BaseCore):
         return True
 
     async def _aset_entry(self, key: str, func_res: Any) -> bool:
-        return self.set_entry(key, func_res)
+        return self._set_entry(key, func_res)
 
     def mark_entry_being_calculated_separate_files(self, key: str) -> None:
         self._save_cache(

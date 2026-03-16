@@ -66,7 +66,7 @@ class _MemoryCore(_BaseCore):
 
     async def _aset_entry(self, key: str, func_res: Any) -> bool:
         """Set an entry."""
-        return self.set_entry(key, func_res)
+        return self._set_entry(key, func_res)
 
     def mark_entry_being_calculated(self, key: str) -> None:
         with self.lock:
