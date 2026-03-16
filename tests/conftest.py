@@ -53,6 +53,10 @@ def worker_sql_connection() -> Optional[str]:
     ``CREATE SCHEMA IF NOT EXISTS`` so this fixture is safe to run even if the schema
     already exists from a previous interrupted run.
 
+    A non-None return value means "use this URL"; schema creation is attempted but may
+    fail silently (e.g. if SQLAlchemy is not installed or the DB is unreachable). Tests
+    that depend on the schema will fail at the DB level with a diagnostic error.
+
     """
     worker_id = os.environ.get("PYTEST_XDIST_WORKER", "master")
     if worker_id == "master":
@@ -197,4 +201,4 @@ def cleanup_test_schemas(request):
                 engine.dispose()
             except Exception as e:
                 # If cleanup fails, it's not critical
-                logger.debug(f"Failed to cleanup schema {schema_name}: {e}")
+                logger.debug("Failed to cleanup schema %s: %s", schema_name, e)
