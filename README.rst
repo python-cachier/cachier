@@ -149,6 +149,7 @@ The following parameters will only be applied to decorators defined after `set_d
 *  `pickle_reload`
 *  `separate_files`
 *  `entry_size_limit`
+*  `allow_non_static_methods`
 
 These parameters can be changed at any time and they will apply to all decorators:
 
