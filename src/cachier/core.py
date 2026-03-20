@@ -200,6 +200,7 @@ def cachier(
     cleanup_stale: Optional[bool] = None,
     cleanup_interval: Optional[timedelta] = None,
     entry_size_limit: Optional[Union[int, str]] = None,
+    allow_non_static_methods: Optional[bool] = None,
 ):
     """Wrap as a persistent, stale-free memoization decorator.
 
@@ -287,6 +288,13 @@ def cachier(
         Maximum serialized size of a cached value. Values exceeding the limit
         are returned but not cached. Human readable strings like ``"10MB"`` are
         allowed.
+    allow_non_static_methods : bool, optional
+        If True, allows ``@cachier`` to decorate instance methods (functions
+        whose first parameter is named ``self``). By default, decorating an
+        instance method raises ``TypeError`` because the ``self`` argument is
+        ignored for cache-key computation, meaning all instances share the
+        same cache -- which is rarely the intended behaviour. Set this to
+        ``True`` only when cross-instance cache sharing is intentional.
 
     """
     # Check for deprecated parameters
@@ -356,6 +364,23 @@ def cachier(
 
     def _cachier_decorator(func):
         core.set_func(func)
+
+        # Guard: raise TypeError when decorating an instance method unless
+        # explicitly opted in.  The 'self' parameter is ignored for cache-key
+        # computation, so all instances share the same cache.
+        if core.func_is_method:
+            _allow_methods = _update_with_defaults(allow_non_static_methods, "allow_non_static_methods")
+            if not _allow_methods:
+                raise TypeError(
+                    f"@cachier cannot decorate instance method "
+                    f"'{func.__qualname__}' because the 'self' parameter is "
+                    "excluded from cache-key computation and all instances "
+                    "would share a single cache. Pass allow_non_static_methods=True "
+                    "to the decorator or call "
+                    "set_global_params(allow_non_static_methods=True) if "
+                    "cross-instance cache sharing is intentional."
+                )
+
         is_coroutine = inspect.iscoroutinefunction(func)
 
         if backend == "mongo":
@@ -468,7 +493,6 @@ def cachier(
                         _print("max_age is negative. Cached result considered stale.")
                         nonneg_max_age = False
                     else:
-                        assert max_age is not None  # noqa: S101
                         max_allowed_age = min(_stale_after, max_age)
                 # note: if max_age < 0, we always consider a value stale
                 if nonneg_max_age and (now - entry.time <= max_allowed_age):
@@ -557,7 +581,6 @@ def cachier(
                         _print("max_age is negative. Cached result considered stale.")
                         nonneg_max_age = False
                     else:
-                        assert max_age is not None  # noqa: S101
                         max_allowed_age = min(_stale_after, max_age)
                 # note: if max_age < 0, we always consider a value stale
                 if nonneg_max_age and (now - entry.time <= max_allowed_age):

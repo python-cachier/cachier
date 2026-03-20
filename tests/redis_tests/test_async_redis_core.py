@@ -84,7 +84,7 @@ async def test_async_redis_client_factory_method_args_and_kwargs():
     call_count = 0
 
     class _RedisMethods:
-        @cachier(backend="redis", redis_client=get_redis_client)
+        @cachier(backend="redis", redis_client=get_redis_client, allow_non_static_methods=True)
         async def async_cached_redis_method_args_kwargs(self, x: int, y: int) -> int:
             nonlocal call_count
             call_count += 1
