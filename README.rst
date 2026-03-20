@@ -746,7 +746,7 @@ This script automatically handles Docker container lifecycle, environment variab
 .. code-block:: bash
 
   # Start MongoDB with Docker
-  docker run -d -p 27017:27017 --name cachier-test-mongo mongo:latest
+  docker run -d -p 27017:27017 --name cachier-test-mongo mongo:8
 
   # Run tests
   CACHIER_TEST_HOST=localhost CACHIER_TEST_PORT=27017 CACHIER_TEST_VS_DOCKERIZED_MONGO=true pytest -m mongo
