@@ -8,6 +8,7 @@ from cachier import cachier, get_global_params
 def test_get_default_params():
     params = get_global_params()
     assert sorted(vars(params).keys()) == [
+        "allow_non_static_methods",
         "allow_none",
         "backend",
         "cache_dir",

@@ -105,7 +105,7 @@ def test_original_issue_scenario():
                 cachier.enable_caching()
 
         # Use memory backend to avoid file cache persistence issues
-        @cachier.cachier(backend="memory")
+        @cachier.cachier(backend="memory", allow_non_static_methods=True)
         def test(self, param):
             self.counter += 1
             return param

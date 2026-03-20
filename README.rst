@@ -95,7 +95,7 @@ You can add a default, pickle-based, persistent cache to your function - meaning
     """Your function now has a persistent cache mapped by argument values!"""
     return {'arg1': arg1, 'arg2': arg2}
 
-Class and object methods can also be cached. Cachier will automatically ignore the `self` parameter when determining the cache key for an object method. **This means that methods will be cached across all instances of an object, which may not be what you want.**
+Class and object methods can also be cached. Cachier will automatically ignore the ``self`` parameter when determining the cache key for an object method. **This means that methods will be cached across all instances of an object, which may not be what you want.** Because this is a common source of bugs, ``@cachier`` raises a ``TypeError`` by default when applied to an instance method (a function whose first parameter is named ``self``). This error is raised when ``@cachier`` is applied (at class definition time), not when the method is called. To opt in to cross-instance cache sharing, pass ``allow_non_static_methods=True``.
 
 .. code-block:: python
 
@@ -108,17 +108,18 @@ Class and object methods can also be cached. Cachier will automatically ignore t
       return arg_1 + arg_2
 
     # Instance method does not depend on object's internal state, so good to cache
-    @cachier()
+    @cachier(allow_non_static_methods=True)
     def good_usage_1(self, arg_1, arg_2):
       return arg_1 + arg_2
 
     # Instance method is calling external service, probably okay to cache
-    @cachier()
+    @cachier(allow_non_static_methods=True)
     def good_usage_2(self, arg_1, arg_2):
       result = self.call_api(arg_1, arg_2)
       return result
 
     # Instance method relies on object attribute, NOT good to cache
+    # @cachier() would raise TypeError here -- this is intentional
     @cachier()
     def bad_usage(self, arg_1, arg_2):
       return arg_1 + arg_2 + self.arg_3
@@ -149,6 +150,7 @@ The following parameters will only be applied to decorators defined after `set_d
 *  `pickle_reload`
 *  `separate_files`
 *  `entry_size_limit`
+*  `allow_non_static_methods`
 
 These parameters can be changed at any time and they will apply to all decorators:
 

@@ -66,6 +66,7 @@ class Params:
     cleanup_stale: bool = False
     cleanup_interval: timedelta = timedelta(days=1)
     entry_size_limit: Optional[int] = None
+    allow_non_static_methods: bool = False
 
 
 _global_params = Params()
@@ -130,7 +131,14 @@ def set_global_params(**params: Any) -> None:
       'cleanup_interval', and 'caching_enabled'. In some cores, if the
       decorator was created without concrete value for 'wait_for_calc_timeout',
       calls that check calculation timeouts will fall back to the global
-      'wait_for_calc_timeout' as well.
+      'wait_for_calc_timeout' as well. 'allow_non_static_methods'
+      (decoration-time only) controls whether instance methods are
+      permitted; it is read once when @cachier is applied, not on each call.
+
+    Note that ``allow_non_static_methods`` is a **decoration-time**
+    parameter: it is checked once when the ``@cachier`` decorator is
+    applied and is not re-read on each function call. Changing it via
+    ``set_global_params`` only affects decorators created after the call.
 
     """
     import cachier
