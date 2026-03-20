@@ -12,7 +12,7 @@ import time
 from collections import deque
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Deque, Optional
+from typing import Optional
 
 
 @dataclass
@@ -96,7 +96,10 @@ class CacheMetrics:
         Sampling rate for metrics collection (0.0-1.0), by default 1.0
         Lower values reduce overhead at the cost of accuracy
     window_sizes : list of timedelta, optional
-        Time windows to track for aggregated metrics, by default [1 minute, 1 hour, 1 day]
+        Informational window presets, by default [1 minute, 1 hour, 1 day].
+        These values are not applied automatically. To filter latency metrics
+        by time window, pass ``window=timedelta(...)`` explicitly to
+        ``get_stats()``.
 
     Examples
     --------
@@ -116,7 +119,9 @@ class CacheMetrics:
         sampling_rate : float
             Sampling rate between 0.0 and 1.0
         window_sizes : list of timedelta, optional
-            Time windows for aggregated metrics
+            Informational window presets. These values are stored but not
+            applied automatically; pass ``window=timedelta(...)`` to
+            ``get_stats()`` for time-windowed latency aggregation.
 
         """
         if not 0.0 <= sampling_rate <= 1.0:
@@ -147,7 +152,7 @@ class CacheMetrics:
         # Assuming ~1000 ops/sec max, keep 1 day of data = 86.4M points
         # Limit to 100K points for memory efficiency
         max_latency_points = 100000
-        self._latencies: Deque[_TimestampedMetric] = deque(maxlen=max_latency_points)
+        self._latencies: deque[_TimestampedMetric] = deque(maxlen=max_latency_points)
 
         # Size tracking
         self._entry_count = 0
@@ -355,30 +360,30 @@ class MetricsContext:
 
     def record_hit(self) -> None:
         """Record a cache hit."""
-        if self._m:
+        if self._m is not None:
             self._m.record_hit()
 
     def record_miss(self) -> None:
         """Record a cache miss."""
-        if self._m:
+        if self._m is not None:
             self._m.record_miss()
 
     def record_stale_hit(self) -> None:
         """Record a stale cache hit."""
-        if self._m:
+        if self._m is not None:
             self._m.record_stale_hit()
 
     def record_recalculation(self) -> None:
         """Record a cache recalculation."""
-        if self._m:
+        if self._m is not None:
             self._m.record_recalculation()
 
     def record_wait_timeout(self) -> None:
         """Record a wait timeout."""
-        if self._m:
+        if self._m is not None:
             self._m.record_wait_timeout()
 
     def record_size_limit_rejection(self) -> None:
         """Record an entry rejection due to size limit."""
-        if self._m:
+        if self._m is not None:
             self._m.record_size_limit_rejection()

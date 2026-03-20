@@ -364,6 +364,8 @@ The metrics system tracks:
 * **Size limit rejections**: Entries rejected due to ``entry_size_limit``
 * **Cache size (memory backend only)**: Number of entries and total size in bytes for the in-memory cache core
 
+  Note: ``entry_count`` and ``total_size_bytes`` are populated only for the memory backend. Other backends (pickle, redis, sql, mongo) currently always report ``0`` for these fields.
+
 Sampling Rate
 -------------
 

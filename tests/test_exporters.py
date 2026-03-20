@@ -54,7 +54,7 @@ def test_prometheus_exporter_text_format():
 
     test_func.clear_cache()
 
-    exporter = PrometheusExporter(port=9093, use_prometheus_client=False)
+    exporter = PrometheusExporter(port=0, use_prometheus_client=False)
     exporter.register_function(test_func)
 
     # Generate some metrics
@@ -89,7 +89,7 @@ def test_prometheus_exporter_multiple_functions():
     func1.clear_cache()
     func2.clear_cache()
 
-    exporter = PrometheusExporter(port=9094, use_prometheus_client=False)
+    exporter = PrometheusExporter(port=0, use_prometheus_client=False)
     exporter.register_function(func1)
     exporter.register_function(func2)
 
@@ -132,10 +132,10 @@ def test_prometheus_exporter_double_instantiation():
     test_func.clear_cache()
     test_func(5)
 
-    exporter1 = PrometheusExporter(port=9097, use_prometheus_client=False)
+    exporter1 = PrometheusExporter(port=0, use_prometheus_client=False)
     exporter1.register_function(test_func)
 
-    exporter2 = PrometheusExporter(port=9098, use_prometheus_client=False)
+    exporter2 = PrometheusExporter(port=0, use_prometheus_client=False)
     exporter2.register_function(test_func)
 
     # Both should generate valid metrics
@@ -158,7 +158,7 @@ def test_prometheus_text_metrics_consistency():
 
     test_func.clear_cache()
 
-    exporter = PrometheusExporter(port=9099, use_prometheus_client=False)
+    exporter = PrometheusExporter(port=0, use_prometheus_client=False)
     exporter.register_function(test_func)
 
     test_func(5)  # miss
@@ -290,7 +290,7 @@ def test_prometheus_client_not_available(monkeypatch):
     test_func.clear_cache()
     test_func(5)
 
-    exporter = PrometheusExporter(port=19093, use_prometheus_client=True)
+    exporter = PrometheusExporter(port=0, use_prometheus_client=True)
     assert exporter._prom_client is None
     exporter.register_function(test_func)
     text = exporter._generate_text_metrics()
@@ -303,8 +303,7 @@ def test_prometheus_client_not_available(monkeypatch):
 def test_prometheus_prom_client_available_paths():
     """Cover prometheus_client-available code paths via module-level patching.
 
-    Exercises: __init__ branch (L157-160), _setup_collector (L168-169),
-    _init_prometheus_metrics (L179), CachierCollector.describe (L57), and
+    Exercises: __init__ branch, _setup_collector, CachierCollector.describe, and
     CachierCollector.collect() None-metrics skip (L66 False branch).
 
     """
@@ -382,7 +381,7 @@ def test_prometheus_module_import_with_prom_client():
 @pytest.mark.memory
 def test_prometheus_stop_when_not_started():
     """Test that stop() is a no-op when the server was never started."""
-    exporter = PrometheusExporter(port=19094, use_prometheus_client=False)
+    exporter = PrometheusExporter(port=0, use_prometheus_client=False)
     exporter.stop()  # Should not raise
 
 
@@ -391,10 +390,11 @@ def test_prometheus_simple_server_404():
     """Test that simple HTTP server returns 404 for non-metrics paths."""
     import http.client
 
-    exporter = PrometheusExporter(port=19095, use_prometheus_client=False)
+    exporter = PrometheusExporter(port=0, use_prometheus_client=False)
     exporter.start()
+    actual_port = exporter._server.server_address[1]
     try:
-        conn = http.client.HTTPConnection("127.0.0.1", 19095)
+        conn = http.client.HTTPConnection("127.0.0.1", actual_port)
         conn.request("GET", "/notfound")
         response = conn.getresponse()
         assert response.status == 404
@@ -410,10 +410,11 @@ def test_prometheus_prometheus_server_404():
 
     pytest.importorskip("prometheus_client")
 
-    exporter = PrometheusExporter(port=19096, use_prometheus_client=True)
+    exporter = PrometheusExporter(port=0, use_prometheus_client=True)
     exporter.start()
+    actual_port = exporter._server.server_address[1]
     try:
-        conn = http.client.HTTPConnection("127.0.0.1", 19096)
+        conn = http.client.HTTPConnection("127.0.0.1", actual_port)
         conn.request("GET", "/notfound")
         response = conn.getresponse()
         assert response.status == 404
@@ -428,7 +429,7 @@ def test_prometheus_collector_collect_empty():
     pytest.importorskip("prometheus_client")
     from prometheus_client import generate_latest
 
-    exporter = PrometheusExporter(port=19097, use_prometheus_client=True)
+    exporter = PrometheusExporter(port=0, use_prometheus_client=True)
     assert exporter._registry is not None
     # No functions registered — collect() should run without error and yield metric families
     output = generate_latest(exporter._registry).decode()
@@ -448,11 +449,12 @@ def test_prometheus_simple_server_metrics_endpoint():
     test_func.clear_cache()
     test_func(5)
 
-    exporter = PrometheusExporter(port=19098, use_prometheus_client=False)
+    exporter = PrometheusExporter(port=0, use_prometheus_client=False)
     exporter.register_function(test_func)
     exporter.start()
+    actual_port = exporter._server.server_address[1]
     try:
-        response = urllib.request.urlopen("http://127.0.0.1:19098/metrics", timeout=5)
+        response = urllib.request.urlopen(f"http://127.0.0.1:{actual_port}/metrics", timeout=5)
         body = response.read().decode()
         assert "cachier_cache_hits_total" in body
     finally:
@@ -474,11 +476,12 @@ def test_prometheus_prometheus_server_metrics_endpoint():
     test_func.clear_cache()
     test_func(5)
 
-    exporter = PrometheusExporter(port=19099, use_prometheus_client=True)
+    exporter = PrometheusExporter(port=0, use_prometheus_client=True)
     exporter.register_function(test_func)
     exporter.start()
+    actual_port = exporter._server.server_address[1]
     try:
-        response = urllib.request.urlopen("http://127.0.0.1:19099/metrics")
+        response = urllib.request.urlopen(f"http://127.0.0.1:{actual_port}/metrics")
         body = response.read().decode()
         assert "cachier_cache_hits_total" in body
     finally:
@@ -568,7 +571,7 @@ def test_prometheus_collector_collect_skips_none_metrics():
     pytest.importorskip("prometheus_client")
     from prometheus_client import generate_latest
 
-    exporter = PrometheusExporter(port=19200, use_prometheus_client=True)
+    exporter = PrometheusExporter(port=0, use_prometheus_client=True)
 
     class _NoMetrics:
         __module__ = "test"

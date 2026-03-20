@@ -7,7 +7,7 @@
 # http://www.opensource.org/licenses/MIT-license
 
 import threading
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Protocol, cast
+from typing import TYPE_CHECKING, Any, Callable, Optional, Protocol, cast
 
 from .base import MetricsExporter
 
@@ -60,7 +60,7 @@ class CachierCollector:
         """Collect metrics from all registered functions."""
         # Snapshot all metrics in one lock acquisition for consistency
         with self.exporter._lock:
-            snapshots: Dict[str, "MetricSnapshot"] = {}
+            snapshots: dict[str, "MetricSnapshot"] = {}
             for func_name, func in self.exporter._registered_functions.items():
                 m = _get_func_metrics(func)
                 if m is not None:
@@ -144,7 +144,7 @@ class PrometheusExporter(MetricsExporter):
         self.port = port
         self.host = host
         self.use_prometheus_client = use_prometheus_client
-        self._registered_functions: Dict[str, _MetricsEnabledCallable] = {}
+        self._registered_functions: dict[str, _MetricsEnabledCallable] = {}
         self._lock = threading.Lock()
         self._server: Optional[Any] = None
         self._server_thread: Optional[threading.Thread] = None
@@ -156,7 +156,6 @@ class PrometheusExporter(MetricsExporter):
         self._registry: Optional[Any] = None
         if use_prometheus_client and PROMETHEUS_CLIENT_AVAILABLE:
             self._prom_client = prometheus_client
-            self._init_prometheus_metrics()
             self._setup_collector()
 
     def _setup_collector(self) -> None:
@@ -167,16 +166,6 @@ class PrometheusExporter(MetricsExporter):
         # Use a per-instance registry so multiple exporters don't conflict
         self._registry = CollectorRegistry()
         self._registry.register(CachierCollector(self))
-
-    def _init_prometheus_metrics(self) -> None:
-        """Initialize Prometheus metrics using prometheus_client.
-
-        Note: With custom collector, we don't need to pre-define metrics.
-        The collector will generate them dynamically at scrape time.
-
-        """
-        # Metrics are now handled by the custom collector in _setup_collector()
-        pass
 
     def register_function(self, func: Callable[..., Any]) -> None:
         """Register a cached function for metrics export.
@@ -232,7 +221,7 @@ class PrometheusExporter(MetricsExporter):
         """
         # Snapshot all metrics in one lock acquisition for consistency
         with self._lock:
-            snapshots: Dict[str, "MetricSnapshot"] = {}
+            snapshots: dict[str, "MetricSnapshot"] = {}
             for func_name, func in self._registered_functions.items():
                 m = _get_func_metrics(func)
                 if m is not None:
