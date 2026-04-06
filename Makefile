@@ -115,7 +115,7 @@ mongo-start:
 	@echo "Starting MongoDB container..."
 	@docker ps -q -f name=cachier-test-mongo | grep -q . && \
 		(echo "MongoDB container already running" && exit 0) || \
-		(docker run -d -p 27017:27017 --name cachier-test-mongo mongo:latest && \
+		(docker run -d -p 27017:27017 --name cachier-test-mongo mongo:8 && \
 		echo "Waiting for MongoDB to start..." && sleep 5)
 
 mongo-stop:

@@ -123,7 +123,7 @@ The script manages the following containers:
 
 | Backend    | Container Name        | Port  | Image          |
 | ---------- | --------------------- | ----- | -------------- |
-| MongoDB    | cachier-test-mongo    | 27017 | mongo:latest   |
+| MongoDB    | cachier-test-mongo    | 27017 | mongo:8        |
 | Redis      | cachier-test-redis    | 6379  | redis:7-alpine |
 | PostgreSQL | cachier-test-postgres | 5432  | postgres:15    |
 
