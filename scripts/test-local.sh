@@ -321,9 +321,9 @@ start_mongodb() {
 
     # Start MongoDB
     if [ "$VERBOSE" = true ]; then
-        docker run -d -p 27017:27017 --name $MONGO_CONTAINER mongo:latest
+        docker run -d -p 27017:27017 --name $MONGO_CONTAINER mongo:8
     else
-        docker run -d -p 27017:27017 --name $MONGO_CONTAINER mongo:latest > /dev/null 2>&1
+        docker run -d -p 27017:27017 --name $MONGO_CONTAINER mongo:8 > /dev/null 2>&1
     fi
 
     # Wait for MongoDB to be ready

@@ -5,7 +5,7 @@ version: "3.8"
 
 services:
   mongodb:
-    image: mongo:latest
+    image: mongo:8
     container_name: cachier-test-mongo
     ports:
       - "27017:27017"
