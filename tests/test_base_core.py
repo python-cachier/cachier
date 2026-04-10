@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from cachier.cores.base import _BaseCore
+from cachier.cores.base import RecalculationNeeded, _BaseCore
 
 
 class ConcreteCachingCore(_BaseCore):
@@ -26,7 +26,7 @@ class ConcreteCachingCore(_BaseCore):
         """Retrieve an entry by its key."""
         return key, None
 
-    def set_entry(self, key, func_res):
+    def _set_entry(self, key, func_res):
         """Store an entry in the cache."""
         self.last_set = (key, func_res)
         return True
@@ -143,3 +143,26 @@ async def test_base_core_aset_entry_fallback():
 
     assert result is True
     assert core.last_set == (key, 99)
+
+
+def test_base_core_size_hooks_default_to_zero():
+    """Base metric hooks should return zero when a backend does not override them."""
+    core = ConcreteCachingCore(hash_func=None, wait_for_calc_timeout=None)
+
+    assert core._get_entry_count() == 0
+    assert core._get_total_size() == 0
+
+
+def test_check_calc_timeout_raises_recalculation_needed():
+    """check_calc_timeout should raise when elapsed time reaches the configured timeout."""
+    core = ConcreteCachingCore(hash_func=None, wait_for_calc_timeout=2)
+
+    with pytest.raises(RecalculationNeeded):
+        core.check_calc_timeout(2)
+
+
+def test_check_calc_timeout_does_not_raise_before_timeout():
+    """check_calc_timeout should not raise before the configured timeout."""
+    core = ConcreteCachingCore(hash_func=None, wait_for_calc_timeout=2)
+
+    core.check_calc_timeout(1)

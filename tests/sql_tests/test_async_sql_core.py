@@ -253,7 +253,7 @@ async def test_async_sql_set_entry_executes_conflict_statement(async_sql_engine,
 
         return DummyResult()
 
-    monkeypatch.setitem(_SQLCore.aset_entry.__globals__, "insert", fake_insert)
+    monkeypatch.setitem(_SQLCore._aset_entry.__globals__, "insert", fake_insert)
     monkeypatch.setattr(AsyncSession, "execute", fake_execute)
 
     core = _SQLCore(hash_func=None, sql_engine=async_sql_engine)

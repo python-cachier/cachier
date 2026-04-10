@@ -6,7 +6,7 @@ import pickle
 import time
 import warnings
 from datetime import datetime, timedelta
-from typing import Any, Callable, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple
 
 try:
     import boto3  # type: ignore[import-untyped]
@@ -19,6 +19,9 @@ except ImportError:
 from .._types import HashFunc
 from ..config import CacheEntry
 from .base import RecalculationNeeded, _BaseCore, _get_func_str
+
+if TYPE_CHECKING:
+    from ..metrics import CacheMetrics
 
 S3_SLEEP_DURATION_IN_SEC = 1
 
@@ -62,6 +65,8 @@ class _S3Core(_BaseCore):
         Optional ``botocore.config.Config`` object passed when creating the client.
     entry_size_limit : int, optional
         Maximum allowed size in bytes of a cached value.
+    metrics : CacheMetrics, optional
+        Metrics collector for tracking cache performance.
 
     """
 
@@ -77,6 +82,7 @@ class _S3Core(_BaseCore):
         s3_endpoint_url: Optional[str] = None,
         s3_config: Optional[Any] = None,
         entry_size_limit: Optional[int] = None,
+        metrics: Optional["CacheMetrics"] = None,
     ):
         if not BOTO3_AVAILABLE:
             _safe_warn(
@@ -88,6 +94,7 @@ class _S3Core(_BaseCore):
             hash_func=hash_func,
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=entry_size_limit,
+            metrics=metrics,
         )
 
         if not s3_bucket:
@@ -199,7 +206,7 @@ class _S3Core(_BaseCore):
             _safe_warn(f"S3 get_entry_by_key failed: {exc}")
             return key, None
 
-    def set_entry(self, key: str, func_res: Any) -> bool:
+    def _set_entry(self, key: str, func_res: Any) -> bool:
         """Store a function result in S3 under the given key.
 
         Parameters
@@ -400,14 +407,14 @@ class _S3Core(_BaseCore):
         """
         return await asyncio.to_thread(self.get_entry_by_key, key)
 
-    async def aset_entry(self, key: str, func_res: Any) -> bool:
+    async def _aset_entry(self, key: str, func_res: Any) -> bool:
         """Async-compatible variant of :meth:`set_entry`.
 
         This method delegates to the sync implementation via
         ``asyncio.to_thread`` because boto3 is sync-only.
 
         """
-        return await asyncio.to_thread(self.set_entry, key, func_res)
+        return await asyncio.to_thread(self._set_entry, key, func_res)
 
     async def amark_entry_being_calculated(self, key: str) -> None:
         """Async-compatible variant of :meth:`mark_entry_being_calculated`.

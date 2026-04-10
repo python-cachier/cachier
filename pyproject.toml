@@ -119,6 +119,8 @@ lint.extend-select = [
 ]
 lint.ignore = [
   "C901",
+  "D203",
+  "D213",
   "E203",
   "S301",
 ]
@@ -151,10 +153,10 @@ lint.unfixable = [
 # [tool.ruff.pydocstyle]
 ## Use Google-style docstrings.
 # convention = "google"
-# [tool.ruff.pycodestyle]
 # ignore-overlong-task-comments = true
 # Unlike Flake8, default to a complexity level of 10.
 lint.mccabe.max-complexity = 10
+lint.pydocstyle.convention = "numpy"
 
 [tool.docformatter]
 recursive = true
