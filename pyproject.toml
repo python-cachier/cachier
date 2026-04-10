@@ -99,7 +99,6 @@ exclude = [
   "build",
   "dist",
 ]
-
 # Enable Pyflakes `E` and `F` codes by default.
 lint.select = [
   "D",      # see: https://pypi.org/project/pydocstyle
