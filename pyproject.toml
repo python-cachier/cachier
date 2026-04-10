@@ -1,5 +1,4 @@
 # === Metadata & Build System ===
-
 [build-system]
 requires = [
   "setuptools",
@@ -22,7 +21,7 @@ keywords = [
 ]
 license = { file = "LICENSE" }
 authors = [
-  { name = "Shay Palachy Affek", email = 'shay.palachy@gmail.com' },
+  { name = "Shay Palachy Affek", email = "shay.palachy@gmail.com" },
 ]
 requires-python = ">=3.10"
 classifiers = [
@@ -49,7 +48,6 @@ dependencies = [
   "pympler>=1",
   "watchdog>=2.3.1",
 ]
-
 optional-dependencies.all = [
   "boto3>=1.26",
   "pymongo>=4",
@@ -70,31 +68,24 @@ optional-dependencies.sql = [
 ]
 urls.Source = "https://github.com/python-cachier/cachier"
 # --- setuptools ---
-
 scripts.cachier = "cachier.__main__:cli"
 
 [tool.setuptools]
 include-package-data = true
-
-[tool.setuptools.dynamic]
-version = { attr = "cachier._version.__version__" }
-
-[tool.setuptools.packages.find]
-where = [
+dynamic.version = { attr = "cachier._version.__version__" }
+packages.find.where = [
   "src",
-] # list of folders that contain the packages (["."] by default)
-include = [
+]  # list of folders that contain the packages (["."] by default)
+packages.find.include = [
   "cachier*",
-] # package names should match these glob patterns (["*"] by default)
-namespaces = false # to disable scanning PEP 420 namespaces (true by default)
+]  # package names should match these glob patterns (["*"] by default)
+packages.find.namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
 
 # === Linting & Formatting ===
-
 [tool.black]
 line-length = 120
 
 # --- ruff ---
-
 [tool.ruff]
 target-version = "py310"
 line-length = 120
@@ -114,12 +105,12 @@ lint.select = [
   "D",      # see: https://pypi.org/project/pydocstyle
   "E",
   "F",      # see: https://pypi.org/project/pyflakes
-  "I",      #see: https://pypi.org/project/isort/
+  "I",      # see: https://pypi.org/project/isort/
   "RUF100", # alternative to yesqa
-  #"N", # see: https://pypi.org/project/pep8-naming
-  "S",   # see: https://pypi.org/project/flake8-bandit
+  # "N", # see: https://pypi.org/project/pep8-naming
+  "S",      # see: https://pypi.org/project/flake8-bandit
   "SIM",
-  "W",   # see: https://pypi.org/project/pycodestyle
+  "W",      # see: https://pypi.org/project/pycodestyle
 ]
 lint.extend-select = [
   "A",  # see: https://pypi.org/project/flake8-builtins
@@ -160,8 +151,10 @@ lint.unfixable = [
   "F401",
 ]
 # --- flake8 ---
-#[tool.ruff.pycodestyle]
-#ignore-overlong-task-comments = true
+# [tool.ruff.pydocstyle]
+## Use Google-style docstrings.
+# convention = "google"
+# ignore-overlong-task-comments = true
 # Unlike Flake8, default to a complexity level of 10.
 lint.mccabe.max-complexity = 10
 lint.pydocstyle.convention = "numpy"
@@ -173,20 +166,18 @@ wrap-summaries = 120
 wrap-descriptions = 120
 blank = true
 
+[tool.pytest]
 # === Testing ===
-
 # --- pytest ---
-
-[tool.pytest.ini_options]
-testpaths = [
+ini_options.testpaths = [
   "cachier",
   "tests",
 ]
-norecursedirs = [
+ini_options.norecursedirs = [
   "dist",
   "build",
 ]
-addopts = [
+ini_options.addopts = [
   "--color=yes",
   "-r a",
   "-v",
@@ -194,7 +185,7 @@ addopts = [
   "-W error",
   # Note: parallel execution is opt-in via -n/--numprocesses (pytest-xdist)
 ]
-markers = [
+ini_options.markers = [
   "mongo: test the MongoDB core",
   "memory: test the memory core",
   "pickle: test the pickle core",
@@ -208,29 +199,26 @@ markers = [
   "seriallocal: local core tests that should run serially",
 ]
 
-[tool.coverage.report]
-show_missing = true
-# Regexes for lines to exclude from consideration
-exclude_lines = [
-  "pragma: no cover",          # Have to re-enable the standard pragma
-  "raise NotImplementedError", # Don't complain if tests don't hit defensive assertion code:
-  "if TYPE_CHECKING:",         # Is only true when running mypy, not tests
-]
+[tool.coverage]
 # Parallel test execution configuration
 # Use: pytest -n auto (for automatic worker detection)
 # Or: pytest -n 4 (for specific number of workers)
 # Memory tests are safe to run in parallel by default
 # Pickle tests require isolation (handled by conftest.py fixture)
-
 # --- coverage ---
-
-[tool.coverage.run]
-branch = true
-parallel = true
+run.branch = true
 # dynamic_context = "test_function"
-omit = [
-  "tests/*",
-  "src/cachier/_version.py",
-  "src/cachier/__init__.py",
+run.omit = [
   "**/scripts/**",
+  "src/cachier/__init__.py",
+  "src/cachier/_version.py",
+  "tests/*",
 ]
+run.parallel = true
+# Regexes for lines to exclude from consideration
+report.exclude_lines = [
+  "if TYPE_CHECKING:",         # Is only true when running mypy, not tests
+  "pragma: no cover",          # Have to re-enable the standard pragma
+  "raise NotImplementedError", # Don't complain if tests don't hit defensive assertion code:
+]
+report.show_missing = true
