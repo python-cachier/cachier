@@ -32,6 +32,7 @@ def _run_mypy(code: str) -> tuple[list[str], list[str]]:
             textwrap.dedent(code),
             "--no-error-summary",
             "--hide-error-context",
+            "--ignore-missing-imports",
         ]
     )
     stdout = result[0]
@@ -199,6 +200,62 @@ class TestComplexSignatures:
         """)
         assert not errors
         assert any('"None"' in n for n in notes)
+
+
+class TestDecoratorAttributes:
+    """Verify that cache-management attributes are visible to type checkers."""
+
+    def test_clear_cache_is_callable(self) -> None:
+        """Mypy should see ``.clear_cache()`` as a callable attribute."""
+        _notes, errors = _run_mypy("""
+            from cachier import cachier
+
+            @cachier()
+            def f(x: int) -> int:
+                return x
+
+            f.clear_cache()
+        """)
+        assert not errors
+
+    def test_precache_value_is_callable(self) -> None:
+        """Mypy should see ``.precache_value()`` as a callable attribute."""
+        _notes, errors = _run_mypy("""
+            from cachier import cachier
+
+            @cachier()
+            def f(x: int) -> int:
+                return x
+
+            f.precache_value(1, value_to_cache=42)
+        """)
+        assert not errors
+
+    def test_metrics_attribute_accessible(self) -> None:
+        """Mypy should see ``.metrics`` as an attribute."""
+        _notes, errors = _run_mypy("""
+            from cachier import cachier
+
+            @cachier()
+            def f(x: int) -> int:
+                return x
+
+            m = f.metrics
+        """)
+        assert not errors
+
+    def test_undefined_attribute_is_error(self) -> None:
+        """Mypy should reject access to attributes that do not exist."""
+        _notes, errors = _run_mypy("""
+            from cachier import cachier
+
+            @cachier()
+            def f(x: int) -> int:
+                return x
+
+            f.not_a_real_method()
+        """)
+        assert errors
 
 
 class TestDecoratorWithArgs:

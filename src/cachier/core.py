@@ -16,7 +16,7 @@ from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Any, Callable, Optional, ParamSpec, TypeVar, Union
+from typing import Any, Callable, Optional, ParamSpec, Protocol, TypeVar, Union
 from warnings import warn
 
 from ._types import RedisClient, S3Client
@@ -33,6 +33,31 @@ from .util import parse_bytes
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
+_R_co = TypeVar("_R_co", covariant=True)
+
+
+class _CachierWrappedFunc(Protocol[_P, _R_co]):
+    """Callable returned by ``@cachier`` with the decorated function's signature.
+
+    Preserves the original function's parameter and return types via ``ParamSpec``
+    while also exposing the cache-management attributes attached by the decorator.
+    Per-call cachier options such as ``max_age`` and ``cachier__skip_cache`` are
+    accepted at runtime but are not surfaced in the ``__call__`` signature here;
+    PEP 612 does not permit mixing ParamSpec kwargs with additional keyword-only
+    parameters.
+
+    """
+
+    def __call__(self, *args: _P.args, **kwargs: _P.kwargs) -> _R_co: ...
+
+    clear_cache: Callable[[], Any]
+    clear_being_calculated: Callable[[], Any]
+    aclear_cache: Callable[[], Any]
+    aclear_being_calculated: Callable[[], Any]
+    cache_dpath: Callable[[], Optional[str]]
+    precache_value: Callable[..., Any]
+    metrics: Optional[CacheMetrics]
+
 
 MAX_WORKERS_ENVAR_NAME = "CACHIER_MAX_WORKERS"
 DEFAULT_MAX_WORKERS = 8
@@ -224,7 +249,7 @@ def cachier(
     allow_non_static_methods: Optional[bool] = None,
     enable_metrics: bool = False,
     metrics_sampling_rate: float = 1.0,
-) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
+) -> Callable[[Callable[_P, _R]], _CachierWrappedFunc[_P, _R]]:
     """Wrap as a persistent, stale-free memoization decorator.
 
     The positional and keyword arguments to the wrapped function must be
@@ -403,7 +428,7 @@ def cachier(
     else:
         raise ValueError("specified an invalid core: %s" % backend)
 
-    def _cachier_decorator(func: Callable[_P, _R]) -> Callable[_P, _R]:
+    def _cachier_decorator(func: Callable[_P, _R]) -> _CachierWrappedFunc[_P, _R]:
         core.set_func(func)
 
         # Guard: raise TypeError when decorating an instance method unless
