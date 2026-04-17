@@ -48,7 +48,7 @@ class _CachierWrappedFunc(Protocol[_P, _R_co]):
 
     """
 
-    def __call__(self, *args: _P.args, **kwargs: _P.kwargs) -> _R_co: ...
+    def __call__(self, *args: _P.args, **kwargs: _P.kwargs) -> _R_co: ...  # pragma: no cover
 
     clear_cache: Callable[[], Any]
     clear_being_calculated: Callable[[], Any]
