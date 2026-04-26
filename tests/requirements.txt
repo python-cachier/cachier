@@ -7,6 +7,8 @@ pytest-rerunfailures  # for retrying flaky tests
 coverage
 pytest-cov
 birch
+# type checking
+mypy
 # to be able to run `python setup.py checkdocs`
 collective.checkdocs
 pygments

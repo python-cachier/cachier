@@ -16,7 +16,7 @@ from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, ParamSpec, Protocol, TypeVar, Union
 from warnings import warn
 
 from ._types import RedisClient, S3Client
@@ -30,6 +30,34 @@ from .cores.s3 import _S3Core
 from .cores.sql import _SQLCore
 from .metrics import CacheMetrics, MetricsContext
 from .util import parse_bytes
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
+_R_co = TypeVar("_R_co", covariant=True)
+
+
+class _CachierWrappedFunc(Protocol[_P, _R_co]):
+    """Callable returned by ``@cachier`` with the decorated function's signature.
+
+    Preserves the original function's parameter and return types via ``ParamSpec``
+    while also exposing the cache-management attributes attached by the decorator.
+    Per-call cachier options such as ``max_age`` and ``cachier__skip_cache`` are
+    accepted at runtime but are not surfaced in the ``__call__`` signature here;
+    PEP 612 does not permit mixing ParamSpec kwargs with additional keyword-only
+    parameters.
+
+    """
+
+    def __call__(self, *args: _P.args, **kwargs: _P.kwargs) -> _R_co: ...  # pragma: no cover
+
+    clear_cache: Callable[[], Any]
+    clear_being_calculated: Callable[[], Any]
+    aclear_cache: Callable[[], Any]
+    aclear_being_calculated: Callable[[], Any]
+    cache_dpath: Callable[[], Optional[str]]
+    precache_value: Callable[..., Any]
+    metrics: Optional[CacheMetrics]
+
 
 MAX_WORKERS_ENVAR_NAME = "CACHIER_MAX_WORKERS"
 DEFAULT_MAX_WORKERS = 8
@@ -221,7 +249,7 @@ def cachier(
     allow_non_static_methods: Optional[bool] = None,
     enable_metrics: bool = False,
     metrics_sampling_rate: float = 1.0,
-):
+) -> Callable[[Callable[_P, _R]], _CachierWrappedFunc[_P, _R]]:
     """Wrap as a persistent, stale-free memoization decorator.
 
     The positional and keyword arguments to the wrapped function must be
@@ -400,7 +428,7 @@ def cachier(
     else:
         raise ValueError("specified an invalid core: %s" % backend)
 
-    def _cachier_decorator(func):
+    def _cachier_decorator(func: Callable[_P, _R]) -> _CachierWrappedFunc[_P, _R]:
         core.set_func(func)
 
         # Guard: raise TypeError when decorating an instance method unless
@@ -513,7 +541,7 @@ def cachier(
             from .config import _global_params
 
             if ignore_cache or not _global_params.caching_enabled:
-                return func(args[0], **kwargs) if core.func_is_method else func(**kwargs)
+                return func(args[0], **kwargs) if core.func_is_method else func(**kwargs)  # type: ignore[call-arg]
 
             with MetricsContext(cache_metrics) as _mctx:
                 key, entry = core.get_entry((), kwargs)
@@ -629,7 +657,7 @@ def cachier(
             from .config import _global_params
 
             if ignore_cache or not _global_params.caching_enabled:
-                return await func(args[0], **kwargs) if core.func_is_method else await func(**kwargs)
+                return await func(args[0], **kwargs) if core.func_is_method else await func(**kwargs)  # type: ignore[call-arg,misc]
 
             with MetricsContext(cache_metrics) as _mctx:
                 key, entry = await core.aget_entry((), kwargs)
@@ -699,14 +727,14 @@ def cachier(
         if is_coroutine:
 
             @wraps(func)
-            async def func_wrapper(*args, **kwargs):
-                return await _call_async(*args, **kwargs)
+            async def func_wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+                return await _call_async(*args, **kwargs)  # type: ignore[arg-type]
 
         else:
 
             @wraps(func)
-            def func_wrapper(*args, **kwargs):
-                return _call(*args, **kwargs)
+            def func_wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+                return _call(*args, **kwargs)  # type: ignore[arg-type]
 
         def _clear_cache():
             """Clear the cache."""
@@ -751,13 +779,13 @@ def cachier(
             kwargs = _convert_args_kwargs(func, _is_method=core.func_is_method, args=args, kwds=kwds)
             return core.precache_value((), kwargs, value_to_cache)
 
-        func_wrapper.clear_cache = _clear_cache
-        func_wrapper.clear_being_calculated = _clear_being_calculated
-        func_wrapper.aclear_cache = _aclear_cache
-        func_wrapper.aclear_being_calculated = _aclear_being_calculated
-        func_wrapper.cache_dpath = _cache_dpath
-        func_wrapper.precache_value = _precache_value
-        func_wrapper.metrics = cache_metrics  # Expose metrics object
-        return func_wrapper
+        func_wrapper.clear_cache = _clear_cache  # type: ignore[attr-defined]
+        func_wrapper.clear_being_calculated = _clear_being_calculated  # type: ignore[attr-defined]
+        func_wrapper.aclear_cache = _aclear_cache  # type: ignore[attr-defined]
+        func_wrapper.aclear_being_calculated = _aclear_being_calculated  # type: ignore[attr-defined]
+        func_wrapper.cache_dpath = _cache_dpath  # type: ignore[attr-defined]
+        func_wrapper.precache_value = _precache_value  # type: ignore[attr-defined]
+        func_wrapper.metrics = cache_metrics  # type: ignore[attr-defined]
+        return func_wrapper  # type: ignore[return-value]
 
     return _cachier_decorator

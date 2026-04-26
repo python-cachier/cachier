@@ -6,6 +6,12 @@ ci:
   autoupdate_commit_msg: "[pre-commit.ci] pre-commit suggestions"
   autoupdate_schedule: quarterly
   # submodules: true
+  # docformatter v1.7.7 transitively pulls `untokenize`, whose setup.py
+  # uses `ast.Constant.s` (removed in Python 3.12+) and fails to install
+  # on pre-commit.ci's runners. The `pre-commit` GitHub Actions job still
+  # runs docformatter, so coverage isn't lost. Remove this once docformatter
+  # ships v1.7.8 (which drops the untokenize dep).
+  skip: [docformatter]
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
