@@ -508,7 +508,9 @@ ______________________________________________________________________
 
 ### c. **Claude-Specific Tips**
 
-- **Use MCP for git operations** (commits, pushes, PRs) instead of CLI.
+- **Use standard git and gh CLI first** for commits, pushes, PRs, and other
+  git/GitHub operations. Use git/GitHub MCP tools only when the CLI has a gap,
+  the CLI is unavailable, or the user explicitly requests MCP usage.
 - **When in doubt, prefer explicit, readable code over cleverness.**
 - **Never use non-ASCII characters or the em dash.**
 - **If stuck, suggest opening a new chat with latest context.**
@@ -554,7 +556,8 @@ ______________________________________________________________________
 - **Workflow:** Issue → Feature branch → GitHub PR
 - **Branch naming:** `feature/<desc>`, `bugfix/<desc>`, etc.
 - **PRs:** Reference relevant issue, link to tests/docs as needed.
-- **Commits:** Use MCP tools, not direct git CLI.
+- **Commits:** Use standard `git` CLI first. Use git MCP tools only when the CLI
+  has a gap, the CLI is unavailable, or the user explicitly requests MCP usage.
 
 ______________________________________________________________________
 
