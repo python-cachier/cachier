@@ -39,12 +39,10 @@ _R_co = TypeVar("_R_co", covariant=True)
 class _CachierWrappedFunc(Protocol[_P, _R_co]):
     """Callable returned by ``@cachier`` with the decorated function's signature.
 
-    Preserves the original function's parameter and return types via ``ParamSpec``
-    while also exposing the cache-management attributes attached by the decorator.
-    Per-call cachier options such as ``max_age`` and ``cachier__skip_cache`` are
-    accepted at runtime but are not surfaced in the ``__call__`` signature here;
-    PEP 612 does not permit mixing ParamSpec kwargs with additional keyword-only
-    parameters.
+    Preserves the original function's parameter and return types via ``ParamSpec`` while also exposing the cache-
+    management attributes attached by the decorator. Per-call cachier options such as ``max_age`` and
+    ``cachier__skip_cache`` are accepted at runtime but are not surfaced in the ``__call__`` signature here; PEP 612
+    does not permit mixing ParamSpec kwargs with additional keyword-only parameters.
 
     """
 
@@ -85,9 +83,8 @@ async def _background_recalc_async(
 ) -> None:
     """Run async recomputation in background and clear processing flag.
 
-    This helper ensures that the cache entry's "being calculated" state is
-    cleared only after the background recomputation and cache update
-    (performed by ``_function_thread_async``) have completed.
+    This helper ensures that the cache entry's "being calculated" state is cleared only after the background
+    recomputation and cache update (performed by ``_function_thread_async``) have completed.
 
     """
     try:
