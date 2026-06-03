@@ -48,14 +48,13 @@ def _build_worker_url(original_url: str, schema_name: str) -> str:
 def worker_sql_connection(request: pytest.FixtureRequest) -> Optional[str]:
     """Create the worker-specific PostgreSQL schema once per xdist worker session.
 
-    Returns the worker-specific connection URL, or None when schema isolation is not
-    needed (serial run or non-PostgreSQL backend). The schema is created with
-    ``CREATE SCHEMA IF NOT EXISTS`` so this fixture is safe to run even if the schema
-    already exists from a previous interrupted run.
+    Returns the worker-specific connection URL, or None when schema isolation is not needed (serial run or non-
+    PostgreSQL backend). The schema is created with ``CREATE SCHEMA IF NOT EXISTS`` so this fixture is safe to run even
+    if the schema already exists from a previous interrupted run.
 
-    A non-None return value means "use this URL"; schema creation is attempted but may
-    fail silently (e.g. if SQLAlchemy is not installed or the DB is unreachable). Tests
-    that depend on the schema will fail at the DB level with a diagnostic error.
+    A non-None return value means "use this URL"; schema creation is attempted but may fail silently (e.g. if SQLAlchemy
+    is not installed or the DB is unreachable). Tests that depend on the schema will fail at the DB level with a
+    diagnostic error.
 
     """
     # Avoid touching SQL backends entirely when no SQL tests are collected.

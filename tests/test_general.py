@@ -77,7 +77,7 @@ def test_wait_for_calc_timeout_ok(mongetter, stale_after, separate_files):
         res = _wait_for_calc_timeout_fast(1, 2)
         res_queue.put(res)
 
-    """ Testing calls that avoid timeouts store the values in cache. """
+    # Testing calls that avoid timeouts store the values in cache.
     _wait_for_calc_timeout_fast.clear_cache()
     val1 = _wait_for_calc_timeout_fast(1, 2)
     val2 = _wait_for_calc_timeout_fast(1, 2)
@@ -123,7 +123,7 @@ def test_wait_for_calc_timeout_slow(mongetter, stale_after, separate_files):
         res = _wait_for_calc_timeout_slow(1, 2)
         res_queue.put(res)
 
-    """Testing for calls timing out to be performed twice when needed."""
+    # Testing for calls timing out to be performed twice when needed.
     _wait_for_calc_timeout_slow.clear_cache()
     res_queue = queue.Queue()
     thread1 = threading.Thread(
