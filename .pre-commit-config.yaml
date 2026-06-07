@@ -6,12 +6,6 @@ ci:
   autoupdate_commit_msg: "[pre-commit.ci] pre-commit suggestions"
   autoupdate_schedule: quarterly
   # submodules: true
-  # docformatter v1.7.7 transitively pulls `untokenize`, whose setup.py
-  # uses `ast.Constant.s` (removed in Python 3.12+) and fails to install
-  # on pre-commit.ci's runners. The `pre-commit` GitHub Actions job still
-  # runs docformatter, so coverage isn't lost. Remove this once docformatter
-  # ships v1.7.8 (which drops the untokenize dep).
-  skip: [docformatter]
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -36,11 +30,23 @@ repos:
         args: []
 
   - repo: https://github.com/PyCQA/docformatter
-    rev: v1.7.7
+    rev: v1.7.8
     hooks:
       - id: docformatter
         additional_dependencies: [tomli]
         args: ["--in-place"]
+        # docformatter v1.7.8 disagrees with ruff-format on these files
+        # (blank lines after docstring-only function bodies, blank lines
+        # between module docstring and first class, and a multi-line
+        # string literal used as an `exec()` argument that docformatter
+        # incorrectly treats as a docstring). Exclude until upstream
+        # reconciles the conventions or the patterns are restructured.
+        exclude: |
+          (?x)^(
+            src/cachier/exporters/prometheus\.py|
+            tests/mongo_tests/clients\.py|
+            tests/test_varargs\.py
+          )$
 
   - repo: https://github.com/executablebooks/mdformat
     rev: 1.0.0
