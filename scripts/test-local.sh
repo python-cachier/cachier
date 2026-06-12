@@ -312,6 +312,28 @@ check_dependencies() {
     print_message $GREEN "All required dependencies are installed!"
 }
 
+run_pytest_phase() {
+    local phase_name="$1"
+    shift
+
+    print_message $BLUE "Running $phase_name: $(printf '%q ' "$@")"
+
+    local phase_exit_code=0
+    if "$@"; then
+        phase_exit_code=0
+    else
+        phase_exit_code=$?
+    fi
+
+    if [ "$phase_exit_code" -eq 0 ]; then
+        print_message $GREEN "$phase_name passed"
+    else
+        print_message $RED "$phase_name failed with exit code $phase_exit_code"
+    fi
+
+    return "$phase_exit_code"
+}
+
 # MongoDB functions
 start_mongodb() {
     print_message $YELLOW "Starting MongoDB container..."
@@ -613,23 +635,42 @@ EOF
     PYTEST_ARGS+=(--cov=cachier --cov-report="$COVERAGE_REPORT")
     SERIAL_PYTEST_ARGS+=(--cov=cachier --cov-report="$COVERAGE_REPORT" --cov-append)
 
-    # Print and run the command
-    print_message $BLUE "Running: $(printf '%q ' "${PYTEST_ARGS[@]}")"
-    "${PYTEST_ARGS[@]}"
+    MAIN_TEST_EXIT_CODE=0
+    SERIAL_TEST_EXIT_CODE=0
+    MAIN_TEST_STATUS="skipped"
+    SERIAL_TEST_STATUS="skipped"
+
+    if run_pytest_phase "main pytest phase" "${PYTEST_ARGS[@]}"; then
+        MAIN_TEST_EXIT_CODE=0
+        MAIN_TEST_STATUS="passed"
+    else
+        MAIN_TEST_EXIT_CODE=$?
+        MAIN_TEST_STATUS="failed ($MAIN_TEST_EXIT_CODE)"
+    fi
 
     if [ "$run_serial_local_tests" = true ]; then
-        print_message $BLUE "Running serial local tests (pickle, memory) with: $(printf '%q ' "${SERIAL_PYTEST_ARGS[@]}")"
-        "${SERIAL_PYTEST_ARGS[@]}"
+        if run_pytest_phase "serial local pytest phase" "${SERIAL_PYTEST_ARGS[@]}"; then
+            SERIAL_TEST_EXIT_CODE=0
+            SERIAL_TEST_STATUS="passed"
+        else
+            SERIAL_TEST_EXIT_CODE=$?
+            SERIAL_TEST_STATUS="failed ($SERIAL_TEST_EXIT_CODE)"
+        fi
     else
         print_message $BLUE "Skipping serial local tests (pickle, memory) since not requested"
     fi
 
-    TEST_EXIT_CODE=$?
+    TEST_EXIT_CODE=0
+    if [ "$MAIN_TEST_EXIT_CODE" -ne 0 ]; then
+        TEST_EXIT_CODE=$MAIN_TEST_EXIT_CODE
+    elif [ "$SERIAL_TEST_EXIT_CODE" -ne 0 ]; then
+        TEST_EXIT_CODE=$SERIAL_TEST_EXIT_CODE
+    fi
 
     if [ $TEST_EXIT_CODE -eq 0 ]; then
         print_message $GREEN "All tests passed!"
     else
-        print_message $RED "Some tests failed. Exit code: $TEST_EXIT_CODE"
+        print_message $RED "Some tests failed. Main phase: $MAIN_TEST_STATUS, serial local phase: $SERIAL_TEST_STATUS"
     fi
 
     # Exit with test status
