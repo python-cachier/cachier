@@ -76,6 +76,27 @@ def test_sql_core_keywords():
 
 
 @pytest.mark.sql
+def test_sql_clear_cache_for_specific_arguments():
+    """clear_cache can remove one SQL cache entry by function arguments."""
+
+    @cachier(backend="sql", sql_engine=SQL_CONN_STR)
+    def f(x, y):
+        return random() + x + y
+
+    f.clear_cache()
+    v1 = f(1, y=2)
+    v2 = f(3, y=4)
+    assert f(1, y=2) == v1
+    assert f(3, y=4) == v2
+
+    f.clear_cache(1, y=2)
+
+    assert f(1, y=2) != v1
+    assert f(3, y=4) == v2
+    f.clear_cache()
+
+
+@pytest.mark.sql
 def test_sql_stale_after():
     @cachier(
         backend="sql",

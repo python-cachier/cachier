@@ -416,6 +416,17 @@ class _PickleCore(_BaseCore):
         else:
             self._save_cache({})
 
+    def clear_cache_entry(self, key: str) -> None:
+        if self.separate_files:
+            with suppress(FileNotFoundError):
+                os.remove(f"{self.cache_fpath}_{key}")
+            return
+
+        with self.lock:
+            cache = self.get_cache_dict()
+            cache.pop(key, None)
+            self._save_cache(cache)
+
     def clear_being_calculated(self) -> None:
         if self.separate_files:
             self._clear_being_calculated_all_cache_files()

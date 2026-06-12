@@ -99,6 +99,66 @@ def test_clear_cache(tmp_path):
 
 
 @pytest.mark.smoke
+@pytest.mark.parametrize("backend", ["memory", "pickle"])
+@pytest.mark.parametrize("separate_files", [False, True])
+def test_clear_cache_for_specific_arguments(tmp_path, backend, separate_files):
+    """Test that clear_cache can reset one cached argument set."""
+    if backend == "memory" and separate_files:
+        pytest.skip("separate_files only applies to pickle")
+
+    call_count = 0
+
+    @cachier_decorator(
+        backend=backend,
+        cache_dir=tmp_path,
+        separate_files=separate_files,
+    )
+    def func(x, y=1):
+        nonlocal call_count
+        call_count += 1
+        return f"{x}:{y}:{call_count}"
+
+    func.clear_cache()
+
+    first = func(1, y=2)
+    second = func(3, y=4)
+    assert func(1, y=2) == first
+    assert func(3, y=4) == second
+
+    func.clear_cache(1, y=2)
+
+    assert func(1, y=2) != first
+    assert func(3, y=4) == second
+    func.clear_cache()
+
+
+@pytest.mark.smoke
+def test_clear_cache_for_specific_method_arguments():
+    """Test that method cache entries can be cleared by method arguments."""
+    call_count = 0
+
+    class Foo:
+        @cachier_decorator(backend="memory", allow_non_static_methods=True)
+        def method(self, x):
+            nonlocal call_count
+            call_count += 1
+            return f"{x}:{call_count}"
+
+    obj = Foo()
+    obj.method.clear_cache()
+    first = obj.method(1)
+    second = obj.method(2)
+    assert obj.method(1) == first
+    assert obj.method(2) == second
+
+    obj.method.clear_cache(1)
+
+    assert obj.method(1) != first
+    assert obj.method(2) == second
+    obj.method.clear_cache()
+
+
+@pytest.mark.smoke
 def test_pickle_backend_stale_after(tmp_path):
     """Test that stale_after=timedelta(0) always recalculates."""
     call_count = 0

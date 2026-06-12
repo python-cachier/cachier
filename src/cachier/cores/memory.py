@@ -126,6 +126,11 @@ class _MemoryCore(_BaseCore):
             # Update size metrics after clearing
             self._update_size_metrics()
 
+    def clear_cache_entry(self, key: str) -> None:
+        with self.lock:
+            self.cache.pop(self._hash_func_key(key), None)
+            self._update_size_metrics()
+
     def clear_being_calculated(self) -> None:
         with self.lock:
             for entry in self.cache.values():

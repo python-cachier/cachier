@@ -105,6 +105,27 @@ def test_s3_core_different_args(s3_bucket):
 
 
 @pytest.mark.s3
+def test_s3_clear_cache_for_specific_arguments(s3_bucket):
+    """clear_cache can remove one S3 cache entry by function arguments."""
+
+    @cachier(backend="s3", s3_bucket=s3_bucket, s3_region=TEST_REGION)
+    def _cached(x, y=1):
+        return random() + x + y
+
+    _cached.clear_cache()
+    val1 = _cached(1, y=2)
+    val2 = _cached(3, y=4)
+    assert _cached(1, y=2) == val1
+    assert _cached(3, y=4) == val2
+
+    _cached.clear_cache(1, y=2)
+
+    assert _cached(1, y=2) != val1
+    assert _cached(3, y=4) == val2
+    _cached.clear_cache()
+
+
+@pytest.mark.s3
 def test_s3_core_skip_cache(s3_bucket):
     """cachier__skip_cache bypasses the cache."""
 
