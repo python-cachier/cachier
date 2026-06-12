@@ -2,7 +2,9 @@
 
 import platform
 import sys
+import warnings
 from contextlib import suppress
+from typing import Any
 from urllib.parse import quote_plus
 
 from birch import Birch  # type: ignore[import-not-found]
@@ -41,6 +43,16 @@ CFG = Birch(namespace="cachier", defaults={CfgKey.TEST_VS_DOCKERIZED_MONGO: Fals
 _COLLECTION_NAME = f"cachier_test_{platform.system()}_{'.'.join(map(str, sys.version_info[:3]))}"
 
 
+def _build_inmemory_mongo_client() -> Any:
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="Python 3.14 will, by default, filter extracted tar archives.*",
+            category=DeprecationWarning,
+        )
+        return InMemoryMongoClient()
+
+
 def _get_cachier_db_mongo_client():
     host = quote_plus(CFG[CfgKey.HOST])
     port = quote_plus(CFG[CfgKey.PORT])
@@ -55,7 +67,7 @@ def _test_mongetter():
             _test_mongetter.client = _get_cachier_db_mongo_client()
         else:
             print("Using in-memory MongoDB instance for testing.")
-            _test_mongetter.client = InMemoryMongoClient()
+            _test_mongetter.client = _build_inmemory_mongo_client()
     db_obj = _test_mongetter.client["cachier_test"]
     if _COLLECTION_NAME not in db_obj.list_collection_names():
         db_obj.create_collection(_COLLECTION_NAME)

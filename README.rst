@@ -853,11 +853,11 @@ This script automatically handles Docker container lifecycle, environment variab
   # Clean up
   docker stop cachier-test-mongo && docker rm cachier-test-mongo
 
-**CI Environment:** The ``CACHIER_TEST_VS_DOCKERIZED_MONGO`` environment variable is set to ``True`` in the GitHub Actions CI environment, which runs tests against a real MongoDB instance on every commit and pull request.
+**CI Environment:** GitHub Actions runs MongoDB tests against a real Dockerized MongoDB instance on Linux. Windows MongoDB jobs use the in-memory MongoDB backend because GitHub-hosted Windows runners do not provide a stable Docker daemon for Linux MongoDB containers.
 
-Contributors are encouraged to test against a real MongoDB instance before submitting PRs to ensure compatibility, though the in-memory MongoDB instance serves as a good proxy for most development.
+Contributors are encouraged to test against a real MongoDB instance before submitting PRs to ensure compatibility, though the in-memory MongoDB instance serves as a good proxy for most development and CI platform coverage.
 
-**HOWEVER, the tests run against a live MongoDB instance when you submit a PR are the determining tests for deciding whether your code functions correctly against MongoDB.**
+**HOWEVER, only the Linux MongoDB CI jobs are live-server integration tests. Windows MongoDB CI jobs still exercise the Mongo backend API surface, but they are compatibility coverage over ``pymongo_inmemory`` rather than proof of live MongoDB server behavior.**
 
 
 Testing all backends locally
