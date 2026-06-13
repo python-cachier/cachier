@@ -152,6 +152,10 @@ async def test_async_mongo_core_mark_clear_and_stale_paths():
 
     await core.amark_entry_being_calculated("fresh")
     await core.amark_entry_not_calculated("fresh")
+    await core.aclear_cache_entry("fresh")
+    assert (core._func_str, "fresh") not in collection._docs
+
+    await core.aset_entry("fresh", 2)
     await core.aclear_being_calculated()
     await core.adelete_stale_entries(timedelta(hours=1))
 

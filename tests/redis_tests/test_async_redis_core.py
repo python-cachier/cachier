@@ -224,8 +224,14 @@ async def test_async_redis_core_mark_and_clear_paths():
     assert clean1._processing is False
     assert clean2._processing is False
 
+    await core.aclear_cache_entry("cleanup-1")
+    _, cleared_one = await core.aget_entry_by_key("cleanup-1")
+    _, kept = await core.aget_entry_by_key("cleanup-2")
+    assert cleared_one is None
+    assert kept is not None
+
     await core.aclear_cache()
-    _, cleared = await core.aget_entry_by_key("cleanup-1")
+    _, cleared = await core.aget_entry_by_key("cleanup-2")
     assert cleared is None
 
     await core.aclear_cache()
@@ -251,6 +257,11 @@ async def test_async_redis_core_mark_and_clear_exceptions():
 
     with pytest.warns(UserWarning, match="Redis clear_cache failed"):
         await core.aclear_cache()
+
+    client.fail_keys = False
+    client.fail_delete = True
+    with pytest.warns(UserWarning, match="Redis clear_cache_entry failed"):
+        await core.aclear_cache_entry("k")
 
 
 @pytest.mark.redis

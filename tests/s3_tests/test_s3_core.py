@@ -699,6 +699,16 @@ def test_s3_set_mark_wait_and_clear_paths(monkeypatch):
     core.clear_cache()
     assert client.delete_objects.call_count == 2
 
+    client.delete_object = Mock(return_value=None)
+    core.clear_cache_entry("k")
+    assert client.delete_object.called
+
+    client.delete_object = Mock(side_effect=RuntimeError("delete failed"))
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        core.clear_cache_entry("k")
+    assert any("clear_cache_entry failed" in str(w.message) for w in caught)
+
     client.get_paginator = Mock(side_effect=RuntimeError("paginate failed"))
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")

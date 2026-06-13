@@ -272,10 +272,14 @@ class _PickleCore(_BaseCore):
         return self._set_entry(key, func_res)
 
     def mark_entry_being_calculated_separate_files(self, key: str) -> None:
-        self._save_cache(
-            CacheEntry(value=None, time=datetime.now(), stale=False, _processing=True),
-            separate_file_key=key,
+        entry = self._load_cache_by_key(key) or CacheEntry(
+            value=None,
+            time=datetime.now(),
+            stale=False,
+            _processing=False,
         )
+        entry._processing = True
+        self._save_cache(entry, separate_file_key=key)
 
     def _mark_entry_not_calculated_separate_files(self, key: str) -> None:
         _, entry = self.get_entry_by_key(key)

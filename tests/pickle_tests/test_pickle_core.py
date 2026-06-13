@@ -287,7 +287,7 @@ def test_being_calc_next_time(separate_files):
         separate_files=separate_files,
     )
     _being_calc_next_time_decorated.clear_cache()
-    _being_calc_next_time(0.13, 0.02)
+    _being_calc_next_time_decorated(0.13, 0.02)
     sleep(1.1)
     res_queue = queue.Queue()
     thread1 = threading.Thread(

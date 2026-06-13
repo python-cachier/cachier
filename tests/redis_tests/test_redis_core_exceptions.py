@@ -96,6 +96,12 @@ class TestRedisCoreExceptions:
         with pytest.warns(UserWarning, match="Redis clear_cache failed"):
             core.clear_cache()
 
+    def test_clear_cache_entry_exceptions(self, core, mock_redis):
+        """Test clear_cache_entry Redis delete exception handling."""
+        mock_redis.delete.side_effect = Exception("Redis error")
+        with pytest.warns(UserWarning, match="Redis clear_cache_entry failed"):
+            core.clear_cache_entry("key")
+
     def test_clear_being_calculated_exceptions(self, core, mock_redis):
         """Test clear_being_calculated Redis keys exception handling."""
         mock_redis.keys.side_effect = Exception("Redis error")
