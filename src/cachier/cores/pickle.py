@@ -172,19 +172,22 @@ class _PickleCore(_BaseCore):
         path, name = os.path.split(self.cache_fpath)
         for subpath in os.listdir(path):
             if subpath.startswith(f"{name}_"):
-                fpath = os.path.join(path, subpath)
-                # Retry loop to handle Windows mandatory file-locking (WinError 32):
-                # portalocker holds an exclusive lock while a thread is computing,
-                # so os.remove() may fail transiently until the lock is released.
-                for attempt in range(3):  # pragma: no branch
-                    try:
-                        os.remove(fpath)
-                        break
-                    except PermissionError:
-                        if attempt < 2:
-                            time.sleep(0.1 * (attempt + 1))
-                        else:
-                            raise
+                self._remove_cache_file_with_retries(os.path.join(path, subpath))
+
+    @staticmethod
+    def _remove_cache_file_with_retries(fpath: str) -> None:
+        # Retry loop to handle Windows mandatory file-locking (WinError 32):
+        # portalocker holds an exclusive lock while a thread is computing,
+        # so os.remove() may fail transiently until the lock is released.
+        for attempt in range(3):  # pragma: no branch
+            try:
+                os.remove(fpath)
+                break
+            except PermissionError:
+                if attempt < 2:
+                    time.sleep(0.1 * (attempt + 1))
+                else:
+                    raise
 
     def _clear_being_calculated_all_cache_files(self) -> None:
         path, name = os.path.split(self.cache_fpath)
@@ -423,7 +426,7 @@ class _PickleCore(_BaseCore):
     def clear_cache_entry(self, key: str) -> None:
         if self.separate_files:
             with suppress(FileNotFoundError):
-                os.remove(f"{self.cache_fpath}_{key}")
+                self._remove_cache_file_with_retries(f"{self.cache_fpath}_{key}")
             return
 
         with self.lock:
