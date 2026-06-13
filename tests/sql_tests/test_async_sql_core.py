@@ -140,6 +140,45 @@ async def test_sqlcore_async_session_requires_async_engine():
 
 @pytest.mark.sql
 @pytest.mark.asyncio
+async def test_async_sql_clear_cache_entry_executes_delete(monkeypatch):
+    core = _SQLCore.__new__(_SQLCore)
+    core._func_str = "test_func"
+
+    class FakeSession:
+        def __init__(self):
+            self.executed = []
+            self.committed = False
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return None
+
+        async def execute(self, stmt):
+            self.executed.append(stmt)
+
+        async def commit(self):
+            self.committed = True
+
+    session = FakeSession()
+
+    def session_factory():
+        return session
+
+    async def fake_get_async_session():
+        return session_factory
+
+    monkeypatch.setattr(core, "_get_async_session", fake_get_async_session)
+
+    await core.aclear_cache_entry("one-key")
+
+    assert session.executed
+    assert session.committed is True
+
+
+@pytest.mark.sql
+@pytest.mark.asyncio
 async def test_sqlcore_async_session_creates_tables_once(async_sql_engine):
     core = _SQLCore(hash_func=None, sql_engine=async_sql_engine)
     core.set_func(lambda x: x)

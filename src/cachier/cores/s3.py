@@ -333,6 +333,15 @@ class _S3Core(_BaseCore):
         except Exception as exc:
             _safe_warn(f"S3 clear_cache failed: {exc}")
 
+    def clear_cache_entry(self, key: str) -> None:
+        """Delete the cache entry mapped by the given key from S3."""
+        client = self._get_s3_client()
+        s3_key = self._get_s3_key(key)
+        try:
+            client.delete_object(Bucket=self.s3_bucket, Key=s3_key)
+        except Exception as exc:
+            _safe_warn(f"S3 clear_cache_entry failed: {exc}")
+
     def clear_being_calculated(self) -> None:
         """Reset the ``_processing`` flag on all entries for this function in S3."""
         client = self._get_s3_client()

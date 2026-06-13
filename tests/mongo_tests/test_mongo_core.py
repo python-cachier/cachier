@@ -140,6 +140,28 @@ def test_mongo_core_keywords():
 
 
 @pytest.mark.mongo
+def test_mongo_clear_cache_for_specific_arguments():
+    """clear_cache can remove one Mongo cache entry by function arguments."""
+
+    @cachier(mongetter=_test_mongetter)
+    def _test_mongo_caching(arg_1, arg_2):
+        """Some function."""
+        return random() + arg_1 + arg_2
+
+    _test_mongo_caching.clear_cache()
+    val1 = _test_mongo_caching(1, arg_2=2)
+    val2 = _test_mongo_caching(3, arg_2=4)
+    assert _test_mongo_caching(1, arg_2=2) == val1
+    assert _test_mongo_caching(3, arg_2=4) == val2
+
+    _test_mongo_caching.clear_cache(1, arg_2=2)
+
+    assert _test_mongo_caching(1, arg_2=2) != val1
+    assert _test_mongo_caching(3, arg_2=4) == val2
+    _test_mongo_caching.clear_cache()
+
+
+@pytest.mark.mongo
 def test_mongo_stale_after():
     """Testing MongoDB core stale_after functionality."""
 

@@ -133,6 +133,15 @@ The Cachier wrapper adds a ``clear_cache()`` function to each wrapped function. 
 
   foo.clear_cache()
 
+To clear only the cache entry for a specific call, pass the same arguments to ``clear_cache()`` that you would pass to the wrapped function:
+
+.. code-block:: python
+
+  foo.clear_cache(arg1, arg2)
+  foo.clear_cache(arg1, arg2=arg2)
+
+The asynchronous ``aclear_cache()`` helper supports the same argument-specific form.
+
 General Configuration
 ----------------------
 

@@ -48,9 +48,9 @@ class _CachierWrappedFunc(Protocol[_P, _R_co]):
 
     def __call__(self, *args: _P.args, **kwargs: _P.kwargs) -> _R_co: ...  # pragma: no cover
 
-    clear_cache: Callable[[], Any]
+    clear_cache: Callable[..., Any]
     clear_being_calculated: Callable[[], Any]
-    aclear_cache: Callable[[], Any]
+    aclear_cache: Callable[..., Any]
     aclear_being_calculated: Callable[[], Any]
     cache_dpath: Callable[[], Optional[str]]
     precache_value: Callable[..., Any]
@@ -217,6 +217,13 @@ def _is_async_redis_client(client: Any) -> bool:
         return False
     method_names = ("hgetall", "hset", "keys", "delete", "hget")
     return all(inspect.iscoroutinefunction(getattr(client, name, None)) for name in method_names)
+
+
+def _convert_public_cache_args(func, _is_method: bool, args: tuple, kwds: dict) -> dict:
+    """Convert cache-management arguments to canonical cache-key kwargs."""
+    if _is_method:
+        args = (None, *args)
+    return _convert_args_kwargs(func, _is_method=_is_method, args=args, kwds=kwds)
 
 
 def cachier(
@@ -733,9 +740,14 @@ def cachier(
             def func_wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 return _call(*args, **kwargs)  # type: ignore[arg-type]
 
-        def _clear_cache():
-            """Clear the cache."""
-            core.clear_cache()
+        def _clear_cache(*args, **kwds):
+            """Clear the cache, or only the entry matching the provided arguments."""
+            if args or kwds:
+                kwargs = _convert_public_cache_args(func, core.func_is_method, args, kwds)
+                key = core.get_key((), kwargs)
+                core.clear_cache_entry(key)
+            else:
+                core.clear_cache()
             if is_coroutine:
                 return _ImmediateAwaitable()
             return None
@@ -747,9 +759,14 @@ def cachier(
                 return _ImmediateAwaitable()
             return None
 
-        async def _aclear_cache():
-            """Clear the cache asynchronously."""
-            await core.aclear_cache()
+        async def _aclear_cache(*args, **kwds):
+            """Clear the cache asynchronously, or only the entry matching the provided arguments."""
+            if args or kwds:
+                kwargs = _convert_public_cache_args(func, core.func_is_method, args, kwds)
+                key = core.get_key((), kwargs)
+                await core.aclear_cache_entry(key)
+            else:
+                await core.aclear_cache()
 
         async def _aclear_being_calculated():
             """Mark all entries in this cache as not being calculated asynchronously."""

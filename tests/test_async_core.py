@@ -41,6 +41,31 @@ class TestBasicAsyncCaching:
 
         async_func.clear_cache()
 
+    @pytest.mark.memory
+    @pytest.mark.asyncio
+    async def test_clear_cache_for_specific_arguments(self):
+        """Test async wrappers can clear one cached argument set."""
+        call_count = 0
+
+        @cachier(backend="memory")
+        async def async_func(x, y=1):
+            nonlocal call_count
+            call_count += 1
+            return f"{x}:{y}:{call_count}"
+
+        async_func.clear_cache()
+
+        first = await async_func(1, y=2)
+        second = await async_func(3, y=4)
+        assert await async_func(1, y=2) == first
+        assert await async_func(3, y=4) == second
+
+        await async_func.aclear_cache(1, y=2)
+
+        assert await async_func(1, y=2) != first
+        assert await async_func(3, y=4) == second
+        await async_func.aclear_cache()
+
     @pytest.mark.pickle
     @pytest.mark.asyncio
     async def test_pickle(self):

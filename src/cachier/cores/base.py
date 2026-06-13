@@ -275,6 +275,18 @@ class _BaseCore(metaclass=abc.ABCMeta):
         await asyncio.to_thread(self.clear_cache)
 
     @abc.abstractmethod
+    def clear_cache_entry(self, key: str) -> None:
+        """Clear the cache entry mapped by the given key."""
+
+    async def aclear_cache_entry(self, key: str) -> None:
+        """Async-compatible variant of :meth:`clear_cache_entry`.
+
+        By default this runs in a thread to avoid blocking the event loop.
+
+        """
+        await asyncio.to_thread(self.clear_cache_entry, key)
+
+    @abc.abstractmethod
     def clear_being_calculated(self) -> None:
         """Mark all entries in this cache as not being calculated."""
 

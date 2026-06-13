@@ -172,19 +172,22 @@ class _PickleCore(_BaseCore):
         path, name = os.path.split(self.cache_fpath)
         for subpath in os.listdir(path):
             if subpath.startswith(f"{name}_"):
-                fpath = os.path.join(path, subpath)
-                # Retry loop to handle Windows mandatory file-locking (WinError 32):
-                # portalocker holds an exclusive lock while a thread is computing,
-                # so os.remove() may fail transiently until the lock is released.
-                for attempt in range(3):  # pragma: no branch
-                    try:
-                        os.remove(fpath)
-                        break
-                    except PermissionError:
-                        if attempt < 2:
-                            time.sleep(0.1 * (attempt + 1))
-                        else:
-                            raise
+                self._remove_cache_file_with_retries(os.path.join(path, subpath))
+
+    @staticmethod
+    def _remove_cache_file_with_retries(fpath: str) -> None:
+        # Retry loop to handle Windows mandatory file-locking (WinError 32):
+        # portalocker holds an exclusive lock while a thread is computing,
+        # so os.remove() may fail transiently until the lock is released.
+        for attempt in range(3):  # pragma: no branch
+            try:
+                os.remove(fpath)
+                break
+            except PermissionError:
+                if attempt < 2:
+                    time.sleep(0.1 * (attempt + 1))
+                else:
+                    raise
 
     def _clear_being_calculated_all_cache_files(self) -> None:
         path, name = os.path.split(self.cache_fpath)
@@ -272,10 +275,14 @@ class _PickleCore(_BaseCore):
         return self._set_entry(key, func_res)
 
     def mark_entry_being_calculated_separate_files(self, key: str) -> None:
-        self._save_cache(
-            CacheEntry(value=None, time=datetime.now(), stale=False, _processing=True),
-            separate_file_key=key,
+        entry = self._load_cache_by_key(key) or CacheEntry(
+            value=None,
+            time=datetime.now(),
+            stale=False,
+            _processing=False,
         )
+        entry._processing = True
+        self._save_cache(entry, separate_file_key=key)
 
     def _mark_entry_not_calculated_separate_files(self, key: str) -> None:
         _, entry = self.get_entry_by_key(key)
@@ -415,6 +422,17 @@ class _PickleCore(_BaseCore):
             self._clear_all_cache_files()
         else:
             self._save_cache({})
+
+    def clear_cache_entry(self, key: str) -> None:
+        if self.separate_files:
+            with suppress(FileNotFoundError):
+                self._remove_cache_file_with_retries(f"{self.cache_fpath}_{key}")
+            return
+
+        with self.lock:
+            cache = self.get_cache_dict()
+            cache.pop(key, None)
+            self._save_cache(cache)
 
     def clear_being_calculated(self) -> None:
         if self.separate_files:

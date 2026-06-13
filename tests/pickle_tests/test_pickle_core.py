@@ -287,7 +287,7 @@ def test_being_calc_next_time(separate_files):
         separate_files=separate_files,
     )
     _being_calc_next_time_decorated.clear_cache()
-    _being_calc_next_time(0.13, 0.02)
+    _being_calc_next_time_decorated(0.13, 0.02)
     sleep(1.1)
     res_queue = queue.Queue()
     thread1 = threading.Thread(
@@ -1438,6 +1438,49 @@ def test_clear_all_cache_files_retries_on_permission_error(tmp_path):
         patch("cachier.cores.pickle.time.sleep") as mock_sleep,
     ):
         core._clear_all_cache_files()
+        assert mock_sleep.call_count == 2
+        mock_sleep.assert_any_call(0.1)
+        mock_sleep.assert_any_call(0.2)
+
+    assert not os.path.exists(dummy_file)
+
+
+@pytest.mark.pickle
+def test_clear_cache_entry_retries_on_permission_error(tmp_path):
+    """Test clear_cache_entry retries on PermissionError then succeeds."""
+    core = _PickleCore(
+        hash_func=None,
+        cache_dir=tmp_path,
+        pickle_reload=False,
+        wait_for_calc_timeout=10,
+        separate_files=True,
+    )
+
+    def mock_func():
+        pass
+
+    core.set_func(mock_func)
+
+    cache_fpath = core.cache_fpath
+    dummy_file = cache_fpath + "_dummykey"
+    with open(dummy_file, "wb") as f:
+        f.write(b"")
+
+    real_remove = os.remove
+    call_count = 0
+
+    def flaky_remove(path):
+        nonlocal call_count
+        call_count += 1
+        if call_count < 3:
+            raise PermissionError("locked")
+        real_remove(path)
+
+    with (
+        patch("cachier.cores.pickle.os.remove", side_effect=flaky_remove),
+        patch("cachier.cores.pickle.time.sleep") as mock_sleep,
+    ):
+        core.clear_cache_entry("dummykey")
         assert mock_sleep.call_count == 2
         mock_sleep.assert_any_call(0.1)
         mock_sleep.assert_any_call(0.2)

@@ -19,6 +19,7 @@ class ConcreteCachingCore(_BaseCore):
         self.last_mark_not_calc = None
         self.last_wait_key = None
         self.clear_cache_called = False
+        self.last_cleared_key = None
         self.clear_being_calculated_called = False
         self.last_deleted_stale_after = None
 
@@ -47,6 +48,10 @@ class ConcreteCachingCore(_BaseCore):
     def clear_cache(self):
         """Clear the cache."""
         self.clear_cache_called = True
+
+    def clear_cache_entry(self, key):
+        """Clear one cache entry."""
+        self.last_cleared_key = key
 
     def clear_being_calculated(self):
         """Clear entries that are being calculated."""
@@ -111,6 +116,9 @@ async def test_base_core_async_default_wrappers():
 
     await core.aclear_cache()
     assert core.clear_cache_called is True
+
+    await core.aclear_cache_entry("one-key")
+    assert core.last_cleared_key == "one-key"
 
     await core.aclear_being_calculated()
     assert core.clear_being_calculated_called is True

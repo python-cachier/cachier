@@ -131,6 +131,28 @@ def test_redis_core_keywords():
 
 
 @pytest.mark.redis
+def test_redis_clear_cache_for_specific_arguments():
+    """clear_cache can remove one Redis cache entry by function arguments."""
+
+    @cachier(backend="redis", redis_client=_test_redis_getter)
+    def _test_redis_caching(arg_1, arg_2):
+        """Some function."""
+        return random() + arg_1 + arg_2
+
+    _test_redis_caching.clear_cache()
+    val1 = _test_redis_caching(1, arg_2=2)
+    val2 = _test_redis_caching(3, arg_2=4)
+    assert _test_redis_caching(1, arg_2=2) == val1
+    assert _test_redis_caching(3, arg_2=4) == val2
+
+    _test_redis_caching.clear_cache(1, arg_2=2)
+
+    assert _test_redis_caching(1, arg_2=2) != val1
+    assert _test_redis_caching(3, arg_2=4) == val2
+    _test_redis_caching.clear_cache()
+
+
+@pytest.mark.redis
 def test_redis_stale_after():
     """Testing Redis core stale_after functionality."""
 
