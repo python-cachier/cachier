@@ -9,13 +9,140 @@ from typing import Any, Optional, Union
 from ._types import Backend, HashFunc, Mongetter
 
 
+def _is_numpy_array(value: Any) -> bool:
+    """Check whether a value is a NumPy ndarray without importing NumPy eagerly.
+
+    Parameters
+    ----------
+    value : Any
+        The value to inspect.
+
+    Returns
+    -------
+    bool
+        True when ``value`` is a NumPy ndarray instance.
+
+    """
+    return type(value).__module__ == "numpy" and type(value).__name__ == "ndarray"
+
+
+def _hash_numpy_array(hasher: "hashlib._Hash", value: Any) -> None:
+    """Update hasher with NumPy array metadata and buffer content.
+
+    The array content is converted to bytes using C-order (row-major) layout
+    to ensure consistent hashing regardless of memory layout. This operation
+    may create a copy if the array is not already C-contiguous (e.g., for
+    transposed arrays, sliced views, or Fortran-ordered arrays), which has
+    performance implications for large arrays.
+
+    Parameters
+    ----------
+    hasher : hashlib._Hash
+        The hasher to update.
+    value : Any
+        A NumPy ndarray instance.
+
+    Notes
+    -----
+    The ``tobytes(order="C")`` call ensures deterministic hash values by
+    normalizing the memory layout, but may incur a memory copy for
+    non-contiguous arrays. For optimal performance with large arrays,
+    consider using C-contiguous arrays when possible.
+
+    """
+    hasher.update(b"numpy.ndarray")
+    hasher.update(value.dtype.str.encode("utf-8"))
+    hasher.update(str(value.shape).encode("utf-8"))
+    hasher.update(value.tobytes(order="C"))
+
+
+def _update_hash_for_value(hasher: "hashlib._Hash", value: Any, depth: int = 0, max_depth: int = 100) -> None:
+    """Update hasher with a stable representation of a Python value.
+
+    Parameters
+    ----------
+    hasher : hashlib._Hash
+        The hasher to update.
+    value : Any
+        Value to encode.
+    depth : int, optional
+        Current recursion depth (internal use only).
+    max_depth : int, optional
+        Maximum allowed recursion depth to prevent stack overflow.
+
+    Raises
+    ------
+    RecursionError
+        If the recursion depth exceeds max_depth.
+
+    """
+    if depth > max_depth:
+        raise RecursionError(
+            f"Maximum recursion depth ({max_depth}) exceeded while hashing nested "
+            f"data structure. Consider flattening your data or using a custom "
+            f"hash_func parameter."
+        )
+
+    if _is_numpy_array(value):
+        _hash_numpy_array(hasher, value)
+        return
+
+    if isinstance(value, tuple):
+        hasher.update(b"tuple")
+        for item in value:
+            _update_hash_for_value(hasher, item, depth + 1, max_depth)
+        return
+
+    if isinstance(value, list):
+        hasher.update(b"list")
+        for item in value:
+            _update_hash_for_value(hasher, item, depth + 1, max_depth)
+        return
+
+    if isinstance(value, dict):
+        hasher.update(b"dict")
+        for dict_key in sorted(value):
+            _update_hash_for_value(hasher, dict_key, depth + 1, max_depth)
+            _update_hash_for_value(hasher, value[dict_key], depth + 1, max_depth)
+        return
+
+    if isinstance(value, (set, frozenset)):
+        # Use a deterministic ordering of elements for hashing.
+        hasher.update(b"frozenset" if isinstance(value, frozenset) else b"set")
+        try:
+            # Fast path: works for homogeneous, orderable element types.
+            iterable = sorted(value)
+        except TypeError:
+            # Fallback: impose a deterministic order based on type name and repr.
+            iterable = sorted(value, key=lambda item: (type(item).__name__, repr(item)))
+        for item in iterable:
+            _update_hash_for_value(hasher, item)
+        return
+    hasher.update(pickle.dumps(value, protocol=pickle.HIGHEST_PROTOCOL))
+
+
 def _default_hash_func(args, kwds):
-    # Sort the kwargs to ensure consistent ordering
-    sorted_kwargs = sorted(kwds.items())
-    # Serialize args and sorted_kwargs using pickle or similar
-    serialized = pickle.dumps((args, sorted_kwargs))
-    # Create a hash of the serialized data
-    return hashlib.sha256(serialized).hexdigest()
+    """Compute a stable hash key for function arguments.
+
+    Parameters
+    ----------
+    args : tuple
+        Positional arguments.
+    kwds : dict
+        Keyword arguments.
+
+    Returns
+    -------
+    str
+        A hex digest representing the call arguments.
+
+    """
+    hasher = hashlib.blake2b(digest_size=32)
+    hasher.update(b"args")
+    _update_hash_for_value(hasher, args)
+    hasher.update(b"kwds")
+    _update_hash_for_value(hasher, dict(sorted(kwds.items())))
+    return hasher.hexdigest()
 
 
 def _default_cache_dir():
