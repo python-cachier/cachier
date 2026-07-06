@@ -71,8 +71,6 @@ urls.Source = "https://github.com/python-cachier/cachier"
 scripts.cachier = "cachier.__main__:cli"
 
 [tool.setuptools]
-include-package-data = true
-dynamic.version = { attr = "cachier._version.__version__" }
 packages.find.where = [
   "src",
 ]  # list of folders that contain the packages (["."] by default)
@@ -80,6 +78,8 @@ packages.find.include = [
   "cachier*",
 ]  # package names should match these glob patterns (["*"] by default)
 packages.find.namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
+include-package-data = true
+dynamic.version = { attr = "cachier._version.__version__" }
 
 # === Linting & Formatting ===
 [tool.black]
@@ -173,8 +173,8 @@ ini_options.testpaths = [
   "tests",
 ]
 ini_options.norecursedirs = [
-  "dist",
   "build",
+  "dist",
 ]
 ini_options.addopts = [
   "--color=yes",
@@ -185,17 +185,17 @@ ini_options.addopts = [
   # Note: parallel execution is opt-in via -n/--numprocesses (pytest-xdist)
 ]
 ini_options.markers = [
-  "mongo: test the MongoDB core",
+  "asyncio: marks tests as async",
+  "flaky: tests that are known to be flaky and should be retried",
+  "maxage: test the max_age functionality",
   "memory: test the memory core",
+  "mongo: test the MongoDB core",
   "pickle: test the pickle core",
   "redis: test the Redis core",
-  "sql: test the SQL core",
   "s3: test the S3 core",
-  "maxage: test the max_age functionality",
-  "asyncio: marks tests as async",
-  "smoke: fast smoke tests with no external service dependencies",
-  "flaky: tests that are known to be flaky and should be retried",
   "seriallocal: local core tests that should run serially",
+  "smoke: fast smoke tests with no external service dependencies",
+  "sql: test the SQL core",
 ]
 
 [tool.coverage]
@@ -206,7 +206,6 @@ ini_options.markers = [
 # Pickle tests require isolation (handled by conftest.py fixture)
 # --- coverage ---
 run.branch = true
-# dynamic_context = "test_function"
 run.omit = [
   "**/scripts/**",
   "src/cachier/__init__.py",
@@ -221,3 +220,4 @@ report.exclude_lines = [
   "raise NotImplementedError", # Don't complain if tests don't hit defensive assertion code:
 ]
 report.show_missing = true
+# dynamic_context = "test_function"
