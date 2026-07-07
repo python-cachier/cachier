@@ -226,6 +226,7 @@ def cachier(
     mongetter: Optional[Mongetter] = None,
     sql_engine: Optional[Union[str, Any, Callable[[], Any]]] = None,
     redis_client: Optional["RedisClient"] = None,
+    key_prefix: Optional["RedisClient"] = None,
     s3_bucket: Optional[str] = None,
     s3_prefix: str = "cachier",
     s3_client: Optional["S3Client"] = None,
@@ -357,6 +358,7 @@ def cachier(
     backend = _update_with_defaults(backend, "backend")
     mongetter = _update_with_defaults(mongetter, "mongetter")
     size_limit_bytes = parse_bytes(_update_with_defaults(entry_size_limit, "entry_size_limit"))
+    key_prefix = _update_with_defaults(key_prefix, "key_prefix")
 
     # Create metrics object if enabled
     cache_metrics = None
@@ -407,6 +409,7 @@ def cachier(
             wait_for_calc_timeout=wait_for_calc_timeout,
             entry_size_limit=size_limit_bytes,
             metrics=cache_metrics,
+            key_prefix=key_prefix,
         )
     elif backend == "s3":
         core = _S3Core(

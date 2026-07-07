@@ -67,6 +67,8 @@ class Params:
     cleanup_interval: timedelta = timedelta(days=1)
     entry_size_limit: Optional[int] = None
     allow_non_static_methods: bool = False
+    key_prefix: str = "cachier"
+    func_prefix: str = "."
 
 
 _global_params = Params()
