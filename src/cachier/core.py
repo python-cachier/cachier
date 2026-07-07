@@ -226,7 +226,7 @@ def cachier(
     mongetter: Optional[Mongetter] = None,
     sql_engine: Optional[Union[str, Any, Callable[[], Any]]] = None,
     redis_client: Optional["RedisClient"] = None,
-    key_prefix: Optional["RedisClient"] = None,
+    key_prefix: Optional[str] = None,
     s3_bucket: Optional[str] = None,
     s3_prefix: str = "cachier",
     s3_client: Optional["S3Client"] = None,
