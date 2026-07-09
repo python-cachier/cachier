@@ -249,6 +249,14 @@ class _MongoCore(_BaseCore):
         mongo_collection = await self._ensure_collection_async()
         await mongo_collection.delete_many(filter={"func": self._func_str})
 
+    def clear_cache_entry(self, key: str) -> None:
+        mongo_collection = self._ensure_collection()
+        mongo_collection.delete_one(filter={"func": self._func_str, "key": key})
+
+    async def aclear_cache_entry(self, key: str) -> None:
+        mongo_collection = await self._ensure_collection_async()
+        await mongo_collection.delete_one(filter={"func": self._func_str, "key": key})
+
     def clear_being_calculated(self) -> None:
         mongo_collection = self._ensure_collection()
         mongo_collection.update_many(

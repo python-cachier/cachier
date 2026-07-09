@@ -69,3 +69,11 @@ class _AsyncInMemoryMongoCollection:
             del self._docs[key]
             deleted += 1
         return {"deleted_count": deleted}
+
+    async def delete_one(self, query=None, **kwargs):
+        if query is None:
+            query = kwargs.get("filter", {})
+        key = (query.get("func"), query.get("key"))
+        existed = key in self._docs
+        self._docs.pop(key, None)
+        return {"deleted_count": int(existed)}

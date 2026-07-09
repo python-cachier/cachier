@@ -105,6 +105,27 @@ def test_s3_core_different_args(s3_bucket):
 
 
 @pytest.mark.s3
+def test_s3_clear_cache_for_specific_arguments(s3_bucket):
+    """clear_cache can remove one S3 cache entry by function arguments."""
+
+    @cachier(backend="s3", s3_bucket=s3_bucket, s3_region=TEST_REGION)
+    def _cached(x, y=1):
+        return random() + x + y
+
+    _cached.clear_cache()
+    val1 = _cached(1, y=2)
+    val2 = _cached(3, y=4)
+    assert _cached(1, y=2) == val1
+    assert _cached(3, y=4) == val2
+
+    _cached.clear_cache(1, y=2)
+
+    assert _cached(1, y=2) != val1
+    assert _cached(3, y=4) == val2
+    _cached.clear_cache()
+
+
+@pytest.mark.s3
 def test_s3_core_skip_cache(s3_bucket):
     """cachier__skip_cache bypasses the cache."""
 
@@ -677,6 +698,16 @@ def test_s3_set_mark_wait_and_clear_paths(monkeypatch):
     client.delete_objects = Mock(return_value=None)
     core.clear_cache()
     assert client.delete_objects.call_count == 2
+
+    client.delete_object = Mock(return_value=None)
+    core.clear_cache_entry("k")
+    assert client.delete_object.called
+
+    client.delete_object = Mock(side_effect=RuntimeError("delete failed"))
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        core.clear_cache_entry("k")
+    assert any("clear_cache_entry failed" in str(w.message) for w in caught)
 
     client.get_paginator = Mock(side_effect=RuntimeError("paginate failed"))
     with warnings.catch_warnings(record=True) as caught:

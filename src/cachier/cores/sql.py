@@ -434,10 +434,26 @@ class _SQLCore(_BaseCore):
             session.execute(delete(CacheTable).where(CacheTable.function_id == self._func_str))
             session.commit()
 
+    def clear_cache_entry(self, key: str) -> None:
+        session_factory = self._get_sync_session()
+        with self._lock, session_factory() as session:
+            session.execute(
+                delete(CacheTable).where(and_(CacheTable.function_id == self._func_str, CacheTable.key == key))
+            )
+            session.commit()
+
     async def aclear_cache(self) -> None:
         session_factory = await self._get_async_session()
         async with session_factory() as session:
             await session.execute(delete(CacheTable).where(CacheTable.function_id == self._func_str))
+            await session.commit()
+
+    async def aclear_cache_entry(self, key: str) -> None:
+        session_factory = await self._get_async_session()
+        async with session_factory() as session:
+            await session.execute(
+                delete(CacheTable).where(and_(CacheTable.function_id == self._func_str, CacheTable.key == key))
+            )
             await session.commit()
 
     def clear_being_calculated(self) -> None:

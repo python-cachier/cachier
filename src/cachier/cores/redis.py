@@ -353,6 +353,16 @@ class _RedisCore(_BaseCore):
         except Exception as e:
             warnings.warn(f"Redis clear_cache failed: {e}", stacklevel=2)
 
+    def clear_cache_entry(self, key: str) -> None:
+        """Clear the cache entry mapped by the given key."""
+        redis_client = self._resolve_redis_client()
+        redis_key = self._get_redis_key(key)
+
+        try:
+            redis_client.delete(redis_key)
+        except Exception as e:
+            warnings.warn(f"Redis clear_cache_entry failed: {e}", stacklevel=2)
+
     async def aclear_cache(self) -> None:
         """Clear the cache of this core asynchronously."""
         redis_client = await self._resolve_redis_client_async()
@@ -364,6 +374,16 @@ class _RedisCore(_BaseCore):
                 await redis_client.delete(*keys)
         except Exception as e:
             warnings.warn(f"Redis clear_cache failed: {e}", stacklevel=2)
+
+    async def aclear_cache_entry(self, key: str) -> None:
+        """Clear the cache entry mapped by the given key asynchronously."""
+        redis_client = await self._resolve_redis_client_async()
+        redis_key = self._get_redis_key(key)
+
+        try:
+            await redis_client.delete(redis_key)
+        except Exception as e:
+            warnings.warn(f"Redis clear_cache_entry failed: {e}", stacklevel=2)
 
     def clear_being_calculated(self) -> None:
         """Mark all entries in this cache as not being calculated."""
