@@ -37,7 +37,8 @@ def _get_func_str(func: Callable) -> str:
     __name__, but at runtime the decorated functions always do.
 
     """
-    return f"{_update_with_defaults('.', 'func_prefix')}{func.__module__}.{func.__name__}"
+    func_prefix = _update_with_defaults(None, "func_prefix")
+    return f"{func_prefix}{func.__module__}.{func.__name__}"
 
 
 class _BaseCore(metaclass=abc.ABCMeta):
