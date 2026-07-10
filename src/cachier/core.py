@@ -281,6 +281,8 @@ def cachier(
     redis_client : redis.Redis or callable, optional
         Redis client instance or callable returning a Redis client.
         Used for the Redis backend.
+    key_prefix : str, optional
+        Key prefix applied to all redis keys. Defaults to ``"cachier"``.
     s3_bucket : str, optional
         The S3 bucket name for cache storage. Required when using the S3 backend.
     s3_prefix : str, optional
