@@ -131,6 +131,31 @@ def test_redis_core_keywords():
 
 
 @pytest.mark.redis
+def test_redis_key_prefix_passed_to_client():
+    pytest.importorskip("redis")
+
+    class PrefixCapturingRedis(_SyncInMemoryRedis):
+        def __init__(self):
+            super().__init__()
+            self.keys_used: list[str] = []
+
+        def hset(self, key: str, field=None, value=None, mapping=None, **kwargs):
+            self.keys_used.append(key)
+            return super().hset(key, field=field, value=value, mapping=mapping, **kwargs)
+
+    client = PrefixCapturingRedis()
+
+    @cachier(backend="redis", redis_client=client, key_prefix="custom-prefix")
+    def cached_value(x: int) -> int:
+        return x + 1
+
+    result = cached_value(1)
+    assert result == 2
+    assert client.keys_used, "Redis client was not called"
+    assert all(key.startswith("custom-prefix:") for key in client.keys_used)
+
+
+@pytest.mark.redis
 def test_redis_stale_after():
     """Testing Redis core stale_after functionality."""
 
