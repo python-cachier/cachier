@@ -4,6 +4,7 @@ import hashlib
 import queue
 import threading
 import warnings
+from dataclasses import replace
 from datetime import datetime, timedelta
 from random import random
 from time import sleep
@@ -12,7 +13,8 @@ from unittest.mock import MagicMock, Mock, patch
 import pandas as pd
 import pytest
 
-from cachier import cachier
+import cachier.config as cachier_config
+from cachier import cachier, set_global_params
 from cachier.core import _is_async_redis_client
 from cachier.cores.redis import MissingRedisClient, _RedisCore
 from tests.redis_tests.clients import _SyncInMemoryRedis
@@ -128,6 +130,43 @@ def test_redis_core_keywords():
     assert val5 != val1
     val6 = _test_redis_caching(1, arg_2=2)
     assert val6 == val5
+
+
+@pytest.mark.redis
+def test_redis_key_prefix_uses_global_default_and_decorator_override():
+    _copied_defaults = replace(cachier_config.get_global_params())
+
+    set_global_params(key_prefix="global-prefix")
+
+    class PrefixCapturingRedis(_SyncInMemoryRedis):
+        def __init__(self):
+            super().__init__()
+            self.keys_used: list[str] = []
+
+        def hset(self, key: str, field=None, value=None, mapping=None, **kwargs):
+            self.keys_used.append(key)
+            return super().hset(key, field=field, value=value, mapping=mapping, **kwargs)
+
+    global_client = PrefixCapturingRedis()
+    explicit_client = PrefixCapturingRedis()
+
+    @cachier(backend="redis", redis_client=global_client)
+    def cached_with_global_prefix(x: int) -> int:
+        return x + 1
+
+    @cachier(backend="redis", redis_client=explicit_client, key_prefix="explicit-prefix")
+    def cached_with_explicit_prefix(x: int) -> int:
+        return x + 1
+
+    assert cached_with_global_prefix(1) == 2
+    assert cached_with_explicit_prefix(1) == 2
+
+    cachier_config.set_global_params(**vars(_copied_defaults))
+
+    assert global_client.keys_used, "Redis client was not called"
+    assert explicit_client.keys_used, "Redis client was not called"
+    assert all(key.startswith("global-prefix:") for key in global_client.keys_used)
+    assert all(key.startswith("explicit-prefix:") for key in explicit_client.keys_used)
 
 
 @pytest.mark.redis

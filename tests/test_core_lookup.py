@@ -17,6 +17,7 @@ def test_get_default_params():
         "cleanup_stale",
         "entry_size_limit",
         "hash_func",
+        "key_prefix",
         "mongetter",
         "next_time",
         "pickle_reload",

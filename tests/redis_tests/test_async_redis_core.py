@@ -111,6 +111,36 @@ def _build_async_core(client: _AsyncInMemoryRedis) -> _RedisCore:
 
 @pytest.mark.redis
 @pytest.mark.asyncio
+async def test_async_redis_key_prefix_passed_to_client():
+    pytest.importorskip("redis")
+
+    class PrefixCapturingRedis(_AsyncInMemoryRedis):
+        def __init__(self):
+            super().__init__()
+            self.keys_used: list[str] = []
+
+        async def hset(self, key: str, field=None, value=None, mapping=None, **kwargs):
+            self.keys_used.append(key)
+            await super().hset(key, field=field, value=value, mapping=mapping, **kwargs)
+
+    client = PrefixCapturingRedis()
+
+    async def get_redis_client():
+        return client
+
+    @cachier(backend="redis", redis_client=get_redis_client, key_prefix="custom-prefix")
+    async def async_cached_value(x: int) -> int:
+        return x + 1
+
+    result = await async_cached_value(1)
+    assert result == 2
+    assert client.keys_used, "Redis client was not called"
+    assert all(key.startswith("custom-prefix:") for key in client.keys_used)
+    assert all(stored_key.startswith("custom-prefix:") for stored_key in client._data)
+
+
+@pytest.mark.redis
+@pytest.mark.asyncio
 async def test_async_redis_core_helpers_and_client_resolution():
     pytest.importorskip("redis")
 
