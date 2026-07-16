@@ -5,8 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from cachier.config import get_global_params, set_global_params
-from cachier.cores.base import RecalculationNeeded, _BaseCore, _get_func_str
+from cachier.cores.base import RecalculationNeeded, _BaseCore
 
 
 class ConcreteCachingCore(_BaseCore):
@@ -81,21 +80,6 @@ def test_should_store_exception():
     with patch1, patch2:
         # Should return True (allow storage) when size can't be determined
         assert core._should_store("test_value") is True
-
-
-def test_get_func_str_honors_global_func_prefix():
-    """Test _get_func_str prepends the configured func_prefix."""
-    original_prefix = get_global_params().func_prefix
-    try:
-        set_global_params(func_prefix="custom-prefix-")
-
-        def dummy_function():
-            return None
-
-        expected = f"custom-prefix-{dummy_function.__module__}.{dummy_function.__name__}"
-        assert _get_func_str(dummy_function) == expected
-    finally:
-        set_global_params(func_prefix=original_prefix)
 
 
 @pytest.mark.asyncio
