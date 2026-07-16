@@ -16,7 +16,6 @@ def test_get_default_params():
         "cleanup_interval",
         "cleanup_stale",
         "entry_size_limit",
-        "func_prefix",
         "hash_func",
         "key_prefix",
         "mongetter",
