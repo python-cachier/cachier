@@ -133,7 +133,7 @@ def test_redis_core_keywords():
 
 
 @pytest.mark.redis
-def test_redis_key_prefix_uses_global_default_and_decorator_override(monkeypatch):
+def test_redis_key_prefix_uses_global_default_and_decorator_override():
     _copied_defaults = replace(cachier_config.get_global_params())
 
     set_global_params(key_prefix="global-prefix")
