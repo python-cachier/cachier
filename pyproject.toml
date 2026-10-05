@@ -35,6 +35,7 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
   "Topic :: Other/Nonlisted Topic",
   "Topic :: Software Development :: Libraries",
   "Topic :: Software Development :: Libraries :: Python Modules",
@@ -199,6 +200,12 @@ ini_options.markers = [
 ]
 
 [tool.coverage]
+run.omit = [
+  "**/scripts/**",
+  "src/cachier/__init__.py",
+  "src/cachier/_version.py",
+  "tests/*",
+]
 # Parallel test execution configuration
 # Use: pytest -n auto (for automatic worker detection)
 # Or: pytest -n 4 (for specific number of workers)
@@ -206,12 +213,6 @@ ini_options.markers = [
 # Pickle tests require isolation (handled by conftest.py fixture)
 # --- coverage ---
 run.branch = true
-run.omit = [
-  "**/scripts/**",
-  "src/cachier/__init__.py",
-  "src/cachier/_version.py",
-  "tests/*",
-]
 run.parallel = true
 # Regexes for lines to exclude from consideration
 report.exclude_lines = [
