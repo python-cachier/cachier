@@ -180,6 +180,9 @@ class _PickleCore(_BaseCore):
                     try:
                         os.remove(fpath)
                         break
+                    except FileNotFoundError:
+                        # A concurrent clear already removed this file.
+                        break
                     except PermissionError:
                         if attempt < 2:
                             time.sleep(0.1 * (attempt + 1))
