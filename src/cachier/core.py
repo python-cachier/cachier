@@ -538,7 +538,7 @@ def cachier(
             from .config import _global_params
 
             if ignore_cache or not _global_params.caching_enabled:
-                return func(args[0], **kwargs) if core.func_is_method else func(**kwargs)  # type: ignore[call-arg]
+                return func(*args, **kwds)
 
             with MetricsContext(cache_metrics) as _mctx:
                 key, entry = core.get_entry((), kwargs)
@@ -654,7 +654,7 @@ def cachier(
             from .config import _global_params
 
             if ignore_cache or not _global_params.caching_enabled:
-                return await func(args[0], **kwargs) if core.func_is_method else await func(**kwargs)  # type: ignore[call-arg,misc]
+                return await func(*args, **kwds)  # type: ignore[misc]
 
             with MetricsContext(cache_metrics) as _mctx:
                 key, entry = await core.aget_entry((), kwargs)
