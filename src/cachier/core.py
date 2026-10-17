@@ -102,10 +102,20 @@ def _set_max_workers(max_workers):
     _get_executor(True)
 
 
-def _get_executor(reset=False):
-    if reset or not hasattr(_get_executor, "executor"):
-        _get_executor.executor = ThreadPoolExecutor(_max_workers())
-    return _get_executor.executor
+def _get_executor(reset: bool = False) -> ThreadPoolExecutor:
+    """Return the worker pool, retiring the previous pool after a reset.
+
+    Already submitted work is allowed to finish without blocking the caller.
+
+    """
+    executor_state: Any = _get_executor
+    if reset or not hasattr(executor_state, "executor"):
+        executor = ThreadPoolExecutor(_max_workers())
+        previous = getattr(executor_state, "executor", None)
+        executor_state.executor = executor
+        if previous is not None:
+            previous.shutdown(wait=False)
+    return executor_state.executor
 
 
 def _function_thread(core: _BaseCore, key, func, args, kwds):
