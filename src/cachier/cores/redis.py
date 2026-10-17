@@ -3,6 +3,7 @@
 import pickle
 import time
 import warnings
+from collections.abc import AsyncIterator, Iterator
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Tuple, Union
 
@@ -340,15 +341,42 @@ class _RedisCore(_BaseCore):
                 return entry.value
             self.check_calc_timeout(time_spent)
 
+    def _scan_key_batches(self, client: Any) -> Iterator[list[Union[str, bytes]]]:
+        """Yield matching cache keys in incremental Redis SCAN pages.
+
+        Empty pages do not terminate iteration while the cursor is nonzero.
+
+        """
+        pattern = f"{self.key_prefix}:{self._func_str}:*"
+        cursor = 0
+        while True:
+            cursor, keys = client.scan(cursor=cursor, match=pattern, count=100)
+            if keys:
+                yield keys
+            if cursor == 0:
+                break
+
+    async def _ascan_key_batches(self, client: Any) -> AsyncIterator[list[Union[str, bytes]]]:
+        """Yield matching cache keys in asynchronous Redis SCAN pages.
+
+        Empty pages do not terminate iteration while the cursor is nonzero.
+
+        """
+        pattern = f"{self.key_prefix}:{self._func_str}:*"
+        cursor = 0
+        while True:
+            cursor, keys = await client.scan(cursor=cursor, match=pattern, count=100)
+            if keys:
+                yield keys
+            if cursor == 0:
+                break
+
     def clear_cache(self) -> None:
         """Clear the cache of this core."""
         redis_client = self._resolve_redis_client()
-        pattern = f"{self.key_prefix}:{self._func_str}:*"
 
         try:
-            # Find all keys matching the pattern
-            keys = redis_client.keys(pattern)
-            if keys:
+            for keys in self._scan_key_batches(redis_client):
                 redis_client.delete(*keys)
         except Exception as e:
             warnings.warn(f"Redis clear_cache failed: {e}", stacklevel=2)
@@ -356,11 +384,9 @@ class _RedisCore(_BaseCore):
     async def aclear_cache(self) -> None:
         """Clear the cache of this core asynchronously."""
         redis_client = await self._resolve_redis_client_async()
-        pattern = f"{self.key_prefix}:{self._func_str}:*"
 
         try:
-            keys = await redis_client.keys(pattern)
-            if keys:
+            async for keys in self._ascan_key_batches(redis_client):
                 await redis_client.delete(*keys)
         except Exception as e:
             warnings.warn(f"Redis clear_cache failed: {e}", stacklevel=2)
@@ -368,12 +394,9 @@ class _RedisCore(_BaseCore):
     def clear_being_calculated(self) -> None:
         """Mark all entries in this cache as not being calculated."""
         redis_client = self._resolve_redis_client()
-        pattern = f"{self.key_prefix}:{self._func_str}:*"
 
         try:
-            # Find all keys matching the pattern
-            keys = redis_client.keys(pattern)
-            if keys:
+            for keys in self._scan_key_batches(redis_client):
                 # Use pipeline for efficiency
                 pipe = redis_client.pipeline()
                 for key in keys:
@@ -385,68 +408,65 @@ class _RedisCore(_BaseCore):
     async def aclear_being_calculated(self) -> None:
         """Mark all entries in this cache as not being calculated asynchronously."""
         redis_client = await self._resolve_redis_client_async()
-        pattern = f"{self.key_prefix}:{self._func_str}:*"
 
         try:
-            keys = await redis_client.keys(pattern)
-            for key in keys or []:
-                await redis_client.hset(key, "processing", "false")
+            async for keys in self._ascan_key_batches(redis_client):
+                for key in keys:
+                    await redis_client.hset(key, "processing", "false")
         except Exception as e:
             warnings.warn(f"Redis clear_being_calculated failed: {e}", stacklevel=2)
 
     def delete_stale_entries(self, stale_after: timedelta) -> None:
         """Remove stale entries from the Redis cache."""
         redis_client = self._resolve_redis_client()
-        pattern = f"{self.key_prefix}:{self._func_str}:*"
         try:
-            keys = redis_client.keys(pattern)
             threshold = datetime.now() - stale_after
-            for key in keys:
-                ts = redis_client.hget(key, "timestamp")
-                if ts is None:
-                    continue
-                # ts may be bytes or str depending on client configuration
-                if isinstance(ts, bytes):
+            for keys in self._scan_key_batches(redis_client):
+                for key in keys:
+                    ts = redis_client.hget(key, "timestamp")
+                    if ts is None:
+                        continue
+                    # ts may be bytes or str depending on client configuration
+                    if isinstance(ts, bytes):
+                        try:
+                            ts_s = ts.decode("utf-8")
+                        except Exception:
+                            ts_s = ts.decode("latin-1", errors="ignore")
+                    else:
+                        ts_s = str(ts)
                     try:
-                        ts_s = ts.decode("utf-8")
-                    except Exception:
-                        ts_s = ts.decode("latin-1", errors="ignore")
-                else:
-                    ts_s = str(ts)
-                try:
-                    ts_val = datetime.fromisoformat(ts_s)
-                except Exception as exc:
-                    warnings.warn(f"Redis timestamp parse failed: {exc}", stacklevel=2)
-                    continue
-                if ts_val < threshold:
-                    redis_client.delete(key)
+                        ts_val = datetime.fromisoformat(ts_s)
+                    except Exception as exc:
+                        warnings.warn(f"Redis timestamp parse failed: {exc}", stacklevel=2)
+                        continue
+                    if ts_val < threshold:
+                        redis_client.delete(key)
         except Exception as e:
             warnings.warn(f"Redis delete_stale_entries failed: {e}", stacklevel=2)
 
     async def adelete_stale_entries(self, stale_after: timedelta) -> None:
         """Remove stale entries from the Redis cache asynchronously."""
         redis_client = await self._resolve_redis_client_async()
-        pattern = f"{self.key_prefix}:{self._func_str}:*"
         try:
-            keys = await redis_client.keys(pattern)
             threshold = datetime.now() - stale_after
-            for key in keys or []:
-                ts = await redis_client.hget(key, "timestamp")
-                if ts is None:
-                    continue
-                if isinstance(ts, bytes):
+            async for keys in self._ascan_key_batches(redis_client):
+                for key in keys:
+                    ts = await redis_client.hget(key, "timestamp")
+                    if ts is None:
+                        continue
+                    if isinstance(ts, bytes):
+                        try:
+                            ts_s = ts.decode("utf-8")
+                        except Exception:
+                            ts_s = ts.decode("latin-1", errors="ignore")
+                    else:
+                        ts_s = str(ts)
                     try:
-                        ts_s = ts.decode("utf-8")
-                    except Exception:
-                        ts_s = ts.decode("latin-1", errors="ignore")
-                else:
-                    ts_s = str(ts)
-                try:
-                    ts_val = datetime.fromisoformat(ts_s)
-                except Exception as exc:
-                    warnings.warn(f"Redis timestamp parse failed: {exc}", stacklevel=2)
-                    continue
-                if ts_val < threshold:
-                    await redis_client.delete(key)
+                        ts_val = datetime.fromisoformat(ts_s)
+                    except Exception as exc:
+                        warnings.warn(f"Redis timestamp parse failed: {exc}", stacklevel=2)
+                        continue
+                    if ts_val < threshold:
+                        await redis_client.delete(key)
         except Exception as e:
             warnings.warn(f"Redis delete_stale_entries failed: {e}", stacklevel=2)

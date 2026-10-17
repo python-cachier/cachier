@@ -351,7 +351,7 @@ def test_redis_core_exceptions():
     # Configure all methods to raise exceptions
     mock_client.hgetall = MagicMock(side_effect=Exception("Redis connection error"))
     mock_client.hset = MagicMock(side_effect=Exception("Redis write error"))
-    mock_client.keys = MagicMock(side_effect=Exception("Redis keys error"))
+    mock_client.scan = MagicMock(side_effect=Exception("Redis keys error"))
     mock_client.delete = MagicMock(side_effect=Exception("Redis delete error"))
 
     core = _RedisCore(hash_func=None, redis_client=mock_client, wait_for_calc_timeout=10)
@@ -449,7 +449,7 @@ def test_redis_delete_stale_entries():
     delete_mock_client = MagicMock()
 
     # Set up keys method
-    delete_mock_client.keys = MagicMock(return_value=[b"key1", b"key2", b"key3"])
+    delete_mock_client.scan = MagicMock(return_value=(0, [b"key1", b"key2", b"key3"]))
 
     now = datetime.now()
     old_timestamp = (now - timedelta(hours=2)).isoformat()
@@ -482,7 +482,7 @@ def test_redis_delete_stale_entries():
 
     # Test exception during timestamp parsing
     mock_client.reset_mock()
-    mock_client.keys.return_value = [b"key4"]
+    mock_client.scan.return_value = (0, [b"key4"])
     mock_client.hget.return_value = b"invalid-timestamp"
 
     # Need to mock _resolve_redis_client for the original core as well
@@ -496,7 +496,7 @@ def test_redis_delete_stale_entries():
 
     # Test exception during keys operation
     mock_client.reset_mock()
-    mock_client.keys.side_effect = Exception("Redis keys error")
+    mock_client.scan.side_effect = Exception("Redis keys error")
 
     with warnings.catch_warnings(record=True) as w2:
         warnings.simplefilter("always")
@@ -565,7 +565,7 @@ def test_redis_clear_being_calculated_with_pipeline():
     pipeline_mock = MagicMock()
 
     # Set up keys to return 3 keys
-    pipeline_mock_client.keys = MagicMock(return_value=[b"key1", b"key2", b"key3"])
+    pipeline_mock_client.scan = MagicMock(return_value=(0, [b"key1", b"key2", b"key3"]))
 
     # Set up pipeline
     pipeline_mock_client.pipeline = MagicMock(return_value=pipeline_mock)
@@ -598,7 +598,7 @@ def test_redis_clear_being_calculated_with_pipeline():
 def test_redis_clear_being_calculated_without_keys():
     """Test clear_being_calculated when no keys are returned."""
     mock_client = MagicMock()
-    mock_client.keys = MagicMock(return_value=[])
+    mock_client.scan = MagicMock(return_value=(0, []))
     mock_client.pipeline = MagicMock()
 
     core = _RedisCore(hash_func=None, redis_client=mock_client, wait_for_calc_timeout=10)

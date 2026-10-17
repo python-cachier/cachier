@@ -92,25 +92,25 @@ class TestRedisCoreExceptions:
 
     def test_clear_cache_exceptions(self, core, mock_redis):
         """Test clear_cache Redis keys exception handling."""
-        mock_redis.keys.side_effect = Exception("Redis error")
+        mock_redis.scan.side_effect = Exception("Redis error")
         with pytest.warns(UserWarning, match="Redis clear_cache failed"):
             core.clear_cache()
 
     def test_clear_being_calculated_exceptions(self, core, mock_redis):
         """Test clear_being_calculated Redis keys exception handling."""
-        mock_redis.keys.side_effect = Exception("Redis error")
+        mock_redis.scan.side_effect = Exception("Redis error")
         with pytest.warns(UserWarning, match="Redis clear_being_calculated failed"):
             core.clear_being_calculated()
 
     def test_delete_stale_entries_keys_exception(self, core, mock_redis):
         """Test delete_stale_entries Redis keys exception handling."""
-        mock_redis.keys.side_effect = Exception("Redis error")
+        mock_redis.scan.side_effect = Exception("Redis error")
         with pytest.warns(UserWarning, match="Redis delete_stale_entries failed"):
             core.delete_stale_entries(timedelta(seconds=1))
 
     def test_delete_stale_entries_timestamp_parse_exception(self, core, mock_redis):
         """Test delete_stale_entries timestamp parsing exception handling."""
-        mock_redis.keys.return_value = [b"key1"]
+        mock_redis.scan.return_value = (0, [b"key1"])
         mock_redis.hget.return_value = b"invalid_timestamp"
 
         with pytest.warns(UserWarning, match="Redis timestamp parse failed"):
@@ -118,7 +118,7 @@ class TestRedisCoreExceptions:
 
     def test_delete_stale_entries_latin1_fallback(self, core, mock_redis):
         """Test delete_stale_entries uses latin-1 for invalid utf-8."""
-        mock_redis.keys.return_value = [b"key1"]
+        mock_redis.scan.return_value = (0, [b"key1"])
         # b'\xff' is invalid utf-8 start byte
         mock_redis.hget.return_value = b"\xff"
 
@@ -128,7 +128,7 @@ class TestRedisCoreExceptions:
 
     def test_delete_stale_entries_str_timestamp(self, core, mock_redis):
         """Test delete_stale_entries handles string timestamps (not bytes)."""
-        mock_redis.keys.return_value = [b"key1"]
+        mock_redis.scan.return_value = (0, [b"key1"])
         now = datetime.now()
         old_time = now - timedelta(hours=1)
         # Return a string, not bytes

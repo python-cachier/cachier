@@ -1,5 +1,6 @@
 """Redis test client implementations shared across Redis test modules."""
 
+from collections.abc import Sequence
 from fnmatch import fnmatch
 
 
@@ -58,6 +59,14 @@ class _MockRedis:
         result = [k for k in self.data if re.match(pattern, k)]
         print(f"DEBUG: keys({pattern}) = {result}")
         return result
+
+    def scan(self, cursor: int = 0, match: str = "*", count: int = 100) -> tuple[int, Sequence[str]]:
+        """Return matching keys as a single scan page.
+
+        The in-memory client does not need multiple cursor pages.
+
+        """
+        return 0, [key for key in self.data if fnmatch(key, match)]
 
     def delete(self, *keys):
         for key in keys:
@@ -139,6 +148,16 @@ class _AsyncInMemoryRedis:
         if self.fail_keys:
             raise Exception("keys failed")
         return [key for key in self._data if fnmatch(key, pattern)]
+
+    async def scan(self, cursor: int = 0, match: str = "*", count: int = 100) -> tuple[int, Sequence[str]]:
+        """Return matching keys as a single asynchronous scan page.
+
+        Reuse the key-scan failure flag for error-path tests.
+
+        """
+        if self.fail_keys:
+            raise Exception("scan failed")
+        return 0, [key for key in self._data if fnmatch(key, match)]
 
     async def delete(self, *keys: str):
         if self.fail_delete:
