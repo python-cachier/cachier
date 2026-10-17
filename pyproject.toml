@@ -44,6 +44,7 @@ dynamic = [
   "version",
 ]
 dependencies = [
+  "click",
   "portalocker>=2.3.2",
   "pympler>=1",
   "watchdog>=2.3.1",
