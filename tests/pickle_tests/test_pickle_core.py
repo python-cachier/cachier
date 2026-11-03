@@ -286,8 +286,8 @@ def test_pickle_being_calculated(separate_files):
 def test_pickle_cache_change_handler_matches_the_cache_file_by_name(event, dispatched):
     """Test the waiter's handler reacts to its cache file's events on a full path.
 
-    watchdog 7 matches glob patterns against the whole path, which broke a
-    ``"*" + filename`` pattern and left concurrent waiters hanging.
+    watchdog 7 matches glob patterns against the whole path, which broke a ``"*" + filename`` pattern and left
+    concurrent waiters hanging.
 
     """
     handler = _PickleCore.CacheChangeHandler(filename=".mod.func", core=Mock(), key="k")
