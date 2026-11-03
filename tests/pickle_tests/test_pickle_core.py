@@ -22,6 +22,12 @@ from time import sleep, time
 from unittest.mock import Mock, patch
 
 import pytest
+from watchdog.events import (
+    DirModifiedEvent,
+    FileCreatedEvent,
+    FileModifiedEvent,
+    FileMovedEvent,
+)
 
 try:
     import queue
@@ -263,6 +269,31 @@ def test_pickle_being_calculated(separate_files):
     res1 = res_queue.get()
     res2 = res_queue.get()
     assert res1 == res2
+
+
+@pytest.mark.pickle
+@pytest.mark.parametrize(
+    ("event", "dispatched"),
+    [
+        (FileModifiedEvent("/cache/dir/.mod.func"), True),
+        (FileCreatedEvent("/cache/dir/.mod.func"), True),
+        (FileMovedEvent("/cache/dir/.mod.func.tmp", "/cache/dir/.mod.func"), True),
+        (FileModifiedEvent("/cache/dir/.mod.func.lock"), False),
+        (FileModifiedEvent("/cache/dir/.mod.other_func"), False),
+        (DirModifiedEvent("/cache/dir/.mod.func"), False),
+    ],
+)
+def test_pickle_cache_change_handler_matches_the_cache_file_by_name(event, dispatched):
+    """Test the waiter's handler reacts to its cache file's events on a full path.
+
+    watchdog 7 matches glob patterns against the whole path, which broke a ``"*" + filename`` pattern and left
+    concurrent waiters hanging.
+
+    """
+    handler = _PickleCore.CacheChangeHandler(filename=".mod.func", core=Mock(), key="k")
+    with patch.object(handler, "_check_calculation") as check_calculation:
+        handler.dispatch(event)
+    assert check_calculation.called is dispatched
 
 
 def _being_calc_next_time(arg_1, arg_2):

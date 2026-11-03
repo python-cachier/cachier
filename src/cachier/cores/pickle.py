@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 from typing import IO, TYPE_CHECKING, Any, Dict, Optional, Tuple, Union, cast
 
 import portalocker  # to lock on pickle cache IO
-from watchdog.events import PatternMatchingEventHandler
+from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
 from .._types import HashFunc
@@ -35,21 +35,30 @@ class _PickleCore(_BaseCore):
 
     _SHARED_LOCK_SUFFIX = ".lock"
 
-    class CacheChangeHandler(PatternMatchingEventHandler):
+    class CacheChangeHandler(FileSystemEventHandler):
         """Handles cache-file modification events."""
 
         def __init__(self, filename, core, key):
-            PatternMatchingEventHandler.__init__(
-                self,
-                patterns=["*" + filename],
-                ignore_patterns=None,
-                ignore_directories=True,
-                case_sensitive=False,
-            )
+            FileSystemEventHandler.__init__(self)
+            self.filename = filename
             self.core = core
             self.key = key
             self.observer = None
             self.value = None
+
+        def dispatch(self, event: FileSystemEvent) -> None:
+            """Dispatch only the events of this cache file.
+
+            Matched by file name rather than a glob pattern: watchdog 7 matches
+            patterns against the whole path (``PurePath.full_match``), so the
+            former ``"*" + filename`` pattern never matched and waiters hung.
+
+            """
+            if event.is_directory:
+                return
+            paths = [event.src_path, getattr(event, "dest_path", "")]
+            if any(path and os.path.basename(os.fsdecode(path)) == self.filename for path in paths):
+                super().dispatch(event)
 
         def inject_observer(self, observer) -> None:
             """Inject the observer running this handler."""
